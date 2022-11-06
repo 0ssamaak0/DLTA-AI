@@ -49,6 +49,7 @@ import threading
 
 LABEL_COLORMAP = imgviz.label_colormap(value=200)
 
+
 class MainWindow(QtWidgets.QMainWindow):
 
     FIT_WINDOW, FIT_WIDTH, MANUAL_ZOOM = 0, 1, 2
@@ -549,7 +550,7 @@ class MainWindow(QtWidgets.QMainWindow):
             enabled=True,
         )
         fill_drawing.trigger()
-        #intelligence actions
+        # intelligence actions
         detect_barcodes = action(
             self.tr("Detect Barcodes for the Current File"),
             self.detectBarcodesOfOne,
@@ -557,7 +558,7 @@ class MainWindow(QtWidgets.QMainWindow):
             None,
             self.tr("Detect Barcodes for the Current File")
         )
-        
+
         detect_barcodes_all = action(
             self.tr("Detect Barcodes for All Files"),
             self.detectBarcodesOfAll,
@@ -565,8 +566,7 @@ class MainWindow(QtWidgets.QMainWindow):
             None,
             self.tr("Detect Barcodes for All Files")
         )
-        
-        
+
         # Lavel list context menu.
         labelMenu = QtWidgets.QMenu()
         utils.addActions(labelMenu, (edit, delete))
@@ -689,7 +689,8 @@ class MainWindow(QtWidgets.QMainWindow):
             ),
         )
         utils.addActions(self.menus.help, (help,))
-        utils.addActions(self.menus.intelligence, (detect_barcodes,detect_barcodes_all))
+        utils.addActions(self.menus.intelligence,
+                         (detect_barcodes, detect_barcodes_all))
         utils.addActions(
             self.menus.view,
             (
@@ -2046,7 +2047,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     images.append(relativePath)
         images.sort(key=lambda x: x.lower())
         return images
-        
+
     def detectBarcodesOfOne(self):
         if os.path.exists(self.filename):
             self.labelList.clearSelection()
@@ -2058,8 +2059,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.setDirty()
 
     def detectBarcodesOfAll(self):
-        images=[]
+        images = []
         for filename in self.imageList:
             images.append(filename)
         self.intelligenceHelper.detectBarcodesOfAll(images)
-

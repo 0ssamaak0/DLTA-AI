@@ -1,34 +1,52 @@
 from dbr import *
 
+import torch
+from mmdet.apis import inference_detector, init_detector, show_result_pyplot
+import cv2
+import numpy as np
+import matplotlib.pyplot as plt
+
 class DynamsoftBarcodeReader():
     def __init__(self):
         self.dbr = BarcodeReader()
         self.dbr.init_license("t0068MgAAABaPdihgo0ura46bBvXa/K+sCfupbVhYdDSY3AlEooBX/7ZSvLQVJmCnYzaJ8Xblhwt1G3hrI9hrklQDGgzvFp0=")
 
     def decode_file(self, img_path, engine=""):
+        config = "/mnt/c/Graduation Project/Auto Annotation Tool/mmdetection/configs/detectors/htc_r50_sac_1x_coco.py"
+        checkpoint = "/mnt/c/Graduation Project/Auto Annotation Tool/mmdetection/checkpoints/htc_r50_sac_1x_coco-bfa60c54.pth"
+
+        model = init_detector(config, checkpoint, device = torch.device("cuda"))
+
+        torch.cuda.empty_cache()
+
+        results = inference_detector(model, plt.imread(img_path))
+        results = results[0]
+        results = [results[0], results[2],results[3],results[5],results[7]]
         result_dict = {}
-        results = []
-        text_results = self.dbr.decode_file(img_path)
-        
-        if text_results!=None:
-            for tr in text_results:
+        res_list = []
+
+        def full_points(bbox):
+            return np.array([[bbox[0], bbox[1]], [bbox[0], bbox[3]], [bbox[2], bbox[3]], [bbox[2], bbox[1]]])
+
+        classdict = {0:"person", 1:"car", 2:"motorcycle", 3:"bus", 4:"truck"}
+        for classno in range(len(results)):
+            for instance in range(len(results[classno])):
                 result = {}
-                result["barcodeFormat"] = tr.barcode_format_string
-                result["barcodeFormat_2"] = tr.barcode_format_string_2
-                result["barcodeText"] = tr.barcode_text
-                result["confidence"] = tr.extended_results[0].confidence
-                results.append(result)
-                points = tr.localization_result.localization_points
-                result["x1"] =points[0][0]
-                result["y1"] =points[0][1]
-                result["x2"] =points[1][0]
-                result["y2"] =points[1][1]
-                result["x3"] =points[2][0]
-                result["y3"] =points[2][1]
-                result["x4"] =points[3][0]
-                result["y4"] =points[3][1]
-        result_dict["results"] = results
-        
+                result["class"] = classdict[classno]
+                result["confidence"] = results[classno][instance][-1]
+                result["bbox"] = results[classno][instance][:-1]
+                points = full_points(result["bbox"])
+                result["x1"] = points[0][0]
+                result["y1"] = points[0][1]
+                result["x2"] = points[1][0]
+                result["y2"] = points[1][1]
+                result["x3"] = points[2][0]
+                result["y3"] = points[2][1]
+                result["x4"] = points[3][0]
+                result["y4"] = points[3][1]
+                res_list.append(result)
+
+        result_dict["results"] = res_list
         return result_dict
         
 if __name__ == '__main__':
