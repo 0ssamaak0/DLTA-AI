@@ -51,8 +51,8 @@ class Intelligence():
         s = []
         for result in results:
             shape = Shape()
-            shape.label = result["barcodeFormat"]
-            shape.content = result["barcodeText"]
+            shape.label = result["class"]
+            shape.content = result["confidence"]
             shape.shape_type="polygon"
             shape.flags = {}
             shape.other_data = {}
