@@ -43,22 +43,25 @@ class Intelligence():
     def __init__(self,parent):
         self.reader = DynamsoftBarcodeReader()
         self.parent = parent
+        self.threshold = 0.5
         
 
-            
     def getBarcodeShapesOfOne(self,filename):
+        print(f"Threshold is {self.threshold}")
         results = self.reader.decode_file(filename)["results"]
         s = []
         for result in results:
+            if float(result["confidence"]) < float(self.threshold):
+                continue
             shape = Shape()
             shape.label = result["class"]
             shape.content = result["confidence"]
             shape.shape_type="polygon"
             shape.flags = {}
             shape.other_data = {}
-            for i in range(1,5):
-                x = result["x"+str(i)]
-                y = result["y"+str(i)]
+            for i in range(len(result["seg"])):
+                x = result["seg"][i][0]
+                y = result["seg"][i][1]
                 shape.addPoint(QtCore.QPointF(x, y))
             shape.close()
             s.append(shape)
@@ -70,6 +73,14 @@ class Intelligence():
         self.thread = IntelligenceWorker(self.parent,images,self)
         self.thread.sinOut.connect(self.updateDialog)
         self.thread.start()
+
+    # get the thresold as input from the user
+    def setThreshold(self):
+        text, ok = QtWidgets.QInputDialog.getText(self.parent, 'Threshold Selector', 'Enter the threshold:')
+        if ok:
+            return text
+        else:
+            return 0.5
     
     def updateDialog(self, completed, total):
         progress = int(completed/total*100)

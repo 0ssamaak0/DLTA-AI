@@ -552,20 +552,29 @@ class MainWindow(QtWidgets.QMainWindow):
         fill_drawing.trigger()
         # intelligence actions
         detect_barcodes = action(
-            self.tr("Detect Barcodes for the Current File"),
+            self.tr("Run the model for the Current File"),
             self.detectBarcodesOfOne,
             None,
             None,
-            self.tr("Detect Barcodes for the Current File")
+            self.tr("Run the model for the Current File")
         )
 
         detect_barcodes_all = action(
-            self.tr("Detect Barcodes for All Files"),
+            self.tr("Run the model for All Files"),
             self.detectBarcodesOfAll,
             None,
             None,
-            self.tr("Detect Barcodes for All Files")
+            self.tr("Run the model for All Files")
         )
+        set_threshold = action(
+            self.tr("Set the threshold for the model"),
+            self.setThreshold,
+            None,
+            None,
+            self.tr("Set the threshold for the model")
+        )
+
+
 
         # Lavel list context menu.
         labelMenu = QtWidgets.QMenu()
@@ -663,7 +672,7 @@ class MainWindow(QtWidgets.QMainWindow):
             file=self.menu(self.tr("&File")),
             edit=self.menu(self.tr("&Edit")),
             view=self.menu(self.tr("&View")),
-            intelligence=self.menu(self.tr("&Intelligence")),
+            intelligence=self.menu(self.tr("&Auto Annotation")),
             help=self.menu(self.tr("&Help")),
             recentFiles=QtWidgets.QMenu(self.tr("Open &Recent")),
             labelList=labelMenu,
@@ -690,7 +699,7 @@ class MainWindow(QtWidgets.QMainWindow):
         )
         utils.addActions(self.menus.help, (help,))
         utils.addActions(self.menus.intelligence,
-                         (detect_barcodes, detect_barcodes_all))
+                         (detect_barcodes, detect_barcodes_all, set_threshold))
         utils.addActions(
             self.menus.view,
             (
@@ -2063,3 +2072,6 @@ class MainWindow(QtWidgets.QMainWindow):
         for filename in self.imageList:
             images.append(filename)
         self.intelligenceHelper.detectBarcodesOfAll(images)
+    
+    def setThreshold(self):
+        self.intelligenceHelper.threshold = self.intelligenceHelper.setThreshold()
