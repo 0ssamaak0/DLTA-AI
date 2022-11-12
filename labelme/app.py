@@ -441,12 +441,12 @@ class MainWindow(QtWidgets.QMainWindow):
             enabled=False,
         )
 
-        help = action(
-            self.tr("&Tutorial"),
-            self.tutorial,
-            icon="help",
-            tip=self.tr("Show tutorial page"),
-        )
+        # help = action(
+        #     self.tr("&Tutorial"),
+        #     self.tutorial,
+        #     icon="help",
+        #     tip=self.tr("Show tutorial page"),
+        # )
 
         zoom = QtWidgets.QWidgetAction(self)
         zoom.setDefaultWidget(self.zoomWidget)
@@ -673,7 +673,7 @@ class MainWindow(QtWidgets.QMainWindow):
             edit=self.menu(self.tr("&Edit")),
             view=self.menu(self.tr("&View")),
             intelligence=self.menu(self.tr("&Auto Annotation")),
-            help=self.menu(self.tr("&Help")),
+            # help=self.menu(self.tr("&Help")),
             recentFiles=QtWidgets.QMenu(self.tr("Open &Recent")),
             labelList=labelMenu,
         )
@@ -697,7 +697,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 quit,
             ),
         )
-        utils.addActions(self.menus.help, (help,))
+        # utils.addActions(self.menus.help, (help,))
         utils.addActions(self.menus.intelligence,
                          (detect_barcodes, detect_barcodes_all, set_threshold))
         utils.addActions(

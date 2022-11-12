@@ -43,9 +43,9 @@ class DynamsoftBarcodeReader():
         self.dbr = BarcodeReader()
         self.dbr.init_license("t0068MgAAABaPdihgo0ura46bBvXa/K+sCfupbVhYdDSY3AlEooBX/7ZSvLQVJmCnYzaJ8Xblhwt1G3hrI9hrklQDGgzvFp0=")
 
-    def decode_file(self, img_path, engine=""):
-        config = "/mnt/c/Graduation Project/Auto Annotation Tool/mmdetection/configs/detectors/htc_r50_sac_1x_coco.py"
-        checkpoint = "/mnt/c/Graduation Project/Auto Annotation Tool/mmdetection/checkpoints/htc_r50_sac_1x_coco-bfa60c54.pth"
+    def decode_file(self, img_path, engine="", threshold=0.5):
+        config = "/mnt/c/Graduation Project/Auto Annotation Tool/mmdetection/configs/mask2former/mask2former_r50_lsj_8x2_50e_coco.py"
+        checkpoint = "/mnt/c/Graduation Project/Auto Annotation Tool/mmdetection/checkpoints/mask2former_r50_lsj_8x2_50e_coco_20220506_191028-8e96e88b.pth"
 
         model = init_detector(config, checkpoint, device = torch.device("cuda"))
 
@@ -57,18 +57,19 @@ class DynamsoftBarcodeReader():
         result_dict = {}
         res_list = []
 
-        def full_points(bbox):
-            return np.array([[bbox[0], bbox[1]], [bbox[0], bbox[3]], [bbox[2], bbox[3]], [bbox[2], bbox[1]]])
+        # def full_points(bbox):
+        #     return np.array([[bbox[0], bbox[1]], [bbox[0], bbox[3]], [bbox[2], bbox[3]], [bbox[2], bbox[1]]])
 
         classdict = {0:"person", 1:"car", 2:"motorcycle", 3:"bus", 4:"truck"}
         for classno in range(len(results0)):
             for instance in range(len(results0[classno])):
+                if float(results0[classno][instance][-1]) < float(threshold):
+                    continue
                 result = {}
                 result["class"] = classdict[classno]
                 # Confidence
                 result["confidence"] = str(results0[classno][instance][-1])
                 result["bbox"] = results0[classno][instance][:-1]
-
                 result["seg"] = mask_to_polygons(results1[classno][instance].astype(np.uint8))
 
                 # points = full_points(result["bbox"])
