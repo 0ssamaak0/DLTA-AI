@@ -48,11 +48,9 @@ class Intelligence():
 
     def getBarcodeShapesOfOne(self,filename):
         print(f"Threshold is {self.threshold}")
-        results = self.reader.decode_file(filename)["results"]
+        results = self.reader.decode_file(filename, threshold = self.threshold)["results"]
         s = []
         for result in results:
-            if float(result["confidence"]) < float(self.threshold):
-                continue
             shape = Shape()
             shape.label = result["class"]
             shape.content = result["confidence"]
