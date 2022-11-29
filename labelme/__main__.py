@@ -15,7 +15,8 @@ from labelme.app import MainWindow
 from labelme.config import get_config
 from labelme.logger import logger
 from labelme.utils import newIcon
-
+import warnings
+warnings.filterwarnings("ignore")
 
 def main():
     parser = argparse.ArgumentParser()
