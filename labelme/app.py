@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import functools
+import json
 import math
 import os
 import os.path as osp
@@ -37,6 +38,8 @@ from .intelligence import Intelligence
 
 import time
 import threading
+import warnings
+warnings.filterwarnings("ignore")
 
 # FIXME
 # - [medium] Set max zoom value to something big enough for FitWidth/Window
@@ -551,17 +554,17 @@ class MainWindow(QtWidgets.QMainWindow):
         )
         fill_drawing.trigger()
         # intelligence actions
-        detect_barcodes = action(
+        annotate_one_action = action(
             self.tr("Run the model for the Current File"),
-            self.detectBarcodesOfOne,
+            self.annotate_one,
             None,
             None,
             self.tr("Run the model for the Current File")
         )
 
-        detect_barcodes_all = action(
+        annotate_batch_action = action(
             self.tr("Run the model for All Files"),
-            self.detectBarcodesOfAll,
+            self.annotate_batch,
             None,
             None,
             self.tr("Run the model for All Files")
@@ -573,6 +576,7 @@ class MainWindow(QtWidgets.QMainWindow):
             None,
             self.tr("Set the threshold for the model")
         )
+
 
 
 
@@ -675,6 +679,7 @@ class MainWindow(QtWidgets.QMainWindow):
             intelligence=self.menu(self.tr("&Auto Annotation")),
             # help=self.menu(self.tr("&Help")),
             recentFiles=QtWidgets.QMenu(self.tr("Open &Recent")),
+            saved_models=QtWidgets.QMenu(self.tr("Select model")),
             labelList=labelMenu,
         )
 
@@ -699,7 +704,12 @@ class MainWindow(QtWidgets.QMainWindow):
         )
         # utils.addActions(self.menus.help, (help,))
         utils.addActions(self.menus.intelligence,
-                         (detect_barcodes, detect_barcodes_all, set_threshold))
+                (annotate_one_action,
+                annotate_batch_action,
+                set_threshold ,
+                self.menus.saved_models,
+)
+                )
         utils.addActions(
             self.menus.view,
             (
@@ -725,6 +735,7 @@ class MainWindow(QtWidgets.QMainWindow):
         )
 
         self.menus.file.aboutToShow.connect(self.updateFileMenu)
+        self.menus.file.aboutToShow.connect(self.update_models_menu)
 
         # Custom context menu for the canvas widget:
         utils.addActions(self.canvas.menus[0], self.actions.menu)
@@ -810,6 +821,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Populate the File menu dynamically.
         self.updateFileMenu()
+        self.update_models_menu()
         # Since loading the file may take some time,
         # make sure it runs in the background.
         if self.filename is not None:
@@ -872,6 +884,10 @@ class MainWindow(QtWidgets.QMainWindow):
             if self.output_dir:
                 label_file_without_path = osp.basename(label_file)
                 label_file = osp.join(self.output_dir, label_file_without_path)
+                
+            if os.path.isdir(label_file):
+                os.remove(label_file)
+                
             self.saveLabels(label_file)
             return
         self.dirty = True
@@ -1038,6 +1054,25 @@ class MainWindow(QtWidgets.QMainWindow):
             )
             action.triggered.connect(functools.partial(self.loadRecent, f))
             menu.addAction(action)
+
+    def update_models_menu(self):
+
+        menu = self.menus.saved_models
+        menu.clear()
+        
+        with open("saved_models.json") as json_file:
+            data = json.load(json_file)
+            # loop through all the models
+            i = 0
+            for model_name in list(data.keys()):
+                icon = utils.newIcon("labels")
+                action = QtWidgets.QAction(icon, "&%d %s" % (i + 1, model_name), self)
+                action.triggered.connect(functools.partial(self.change_curr_model, model_name))
+                menu.addAction(action)
+                i+=1
+        
+    
+
 
     def popLabelListMenu(self, point):
         self.menus.labelList.exec_(self.labelList.mapToGlobal(point))
@@ -1664,6 +1699,8 @@ class MainWindow(QtWidgets.QMainWindow):
     def loadRecent(self, filename):
         if self.mayContinue():
             self.loadFile(filename)
+    def change_curr_model(self, model_name):
+        self.intelligenceHelper.current_model_name ,self.intelligenceHelper.current_mm_model = self.intelligenceHelper.make_mm_model(model_name)
 
     def openPrevImg(self, _value=False):
         keep_prev = self._config["keep_prev"]
@@ -2057,21 +2094,22 @@ class MainWindow(QtWidgets.QMainWindow):
         images.sort(key=lambda x: x.lower())
         return images
 
-    def detectBarcodesOfOne(self):
+    def annotate_one(self):
         if os.path.exists(self.filename):
             self.labelList.clearSelection()
-            s = self.intelligenceHelper.getBarcodeShapesOfOne(self.filename)
+            s = self.intelligenceHelper.get_shapes_of_one(self.filename)
             self.loadShapes(s)
             self.actions.editMode.setEnabled(True)
             self.actions.undoLastPoint.setEnabled(False)
             self.actions.undo.setEnabled(True)
             self.setDirty()
 
-    def detectBarcodesOfAll(self):
+    def annotate_batch(self):
         images = []
         for filename in self.imageList:
             images.append(filename)
-        self.intelligenceHelper.detectBarcodesOfAll(images)
+        self.intelligenceHelper.get_shapes_of_batch(images)
     
     def setThreshold(self):
         self.intelligenceHelper.threshold = self.intelligenceHelper.setThreshold()
+    
