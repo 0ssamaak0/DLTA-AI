@@ -1,9 +1,0 @@
-matplotlib
-dbr
-colorama
-numpy
-QtPy
-termcolor
-imgviz
-Pillow
-PyYAML
