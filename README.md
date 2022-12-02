@@ -31,7 +31,7 @@ you can simply use pip
 	pip install mmdet
 ```
 
-## 4. download model checkpoint from mmdetection (in checkpoint directory) you need to run cmd as adminstrator.
+## 4. download model checkpoint from [mmdetection](https://github.com/open-mmlab/mmdetection) (in checkpoint directory) you need to run cmd as adminstrator.
 
 ```
 	wget https://download.openmmlab.com/mmdetection/v2.0/yolact/yolact_r50_1x8_coco/yolact_r50_1x8_coco_20200908-f38d58df.pth -O /mmdetection/checkpoints
