@@ -34,7 +34,7 @@ you can simply use pip
 ## 4. download model checkpoint from [mmdetection](https://github.com/open-mmlab/mmdetection) (in checkpoint directory) you need to run cmd as adminstrator.
 
 ```
-	wget https://download.openmmlab.com/mmdetection/v2.0/yolact/yolact_r50_1x8_coco/yolact_r50_1x8_coco_20200908-f38d58df.pth -O /mmdetection/checkpoints
+	wget https://download.openmmlab.com/mmdetection/v2.0/yolact/yolact_r50_1x8_coco/yolact_r50_1x8_coco_20200908-f38d58df.pth  -P mmdetection\checkpoints
 ```
 
 
@@ -57,5 +57,5 @@ pip install opencv-python
 In the tool's directory, run using
 
 ```
-python __main__.py
+python labelme-master/__main__.py
 ```
