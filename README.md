@@ -1,5 +1,5 @@
-# Labelme (Automated)
-Supporting Auto Annotation using mmdetection frameworks for [Labelme](https://github.com/wkentaro/labelme).
+# Labelmm
+Auto Annotation tool for instance segmentation based on [Labelme](https://github.com/wkentaro/labelme), using [mmdetection](https://github.com/open-mmlab/mmdetection) framework
 
 
 # Installation
