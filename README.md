@@ -35,7 +35,6 @@ pip install mmdet
 
 ```
 wget https://download.openmmlab.com/mmdetection/v2.0/yolact/yolact_r50_1x8_coco/yolact_r50_1x8_coco_20200908-f38d58df.pth  -P mmdetection\checkpoints
-wget https://download.openmmlab.com/mmdetection/v2.0/detectors/cascade_rcnn_r50_sac_1x_coco/cascade_rcnn_r50_sac_1x_coco-24bfda62.pth -P mmdetection\checkpoints
 ```
 
 
