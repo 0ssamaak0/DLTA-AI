@@ -31,7 +31,14 @@ you can simply use pip
 	pip install mmdet
 ```
 
-## 4. Install [labelme](https://github.com/wkentaro/labelme#installation)
+## 4. download model checkpoint from mmdetection (in checkpoint directory) you need to run cmd as adminstrator.
+
+```
+	wget https://download.openmmlab.com/mmdetection/v2.0/yolact/yolact_r50_1x8_coco/yolact_r50_1x8_coco_20200908-f38d58df.pth -O /mmdetection/checkpoints
+```
+
+
+## 5. Install [labelme](https://github.com/wkentaro/labelme#installation)
 
 ```
 	conda install -c conda-forge pyside2
@@ -41,12 +48,12 @@ you can simply use pip
 	pip install labelme
 ```
 
-## 5. Install [OpenCV-python](https://pypi.org/project/opencv-python/)
+## 6. Install [OpenCV-python](https://pypi.org/project/opencv-python/)
 
 ```
 pip install opencv-python
 ```
-# Running
+# 7.Running
 In the tool's directory, run using
 
 ```
