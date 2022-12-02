@@ -24,28 +24,29 @@ conda install pytorch torchvision pytorch-cuda=11.7 -c pytorch -c nvidia
 you can simply use pip
 
 ```
-	pip install -U openmim
+pip install -U openmim
 
-	mim install mmcv-full
+mim install mmcv-full
 
-	pip install mmdet
+pip install mmdet
 ```
 
-## 4. download model checkpoint from [mmdetection](https://github.com/open-mmlab/mmdetection) (in checkpoint directory) you need to run cmd as adminstrator.
+## 4. download models checkpoints from [mmdetection](https://github.com/open-mmlab/mmdetection) you need to run cmd as adminstrator.
 
 ```
-	wget https://download.openmmlab.com/mmdetection/v2.0/yolact/yolact_r50_1x8_coco/yolact_r50_1x8_coco_20200908-f38d58df.pth  -P mmdetection\checkpoints
+wget https://download.openmmlab.com/mmdetection/v2.0/yolact/yolact_r50_1x8_coco/yolact_r50_1x8_coco_20200908-f38d58df.pth  -P mmdetection\checkpoints
+wget https://download.openmmlab.com/mmdetection/v2.0/detectors/cascade_rcnn_r50_sac_1x_coco/cascade_rcnn_r50_sac_1x_coco-24bfda62.pth -P mmdetection\checkpoints
 ```
 
 
 ## 5. Install [labelme](https://github.com/wkentaro/labelme#installation)
 
 ```
-	conda install -c conda-forge pyside2
+conda install -c conda-forge pyside2
 
-	pip install pyqt5
+pip install pyqt5
 
-	pip install labelme
+pip install labelme
 ```
 
 ## 6. Install [OpenCV-python](https://pypi.org/project/opencv-python/)
@@ -54,8 +55,9 @@ you can simply use pip
 pip install opencv-python
 ```
 # 7.Running
-In the tool's directory, run using
+run the tool using
 
 ```
-python labelme-master/__main__.py
+cd labelme-master
+python __main__.py
 ```
