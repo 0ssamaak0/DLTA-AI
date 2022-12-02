@@ -3,7 +3,7 @@ Supporting Auto Annotation using mmdetection frameworks for [Labelme](https://gi
 
 
 # Installation
-## 1. Install [Anaconda or Miniconda](https://docs.conda.io/en/latest/miniconda.html)
+## 1. Install [Anaconda](https://www.anaconda.com) or [Miniconda](https://docs.conda.io/en/latest/miniconda.html)
 
 then create a virtual enviroment
 ```
