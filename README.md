@@ -5,7 +5,7 @@ Supporting Auto Annotation using mmdetection frameworks for [Labelme](https://gi
 # Installation
 ## 1. Install [Anaconda or Miniconda](https://docs.conda.io/en/latest/miniconda.html)
 
-create a virtual enviroment
+then create a virtual enviroment
 ```
 conda create --name auto_annotate python=3.8 -y
 
