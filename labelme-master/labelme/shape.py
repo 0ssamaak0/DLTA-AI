@@ -56,6 +56,7 @@ class Shape(object):
         self.label = label
         self.group_id = group_id
         self.points = []
+        self.bbox = []
         self.fill = False
         self.selected = False
         self.shape_type = shape_type
