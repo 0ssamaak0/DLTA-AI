@@ -96,7 +96,7 @@ class models_inference():
                 result["class"] = classdict[classno]
                 # Confidence
                 result["confidence"] = str(results0[classno][instance][-1])
-                result["bbox"] = results0[classno][instance][:-1]
+                result["bbox"] = results0[classno][instance][:-1].astype(np.uint8)
                 if classno == 0:
                     result["seg"] = self.mask_to_polygons(results1[classno][instance].astype(np.uint8) , 10)
                 else : 

@@ -14,6 +14,7 @@ import threading
 import os
 import os.path as osp
 import warnings
+import numpy as np
 
 import torch
 from mmdet.apis import inference_detector, init_detector
@@ -97,6 +98,7 @@ class Intelligence():
             shape.label = result["class"]
             shape.content = result["confidence"]
             shape.shape_type="polygon"
+            shape.bbox = result["bbox"].tolist()
             shape.flags = {}
             shape.other_data = {}
             for i in range(len(result["seg"])):
@@ -151,6 +153,10 @@ class Intelligence():
         else:
             self.parent.loadFile(self.parent.filename)
         
+    def flattener(self, list_2d):
+        points=[(p.x(), p.y()) for p in list_2d]
+        points= np.array(points, np.uint16).flatten().tolist()
+        return points
     
     def saveLabelFile(self, filename, detectedShapes):
         lf = LabelFile()
@@ -160,7 +166,8 @@ class Intelligence():
             data.update(
                 dict(
                     label=s.label.encode("utf-8") if PY2 else s.label,
-                    points=[(p.x(), p.y()) for p in s.points],
+                    points= self.flattener(s.points),
+                    bbox = s.bbox,
                     group_id=s.group_id,
                     content=s.content,
                     shape_type=s.shape_type,

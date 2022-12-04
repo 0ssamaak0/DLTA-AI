@@ -41,6 +41,8 @@ import threading
 import warnings
 warnings.filterwarnings("ignore")
 
+import numpy as np
+
 # FIXME
 # - [medium] Set max zoom value to something big enough for FitWidth/Window
 
@@ -1236,6 +1238,7 @@ class MainWindow(QtWidgets.QMainWindow):
         for shape in shapes:
             label = shape["label"]
             points = shape["points"]
+            bbox = shape["bbox"]
             shape_type = shape["shape_type"]
             flags = shape["flags"]
             content = shape["content"]
@@ -1252,8 +1255,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 group_id=group_id,
                 content=content,
             )
-            for x, y in points:
-                shape.addPoint(QtCore.QPointF(x, y))
+            for i in range(0,len(points),2):
+                shape.addPoint(QtCore.QPointF(points[i], points[i+ 1]))
             shape.close()
 
             default_flags = {}
@@ -1277,15 +1280,22 @@ class MainWindow(QtWidgets.QMainWindow):
             item.setCheckState(Qt.Checked if flag else Qt.Unchecked)
             self.flag_widget.addItem(item)
 
+    def flattener(self, list_2d):
+        points=[(p.x(), p.y()) for p in list_2d]
+        points= np.array(points, np.int16).flatten().tolist()
+        return points
+
     def saveLabels(self, filename):
         lf = LabelFile()
-
+    
         def format_shape(s):
             data = s.other_data.copy()
             data.update(
                 dict(
                     label=s.label.encode("utf-8") if PY2 else s.label,
-                    points=[(p.x(), p.y()) for p in s.points],
+                    # convert points into 1D array
+                    points= self.flattener(s.points),
+                    bbox = s.bbox,
                     group_id=s.group_id,
                     content=s.content,
                     shape_type=s.shape_type,
