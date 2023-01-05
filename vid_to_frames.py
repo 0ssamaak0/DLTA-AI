@@ -12,6 +12,7 @@ def vid_to_frames(vid_path , frames_to_skip):
     n_frames = int(vidcap.get(cv2.CAP_PROP_FRAME_COUNT))
     print(n_frames)
     count = 0
+    i = 1
     # add tqdm
     try:
         from tqdm import tqdm
@@ -19,7 +20,8 @@ def vid_to_frames(vid_path , frames_to_skip):
             success,image = vidcap.read()
             if count % frames_to_skip == 0:
                 if success:
-                    cv2.imwrite(os.path.join(frames_path , "img%d.jpg" % count), image)     # save frame as JPEG file
+                    cv2.imwrite(os.path.join(frames_path , "%d.jpg" % i), image)     # save frame as JPEG file
+                    i += 1
     # original code if not tqdm
     except:
         print("Loading frames...")
@@ -27,11 +29,13 @@ def vid_to_frames(vid_path , frames_to_skip):
             success,image = vidcap.read()
             if count % frames_to_skip == 0:
                 # print(count)
-                cv2.imwrite(os.path.join(frames_path , "img%d.jpg" % count), image)     # save frame as JPEG file
+                # save frame as JPEG file
+                cv2.imwrite(os.path.join(frames_path , "%d.jpg" % i), image)
+                i+= 1
             count += 1
             if count > n_frames:
                 break
     print("Done")
 
         
-vid_to_frames("output3.mp4" , 10)
+vid_to_frames("pampam.mp4" , 10)
