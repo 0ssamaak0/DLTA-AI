@@ -1940,7 +1940,6 @@ class MainWindow(QtWidgets.QMainWindow):
                     "supercategory": "vehicle"
                 },
         ]
-
         json_paths = glob.glob(f"{file_path}/*.json")
         annotations = []
         images = []
@@ -1982,6 +1981,7 @@ class MainWindow(QtWidgets.QMainWindow):
             json.dump(file, outfile, indent=4)
 
         print(f"Exported to {file_path}/Annotations/{output_name}.json")
+
 
 
     def saveFileAs(self, _value=False):
