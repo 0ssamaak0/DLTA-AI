@@ -24,3 +24,13 @@ def vid_to_frames(vid_path , frames_to_skip):
         
         
 vid_to_frames("test_vid_1.mp4" , 10)
+
+
+# make a python arbitray class
+class A:
+    def __init__(self):
+        self.a = 1
+        self.b = 2
+    def __str__(self):
+        return f"{self.a} {self.b}"
+    def __repr__(self):

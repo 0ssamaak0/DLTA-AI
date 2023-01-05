@@ -7,6 +7,8 @@ import os
 import os.path as osp
 import re
 import webbrowser
+import datetime
+import glob
 
 import imgviz
 from qtpy import QtCore
@@ -36,6 +38,9 @@ from labelme.widgets import UniqueLabelQListWidget
 from labelme.widgets import ZoomWidget
 from .intelligence import Intelligence
 
+
+
+
 import time
 import threading
 import warnings
@@ -53,6 +58,7 @@ import numpy as np
 # - Zoom is too "steppy".
 
 LABEL_COLORMAP = imgviz.label_colormap(value=200)
+
 
 
 class MainWindow(QtWidgets.QMainWindow):
@@ -198,6 +204,10 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.setCentralWidget(scrollArea)
 
+        # for Export
+        self.target_directory = ""
+        self.save_path = ""
+
         features = QtWidgets.QDockWidget.DockWidgetFeatures()
         for dock in ["flag_dock", "label_dock", "shape_dock", "file_dock"]:
             if self._config[dock]["closable"]:
@@ -261,6 +271,13 @@ class MainWindow(QtWidgets.QMainWindow):
             shortcuts["save"],
             "save",
             self.tr("Save labels to file"),
+            enabled=False,
+        )
+        export = action(
+            self.tr("&Export"),
+            self.exportCOCO,
+            "export",
+            self.tr(u"Export annotations to COCO format"),
             enabled=False,
         )
         saveAs = action(
@@ -625,6 +642,7 @@ class MainWindow(QtWidgets.QMainWindow):
             zoomActions=zoomActions,
             openNextImg=openNextImg,
             openPrevImg=openPrevImg,
+            export = export,
             fileMenuActions=(open_, opendir, save, saveAs, close, quit),
             tool=(),
             # XXX: need to add some actions here to activate the shortcut
@@ -757,6 +775,7 @@ class MainWindow(QtWidgets.QMainWindow):
             openNextImg,
             openPrevImg,
             save,
+            export,
             deleteFile,
             None,
             createMode,
@@ -784,6 +803,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Application state.
         self.image = QtGui.QImage()
+
         self.imagePath = None
         self.recentFiles = []
         self.maxRecent = 7
@@ -833,6 +853,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.zoomWidget.valueChanged.connect(self.paintCanvas)
 
         self.populateModeActions()
+
+
 
         # self.firstStart = True
         # if self.firstStart:
@@ -1762,6 +1784,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self._config["keep_prev"] = keep_prev
 
     def openFile(self, _value=False):
+        
         if not self.mayContinue():
             return
         path = osp.dirname(str(self.filename)) if self.filename else "."
@@ -1822,19 +1845,145 @@ class MainWindow(QtWidgets.QMainWindow):
             self.fileListWidget.repaint()
 
     def saveFile(self, _value=False):
+        self.actions.export.setEnabled(True)
         assert not self.image.isNull(), "cannot save empty image"
         if self.labelFile:
             # DL20180323 - overwrite when in directory
-            self._saveFile(self.labelFile.filename)
+            self.save_path = self.labelFile.filename
+            self._saveFile(self.save_path)
         elif self.output_file:
-            self._saveFile(self.output_file)
+            self.save_path = self.output_file
+            self._saveFile(self.save_path)
             self.close()
         else:
-            self._saveFile(self.saveFileDialog())
+            self.save_path = self.saveFileDialog()
+            self._saveFile(self.save_path)
+    
+    def get_bbox(self, segmentation):
+        x = []
+        y = []
+        for i in range(len(segmentation)):
+            if i % 2 == 0:
+                x.append(segmentation[i])
+            else:
+                y.append(segmentation[i])
+        return [min(x), min(y), max(x) - min(x), max(y) - min(y)]
+
+    # Export function
+    def exportCOCO(self):
+        '''
+        Exports the annotations in the Labelmm format to COCO format
+        '''
+        # if directory
+        file_path = self.target_directory
+
+        # if one file
+        # TODO support \
+
+        if file_path is "":
+            file_path = self.save_path
+            file_path = file_path.split("/")[:-1]
+            file_path = "/".join(file_path)
+        output_name = "coco"
+        
+        file = {}
+        coco_categories = {
+            "person": 1,
+            "bicycle": 2,
+            "car": 3,
+            "motorcycle": 4,
+            "bus": 6,
+            "truck": 8,
+        }
+
+        # write the info header
+        file["info"] =  {
+                "description": "Exported from Labelmm",
+                # "url": "n/a",
+                # "version": "n/a",
+                "year": datetime.datetime.now().year,
+                # "contributor": "n/a",
+                "date_created": datetime.date.today().strftime("%Y/%m/%d")
+            }
+
+
+        # write list of COCO (custmn) categories
+        file["categories"] = [
+                {
+                    "id": 1,
+                    "name": "person",
+                    "supercategory": "person"
+                },
+                {
+                    "id": 2,
+                    "name": "bicycle",
+                    "supercategory": "vehicle"
+                },
+                {
+                    "id": 3,
+                    "name": "car",
+                    "supercategory": "vehicle"
+                },
+                {
+                    "id": 4,
+                    "name": "motorcycle",
+                    "supercategory": "vehicle"
+                },
+                {
+                    "id": 6,
+                    "name": "bus",
+                    "supercategory": "vehicle"
+                },
+                {
+                    "id": 8,
+                    "name": "truck",
+                    "supercategory": "vehicle"
+                },
+        ]
+
+        json_paths = glob.glob(f"{file_path}/*.json")
+        annotations = []
+        images = []
+        for i in range(len(json_paths)):
+            with open(json_paths[i]) as f:
+                # image data
+                data = json.load(f)
+                images.append({
+                    "id": i,
+                    "width": data["imageWidth"],
+                    "height": data["imageHeight"],
+                    "file_name": json_paths[i].split("/")[-1].replace(".json", ".jpg"),
+                })
+            for j in range(len(data["shapes"])):
+                # annotation data
+                if len(data["shapes"][j]["points"],) == 0:
+                    continue
+                annotations.append({
+                    "id": len(annotations),
+                    "image_id": i,
+                    "category_id": coco_categories[data["shapes"][j]["label"]],
+                    "segmentation": data["shapes"][j]["points"],
+                    "bbox": self.get_bbox(data["shapes"][j]["points"]),
+                    "confidence": float(data["shapes"][j]["content"])
+                })
+
+        file["images"] = images
+        file["annotations"] = annotations
+        
+        # make a directory under file_path called Annotations (if it doesn't exist)
+        if not os.path.exists(f"{file_path}/Annotations"):
+            os.makedirs(f"{file_path}/Annotations")
+
+        # write in the output file in json, format the output to be pretty
+        with open(f"{file_path}/Annotations/{output_name}.json", 'w') as outfile:
+            json.dump(file, outfile, indent=4)
+
 
     def saveFileAs(self, _value=False):
+        self.actions.export.setEnabled(True)
         assert not self.image.isNull(), "cannot save empty image"
-        self._saveFile(self.saveFileDialog())
+        self.save_path = self.saveFileDialog()
+        self._saveFile(self.save_path)
 
     def saveFileDialog(self):
         caption = self.tr("%s - Choose File") % __appname__
@@ -2019,6 +2168,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 | QtWidgets.QFileDialog.DontResolveSymlinks,
             )
         )
+        self.target_directory = targetDirPath
         self.importDirImages(targetDirPath)
 
     @property
@@ -2064,6 +2214,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def importDirImages(self, dirpath, pattern=None, load=True):
         self.actions.openNextImg.setEnabled(True)
         self.actions.openPrevImg.setEnabled(True)
+        self.actions.export.setEnabled(True)
 
         if not self.mayContinue() or not dirpath:
             return
