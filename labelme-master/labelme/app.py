@@ -1880,7 +1880,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # if one file
         # TODO support \
 
-        if file_path is "":
+        if file_path == "":
             file_path = self.save_path
             file_path = file_path.split("/")[:-1]
             file_path = "/".join(file_path)
@@ -1945,28 +1945,31 @@ class MainWindow(QtWidgets.QMainWindow):
         annotations = []
         images = []
         for i in range(len(json_paths)):
-            with open(json_paths[i]) as f:
-                # image data
-                data = json.load(f)
-                images.append({
-                    "id": i,
-                    "width": data["imageWidth"],
-                    "height": data["imageHeight"],
-                    "file_name": json_paths[i].split("/")[-1].replace(".json", ".jpg"),
-                })
-            for j in range(len(data["shapes"])):
-                # annotation data
-                if len(data["shapes"][j]["points"],) == 0:
-                    continue
-                annotations.append({
-                    "id": len(annotations),
-                    "image_id": i,
-                    "category_id": coco_categories[data["shapes"][j]["label"]],
-                    "segmentation": data["shapes"][j]["points"],
-                    "bbox": self.get_bbox(data["shapes"][j]["points"]),
-                    "confidence": float(data["shapes"][j]["content"])
-                })
-
+            try:
+                with open(json_paths[i]) as f:
+                    # image data
+                    data = json.load(f)
+                    images.append({
+                        "id": i,
+                        "width": data["imageWidth"],
+                        "height": data["imageHeight"],
+                        "file_name": json_paths[i].split("/")[-1].replace(".json", ".jpg"),
+                    })
+                for j in range(len(data["shapes"])):
+                    # annotation data
+                    if len(data["shapes"][j]["points"],) == 0:
+                        continue
+                    annotations.append({
+                        "id": len(annotations),
+                        "image_id": i,
+                        "category_id": coco_categories[data["shapes"][j]["label"]],
+                        "segmentation": data["shapes"][j]["points"],
+                        "bbox": self.get_bbox(data["shapes"][j]["points"]),
+                        "confidence": float(data["shapes"][j]["content"])
+                    })
+            except:
+                print(f"Error with {json_paths[i]}")
+                continue
         file["images"] = images
         file["annotations"] = annotations
         
@@ -1977,6 +1980,8 @@ class MainWindow(QtWidgets.QMainWindow):
         # write in the output file in json, format the output to be pretty
         with open(f"{file_path}/Annotations/{output_name}.json", 'w') as outfile:
             json.dump(file, outfile, indent=4)
+
+        print(f"Exported to {file_path}/Annotations/{output_name}.json")
 
 
     def saveFileAs(self, _value=False):
