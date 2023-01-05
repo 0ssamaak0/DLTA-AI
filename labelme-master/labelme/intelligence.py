@@ -83,6 +83,17 @@ class Intelligence():
                             # "C:/Users/Shehab/Desktop/mmdetection/mmdetection/checkpoints/htc_r50_sac_1x_coco-bfa60c54.pth", device = torch.device("cuda"))
         return selected_model_name, model   
         
+        
+        
+    def get_bbox(self,segmentation):
+        x = []
+        y = []
+        for i in range(len(segmentation)):
+            x.append(segmentation[i][0])
+            y.append(segmentation[i][1])
+        return [min(x),min(y),max(x) - min(x),max(y) - min(y)]
+        
+        
     def get_shapes_of_one(self,filename):
         # print(f"Threshold is {self.threshold}")
         # results = self.reader.decode_file(img_path = filename, threshold = self.threshold , selected_model_name = self.current_model_name)["results"]
@@ -98,7 +109,25 @@ class Intelligence():
             shape.label = result["class"]
             shape.content = result["confidence"]
             shape.shape_type="polygon"
-            shape.bbox = result["bbox"].tolist()
+            shape.flags = {}
+            shape.other_data = {}
+            
+            x_min , y_min , w , h = self.get_bbox(result["seg"])
+            (x1,y1) , (x2,y2) , (x3,y3) , (x4,y4) = [(x_min,y_min) , (x_min+w,y_min) , (x_min+w,y_min+h) , (x_min,y_min+h)]
+            for point in [(x1,y1) , (x2,y2) , (x3,y3) , (x4,y4)]:
+                shape.addPoint(QtCore.QPointF(point[0], point[1]))
+            
+            
+            # for point in result["bbox"]:
+            #     shape.addPoint(QtCore.QPointF(point[0], point[1]))
+            shape.close()
+            shapes.append(shape)
+            
+            
+            shape = Shape()
+            shape.label = result["class"]
+            shape.content = result["confidence"]
+            shape.shape_type="polygon"
             shape.flags = {}
             shape.other_data = {}
             for i in range(len(result["seg"])):
@@ -107,6 +136,7 @@ class Intelligence():
                 shape.addPoint(QtCore.QPointF(x, y))
             shape.close()
             shapes.append(shape)
+            
             #self.addLabel(shape)
         return shapes
         

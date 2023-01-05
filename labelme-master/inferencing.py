@@ -85,8 +85,10 @@ class models_inference():
         results1 = [results[1][0], results[1][2],results[1][3],results[1][5],results[1][7]]
         result_dict = {}
         res_list = []
-        # def full_points(bbox):
-        #     return np.array([[bbox[0], bbox[1]], [bbox[0], bbox[3]], [bbox[2], bbox[3]], [bbox[2], bbox[1]]])
+        
+        def full_points(bbox):
+            return np.array([[bbox[0], bbox[1]], [bbox[0], bbox[3]], [bbox[2], bbox[3]], [bbox[2], bbox[1]]])
+        
         classdict = {0:"person", 1:"car", 2:"motorcycle", 3:"bus", 4:"truck"}
         for classno in range(len(results0)):
             for instance in range(len(results0[classno])):
@@ -101,6 +103,7 @@ class models_inference():
                     result["seg"] = self.mask_to_polygons(results1[classno][instance].astype(np.uint8) , 10)
                 else : 
                     result["seg"] = self.mask_to_polygons(results1[classno][instance].astype(np.uint8))
+                # result["bbox"] = full_points(result["bbox"]).tolist()
                 # points = full_points(result["bbox"])
                 # result["x1"] = points[0][0]
                 # result["y1"] = points[0][1]

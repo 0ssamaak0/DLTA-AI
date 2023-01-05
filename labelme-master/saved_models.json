@@ -1,6 +1,6 @@
 {
     "Yoloct": {
-        "checkpoint": "../mmdetection/checkpoints/yolact_r50_1x8_coco_20200908-f38d58df.pth",
-        "config": "../mmdetection/configs/yolact/yolact_r50_1x8_coco.py"
+        "checkpoint": "mmdetection/checkpoints/yolact_r50_1x8_coco_20200908-f38d58df.pth",
+        "config": "mmdetection/configs/yolact/yolact_r50_1x8_coco.py"
     }
 }
