@@ -276,6 +276,7 @@ class MainWindow(QtWidgets.QMainWindow):
         export = action(
             self.tr("&Export"),
             self.exportCOCO,
+            shortcuts["export"],
             "export",
             self.tr(u"Export annotations to COCO format"),
             enabled=False,
