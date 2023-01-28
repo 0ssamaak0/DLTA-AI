@@ -105,23 +105,26 @@ class Intelligence():
 
         shapes = []
         for result in results:
-            shape = Shape()
-            shape.label = result["class"]
-            shape.content = result["confidence"]
-            shape.shape_type="polygon"
-            shape.flags = {}
-            shape.other_data = {}
             
-            x_min , y_min , w , h = self.get_bbox(result["seg"])
-            (x1,y1) , (x2,y2) , (x3,y3) , (x4,y4) = [(x_min,y_min) , (x_min+w,y_min) , (x_min+w,y_min+h) , (x_min,y_min+h)]
-            for point in [(x1,y1) , (x2,y2) , (x3,y3) , (x4,y4)]:
-                shape.addPoint(QtCore.QPointF(point[0], point[1]))
+            # dont show bbox for now
             
+            # shape = Shape()
+            # shape.label = result["class"]
+            # shape.content = result["confidence"]
+            # shape.shape_type="polygon"
+            # shape.flags = {}
+            # shape.other_data = {}
             
-            # for point in result["bbox"]:
+            # x_min , y_min , w , h = self.get_bbox(result["seg"])
+            # (x1,y1) , (x2,y2) , (x3,y3) , (x4,y4) = [(x_min,y_min) , (x_min+w,y_min) , (x_min+w,y_min+h) , (x_min,y_min+h)]
+            # for point in [(x1,y1) , (x2,y2) , (x3,y3) , (x4,y4)]:
             #     shape.addPoint(QtCore.QPointF(point[0], point[1]))
-            shape.close()
-            shapes.append(shape)
+            
+            
+            # # for point in result["bbox"]:
+            # #     shape.addPoint(QtCore.QPointF(point[0], point[1]))
+            # shape.close()
+            # shapes.append(shape)
             
             
             shape = Shape()
