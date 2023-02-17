@@ -57,6 +57,7 @@ class Intelligence():
         self.reader = models_inference()
         self.parent = parent
         self.threshold = 0.3
+        self.selectedclasses = {0:"person", 2:"car", 3:"motorcycle", 5:"bus", 7:"truck"}
         self.current_model_name , self.current_mm_model = self.make_mm_model("")
         
         
@@ -99,7 +100,7 @@ class Intelligence():
         # results = self.reader.decode_file(img_path = filename, threshold = self.threshold , selected_model_name = self.current_model_name)["results"]
         start_time = time.time()
         print(filename)
-        results = self.reader.decode_file(img_path = filename, model = self.current_mm_model,threshold = self.threshold )["results"]
+        results = self.reader.decode_file(img_path = filename, model = self.current_mm_model,classdict = self.selectedclasses ,threshold = self.threshold )["results"]
         end_time = time.time()
         print(f"Time taken to annoatate img on {self.current_model_name}: {end_time - start_time}")
 
@@ -158,7 +159,56 @@ class Intelligence():
             return text
         else:
             return 0.3
-    
+    # add a resizable and scrollable dialog that contains all coco classes and allow the user to select among them using checkboxes
+    def selectClasses(self):
+        #self.selectedclasses.clear()
+        coco_classes = ['person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', 'truck', 'boat', 'traffic light', 'fire hydrant', 'stop sign', 'parking meter', 'bench', 'bird', 'cat', 'dog', 'horse', 'sheep', 'cow', 'elephant', 'bear', 'zebra', 'giraffe', 'backpack', 'umbrella', 'handbag', 'tie', 'suitcase', 'frisbee', 'skis', 'snowboard', 'sports ball', 'kite', 'baseball bat', 'baseball glove', 'skateboard', 'surfboard', 'tennis racket', 'bottle', 'wine glass', 'cup', 'fork', 'knife', 'spoon', 'bowl', 'banana', 'apple', 'sandwich', 'orange', 'broccoli', 'carrot', 'hot dog', 'pizza', 'donut', 'cake', 'chair', 'couch', 'potted plant', 'bed', 'dining table', 'toilet', 'tv', 'laptop', 'mouse', 'remote', 'keyboard', 'cell phone', 'microwave', 'oven', 'toaster', 'sink', 'refrigerator', 'book', 'clock', 'vase', 'scissors', 'teddy bear', 'hair drier', 'toothbrush']
+        # return the selected classes
+        dialog = QtWidgets.QDialog(self.parent)
+        dialog.setWindowTitle('Select Classes')
+        dialog.setWindowModality(QtCore.Qt.ApplicationModal)
+        dialog.resize(500, 500)
+        dialog.setMinimumSize(QtCore.QSize(500, 500))
+        verticalLayout = QtWidgets.QVBoxLayout(dialog)
+        verticalLayout.setObjectName("verticalLayout")
+        scrollArea = QtWidgets.QScrollArea(dialog)
+        scrollArea.setWidgetResizable(True)
+        scrollArea.setObjectName("scrollArea")
+        scrollAreaWidgetContents = QtWidgets.QWidget()
+        scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 478, 478))
+        scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
+        verticalLayout_2 = QtWidgets.QVBoxLayout(scrollAreaWidgetContents)
+        verticalLayout_2.setObjectName("verticalLayout_2")
+        self.scrollAreaWidgetContents = scrollAreaWidgetContents
+        scrollArea.setWidget(scrollAreaWidgetContents)
+        verticalLayout.addWidget(scrollArea)
+        buttonBox = QtWidgets.QDialogButtonBox(dialog)
+        buttonBox.setOrientation(QtCore.Qt.Horizontal)
+        buttonBox.setStandardButtons(QtWidgets.QDialogButtonBox.Cancel|QtWidgets.QDialogButtonBox.Ok)
+        buttonBox.setObjectName("buttonBox")
+        verticalLayout.addWidget(buttonBox)
+        buttonBox.accepted.connect(dialog.accept)
+        buttonBox.rejected.connect(dialog.reject)
+        self.classes = []
+        for i in range(len(coco_classes)):
+            self.classes.append(QtWidgets.QCheckBox(coco_classes[i], dialog))
+            verticalLayout_2.addWidget(self.classes[i])
+        # if the class is in self.selectedclasses then check the checkbox by default 
+        for value in self.selectedclasses.values():
+            if value != None:
+                indx = coco_classes.index(value)
+                self.classes[indx].setChecked(True)
+        dialog.show()
+        dialog.exec_()
+        self.selectedclasses.clear()
+        for i in range(len(self.classes)):
+            if self.classes[i].isChecked():
+                indx = coco_classes.index(self.classes[i].text())
+                self.selectedclasses[indx] = self.classes[i].text()
+        #print(self.selectedclasses)
+        return self.selectedclasses
+
+
     def updateDialog(self, completed, total):
         progress = int(completed/total*100)
         self.pd.setLabelText(str(completed) +"/"+ str(total))
