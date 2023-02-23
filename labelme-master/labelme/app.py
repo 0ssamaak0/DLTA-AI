@@ -596,7 +596,13 @@ class MainWindow(QtWidgets.QMainWindow):
             None,
             self.tr("Set the threshold for the model")
         )
-
+        select_classes = action(
+            self.tr("select the classes to be annotated"),
+            self.selectClasses,
+            None,
+            None,
+            self.tr("select the classes to be annotated")
+        )
 
 
 
@@ -731,6 +737,15 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.menus.saved_models,
 )
                 )
+        #add one for the select classes action
+        utils.addActions(self.menus.intelligence,
+                (annotate_one_action,
+                annotate_batch_action,
+                select_classes,
+                
+)       
+                )
+
         utils.addActions(
             self.menus.view,
             (
@@ -2279,4 +2294,7 @@ class MainWindow(QtWidgets.QMainWindow):
     
     def setThreshold(self):
         self.intelligenceHelper.threshold = self.intelligenceHelper.setThreshold()
+
+    def selectClasses(self):
+        self.intelligenceHelper.selectedclasses = self.intelligenceHelper.selectClasses()   
     
