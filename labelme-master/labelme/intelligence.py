@@ -143,7 +143,20 @@ class Intelligence():
             
             #self.addLabel(shape)
         return shapes
-        
+    
+    # print the labels of the selected classes in the dialog
+    # def updatlabellist(self):
+    #     for selectedclass in self.selectedclasses.values():
+    #         shape = Shape()
+    #         shape.label = selectedclass
+    #         shape.content = ""
+    #         shape.shape_type="polygon"
+    #         shape.flags = {}
+    #         shape.other_data = {}
+    #         mainwindow = self.parent
+    #         mainwindow.addLabel(shape)
+
+
     def get_shapes_of_batch(self,images):
         self.pd = self.startOperationDialog()
         self.thread = IntelligenceWorker(self.parent,images,self)
@@ -206,6 +219,7 @@ class Intelligence():
                 indx = coco_classes.index(self.classes[i].text())
                 self.selectedclasses[indx] = self.classes[i].text()
         #print(self.selectedclasses)
+        #self.updatlabellist()
         return self.selectedclasses
 
 
