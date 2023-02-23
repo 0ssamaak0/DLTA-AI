@@ -45,7 +45,7 @@ class models_inference():
 
 
 
-    def decode_file(self, img_path , model, threshold=0.3 ):
+    def decode_file(self, img_path , model, classdict,threshold=0.3):
     # def decode_file(self, img_path, threshold=0.3 , selected_model_name=""):
         # if img_path is none img_path = "test_img_1.webp"
 
@@ -61,7 +61,7 @@ class models_inference():
         #         checkpoint = data[selected_model_name]["checkpoint"]
         #     # print(f'selected model : {selected_model_name} \n config : {config} \n\
         #     #     checkpoint : {checkpoint} \n')
-            
+        print(classdict)   
         
         # torch.cuda.empty_cache()
         
@@ -80,22 +80,30 @@ class models_inference():
         # print(f'what is using the ram : {torch.cuda.memory_summary()}')
 
         
+
+        #results0 = [results[0][0], results[0][2],results[0][3],results[0][5],results[0][7]]
+        #results1 = [results[1][0], results[1][2],results[1][3],results[1][5],results[1][7]]
         
-        results0 = [results[0][0], results[0][2],results[0][3],results[0][5],results[0][7]]
-        results1 = [results[1][0], results[1][2],results[1][3],results[1][5],results[1][7]]
+        results0 = []
+        results1 = []
+        for i in classdict.keys():
+            results0.append(results[0][i])
+            results1.append(results[1][i])
+        
         result_dict = {}
         res_list = []
         
         def full_points(bbox):
             return np.array([[bbox[0], bbox[1]], [bbox[0], bbox[3]], [bbox[2], bbox[3]], [bbox[2], bbox[1]]])
         
-        classdict = {0:"person", 1:"car", 2:"motorcycle", 3:"bus", 4:"truck"}
+        #classdict = {0:"person", 1:"car", 2:"motorcycle", 3:"bus", 4:"truck"}
+        classes_numbering = [keyno for keyno in classdict.keys()]
         for classno in range(len(results0)):
             for instance in range(len(results0[classno])):
                 if float(results0[classno][instance][-1]) < float(threshold):
                     continue
                 result = {}
-                result["class"] = classdict[classno]
+                result["class"] = classdict.get(classes_numbering[classno])
                 # Confidence
                 result["confidence"] = str(results0[classno][instance][-1])
                 result["bbox"] = results0[classno][instance][:-1].astype(np.uint8)
