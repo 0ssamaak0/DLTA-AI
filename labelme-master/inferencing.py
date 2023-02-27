@@ -45,7 +45,7 @@ class models_inference():
 
 
 
-    def decode_file(self, img_path , model, classdict,threshold=0.3):
+    def decode_file(self, img , model, classdict,threshold=0.3,img_array_flag=False):
     # def decode_file(self, img_path, threshold=0.3 , selected_model_name=""):
         # if img_path is none img_path = "test_img_1.webp"
 
@@ -66,8 +66,10 @@ class models_inference():
         # torch.cuda.empty_cache()
         
         # model = init_detector(config, checkpoint, device = torch.device("cuda"))
-        
-        results = inference_detector(model, plt.imread(img_path))
+        if img_array_flag:
+            results = inference_detector(model, img)
+        else:
+            results = inference_detector(model, plt.imread(img))
         # results = async_inference_detector(model, plt.imread(img_path))
         
 
