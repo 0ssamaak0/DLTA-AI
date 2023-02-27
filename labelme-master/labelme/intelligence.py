@@ -95,12 +95,16 @@ class Intelligence():
         return [min(x),min(y),max(x) - min(x),max(y) - min(y)]
         
         
-    def get_shapes_of_one(self,filename):
+    def get_shapes_of_one(self,image,img_array_flag = False):
         # print(f"Threshold is {self.threshold}")
         # results = self.reader.decode_file(img_path = filename, threshold = self.threshold , selected_model_name = self.current_model_name)["results"]
         start_time = time.time()
-        print(filename)
-        results = self.reader.decode_file(img_path = filename, model = self.current_mm_model,classdict = self.selectedclasses ,threshold = self.threshold )["results"]
+        print(image)
+        # if img_array_flag is true then the image is a numpy array and not a path
+        if img_array_flag:
+            results = self.reader.decode_file(img = image, model = self.current_mm_model,classdict = self.selectedclasses ,threshold = self.threshold, img_array_flag=True )["results"]
+        else:
+            results = self.reader.decode_file(img = image, model = self.current_mm_model,classdict = self.selectedclasses ,threshold = self.threshold )["results"]
         end_time = time.time()
         print(f"Time taken to annoatate img on {self.current_model_name}: {end_time - start_time}")
 
