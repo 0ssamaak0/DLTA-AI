@@ -9,7 +9,7 @@ import re
 import webbrowser
 import datetime
 import glob
-
+import qimage2ndarray
 import imgviz
 from qtpy import QtCore
 from qtpy.QtCore import Qt
@@ -47,6 +47,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 import numpy as np
+import cv2
 
 # FIXME
 # - [medium] Set max zoom value to something big enough for FitWidth/Window
@@ -207,6 +208,9 @@ class MainWindow(QtWidgets.QMainWindow):
         # for Export
         self.target_directory = ""
         self.save_path = ""
+
+        # for video annotation 
+        self.frame_time = 0
 
         features = QtWidgets.QDockWidget.DockWidgetFeatures()
         for dock in ["flag_dock", "label_dock", "shape_dock", "file_dock"]:
@@ -603,6 +607,13 @@ class MainWindow(QtWidgets.QMainWindow):
             None,
             self.tr("select the classes to be annotated")
         )
+        openVideo = action(
+            self.tr("Open &Video"),
+            self.openVideo,
+            None,
+            None,
+            self.tr("Open a video file"),
+        )
 
 
 
@@ -650,6 +661,7 @@ class MainWindow(QtWidgets.QMainWindow):
             openNextImg=openNextImg,
             openPrevImg=openPrevImg,
             export = export,
+            openVideo=openVideo,
             fileMenuActions=(open_, opendir, save, saveAs, close, quit),
             tool=(),
             # XXX: need to add some actions here to activate the shortcut
@@ -788,6 +800,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.actions.tool = (
             open_,
             opendir,
+            openVideo,
             openNextImg,
             openPrevImg,
             save,
@@ -803,6 +816,7 @@ class MainWindow(QtWidgets.QMainWindow):
             None,
             zoom,
             fitWidth,
+            
         )
 
         self.statusBar().showMessage(self.tr("%s started.") % __appname__)
@@ -979,6 +993,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.filename = None
         self.imagePath = None
         self.imageData = None
+        self.current_frame_array = None
         self.labelFile = None
         self.otherData = None
         self.canvas.resetState()
@@ -1592,7 +1607,13 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.imagePath = filename
             self.labelFile = None
         image = QtGui.QImage.fromData(self.imageData)
-
+        # #image = QtGui.QImage('test_img_1.jpg')
+        # img = np.random.randint(0, 255, (100, 100, 3), dtype=np.uint8)
+        # #im_np = np.transpose(im_np, (1,0,2))
+        # im_np = np.array(img)
+        # image = QtGui.QImage(im_np.data, im_np.shape[1], im_np.shape[0],
+        #          QtGui.QImage.Format_BGR888)
+        
         if image.isNull():
             formats = [
                 "*.{}".format(fmt.data().decode())
@@ -1801,6 +1822,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def openFile(self, _value=False):
         
+        self.current_annotation_mode = "img"
+        try :
+            cv2.destroyWindow('video processing')
+        except:
+            pass
         if not self.mayContinue():
             return
         path = osp.dirname(str(self.filename)) if self.filename else "."
@@ -2169,6 +2195,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setDirty()
 
     def openDirDialog(self, _value=False, dirpath=None):
+        self.current_annotation_mode = "dir"
+        try :
+            cv2.destroyWindow('video processing')
+        except:
+            pass
         if not self.mayContinue():
             return
 
@@ -2277,14 +2308,23 @@ class MainWindow(QtWidgets.QMainWindow):
         return images
 
     def annotate_one(self):
-        if os.path.exists(self.filename):
-            self.labelList.clearSelection()
-            s = self.intelligenceHelper.get_shapes_of_one(self.filename)
-            self.loadShapes(s)
+        # print(self.current_annotation_mode)
+        if self.current_annotation_mode  == "video":
+            shapes = self.intelligenceHelper.get_shapes_of_one(self.current_frame_array, img_array_flag=True)
+            self.loadShapes(shapes)
             self.actions.editMode.setEnabled(True)
             self.actions.undoLastPoint.setEnabled(False)
             self.actions.undo.setEnabled(True)
             self.setDirty()
+        else:
+            if os.path.exists(self.filename):
+                self.labelList.clearSelection()
+                shapes = self.intelligenceHelper.get_shapes_of_one(self.filename)
+                self.loadShapes(shapes)
+                self.actions.editMode.setEnabled(True)
+                self.actions.undoLastPoint.setEnabled(False)
+                self.actions.undo.setEnabled(True)
+                self.setDirty()
 
     def annotate_batch(self):
         images = []
@@ -2297,4 +2337,353 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def selectClasses(self):
         self.intelligenceHelper.selectedclasses = self.intelligenceHelper.selectClasses()   
+    
+    
+    def openVideo(self):
+        
+        self.current_annotation_mode = "video"
+        # first check if there is open window named "video processing" and close it if it is open
+        try :
+            cv2.destroyWindow('video processing')
+        except:
+            pass
+        
+        
+        # select video file then load it in the canvas and allow the user to navigate through the frames
+        if not self.mayContinue():
+            return
+        videoFile = QtWidgets.QFileDialog.getOpenFileName(
+            self, self.tr("%s - Choose Video") % __appname__, ".",
+            self.tr("Video files (*.mp4 *.avi)")
+        )
+        #print(videoFile[0],videoFile[1])
+        
+        if videoFile[0] :
+        
+            cap = cv2.VideoCapture(videoFile[0])
+            length = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+            # get the fps of the video
+            fps = cap.get(cv2.CAP_PROP_FPS)
+            # get the duration in hours, minutes and seconds
+            duration = length/fps
+            hours = int(duration/3600)
+            minutes = int((duration - hours*3600)/60)
+            seconds = int(duration - hours*3600 - minutes*60)
+            #print them in formal time format
+            print("duration is %02d:%02d:%02d" % (hours, minutes, seconds))
+            
+            self.addToolBarBreak
+            def onChange(trackbarValue):
+                cap.set(cv2.CAP_PROP_POS_FRAMES,trackbarValue)
+                success,img = cap.read()
+                if success:
+                    frame_array = np.array(img)
+                else:
+                    frame_array = []
+                self.loadFramefromVideo(frame_array,trackbarValue)
+                self.frame_time = mapFrameToTime(trackbarValue)
+                #print("frame time is %02d:%02d:%02d" % (self.frame_time[0], self.frame_time[1], self.frame_time[2]))
+                pass
+            # map the frame number to the corresponding hour , minute and second in the video
+            def mapFrameToTime(frameNumber):
+                # get the fps of the video
+                fps = cap.get(cv2.CAP_PROP_FPS)
+                # get the time of the frame
+                frameTime = frameNumber/fps
+                frameHours = int(frameTime/3600)
+                frameMinutes = int((frameTime - frameHours*3600)/60)
+                frameSeconds = int(frameTime - frameHours*3600 - frameMinutes*60)
+                #print them in formal time format
+                return frameHours, frameMinutes, frameSeconds
+
+            cv2.namedWindow('video processing')
+            cv2.setWindowProperty('video processing', cv2.WND_PROP_TOPMOST, 1)
+            cv2.resizeWindow('video processing', 1200, 150)
+            cv2.moveWindow('video processing', 75, 500)
+            
+            # remove the title bar of the window
+            cv2.createTrackbar( 'FRAME', 'video processing', 0, length-1, onChange )
+            # display self.frame_time in a text box in the window
+            dummy_img = np.zeros((300, 600, 3), np.uint8)
+
+            # Draw text on the image
+            
+            font = cv2.FONT_HERSHEY_SIMPLEX
+            fontScale = 1.5
+            thickness = 2
+            color = (0, 255, 0)
+            #textSize, _ = cv2.getTextSize(self.frame_time , font, fontScale, thickness)
+            #textOrg = ((dummy_img.shape[1] - textSize[0]) // 2, (dummy_img.shape[0] + textSize[1]) // 2)
+            cv2.putText(dummy_img, self.frame_time, (10, 50), font, fontScale, color, thickness, cv2.LINE_AA)
+
+            print(self.frame_time)
+            #cv2.putText('video processing', self.frame_time, (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2, cv2.LINE_AA)
+            # allow the user to write the frames to skip in the 
+            cv2.createTrackbar( 'SKIP', 'video processing', 1, 100, lambda x: None )
+            # add buttons for skipping the frames according to the SKIP trackbar
+            cv2.createButton( '<<', lambda x: onChange(cv2.getTrackbarPos('FRAME','video processing')-cv2.getTrackbarPos('SKIP','video processing')), None, cv2.QT_PUSH_BUTTON, 0 )
+            cv2.createButton( '>>', lambda x: onChange(cv2.getTrackbarPos('FRAME','video processing')+cv2.getTrackbarPos('SKIP','video processing')), None, cv2.QT_PUSH_BUTTON, 0 )
+            onChange(0)
+            cv2.waitKey(1)
+
+        # FRAME_NUMBER = cv2.getTrackbarPos('FRAME NUMBER','video processing')
+
+        # cap.set(cv2.CAP_PROP_POS_FRAMES,FRAME_NUMBER)
+        # while cap.isOpened():
+        #     success,img = cap.read()
+        #     if success:
+        #         frame_array = np.array(img)
+        #     else:
+        #         frame_array = []
+        #     if cap.get(cv2.CAP_PROP_POS_FRAMES) >= length:
+        #         break
+        #     self.loadFramefromVideo(frame_array,FRAME_NUMBER)
+        #     k = cv2.waitKey(10) & 0xff
+        #     if k==27:
+        #         break
+                
+        
+        
+        # frame_count = 200
+        # index = 10
+        
+        # for index in range(frame_count):
+        #     vidcap.set(cv2.CAP_PROP_POS_FRAMES, index+1)
+        
+        #     # Read the frame
+        #     success, image = vidcap.read()
+        
+        #     # Store the frame in a numpy array
+        #     if success:
+        #         frame_array = np.array(image)
+        #     else:
+        #         frame_array = []
+        #     self.loadFramefromVideo(frame_array,index)
+            
+        
+        
+
+        
+        
+        
+        
+        
+
+    
+    def loadFramefromVideo(self,frame_array,index=0):
+        filename = str(index) + ".jpg"
+        self.resetState()
+        self.canvas.setEnabled(False)
+        
+        # assumes same name, but json extension
+        label_file = str(index) + ".json"
+        if self.output_dir:
+            label_file_without_path = osp.basename(label_file)
+            label_file = osp.join(self.output_dir, label_file_without_path)
+        if QtCore.QFile.exists(label_file) and LabelFile.is_label_file(
+            label_file
+        ):
+            try:
+                self.labelFile = LabelFile(label_file)
+            except LabelFileError as e:
+                self.errorMessage(
+                    self.tr("Error opening file"),
+                    self.tr(
+                        "<p><b>%s</b></p>"
+                        "<p>Make sure <i>%s</i> is a valid label file."
+                    )
+                    % (e, label_file),
+                )
+                self.status(self.tr("Error reading %s") % label_file)
+                return False
+            self.imageData = self.labelFile.imageData
+            self.imagePath = osp.join(
+                osp.dirname(label_file),
+                self.labelFile.imagePath,
+            )
+            self.otherData = self.labelFile.otherData
+        else:
+            self.labelFile = None
+        
+        
+        self.imageData = frame_array.data
+        self.current_frame_array = frame_array
+        image = QtGui.QImage(frame_array.data, frame_array.shape[1], frame_array.shape[0],
+                 QtGui.QImage.Format_BGR888)
+        
+        
+        #image = QtGui.QImage.fromData(self.imageData)
+        #image = QtGui.QImage(filename)
+        # img = np.random.randint(0, 255, (100, 100, 3), dtype=np.uint8)
+        # #im_np = np.transpose(im_np, (1,0,2))
+        # im_np = np.array(img)
+        # image = QtGui.QImage(im_np.data, im_np.shape[1], im_np.shape[0],
+        #          QtGui.QImage.Format_BGR888)
+        
+        if image.isNull():
+            formats = [
+                "*.{}".format(fmt.data().decode())
+                for fmt in QtGui.QImageReader.supportedImageFormats()
+            ]
+            self.errorMessage(
+                self.tr("Error opening file"),
+                self.tr(
+                    "<p>Make sure <i>{0}</i> is a valid image file.<br/>"
+                    "Supported image formats: {1}</p>"
+                ).format(filename, ",".join(formats)),
+            )
+            #self.status(self.tr("Error reading %s") % filename)
+            return False
+        self.image = image
+        #self.filename = filename
+        if self._config["keep_prev"]:
+            prev_shapes = self.canvas.shapes
+        self.canvas.loadPixmap(QtGui.QPixmap.fromImage(image))
+        flags = {k: False for k in self._config["flags"] or []}
+        if self.labelFile:
+            self.loadLabels(self.labelFile.shapes)
+            if self.labelFile.flags is not None:
+                flags.update(self.labelFile.flags)
+        self.loadFlags(flags)
+        if self._config["keep_prev"] and self.noShapes():
+            self.loadShapes(prev_shapes, replace=False)
+            self.setDirty()
+        else:
+            self.setClean()
+        self.canvas.setEnabled(True)
+        # set zoom values
+        is_initial_load = not self.zoom_values
+        if self.filename in self.zoom_values:
+            self.zoomMode = self.zoom_values[self.filename][0]
+            self.setZoom(self.zoom_values[self.filename][1])
+        elif is_initial_load or not self._config["keep_prev_scale"]:
+            self.adjustScale(initial=True)
+        # set scroll values
+        for orientation in self.scroll_values:
+            if self.filename in self.scroll_values[orientation]:
+                self.setScroll(
+                    orientation, self.scroll_values[orientation][self.filename]
+                )
+        # set brightness constrast values
+        # dialog = BrightnessContrastDialog(
+        #     utils.img_data_to_pil(self.imageData),
+        #     self.onNewBrightnessContrast,
+        #     parent=self,
+        # )
+        # brightness, contrast = self.brightnessContrast_values.get(
+        #     self.filename, (None, None)
+        # )
+        if self._config["keep_prev_brightness"] and self.recentFiles:
+            brightness, _ = self.brightnessContrast_values.get(
+                self.recentFiles[0], (None, None)
+            )
+        if self._config["keep_prev_contrast"] and self.recentFiles:
+            _, contrast = self.brightnessContrast_values.get(
+                self.recentFiles[0], (None, None)
+            )
+        # if brightness is not None:
+        #     dialog.slider_brightness.setValue(brightness)
+        # if contrast is not None:
+        #     dialog.slider_contrast.setValue(contrast)
+        # self.brightnessContrast_values[self.filename] = (brightness, contrast)
+        # if brightness is not None or contrast is not None:
+        #     dialog.onNewValue(None)
+        self.paintCanvas()
+        #self.addRecentFile(self.filename)
+        self.toggleActions(True)
+        self.canvas.setFocus()
+        self.status(self.tr("Loaded %s") % osp.basename(str(filename)))
+        return True
+
+        
+    
+    #     if videoFile:
+    #         # load the video to the program
+    #         self.videoCapture = cv2.VideoCapture(videoFile[0])
+    #         self.videoCapture.set(cv2.CAP_PROP_POS_FRAMES, 0)
+    #         self.videoCapture.set(cv2.CAP_PROP_POS_AVI_RATIO, 0)
+    #         self.videoCapture.set(cv2.CAP_PROP_FPS, 30)
+    #         self.videoCapture.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+    #         self.videoCapture.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
+    #         self.videoCapture.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'))
+    #         self.videoCapture.set(cv2.CAP_PROP_CONVERT_RGB, 1)
+    #         # check if the video was loaded correctly
+    #         if not self.videoCapture.isOpened():
+    #             QtWidgets.QMessageBox.warning(
+    #                 self, self.tr("%s - Error opening video") % __appname__,
+    #                 self.tr("Error opening video: %s") % videoFile[0]
+    #             )
+    #             return
+
+    #         # load the first frame of the video
+    #         self.videoFrameNumber = 0
+    #         self.loadFrame()
+    #         self.actions.prevFrame.setEnabled(True)
+    #         self.actions.nextFrame.setEnabled(True)
+    #         self.actions.play.setEnabled(True)
+
+    # def loadFrame(self):
+    #     # load the frame from the video and display it in the canvas
+    #     if self.videoCapture is not None:
+    #         self.videoCapture.set(cv2.CAP_PROP_POS_FRAMES, self.videoFrameNumber)
+    #         ret, frame = self.videoCapture.read()
+    #         if ret:
+    #             self.loadPixmap(QtGui.QPixmap.fromImage(
+    #                 QtGui.QImage(frame, frame.shape[1], frame.shape[0], frame.strides[0], QtGui.QImage.Format_RGB888).rgbSwapped()))
+    #             self.setDirty()
+
+
+    # def prevFrame(self):
+    #     # load the previous frame of the video
+    #     if self.videoCapture is not None:
+    #         self.videoFrameNumber -= 1
+    #         if self.videoFrameNumber < 0:
+    #             self.videoFrameNumber = 0
+    #         self.loadFrame()
+    
+    # def nextFrame(self):
+    #     # load the next frame of the video
+    #     if self.videoCapture is not None:
+    #         self.videoFrameNumber += 1
+    #         self.loadFrame()
+
+    # def play(self):
+    #     # play the video
+    #     if self.videoCapture is not None:
+    #         self.actions.play.setEnabled(False)
+    #         self.actions.pause.setEnabled(True)
+    #         self.actions.stop.setEnabled(True)
+    #         self.actions.prevFrame.setEnabled(False)
+    #         self.actions.nextFrame.setEnabled(False)
+    #         self.playTimer.start(1000 / self.videoCapture.get(cv2.CAP_PROP_FPS))
+
+    # def pause(self):
+    #     # pause the video
+    #     if self.videoCapture is not None:
+    #         self.actions.play.setEnabled(True)
+    #         self.actions.pause.setEnabled(False)
+    #         self.actions.stop.setEnabled(True)
+    #         self.actions.prevFrame.setEnabled(True)
+    #         self.actions.nextFrame.setEnabled(True)
+    #         self.playTimer.stop()
+
+    # def stop(self):
+    #     # stop the video
+    #     if self.videoCapture is not None:
+    #         self.actions.play.setEnabled(True)
+    #         self.actions.pause.setEnabled(False)
+    #         self.actions.stop.setEnabled(False)
+    #         self.actions.prevFrame.setEnabled(True)
+    #         self.actions.nextFrame.setEnabled(True)
+    #         self.playTimer.stop()
+    #         self.videoFrameNumber = 0
+    #         self.loadFrame()
+
+    # def playTimerTimeout(self):
+    #     # load the next frame of the video
+    #     if self.videoCapture is not None:
+    #         self.videoFrameNumber += 1
+    #         self.loadFrame()
+
+            
     
