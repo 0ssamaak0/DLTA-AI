@@ -611,7 +611,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.tr("Open &Video"),
             self.openVideo,
             None,
-            None,
+            "video",
             self.tr("Open a video file"),
         )
 
@@ -2414,16 +2414,16 @@ class MainWindow(QtWidgets.QMainWindow):
             color = (0, 255, 0)
             #textSize, _ = cv2.getTextSize(self.frame_time , font, fontScale, thickness)
             #textOrg = ((dummy_img.shape[1] - textSize[0]) // 2, (dummy_img.shape[0] + textSize[1]) // 2)
-            cv2.putText(dummy_img, self.frame_time, (10, 50), font, fontScale, color, thickness, cv2.LINE_AA)
+            # cv2.putText(dummy_img, self.frame_time, (10, 50), font, fontScale, color, thickness, cv2.LINE_AA)
 
             print(self.frame_time)
             #cv2.putText('video processing', self.frame_time, (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2, cv2.LINE_AA)
             # allow the user to write the frames to skip in the 
             cv2.createTrackbar( 'SKIP', 'video processing', 1, 100, lambda x: None )
             # add buttons for skipping the frames according to the SKIP trackbar
-            cv2.createButton( '<<', lambda x: onChange(cv2.getTrackbarPos('FRAME','video processing')-cv2.getTrackbarPos('SKIP','video processing')), None, cv2.QT_PUSH_BUTTON, 0 )
-            cv2.createButton( '>>', lambda x: onChange(cv2.getTrackbarPos('FRAME','video processing')+cv2.getTrackbarPos('SKIP','video processing')), None, cv2.QT_PUSH_BUTTON, 0 )
-            onChange(0)
+            # cv2.createButton( '<<', lambda x: onChange(cv2.getTrackbarPos('FRAME','video processing')-cv2.getTrackbarPos('SKIP','video processing')), None, cv2.QT_PUSH_BUTTON, 0 )
+            # cv2.createButton( '>>', lambda x: onChange(cv2.getTrackbarPos('FRAME','video processing')+cv2.getTrackbarPos('SKIP','video processing')), None, cv2.QT_PUSH_BUTTON, 0 )
+            # onChange(0)
             cv2.waitKey(1)
 
         # FRAME_NUMBER = cv2.getTrackbarPos('FRAME NUMBER','video processing')
