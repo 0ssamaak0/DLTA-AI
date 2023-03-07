@@ -211,6 +211,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # for video annotation 
         self.frame_time = 0
+        self.frames_to_skip = 0
+        self.frame_number = 0
 
         features = QtWidgets.QDockWidget.DockWidgetFeatures()
         for dock in ["flag_dock", "label_dock", "shape_dock", "file_dock"]:
@@ -2373,17 +2375,21 @@ class MainWindow(QtWidgets.QMainWindow):
             print("duration is %02d:%02d:%02d" % (hours, minutes, seconds))
             
             self.addToolBarBreak
-            def onChange(trackbarValue):
-                cap.set(cv2.CAP_PROP_POS_FRAMES,trackbarValue)
-                success,img = cap.read()
-                if success:
-                    frame_array = np.array(img)
+            def onChange(trackbarValue,called_via_skip=False):
+                if called_via_skip:
+                    print("called via skip " + str(trackbarValue) + ' ' + str(self.frames_to_skip))
                 else:
-                    frame_array = []
-                self.loadFramefromVideo(frame_array,trackbarValue)
-                self.frame_time = mapFrameToTime(trackbarValue)
-                #print("frame time is %02d:%02d:%02d" % (self.frame_time[0], self.frame_time[1], self.frame_time[2]))
-                pass
+                    cap.set(cv2.CAP_PROP_POS_FRAMES,trackbarValue)
+                    success,img = cap.read()
+                    if success:
+                        frame_array = np.array(img)
+                    else:
+                        frame_array = []
+                    self.loadFramefromVideo(frame_array,trackbarValue)
+                    self.frame_time = mapFrameToTime(trackbarValue)
+                    print(self.frame_time)
+                    #print("frame time is %02d:%02d:%02d" % (self.frame_time[0], self.frame_time[1], self.frame_time[2]))
+                    pass
             # map the frame number to the corresponding hour , minute and second in the video
             def mapFrameToTime(frameNumber):
                 # get the fps of the video
@@ -2402,24 +2408,29 @@ class MainWindow(QtWidgets.QMainWindow):
             cv2.moveWindow('video processing', 75, 500)
             
             # remove the title bar of the window
-            cv2.createTrackbar( 'FRAME', 'video processing', 0, length-1, onChange )
+            cv2.createTrackbar( 'FRAME', 'video processing', 1, length-1, onChange)
+            
             # display self.frame_time in a text box in the window
             dummy_img = np.zeros((300, 600, 3), np.uint8)
 
             # Draw text on the image
             
-            font = cv2.FONT_HERSHEY_SIMPLEX
-            fontScale = 1.5
-            thickness = 2
-            color = (0, 255, 0)
-            #textSize, _ = cv2.getTextSize(self.frame_time , font, fontScale, thickness)
-            #textOrg = ((dummy_img.shape[1] - textSize[0]) // 2, (dummy_img.shape[0] + textSize[1]) // 2)
-            # cv2.putText(dummy_img, self.frame_time, (10, 50), font, fontScale, color, thickness, cv2.LINE_AA)
+            # font = cv2.FONT_HERSHEY_SIMPLEX
+            # fontScale = 1.5
+            # thickness = 2
+            # color = (0, 255, 0)
+            textSize, _ = cv2.getTextSize(self.frame_time , font, fontScale, thickness)
+            textOrg = ((dummy_img.shape[1] - textSize[0]) // 2, (dummy_img.shape[0] + textSize[1]) // 2)
+            cv2.putText(dummy_img, self.frame_time, (10, 50), font, fontScale, color, thickness, cv2.LINE_AA)
 
             print(self.frame_time)
             #cv2.putText('video processing', self.frame_time, (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2, cv2.LINE_AA)
             # allow the user to write the frames to skip in the 
-            cv2.createTrackbar( 'SKIP', 'video processing', 1, 100, lambda x: None )
+            cv2.createTrackbar( 'SKIP', 'video processing', 1, length-1, lambda x: skipframes(x) )
+
+            def skipframes(x):
+                self.frames_to_skip = x
+                onChange(cv2.getTrackbarPos('FRAME','video processing'),called_via_skip=True)
             # add buttons for skipping the frames according to the SKIP trackbar
             # cv2.createButton( '<<', lambda x: onChange(cv2.getTrackbarPos('FRAME','video processing')-cv2.getTrackbarPos('SKIP','video processing')), None, cv2.QT_PUSH_BUTTON, 0 )
             # cv2.createButton( '>>', lambda x: onChange(cv2.getTrackbarPos('FRAME','video processing')+cv2.getTrackbarPos('SKIP','video processing')), None, cv2.QT_PUSH_BUTTON, 0 )
