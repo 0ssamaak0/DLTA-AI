@@ -213,7 +213,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # for video annotation 
         self.frame_time = 0
-        self.frames_to_skip = 5
+        self.FRAMES_TO_SKIP= 5
         # self.frame_number = 0
         self.INDEX_OF_CURRENT_FRAME = 0
 
@@ -2355,23 +2355,23 @@ class MainWindow(QtWidgets.QMainWindow):
     
     
     def skipframes(self, x):
-        self.frames_to_skip = x
+        self.FRAMES_TO_SKIP= x
         self.onChange(cv2.getTrackbarPos('FRAME','video processing'))
         
         
     def onChange(self , frame_idx ):
         self.INDEX_OF_CURRENT_FRAME = frame_idx
-        self.cap.set(cv2.CAP_PROP_POS_FRAMES,frame_idx)
-        success,img = self.cap.read()
+        self.CAP.set(cv2.CAP_PROP_POS_FRAMES,frame_idx)
+        success,img = self.CAP.read()
         if success:
             frame_array = np.array(img)
         else:
             frame_array = []
         self.loadFramefromVideo(frame_array,frame_idx)
-        self.frame_time = self.mapFrameToTime(frame_idx)
         
+        self.frame_time = self.mapFrameToTime(frame_idx)
         frame_text = ("%02d:%02d:%02d:%03d" % (self.frame_time[0], self.frame_time[1], self.frame_time[2] , self.frame_time[3]))
-        video_duration = self.mapFrameToTime(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        video_duration = self.mapFrameToTime(self.CAP.get(cv2.CAP_PROP_FRAME_COUNT))
         video_duration_text = ("%02d:%02d:%02d:%03d" % (video_duration[0], video_duration[1], video_duration[2] , video_duration[3]))
         final_text = frame_text + " / " + video_duration_text
         dummy_img = np.zeros((50, 1200, 3), np.uint8)
@@ -2387,7 +2387,7 @@ class MainWindow(QtWidgets.QMainWindow):
         
     def mapFrameToTime(self , frameNumber):
         # get the fps of the video
-        fps = self.cap.get(cv2.CAP_PROP_FPS)
+        fps = self.CAP.get(cv2.CAP_PROP_FPS)
         # get the time of the frame
         frameTime = frameNumber/fps
         frameHours = int(frameTime/3600)
@@ -2399,15 +2399,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
 
     def openVideo(self):
-        
-        
-        self.videoControls.setVisible(True)
-        for widget in self.videoControls.children():
-            try:
-                widget.setVisible(True)
-            except:
-                pass
-        
         # self.videoControls.show()
         self.current_annotation_mode = "video"
         try :
@@ -2425,41 +2416,22 @@ class MainWindow(QtWidgets.QMainWindow):
         if videoFile[0] :
             
             cap = cv2.VideoCapture(videoFile[0])
-            self.cap = cap
-            length = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-            fps = cap.get(cv2.CAP_PROP_FPS)
-            self.addToolBarBreak
+            self.CAP = cap
+            # making the total video frames equal to the total frames in the video file - 1 as the indexing starts from 0 
+            self.TOTAL_VIDEO_FRAMES = self.CAP.get(cv2.CAP_PROP_FRAME_COUNT) - 1
+            self.CURRENT_VIDEO_FPS = self.CAP.get(cv2.CAP_PROP_FPS)
+                
+            self.main_video_frames_slider.setMaximum(self.TOTAL_VIDEO_FRAMES)
+            self.main_video_frames_slider.setValue(0) 
 
-            cv2.namedWindow('video processing')
-            cv2.setWindowProperty('video processing', cv2.WND_PROP_TOPMOST, 1)
-            cv2.resizeWindow('video processing', 1200, 25)
-            cv2.moveWindow('video processing', 75, 800)
-            cv2.createTrackbar( 'FRAME', 'video processing', 1, length-1, self.onChange)
-            cv2.waitKey(1)
-
-                        
-            # Close the window and exit the program
-                        
-            # font = cv2.FONT_HERSHEY_SIMPLEX
-            # fontScale = 1.5
-            # thickness = 2
-            # color = (0, 255, 0)
-            # textSize, _ = cv2.getTextSize(self.frame_time , font, fontScale, thickness)
-            # textOrg = ((dummy_img.shape[1] - textSize[0]) // 2, (dummy_img.shape[0] + textSize[1]) // 2)
-            # cv2.putText(dummy_img, self.frame_time, (10, 50), font, fontScale, color, thickness, cv2.LINE_AA)
-
-            # print(self.frame_time)
-            #cv2.putText('video processing', self.frame_time, (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2, cv2.LINE_AA)
-            # allow the user to write the frames to skip in the 
-
-
-            # add buttons for skipping the frames according to the SKIP trackbar
-            # cv2.createButton( '<<', lambda x: onChange(cv2.getTrackbarPos('FRAME','video processing')-cv2.getTrackbarPos('SKIP','video processing')), None, cv2.QT_PUSH_BUTTON, 0 )
-            # cv2.createButton( '>>', lambda x: onChange(cv2.getTrackbarPos('FRAME','video processing')+cv2.getTrackbarPos('SKIP','video processing')), None, cv2.QT_PUSH_BUTTON, 0 )
-            # onChange(0)
-
-
-
+            # self.addToolBarBreak
+            
+            self.videoControls.setVisible(True)
+            for widget in self.videoControls.children():
+                try:
+                    widget.setVisible(True)
+                except:
+                    pass
                 
 
     def loadFramefromVideo(self,frame_array,index=0):
@@ -2595,12 +2567,21 @@ class MainWindow(QtWidgets.QMainWindow):
     # then add the toolbar to the main window and show it
     
     def nextFrame_buttonClicked(self):
-        self.onChange(self.INDEX_OF_CURRENT_FRAME + self.frames_to_skip )
+        # first assert that the new value of the slider is not greater than the total number of frames
+        new_value = self.INDEX_OF_CURRENT_FRAME + self.FRAMES_TO_SKIP
+        if new_value >= self.TOTAL_VIDEO_FRAMES:
+            new_value = self.TOTAL_VIDEO_FRAMES 
+        self.main_video_frames_slider.setValue(new_value)
+        self.main_video_frames_slider_changed()
     def previousFrameClicked(self):
-        self.onChange(self.INDEX_OF_CURRENT_FRAME - self.frames_to_skip )
+        new_value = self.INDEX_OF_CURRENT_FRAME - self.FRAMES_TO_SKIP
+        if new_value <= 0:
+            new_value = 0
+        self.main_video_frames_slider.setValue(new_value)
+        self.main_video_frames_slider_changed()
     def frames_to_skip_slider_changed(self):
-        self.frames_to_skip = self.frames_to_skip_slider.value()
-        self.frames_to_skip_label.setText('adjust number of frames to skip: ' + str(self.frames_to_skip))
+        self.FRAMES_TO_SKIP= self.frames_to_skip_slider.value()
+        self.frames_to_skip_label.setText('frames to skip: ' + str(self.FRAMES_TO_SKIP))
 
     # function of the play/pause button 
     # first it checks if the video is playing or not
@@ -2619,25 +2600,74 @@ class MainWindow(QtWidgets.QMainWindow):
             self.playPauseButton.setIcon(self.style().standardIcon(QtWidgets.QStyle.SP_MediaPlay))
         # print(1)
     
+    
+    
+    def main_video_frames_slider_changed(self):
+        frame_idx = self.main_video_frames_slider.value()
+        
+        self.INDEX_OF_CURRENT_FRAME = frame_idx
+        self.CAP.set(cv2.CAP_PROP_POS_FRAMES,frame_idx)
+        
+        
+        # setting text of labels
+        self.main_video_frames_label_1.setText(f'frame {frame_idx} / {int(self.TOTAL_VIDEO_FRAMES)}' )
+        self.frame_time = self.mapFrameToTime(frame_idx)
+        frame_text = ("%02d:%02d:%02d:%03d" % (self.frame_time[0], self.frame_time[1], self.frame_time[2] , self.frame_time[3]))
+        video_duration = self.mapFrameToTime(self.TOTAL_VIDEO_FRAMES)
+        video_duration_text = ("%02d:%02d:%02d:%03d     " % (video_duration[0], video_duration[1], video_duration[2] , video_duration[3]))
+        final_text = frame_text + " / " + video_duration_text
+        self.main_video_frames_label_2.setText(f'time {final_text}')
+        
+    
+    
+        # reading the current frame from the video and loading it into the canvas 
+        success,img = self.CAP.read()
+        if success:
+            frame_array = np.array(img)
+        else:
+            frame_array = []
+        self.loadFramefromVideo(frame_array,frame_idx)
+    
+    
+        # finally update the trackbar
+        self.main_video_frames_slider.setValue(frame_idx)
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     def addVideoControls(self):
         self.videoControls = QtWidgets.QToolBar()
-        self.videoControls.setMovable(False)
-        self.videoControls.setFloatable(False)
-        self.videoControls.setAllowedAreas(Qt.LeftToolBarArea)
+        self.videoControls.setMovable(True)
+        self.videoControls.setFloatable(True)
+        # self.videoControls.setAllowedAreas(Qt.BottomToolBarArea)
         self.videoControls.setObjectName("videoControls")
-        self.videoControls.setStyleSheet("QToolBar#videoControls { border: 0px }")
-        self.addToolBar(Qt.LeftToolBarArea, self.videoControls)
+        self.videoControls.setStyleSheet("QToolBar#videoControls { border: 2px }")
+        self.addToolBar(Qt.BottomToolBarArea, self.videoControls)
 
         self.frames_to_skip_slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
         self.frames_to_skip_slider.setMinimum(0)
         self.frames_to_skip_slider.setMaximum(100)
-        self.frames_to_skip_slider.setValue(5)
+        self.frames_to_skip_slider.setValue(0)
         self.frames_to_skip_slider.setTickPosition(QtWidgets.QSlider.TicksBelow)
         self.frames_to_skip_slider.setTickInterval(1)
-        self.frames_to_skip_slider.setMaximumWidth(200)
+        self.frames_to_skip_slider.setMaximumWidth(150)
         self.frames_to_skip_slider.valueChanged.connect(self.frames_to_skip_slider_changed)
         self.frames_to_skip_label = QtWidgets.QLabel()
-        self.frames_to_skip_label.setText('  adjust number of frames to skip: ' + str(self.frames_to_skip_slider.value()) )
+        self.frames_to_skip_label.setStyleSheet("QLabel { font-size: 10pt; font-weight: bold; }")
+        self.frames_to_skip_slider.setValue(5)
         self.videoControls.addWidget(self.frames_to_skip_label)
         self.videoControls.addWidget(self.frames_to_skip_slider)
 
@@ -2666,16 +2696,33 @@ class MainWindow(QtWidgets.QMainWindow):
         self.nextFrame_button.clicked.connect(self.nextFrame_buttonClicked)
         self.videoControls.addWidget(self.nextFrame_button)
         
-        self.dummylabel = QtWidgets.QLabel()
-        self.dummylabel.setText('                         ')
-        self.videoControls.addWidget(self.dummylabel)
         
-        self.track_button = QtWidgets.QPushButton()
-        self.track_button.setText("TRACK")
-        # self.previousFrame.clicked.connect(self.track_buttonClicked)
-        self.videoControls.addWidget(self.track_button)
+        
+        self.main_video_frames_slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
+        self.main_video_frames_slider.setMinimum(0)
+        self.main_video_frames_slider.setMaximum(100)
+        self.main_video_frames_slider.setValue(5)
+        self.main_video_frames_slider.setTickPosition(QtWidgets.QSlider.TicksBelow)
+        self.main_video_frames_slider.setTickInterval(1)
+        self.main_video_frames_slider.setMaximumWidth(400)
+        self.main_video_frames_slider.valueChanged.connect(self.main_video_frames_slider_changed)
+        self.main_video_frames_label_1 = QtWidgets.QLabel()
+        self.main_video_frames_label_2 = QtWidgets.QLabel()
+        # make the label text bigger and bold
+        self.main_video_frames_label_1.setStyleSheet("QLabel { font-size: 12pt; font-weight: bold; }")
+        self.main_video_frames_label_2.setStyleSheet("QLabel { font-size: 12pt; font-weight: bold; }")
+        # labels should show the current frame number / total number of frames and cuurent time / total time
+        self.videoControls.addWidget(self.main_video_frames_label_1)
+        self.videoControls.addWidget(self.main_video_frames_slider)        
+        self.videoControls.addWidget(self.main_video_frames_label_2)
+        
+        
+        
+        # self.dummylabel = QtWidgets.QLabel()
+        # self.dummylabel.setText('    ')
+        # self.videoControls.addWidget(self.dummylabel)
+        
 
-        # before the tracking slider add a label to show the current frame
 
         # add the slider to control the video frame
         self.tracking_slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
@@ -2702,6 +2749,12 @@ class MainWindow(QtWidgets.QMainWindow):
         self.totalFrameLabel.setText("0")
         self.videoControls.addWidget(self.totalFrameLabel)
 
+        self.track_button = QtWidgets.QPushButton()
+        self.track_button.setText("TRACK")
+        # self.previousFrame.clicked.connect(self.track_buttonClicked)
+        self.videoControls.addWidget(self.track_button)
+        
+        
         # make it invisible by default
         self.videoControls.setVisible(False)
         for widget in self.videoControls.children():
@@ -2709,6 +2762,13 @@ class MainWindow(QtWidgets.QMainWindow):
                 widget.setVisible(False)
             except:
                 pass
+            
+            
+            
+            
+            
+            
+            
             
                 
     # # this function is called when the next frame button is clicked
@@ -2726,3 +2786,19 @@ class MainWindow(QtWidgets.QMainWindow):
         
     # # now we need to add the video controls to the main window
     
+    
+    # parameters need to be global in the main gui 
+    
+    # current frame idx 
+    # frames to skip 
+    # frames to track 
+    # total frames number
+    # current video fps 
+    # cap object
+    
+    #   what is actually made ----->
+
+    # self.INDEX_OF_CURRENT_FRAME = frame_idx
+    # self.TOTAL_VIDEO_FRAMES = self.CAP.get(cv2.CAP_PROP_FRAME_COUNT)
+    # self.CURRENT_VIDEO_FPS = self.CAP.get(cv2.CAP_PROP_FPS)
+    # self.CAP.set(cv2.CAP_PROP_POS_FRAMES,frame_idx)
