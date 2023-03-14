@@ -1,0 +1,7 @@
+# still under progress but at least you should install 
+
+ultralytics
+supervision
+
+
+# I will append later the precise libraries
