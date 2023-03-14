@@ -2349,42 +2349,13 @@ class MainWindow(QtWidgets.QMainWindow):
     
     
     
-    
-    
-    
-    
-    
-    def skipframes(self, x):
-        self.FRAMES_TO_SKIP= x
-        self.onChange(cv2.getTrackbarPos('FRAME','video processing'))
-        
-        
-    def onChange(self , frame_idx ):
-        self.INDEX_OF_CURRENT_FRAME = frame_idx
-        self.CAP.set(cv2.CAP_PROP_POS_FRAMES,frame_idx)
-        success,img = self.CAP.read()
-        if success:
-            frame_array = np.array(img)
-        else:
-            frame_array = []
-        self.loadFramefromVideo(frame_array,frame_idx)
-        
-        self.frame_time = self.mapFrameToTime(frame_idx)
-        frame_text = ("%02d:%02d:%02d:%03d" % (self.frame_time[0], self.frame_time[1], self.frame_time[2] , self.frame_time[3]))
-        video_duration = self.mapFrameToTime(self.CAP.get(cv2.CAP_PROP_FRAME_COUNT))
-        video_duration_text = ("%02d:%02d:%02d:%03d" % (video_duration[0], video_duration[1], video_duration[2] , video_duration[3]))
-        final_text = frame_text + " / " + video_duration_text
-        dummy_img = np.zeros((50, 1200, 3), np.uint8)
-        cv2.putText(dummy_img, final_text, (450, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (200, 200, 200), 1)
-        cv2.imshow('video processing', dummy_img)
-        
-        cv2.setTrackbarPos('FRAME','video processing',frame_idx)
-        
-        
-        #print("frame time is %02d:%02d:%02d" % (self.frame_time[0], self.frame_time[1], self.frame_time[2]))
-        pass
 
-        
+
+
+    # VIDEO PROCESSING FUNCTIONS (ALL CONNECTED TO THE VIDEO PROCESSING TOOLBAR)
+
+
+
     def mapFrameToTime(self , frameNumber):
         # get the fps of the video
         fps = self.CAP.get(cv2.CAP_PROP_FPS)
@@ -2420,10 +2391,11 @@ class MainWindow(QtWidgets.QMainWindow):
             # making the total video frames equal to the total frames in the video file - 1 as the indexing starts from 0 
             self.TOTAL_VIDEO_FRAMES = self.CAP.get(cv2.CAP_PROP_FRAME_COUNT) - 1
             self.CURRENT_VIDEO_FPS = self.CAP.get(cv2.CAP_PROP_FPS)
-                
+            print("Total Frames : " , self.TOTAL_VIDEO_FRAMES)
             self.main_video_frames_slider.setMaximum(self.TOTAL_VIDEO_FRAMES)
             self.main_video_frames_slider.setValue(0) 
-
+            self.main_video_frames_slider_changed()         
+            
             # self.addToolBarBreak
             
             self.videoControls.setVisible(True)
@@ -2432,7 +2404,6 @@ class MainWindow(QtWidgets.QMainWindow):
                     widget.setVisible(True)
                 except:
                     pass
-                
 
     def loadFramefromVideo(self,frame_array,index=0):
         filename = str(index) + ".jpg"
@@ -2460,7 +2431,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 )
                 self.status(self.tr("Error reading %s") % label_file)
                 return False
-            self.imageData = self.labelFile.imageData
+            # self.imageData = self.labelFile.imageData
             self.imagePath = osp.join(
                 osp.dirname(label_file),
                 self.labelFile.imagePath,
@@ -2469,11 +2440,11 @@ class MainWindow(QtWidgets.QMainWindow):
         else:
             self.labelFile = None
         
-        
         self.imageData = frame_array.data
+
         self.current_frame_array = frame_array
-        image = QtGui.QImage(frame_array.data, frame_array.shape[1], frame_array.shape[0],
-                 QtGui.QImage.Format_BGR888)
+        image = QtGui.QImage(self.imageData, self.imageData.shape[1], self.imageData.shape[0],
+                QtGui.QImage.Format_BGR888)
         
         
         #image = QtGui.QImage.fromData(self.imageData)
@@ -2559,13 +2530,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.status(self.tr("Loaded %s") % osp.basename(str(filename)))
         return True
 
-        
-
-    # add a seperate toolbar for video controls inside the main window
-    # it contains the next and previous buttons and play/pause button and a slider to control the video frame
-    # the toolbar is positioned under the menu bar
-    # then add the toolbar to the main window and show it
-    
     def nextFrame_buttonClicked(self):
         # first assert that the new value of the slider is not greater than the total number of frames
         new_value = self.INDEX_OF_CURRENT_FRAME + self.FRAMES_TO_SKIP
@@ -2573,20 +2537,18 @@ class MainWindow(QtWidgets.QMainWindow):
             new_value = self.TOTAL_VIDEO_FRAMES 
         self.main_video_frames_slider.setValue(new_value)
         self.main_video_frames_slider_changed()
+
     def previousFrameClicked(self):
         new_value = self.INDEX_OF_CURRENT_FRAME - self.FRAMES_TO_SKIP
         if new_value <= 0:
             new_value = 0
         self.main_video_frames_slider.setValue(new_value)
         self.main_video_frames_slider_changed()
+
     def frames_to_skip_slider_changed(self):
         self.FRAMES_TO_SKIP= self.frames_to_skip_slider.value()
         self.frames_to_skip_label.setText('frames to skip: ' + str(self.FRAMES_TO_SKIP))
 
-    # function of the play/pause button 
-    # first it checks if the video is playing or not
-    # then it changes the icon of the button and starts/stops the timer
-    # then it calls the nextFrame function to change the frame
     def playPauseButtonClicked(self):
         # we can check the state of the button by checking the button text
         if self.playPauseButton.text() == "Play":
@@ -2599,9 +2561,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.playPauseButton.setText("Play")
             self.playPauseButton.setIcon(self.style().standardIcon(QtWidgets.QStyle.SP_MediaPlay))
         # print(1)
-    
-    
-    
+
     def main_video_frames_slider_changed(self):
         frame_idx = self.main_video_frames_slider.value()
         
@@ -2624,43 +2584,30 @@ class MainWindow(QtWidgets.QMainWindow):
         success,img = self.CAP.read()
         if success:
             frame_array = np.array(img)
+            self.loadFramefromVideo(frame_array,frame_idx)
         else:
-            frame_array = []
-        self.loadFramefromVideo(frame_array,frame_idx)
+            pass
     
     
         # finally update the trackbar
         self.main_video_frames_slider.setValue(frame_idx)
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+
     def addVideoControls(self):
+        # add video controls toolbar with custom style (background color , spacing , hover color)
         self.videoControls = QtWidgets.QToolBar()
+        # self.videoControls.setOrientation(Qt.Horizontal)
+        # self.videoControls.setStyleSheet("QToolBar { background-color: #2d2d2d; spacing: 10px; } QToolBar:hover { background-color: #3d3d3d; }")
         self.videoControls.setMovable(True)
         self.videoControls.setFloatable(True)
         # self.videoControls.setAllowedAreas(Qt.BottomToolBarArea)
         self.videoControls.setObjectName("videoControls")
-        self.videoControls.setStyleSheet("QToolBar#videoControls { border: 2px }")
+        self.videoControls.setStyleSheet("QToolBar#videoControls { border: 50px }")
         self.addToolBar(Qt.BottomToolBarArea, self.videoControls)
 
         self.frames_to_skip_slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
-        self.frames_to_skip_slider.setMinimum(0)
+        self.frames_to_skip_slider.setMinimum(1)
         self.frames_to_skip_slider.setMaximum(100)
-        self.frames_to_skip_slider.setValue(0)
+        self.frames_to_skip_slider.setValue(1)
         self.frames_to_skip_slider.setTickPosition(QtWidgets.QSlider.TicksBelow)
         self.frames_to_skip_slider.setTickInterval(1)
         self.frames_to_skip_slider.setMaximumWidth(150)
@@ -2701,7 +2648,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.main_video_frames_slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
         self.main_video_frames_slider.setMinimum(0)
         self.main_video_frames_slider.setMaximum(100)
-        self.main_video_frames_slider.setValue(5)
+        self.main_video_frames_slider.setValue(1)
         self.main_video_frames_slider.setTickPosition(QtWidgets.QSlider.TicksBelow)
         self.main_video_frames_slider.setTickInterval(1)
         self.main_video_frames_slider.setMaximumWidth(400)
@@ -2762,43 +2709,18 @@ class MainWindow(QtWidgets.QMainWindow):
                 widget.setVisible(False)
             except:
                 pass
-            
-            
-            
-            
-            
-            
-            
-            
-                
-    # # this function is called when the next frame button is clicked
-    # # it increases the current frame by 1 and loads the next frame
-    # def nextFrameClicked(self):
-    #     self.current_frame += 1
-    #     if self.current_frame > self.total_frames:
-    #         self.current_frame = self.total_frames
-    #     self.loadFrame(self.current_frame)
 
-    # # this function is called when the previous frame button is clicked
-    # # it decreases the current frame by 1 and loads the previous frame
-    # def previousFrameClicked(self):
-    #     self
-        
-    # # now we need to add the video controls to the main window
-    
-    
+
+
     # parameters need to be global in the main gui 
-    
-    # current frame idx 
-    # frames to skip 
-    # frames to track 
-    # total frames number
-    # current video fps 
-    # cap object
-    
-    #   what is actually made ----->
 
-    # self.INDEX_OF_CURRENT_FRAME = frame_idx
-    # self.TOTAL_VIDEO_FRAMES = self.CAP.get(cv2.CAP_PROP_FRAME_COUNT)
-    # self.CURRENT_VIDEO_FPS = self.CAP.get(cv2.CAP_PROP_FPS)
-    # self.CAP.set(cv2.CAP_PROP_POS_FRAMES,frame_idx)
+    # INDEX_OF_CURRENT_FRAME
+    # self.FRAMES_TO_SKIP
+    # frames to track 
+    # self.TOTAL_VIDEO_FRAMES
+    # self.CURRENT_VIDEO_FPS   --> to be used to play the video at the correct speed
+    # self.CAP
+
+
+# to do 
+# remove the video processing tool bar in the other cases

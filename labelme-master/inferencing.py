@@ -99,8 +99,6 @@ class models_inference():
         if img_array_flag:
             results = inference_detector(model, img )
         else:
-            print(model.__class__.__name__)
-
             results = inference_detector(model, plt.imread(img))
         # results = async_inference_detector(model, plt.imread(img_path))
         torch.cuda.empty_cache()
