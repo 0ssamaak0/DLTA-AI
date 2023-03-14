@@ -1,4 +1,5 @@
 {
+"YOLOv8x": {"checkpoint": "yolov8x-seg.pt", "config": "none"},
 "Yoloct": {"checkpoint": "mmdetection/checkpoints/yolact_r50_1x8_coco_20200908-f38d58df.pth", "config": "mmdetection/configs/yolact/yolact_r50_1x8_coco.py"},
 "Hyper task cascade": {"checkpoint": "mmdetection/checkpoints/htc_r50_sac_1x_coco-bfa60c54.pth", "config": "mmdetection/configs/detectors/htc_r50_sac_1x_coco.py"},
 "Mask2former": {"checkpoint": "mmdetection/checkpoints/mask2former_swin-t-p4-w7-224_lsj_8x2_50e_coco_20220508_091649-4a943037.pth", "config": "mmdetection/configs/mask2former/mask2former_swin-t-p4-w7-224_lsj_8x2_50e_coco.py"}, 

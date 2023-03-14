@@ -20,6 +20,10 @@ import torch
 from mmdet.apis import inference_detector, init_detector
 warnings.filterwarnings("ignore")
 
+
+from ultralytics import YOLO
+
+
 class IntelligenceWorker(QThread):
     sinOut = pyqtSignal(int,int)
     def __init__(self, parent, images, source):
@@ -77,6 +81,11 @@ class Intelligence():
         torch.cuda.empty_cache()
         # model = init_detector("C:/Users/Shehab/Desktop/l001/ANNOTATION_TOOL/mmdetection/mmdetection/configs/detectors/htc_r50_sac_1x_coco.py", 
         #                     "C:/Users/Shehab/Desktop/l001/ANNOTATION_TOOL/mmdetection/mmdetection/checkpoints/htc_r50_sac_1x_coco-bfa60c54.pth", device = torch.device("cuda"))
+        if selected_model_name == "YOLOv8x":
+            model = YOLO(checkpoint)
+            model.fuse()
+            return selected_model_name, model
+        
         model = init_detector(config, 
                             checkpoint, device = torch.device("cuda" if torch.cuda.is_available() else "cpu"))
         # "C:\Users\Shehab\Desktop\l001\ANNOTATION_TOOL\mmdetection\mmdetection\configs\yolact\yolact_r50_1x8_coco.py"
