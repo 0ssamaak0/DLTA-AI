@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import collections
 import functools
 import json
 import math
@@ -36,18 +37,69 @@ from labelme.widgets import ToolBar
 from labelme.widgets import UniqueLabelQListWidget
 from labelme.widgets import ZoomWidget
 from .intelligence import Intelligence
+from .intelligence import coco_classes
 
+from ByteTrack.yolox.tracker.byte_tracker import BYTETracker, STrack
+from onemetric.cv.utils.iou import box_iou_batch
+from dataclasses import dataclass
+from supervision.detection.core import  Detections
+from typing import List
 
-
+import numpy as np
+import cv2
+from pathlib import Path
 
 import time
 import threading
 import warnings
 warnings.filterwarnings("ignore")
 
-import numpy as np
-import cv2
+@dataclass(frozen=True)
+class BYTETrackerArgs:
+    track_thresh: float = 0.25
+    track_buffer: int = 30
+    match_thresh: float = 0.8
+    aspect_ratio_thresh: float = 3.0
+    min_box_area: float = 1.0
+    mot20: bool = False
+    
+    
+# converts Detections into format that can be consumed by match_detections_with_tracks function
+def detections2boxes(detections: Detections) -> np.ndarray:
+    return np.hstack((
+        detections.xyxy,
+        detections.confidence[:, np.newaxis]
+    ))
 
+def tracks2boxes(tracks: List[STrack]) -> np.ndarray:
+    return np.array([
+        track.tlbr
+        for track
+        in tracks
+    ], dtype=float)
+
+def match_detections_with_tracks(
+    detections: Detections, 
+    tracks: List[STrack]
+) -> Detections:
+    if not np.any(detections.xyxy) or len(tracks) == 0:
+        return np.empty((0,))
+
+    tracks_boxes = tracks2boxes(tracks=tracks)
+    iou = box_iou_batch(tracks_boxes, detections.xyxy)
+    track2detection = np.argmax(iou, axis=1)
+    
+    tracker_ids = [None] * len(detections)
+    
+    for tracker_index, detection_index in enumerate(track2detection):
+        if iou[tracker_index, detection_index] != 0:
+            tracker_ids[detection_index] = tracks[tracker_index].track_id
+
+    return tracker_ids
+
+
+    
+    
 # FIXME
 # - [medium] Set max zoom value to something big enough for FitWidth/Window
 
@@ -214,6 +266,8 @@ class MainWindow(QtWidgets.QMainWindow):
         # for video annotation 
         self.frame_time = 0
         self.FRAMES_TO_SKIP= 5
+        # make CLASS_NAMES_DICT a dictionary of coco class names 
+        # self.CLASS_NAMES_DICT = 
         # self.frame_number = 0
         self.INDEX_OF_CURRENT_FRAME = 0
 
@@ -1000,7 +1054,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.filename = None
         self.imagePath = None
         self.imageData = None
-        self.current_frame_array = None
+        self.CURRENT_FRAME_IMAGE = None
         self.labelFile = None
         self.otherData = None
         self.canvas.resetState()
@@ -1187,7 +1241,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if shape.group_id is None:
             item.setText(shape.label)
         else:
-            item.setText("{} ({})".format(shape.label, shape.group_id))
+            item.setText(f' ID {shape.group_id}:\t\t{shape.label}')
         self.setDirty()
         if not self.uniqLabelList.findItemsByLabel(shape.label):
             item = QtWidgets.QListWidgetItem()
@@ -1238,7 +1292,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if shape.group_id is None:
             text = shape.label
         else:
-            text = "{} ({})".format(shape.label, shape.group_id)
+            text = f' ID {shape.group_id}:\t\t{shape.label}'
         label_list_item = LabelListWidgetItem(text, shape)
         self.labelList.addItem(label_list_item)
         if not self.uniqLabelList.findItemsByLabel(shape.label):
@@ -2317,7 +2371,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def annotate_one(self):
         # print(self.current_annotation_mode)
         if self.current_annotation_mode  == "video":
-            shapes = self.intelligenceHelper.get_shapes_of_one(self.current_frame_array, img_array_flag=True)
+            shapes = self.intelligenceHelper.get_shapes_of_one(self.CURRENT_FRAME_IMAGE, img_array_flag=True)
             self.loadShapes(shapes)
             self.actions.editMode.setEnabled(True)
             self.actions.undoLastPoint.setEnabled(False)
@@ -2385,7 +2439,8 @@ class MainWindow(QtWidgets.QMainWindow):
         
         
         if videoFile[0] :
-            
+            self.CURRENT_VIDEO_NAME = videoFile[0].split(".")[-2].split("/")[-1]
+            print('video file name : ' , self.CURRENT_VIDEO_NAME)
             cap = cv2.VideoCapture(videoFile[0])
             self.CAP = cap
             # making the total video frames equal to the total frames in the video file - 1 as the indexing starts from 0 
@@ -2394,7 +2449,6 @@ class MainWindow(QtWidgets.QMainWindow):
             print("Total Frames : " , self.TOTAL_VIDEO_FRAMES)
             self.main_video_frames_slider.setMaximum(self.TOTAL_VIDEO_FRAMES)
             self.main_video_frames_slider.setValue(0) 
-            self.main_video_frames_slider_changed()         
             
             # self.addToolBarBreak
             
@@ -2404,81 +2458,89 @@ class MainWindow(QtWidgets.QMainWindow):
                     widget.setVisible(True)
                 except:
                     pass
+                
+            self.byte_tracker = BYTETracker(BYTETrackerArgs())
 
+
+        # label = shape["label"]
+        # points = shape["points"]
+        # bbox = shape["bbox"]
+        # shape_type = shape["shape_type"]
+        # flags = shape["flags"]
+        # content = shape["content"]
+        # group_id = shape["group_id"]
+        # other_data = shape["other_data"]
+    def load_shapes_for_video_frame(self ,json_file_name, index):
+        # this function loads the shapes for the video frame from the json file 
+        # first we read the json file in the form of a list 
+        # we need to parse from it data for the current frame
+
+        
+        target_frame_idx = index
+        listObj = []
+        with open (json_file_name , "r") as json_file:
+            listObj = json.load(json_file)
+            
+        listObj = np.array(listObj)
+
+        shapes = []
+        for i in range(len(listObj)):
+            frame_idx = listObj[i]['frame_idx']
+            if frame_idx == target_frame_idx:
+                # print (listObj[i])
+                # print(i)
+                frame_objects = listObj[i]['frame_data']
+                for object_ in frame_objects:
+                    shape = {}
+                    shape["label"] = coco_classes[object_['class_id']]
+                    shape["group_id"] = str(object_['tracker_id'])
+                    shape["content"] = str(object_['confidence'])
+                    shape["bbox"] = object_['bbox']
+                    points = object_['segment']
+                    points= np.array(points, np.int16).flatten().tolist()
+                    shape["points"] = points
+                    shape["shape_type"] = "polygon"
+                    shape["other_data"] = {}
+                    shape["flags"] = {}
+                    shapes.append(shape)
+                continue
+    
+
+        
+        if len(shapes) > 0:
+            
+            self.loadLabels(shapes)
+
+        
+        
     def loadFramefromVideo(self,frame_array,index=0):
-        filename = str(index) + ".jpg"
+        # filename = str(index) + ".jpg"
+        #self.filename = filename
         self.resetState()
         self.canvas.setEnabled(False)
         
-        # assumes same name, but json extension
-        label_file = str(index) + ".json"
-        if self.output_dir:
-            label_file_without_path = osp.basename(label_file)
-            label_file = osp.join(self.output_dir, label_file_without_path)
-        if QtCore.QFile.exists(label_file) and LabelFile.is_label_file(
-            label_file
-        ):
-            try:
-                self.labelFile = LabelFile(label_file)
-            except LabelFileError as e:
-                self.errorMessage(
-                    self.tr("Error opening file"),
-                    self.tr(
-                        "<p><b>%s</b></p>"
-                        "<p>Make sure <i>%s</i> is a valid label file."
-                    )
-                    % (e, label_file),
-                )
-                self.status(self.tr("Error reading %s") % label_file)
-                return False
-            # self.imageData = self.labelFile.imageData
-            self.imagePath = osp.join(
-                osp.dirname(label_file),
-                self.labelFile.imagePath,
-            )
-            self.otherData = self.labelFile.otherData
-        else:
-            self.labelFile = None
         
         self.imageData = frame_array.data
 
-        self.current_frame_array = frame_array
+        self.CURRENT_FRAME_IMAGE = frame_array
         image = QtGui.QImage(self.imageData, self.imageData.shape[1], self.imageData.shape[0],
-                QtGui.QImage.Format_BGR888)
-        
-        
-        #image = QtGui.QImage.fromData(self.imageData)
-        #image = QtGui.QImage(filename)
-        # img = np.random.randint(0, 255, (100, 100, 3), dtype=np.uint8)
-        # #im_np = np.transpose(im_np, (1,0,2))
-        # im_np = np.array(img)
-        # image = QtGui.QImage(im_np.data, im_np.shape[1], im_np.shape[0],
-        #          QtGui.QImage.Format_BGR888)
-        
-        if image.isNull():
-            formats = [
-                "*.{}".format(fmt.data().decode())
-                for fmt in QtGui.QImageReader.supportedImageFormats()
-            ]
-            self.errorMessage(
-                self.tr("Error opening file"),
-                self.tr(
-                    "<p>Make sure <i>{0}</i> is a valid image file.<br/>"
-                    "Supported image formats: {1}</p>"
-                ).format(filename, ",".join(formats)),
-            )
-            #self.status(self.tr("Error reading %s") % filename)
-            return False
+                QtGui.QImage.Format_BGR888)    
         self.image = image
-        #self.filename = filename
         if self._config["keep_prev"]:
             prev_shapes = self.canvas.shapes
         self.canvas.loadPixmap(QtGui.QPixmap.fromImage(image))
         flags = {k: False for k in self._config["flags"] or []}
+
+            
         if self.labelFile:
             self.loadLabels(self.labelFile.shapes)
             if self.labelFile.flags is not None:
                 flags.update(self.labelFile.flags)
+        else :
+            json_file_name = f'{self.CURRENT_VIDEO_NAME}_tracking_results.json'
+            if os.path.exists(json_file_name):
+                print('json file exists , loading shapes')
+                self.load_shapes_for_video_frame(json_file_name , index)
         self.loadFlags(flags)
         if self._config["keep_prev"] and self.noShapes():
             self.loadShapes(prev_shapes, replace=False)
@@ -2494,41 +2556,12 @@ class MainWindow(QtWidgets.QMainWindow):
         elif is_initial_load or not self._config["keep_prev_scale"]:
             self.adjustScale(initial=True)
         # set scroll values
-        for orientation in self.scroll_values:
-            if self.filename in self.scroll_values[orientation]:
-                self.setScroll(
-                    orientation, self.scroll_values[orientation][self.filename]
-                )
-        # set brightness constrast values
-        # dialog = BrightnessContrastDialog(
-        #     utils.img_data_to_pil(self.imageData),
-        #     self.onNewBrightnessContrast,
-        #     parent=self,
-        # )
-        # brightness, contrast = self.brightnessContrast_values.get(
-        #     self.filename, (None, None)
-        # )
-        if self._config["keep_prev_brightness"] and self.recentFiles:
-            brightness, _ = self.brightnessContrast_values.get(
-                self.recentFiles[0], (None, None)
-            )
-        if self._config["keep_prev_contrast"] and self.recentFiles:
-            _, contrast = self.brightnessContrast_values.get(
-                self.recentFiles[0], (None, None)
-            )
-        # if brightness is not None:
-        #     dialog.slider_brightness.setValue(brightness)
-        # if contrast is not None:
-        #     dialog.slider_contrast.setValue(contrast)
-        # self.brightnessContrast_values[self.filename] = (brightness, contrast)
-        # if brightness is not None or contrast is not None:
-        #     dialog.onNewValue(None)
+
+
         self.paintCanvas()
-        #self.addRecentFile(self.filename)
         self.toggleActions(True)
         self.canvas.setFocus()
-        self.status(self.tr("Loaded %s") % osp.basename(str(filename)))
-        return True
+        self.status(self.tr(f'Loaded {self.CURRENT_VIDEO_NAME} frame {self.INDEX_OF_CURRENT_FRAME}'))
 
     def nextFrame_buttonClicked(self):
         # first assert that the new value of the slider is not greater than the total number of frames
@@ -2536,14 +2569,12 @@ class MainWindow(QtWidgets.QMainWindow):
         if new_value >= self.TOTAL_VIDEO_FRAMES:
             new_value = self.TOTAL_VIDEO_FRAMES 
         self.main_video_frames_slider.setValue(new_value)
-        self.main_video_frames_slider_changed()
 
     def previousFrameClicked(self):
         new_value = self.INDEX_OF_CURRENT_FRAME - self.FRAMES_TO_SKIP
         if new_value <= 0:
             new_value = 0
         self.main_video_frames_slider.setValue(new_value)
-        self.main_video_frames_slider_changed()
 
     def frames_to_skip_slider_changed(self):
         self.FRAMES_TO_SKIP= self.frames_to_skip_slider.value()
@@ -2554,10 +2585,21 @@ class MainWindow(QtWidgets.QMainWindow):
         if self.playPauseButton.text() == "Play":
             self.playPauseButton.setText("Pause")
             self.playPauseButton.setIcon(self.style().standardIcon(QtWidgets.QStyle.SP_MediaPause))
-            # start the timer for only 10 seconds
-            # self.timer.start(1000/30)
+            # play the video at the current fps untill the user clicks pause
+            self.play_timer = QtCore.QTimer(self)
+            # use play_timer.timeout.connect to call a function every time the timer times out
+            # but we need to call the function every interval of time
+            # so we need to call the function every 1/fps seconds
+            self.play_timer.timeout.connect(self.move_frame_by_frame)
+            self.play_timer.start(500)
+            # note that the timer interval is in milliseconds
+            
+            
             # while self.timer.isActive():
         elif self.playPauseButton.text() == "Pause":
+            # first stop the timer 
+            self.play_timer.stop()
+            
             self.playPauseButton.setText("Play")
             self.playPauseButton.setIcon(self.style().standardIcon(QtWidgets.QStyle.SP_MediaPlay))
         # print(1)
@@ -2590,8 +2632,172 @@ class MainWindow(QtWidgets.QMainWindow):
     
     
         # finally update the trackbar
-        self.main_video_frames_slider.setValue(frame_idx)
+        # self.main_video_frames_slider.setValue(frame_idx)
 
+
+    
+    def frames_to_track_slider_changed(self):
+        self.FRAMES_TO_TRACK = self.frames_to_track_slider.value()
+        self.frames_to_track_label.setText(f'track for {self.FRAMES_TO_TRACK} frames')
+
+    def move_frame_by_frame(self):
+        self.main_video_frames_slider.setValue(self.INDEX_OF_CURRENT_FRAME + 1)
+        
+    def class_name_to_id(self, class_name):
+        try :
+            # map from coco_classes(a list of coco class names) to class_id
+            return coco_classes.index(class_name)
+        except:
+            # this means that the class name is not in the coco dataset
+            return -1
+        
+    def track_buttonClicked(self):
+
+            
+        frame_shape = self.CURRENT_FRAME_IMAGE.shape
+        print(frame_shape)
+
+
+        json_file_name = self.CURRENT_VIDEO_NAME + '_tracking_results.json'
+        
+        # first we need to check there is a json file with the same name as the video
+        listObj = []
+        if os.path.exists(json_file_name):
+            print('json file exists')
+            with open (json_file_name, 'r') as json_file:
+                listObj = json.load(json_file)
+        else:
+            # make a json file with the same name as the video
+            print('json file does not exist , creating a new one')
+            with open (json_file_name, 'w') as json_file:
+                json.dump(listObj, json_file)
+                
+        # with open (json_file_name, 'r') as json_file:
+        #     json_object = json.load(json_file)
+        #     print(json_object)
+            
+        
+        # first check if there is any detection in the current frame (and items in self.labelList)
+        # if not --> perform detection on the current frame
+        # shapes = [(item.shape()) for item in self.labelList]
+        # if len(shapes) == 0:
+        #     print('no detection in the current frame so performing detection')
+        #     self.annotate_one()
+        #     shapes = [(item.shape()) for item in self.labelList]
+
+        # now we have the shapes of the detections in the current frame
+        # steps
+        # loop from the current frame to the end frame
+        # each time we loop we need to perform detection on the current frame and then track the detections
+        # output the tracking and detection results in labellist 
+        # then save the tracked detection in a json file named (video_name_tracking_results.json)
+        for i in range(self.FRAMES_TO_TRACK):
+            shapes = [(item.shape()) for item in self.labelList]
+            if len(shapes) == 0:
+                print('no detection in the current frame so performing detection')
+                self.annotate_one()
+                shapes = [(item.shape()) for item in self.labelList]
+            
+        
+        
+            boxes = []
+            confidences = []
+            class_ids = []
+            segments = []
+            # current_objects_ids = []
+            for s in shapes:
+                label=s.label.encode("utf-8") if PY2 else s.label
+                points=[(p.x(), p.y()) for p in s.points]
+                # if points is empty pass
+                if len(points) == 0:
+                    continue
+                segments.append(np.array(points, dtype=int).tolist())
+                
+                boxes.append(self.intelligenceHelper.get_bbox(points))
+                if s.content is None:
+                    confidences.append(1.0)
+                else : 
+                    confidences.append(float(s.content))
+                class_ids.append( int(self.class_name_to_id(label)))
+                
+                # current_objects_ids.append(s.group_id)
+            boxes = np.array(boxes , dtype=int)
+            confidences = np.array(confidences)
+            class_ids = np.array(class_ids)
+            detections = Detections(
+                xyxy=boxes,
+                confidence=confidences,
+                class_id=class_ids,
+            )
+            tracks = self.byte_tracker.update(
+                output_results=detections2boxes(detections=detections),
+                img_info=frame_shape,
+                img_size=frame_shape
+            )
+            tracker_id = match_detections_with_tracks(detections=detections, tracks=tracks)
+            detections.tracker_id = np.array(tracker_id)
+            # filtering out detections without trackers
+            mask = np.array([tracker_id is not None for tracker_id in detections.tracker_id], dtype=bool)
+            detections.filter(mask=mask, inplace=True)
+            
+            
+            
+        # to understand the json output file structure it is a dictionary of frames and each frame is a dictionary of tracker_ids and each tracker_id is a dictionary of bbox , confidence , class_id , segment
+            json_frame = {}
+            json_frame.update({'frame_idx' : self.INDEX_OF_CURRENT_FRAME})
+            json_frame_object_list = []
+            tracked_objects_list = []
+            for j in range(len(detections.tracker_id)):
+                json_tracked_object = {}
+                json_tracked_object['tracker_id'] = int(detections.tracker_id[j])
+                json_tracked_object['bbox'] = detections.xyxy[j].tolist()
+                
+                json_tracked_object['confidence'] = str(detections.confidence[j])
+                json_tracked_object['class_id'] = int(detections.class_id[j])
+                json_tracked_object['segment'] = segments[j]
+                
+                json_frame_object_list.append(json_tracked_object)
+                
+                
+            json_frame.update({'frame_data' : json_frame_object_list})
+            # dictObj.update({self.INDEX_OF_CURRENT_FRAME : json_frame_data})
+            # update the json file with the new frame data even if the frame already exists
+            # first check if the frame already exists in the json file if exists then delete 
+            
+            
+            
+            # dictObj.pop(self.INDEX_OF_CURRENT_FRAME , None)
+            # first check if the frame already exists in the json file if exists then delete
+            for h in range(len(listObj)):
+                if listObj[h]['frame_idx'] == self.INDEX_OF_CURRENT_FRAME:
+                    listObj.pop(h)
+                    break
+            # sort the list of frames by the frame index
+            
+            listObj.append(json_frame)
+            
+            
+            
+            
+            print('finished tracking for frame ' , self.INDEX_OF_CURRENT_FRAME)
+            if i != self.FRAMES_TO_TRACK - 1:
+                self.main_video_frames_slider.setValue(self.INDEX_OF_CURRENT_FRAME + 1)
+            
+    
+            # print('detections' , detections)
+            
+
+                
+        listObj = sorted(listObj, key=lambda k: k['frame_idx'])
+        with open (json_file_name, 'w') as json_file:
+            json.dump(listObj, json_file , 
+                        indent=4,
+                        separators=(',',': '))
+        self.main_video_frames_slider.setValue(self.INDEX_OF_CURRENT_FRAME - 1)
+        self.main_video_frames_slider.setValue(self.INDEX_OF_CURRENT_FRAME + 1)
+
+        
+        
     def addVideoControls(self):
         # add video controls toolbar with custom style (background color , spacing , hover color)
         self.videoControls = QtWidgets.QToolBar()
@@ -2614,7 +2820,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.frames_to_skip_slider.valueChanged.connect(self.frames_to_skip_slider_changed)
         self.frames_to_skip_label = QtWidgets.QLabel()
         self.frames_to_skip_label.setStyleSheet("QLabel { font-size: 10pt; font-weight: bold; }")
-        self.frames_to_skip_slider.setValue(5)
+        self.frames_to_skip_slider.setValue(30)
         self.videoControls.addWidget(self.frames_to_skip_label)
         self.videoControls.addWidget(self.frames_to_skip_slider)
 
@@ -2628,20 +2834,16 @@ class MainWindow(QtWidgets.QMainWindow):
         self.previousFrame_button.setText("<<")
         self.previousFrame_button.clicked.connect(self.previousFrameClicked)
         self.videoControls.addWidget(self.previousFrame_button)
-
-
         self.playPauseButton = QtWidgets.QPushButton()
         self.playPauseButton.setText("Play")
         self.playPauseButton.setIcon(self.style().standardIcon(QtWidgets.QStyle.SP_MediaPlay))
-
         self.playPauseButton.clicked.connect(self.playPauseButtonClicked)
         self.videoControls.addWidget(self.playPauseButton)
-
-
         self.nextFrame_button = QtWidgets.QPushButton()
         self.nextFrame_button.setText(">>")
         self.nextFrame_button.clicked.connect(self.nextFrame_buttonClicked)
         self.videoControls.addWidget(self.nextFrame_button)
+        
         
         
         
@@ -2651,7 +2853,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.main_video_frames_slider.setValue(1)
         self.main_video_frames_slider.setTickPosition(QtWidgets.QSlider.TicksBelow)
         self.main_video_frames_slider.setTickInterval(1)
-        self.main_video_frames_slider.setMaximumWidth(400)
+        self.main_video_frames_slider.setMaximumWidth(500)
         self.main_video_frames_slider.valueChanged.connect(self.main_video_frames_slider_changed)
         self.main_video_frames_label_1 = QtWidgets.QLabel()
         self.main_video_frames_label_2 = QtWidgets.QLabel()
@@ -2664,41 +2866,33 @@ class MainWindow(QtWidgets.QMainWindow):
         self.videoControls.addWidget(self.main_video_frames_label_2)
         
         
-        
-        # self.dummylabel = QtWidgets.QLabel()
-        # self.dummylabel.setText('    ')
-        # self.videoControls.addWidget(self.dummylabel)
-        
 
 
         # add the slider to control the video frame
-        self.tracking_slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
-        self.tracking_slider.setMinimum(0)
-        self.tracking_slider.setMaximum(100)
-        self.tracking_slider.setValue(10)
-        self.tracking_slider.setTickPosition(QtWidgets.QSlider.TicksBelow)
-        self.tracking_slider.setTickInterval(1)
-        self.tracking_slider.setMaximumWidth(100)
-        # self.slider.valueChanged.connect(self.tracking_sliderChanged)
-        self.currentFrameLabel = QtWidgets.QLabel()
-        self.currentFrameLabel.setText('track for the next ' + str(self.tracking_slider.value()) +  ' frames')
-        self.videoControls.addWidget(self.currentFrameLabel)
-        self.videoControls.addWidget(self.tracking_slider)
+        self.frames_to_track_slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
+        self.frames_to_track_slider.setMinimum(1)
+        self.frames_to_track_slider.setMaximum(50)
+        self.frames_to_track_slider.setValue(1)
+        self.frames_to_track_slider.setTickPosition(QtWidgets.QSlider.TicksBelow)
+        self.frames_to_track_slider.setTickInterval(1)
+        self.frames_to_track_slider.setMaximumWidth(150)
+        self.frames_to_track_slider.valueChanged.connect(self.frames_to_track_slider_changed)
 
+        self.frames_to_track_label = QtWidgets.QLabel()
+        self.frames_to_track_label.setStyleSheet("QLabel { font-size: 10pt; font-weight: bold; }")  # make the button text red
+        self.videoControls.addWidget(self.frames_to_track_label)
+        self.videoControls.addWidget(self.frames_to_track_slider)
+        self.frames_to_track_slider.setValue(10)
 
-        # add the current frame label
-        self.currentFrameLabel = QtWidgets.QLabel()
-        self.currentFrameLabel.setText("0")
-        self.videoControls.addWidget(self.currentFrameLabel)
-
-        # add the total frame label
-        self.totalFrameLabel = QtWidgets.QLabel()
-        self.totalFrameLabel.setText("0")
-        self.videoControls.addWidget(self.totalFrameLabel)
+        self.dummy_label = QtWidgets.QLabel()
+        self.dummy_label.setText("\t")
+        self.videoControls.addWidget(self.dummy_label)
 
         self.track_button = QtWidgets.QPushButton()
+        # make the button text bigger and bold
+        self.track_button.setStyleSheet("QPushButton { font-size: 14pt; font-weight: bold; color: red; }")        # make the button text red
         self.track_button.setText("TRACK")
-        # self.previousFrame.clicked.connect(self.track_buttonClicked)
+        self.track_button.clicked.connect(self.track_buttonClicked)
         self.videoControls.addWidget(self.track_button)
         
         
@@ -2712,15 +2906,20 @@ class MainWindow(QtWidgets.QMainWindow):
 
 
 
-    # parameters need to be global in the main gui 
 
-    # INDEX_OF_CURRENT_FRAME
-    # self.FRAMES_TO_SKIP
-    # frames to track 
-    # self.TOTAL_VIDEO_FRAMES
-    # self.CURRENT_VIDEO_FPS   --> to be used to play the video at the correct speed
-    # self.CAP
 
+
+# important parameters across the gui 
+
+# INDEX_OF_CURRENT_FRAME
+# self.FRAMES_TO_SKIP
+# frames to track 
+# self.TOTAL_VIDEO_FRAMES
+# self.CURRENT_VIDEO_FPS   --> to be used to play the video at the correct speed
+# self.CAP
+# self.CLASS_NAMES_DICT
+# self.CURRENT_FRAME_IMAGE
+# self.CURRENT_VIDEO_NAME
 
 # to do 
 # remove the video processing tool bar in the other cases
