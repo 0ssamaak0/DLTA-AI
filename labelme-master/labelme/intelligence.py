@@ -23,6 +23,7 @@ warnings.filterwarnings("ignore")
 
 from ultralytics import YOLO
 
+coco_classes = ['person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', 'truck', 'boat', 'traffic light', 'fire hydrant', 'stop sign', 'parking meter', 'bench', 'bird', 'cat', 'dog', 'horse', 'sheep', 'cow', 'elephant', 'bear', 'zebra', 'giraffe', 'backpack', 'umbrella', 'handbag', 'tie', 'suitcase', 'frisbee', 'skis', 'snowboard', 'sports ball', 'kite', 'baseball bat', 'baseball glove', 'skateboard', 'surfboard', 'tennis racket', 'bottle', 'wine glass', 'cup', 'fork', 'knife', 'spoon', 'bowl', 'banana', 'apple', 'sandwich', 'orange', 'broccoli', 'carrot', 'hot dog', 'pizza', 'donut', 'cake', 'chair', 'couch', 'potted plant', 'bed', 'dining table', 'toilet', 'tv', 'laptop', 'mouse', 'remote', 'keyboard', 'cell phone', 'microwave', 'oven', 'toaster', 'sink', 'refrigerator', 'book', 'clock', 'vase', 'scissors', 'teddy bear', 'hair drier', 'toothbrush']
 
 class IntelligenceWorker(QThread):
     sinOut = pyqtSignal(int,int)
@@ -101,14 +102,15 @@ class Intelligence():
         for i in range(len(segmentation)):
             x.append(segmentation[i][0])
             y.append(segmentation[i][1])
-        return [min(x),min(y),max(x) - min(x),max(y) - min(y)]
+        # get the bbox in xyxy format
+        bbox = [min(x),min(y),max(x) ,max(y)]
+        return bbox
         
         
     def get_shapes_of_one(self,image,img_array_flag = False):
         # print(f"Threshold is {self.threshold}")
         # results = self.reader.decode_file(img_path = filename, threshold = self.threshold , selected_model_name = self.current_model_name)["results"]
         start_time = time.time()
-        print(image)
         # if img_array_flag is true then the image is a numpy array and not a path
         if img_array_flag:
             results = self.reader.decode_file(img = image, model = self.current_mm_model,classdict = self.selectedclasses ,threshold = self.threshold, img_array_flag=True )["results"]
@@ -147,6 +149,11 @@ class Intelligence():
             shape.shape_type="polygon"
             shape.flags = {}
             shape.other_data = {}
+            shape.group_id = None
+            
+            # bbox = shape["bbox"]
+            # shape_type = shape["shape_type"]
+            
             for i in range(len(result["seg"])):
                 x = result["seg"][i][0]
                 y = result["seg"][i][1]
@@ -188,7 +195,6 @@ class Intelligence():
     # add a resizable and scrollable dialog that contains all coco classes and allow the user to select among them using checkboxes
     def selectClasses(self):
         #self.selectedclasses.clear()
-        coco_classes = ['person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', 'truck', 'boat', 'traffic light', 'fire hydrant', 'stop sign', 'parking meter', 'bench', 'bird', 'cat', 'dog', 'horse', 'sheep', 'cow', 'elephant', 'bear', 'zebra', 'giraffe', 'backpack', 'umbrella', 'handbag', 'tie', 'suitcase', 'frisbee', 'skis', 'snowboard', 'sports ball', 'kite', 'baseball bat', 'baseball glove', 'skateboard', 'surfboard', 'tennis racket', 'bottle', 'wine glass', 'cup', 'fork', 'knife', 'spoon', 'bowl', 'banana', 'apple', 'sandwich', 'orange', 'broccoli', 'carrot', 'hot dog', 'pizza', 'donut', 'cake', 'chair', 'couch', 'potted plant', 'bed', 'dining table', 'toilet', 'tv', 'laptop', 'mouse', 'remote', 'keyboard', 'cell phone', 'microwave', 'oven', 'toaster', 'sink', 'refrigerator', 'book', 'clock', 'vase', 'scissors', 'teddy bear', 'hair drier', 'toothbrush']
         # return the selected classes
         dialog = QtWidgets.QDialog(self.parent)
         dialog.setWindowTitle('Select Classes')
