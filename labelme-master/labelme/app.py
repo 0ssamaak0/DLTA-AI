@@ -1909,6 +1909,13 @@ class MainWindow(QtWidgets.QMainWindow):
         filename = str(filename)
         if filename:
             self.loadFile(filename)
+            self.videoControls.setVisible(False)
+        for widget in self.videoControls.children():
+            try:
+                widget.setVisible(False)
+            except:
+                pass
+    
 
     def changeOutputDirDialog(self, _value=False):
         default_output_dir = self.output_dir
@@ -2283,6 +2290,13 @@ class MainWindow(QtWidgets.QMainWindow):
         )
         self.target_directory = targetDirPath
         self.importDirImages(targetDirPath)
+        self.videoControls.setVisible(False)
+        for widget in self.videoControls.children():
+            try:
+                widget.setVisible(False)
+            except:
+                pass
+        
 
     @property
     def imageList(self):
