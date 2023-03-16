@@ -265,7 +265,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # for video annotation 
         self.frame_time = 0
-        self.FRAMES_TO_SKIP= 5
+        self.FRAMES_TO_SKIP= 30
         # make CLASS_NAMES_DICT a dictionary of coco class names 
         # self.CLASS_NAMES_DICT = 
         # self.frame_number = 0
@@ -1086,7 +1086,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def toggleDrawingSensitive(self, drawing=True):
         """Toggle drawing sensitive.
-
         In the middle of drawing, toggling between modes should be disabled.
         """
         self.actions.editMode.setEnabled(not drawing)
@@ -1488,7 +1487,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def newShape(self):
         """Pop-up and give focus to the label editor.
-
         position MUST be in global coordinates.
         """
         items = self.uniqLabelList.selectedItems()
@@ -1909,13 +1907,6 @@ class MainWindow(QtWidgets.QMainWindow):
         filename = str(filename)
         if filename:
             self.loadFile(filename)
-            self.videoControls.setVisible(False)
-        for widget in self.videoControls.children():
-            try:
-                widget.setVisible(False)
-            except:
-                pass
-    
 
     def changeOutputDirDialog(self, _value=False):
         default_output_dir = self.output_dir
@@ -2290,13 +2281,6 @@ class MainWindow(QtWidgets.QMainWindow):
         )
         self.target_directory = targetDirPath
         self.importDirImages(targetDirPath)
-        self.videoControls.setVisible(False)
-        for widget in self.videoControls.children():
-            try:
-                widget.setVisible(False)
-            except:
-                pass
-        
 
     @property
     def imageList(self):
@@ -2462,16 +2446,12 @@ class MainWindow(QtWidgets.QMainWindow):
             self.CURRENT_VIDEO_FPS = self.CAP.get(cv2.CAP_PROP_FPS)
             print("Total Frames : " , self.TOTAL_VIDEO_FRAMES)
             self.main_video_frames_slider.setMaximum(self.TOTAL_VIDEO_FRAMES)
+            self.main_video_frames_slider.setValue(1) 
             self.main_video_frames_slider.setValue(0) 
             
             # self.addToolBarBreak
             
-            self.videoControls.setVisible(True)
-            for widget in self.videoControls.children():
-                try:
-                    widget.setVisible(True)
-                except:
-                    pass
+            self.set_video_controls_visibility(True)
                 
             self.byte_tracker = BYTETracker(BYTETrackerArgs())
 
@@ -2553,7 +2533,7 @@ class MainWindow(QtWidgets.QMainWindow):
         else :
             json_file_name = f'{self.CURRENT_VIDEO_NAME}_tracking_results.json'
             if os.path.exists(json_file_name):
-                print('json file exists , loading shapes')
+                # print('json file exists , loading shapes')
                 self.load_shapes_for_video_frame(json_file_name , index)
         self.loadFlags(flags)
         if self._config["keep_prev"] and self.noShapes():
@@ -2583,9 +2563,23 @@ class MainWindow(QtWidgets.QMainWindow):
         if new_value >= self.TOTAL_VIDEO_FRAMES:
             new_value = self.TOTAL_VIDEO_FRAMES 
         self.main_video_frames_slider.setValue(new_value)
+        
+    def next_1_Frame_buttonClicked(self):
+        # first assert that the new value of the slider is not greater than the total number of frames
+        new_value = self.INDEX_OF_CURRENT_FRAME + 1
+        if new_value >= self.TOTAL_VIDEO_FRAMES:
+            new_value = self.TOTAL_VIDEO_FRAMES 
+        self.main_video_frames_slider.setValue(new_value)
 
-    def previousFrameClicked(self):
+    def previousFrame_buttonClicked(self):
         new_value = self.INDEX_OF_CURRENT_FRAME - self.FRAMES_TO_SKIP
+        if new_value <= 0:
+            new_value = 0
+        self.main_video_frames_slider.setValue(new_value)
+        
+        
+    def previous_1_Frame_buttonclicked(self):
+        new_value = self.INDEX_OF_CURRENT_FRAME - 1
         if new_value <= 0:
             new_value = 0
         self.main_video_frames_slider.setValue(new_value)
@@ -2667,7 +2661,8 @@ class MainWindow(QtWidgets.QMainWindow):
         
     def track_buttonClicked(self):
 
-            
+        self.tracking_progress_bar.setVisible(True)
+        
         frame_shape = self.CURRENT_FRAME_IMAGE.shape
         print(frame_shape)
 
@@ -2678,14 +2673,15 @@ class MainWindow(QtWidgets.QMainWindow):
         listObj = []
         if os.path.exists(json_file_name):
             print('json file exists')
-            with open (json_file_name, 'r') as json_file:
-                listObj = json.load(json_file)
+            with open (json_file_name, 'r') as jf:
+                listObj = json.load(jf)
+            jf.close()
         else:
             # make a json file with the same name as the video
             print('json file does not exist , creating a new one')
-            with open (json_file_name, 'w') as json_file:
-                json.dump(listObj, json_file)
-                
+            with open (json_file_name, 'w') as jf:
+                json.dump(listObj, jf)
+            jf.close()
         # with open (json_file_name, 'r') as json_file:
         #     json_object = json.load(json_file)
         #     print(json_object)
@@ -2709,8 +2705,13 @@ class MainWindow(QtWidgets.QMainWindow):
             shapes = [(item.shape()) for item in self.labelList]
             if len(shapes) == 0:
                 print('no detection in the current frame so performing detection')
-                self.annotate_one()
-                shapes = [(item.shape()) for item in self.labelList]
+                # self.annotate_one()
+                shapes = self.intelligenceHelper.get_shapes_of_one(self.CURRENT_FRAME_IMAGE, img_array_flag=True)
+
+                
+                
+                
+                # shapes = [(item.shape()) for item in self.labelList]
             
         
         
@@ -2733,7 +2734,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 else : 
                     confidences.append(float(s.content))
                 class_ids.append( int(self.class_name_to_id(label)))
-                
+
                 # current_objects_ids.append(s.group_id)
             boxes = np.array(boxes , dtype=int)
             confidences = np.array(confidences)
@@ -2789,45 +2790,90 @@ class MainWindow(QtWidgets.QMainWindow):
             # sort the list of frames by the frame index
             
             listObj.append(json_frame)
+
+                
             
-            
-            
-            
+            # self.loadShapes(shapes)
+            # self.actions.editMode.setEnabled(True)
+            # self.actions.undoLastPoint.setEnabled(False)
+            # self.actions.undo.setEnabled(True)
+            # self.setDirty()
+            # qt sleep for 1 second
+            # self.window_wait(1)
+
+
+
             print('finished tracking for frame ' , self.INDEX_OF_CURRENT_FRAME)
             if i != self.FRAMES_TO_TRACK - 1:
                 self.main_video_frames_slider.setValue(self.INDEX_OF_CURRENT_FRAME + 1)
-            
+            self.tracking_progress_bar.setValue(int((i + 1) / self.FRAMES_TO_TRACK * 100))
     
-            # print('detections' , detections)
-            
 
-                
+            
         listObj = sorted(listObj, key=lambda k: k['frame_idx'])
         with open (json_file_name, 'w') as json_file:
             json.dump(listObj, json_file , 
                         indent=4,
                         separators=(',',': '))
+        json_file.close()
+
+                
         self.main_video_frames_slider.setValue(self.INDEX_OF_CURRENT_FRAME - 1)
         self.main_video_frames_slider.setValue(self.INDEX_OF_CURRENT_FRAME + 1)
 
+        self.tracking_progress_bar.hide()
+        self.tracking_progress_bar.setValue(0)
+
         
         
+
+    def track_full_video_button_clicked(self):
+        self.FRAMES_TO_TRACK = int(self.TOTAL_VIDEO_FRAMES - self.INDEX_OF_CURRENT_FRAME + 1)
+        self.track_buttonClicked()
+        
+        
+    def set_video_controls_visibility(self , visible = False):
+            # make it invisible by default
+            
+        self.videoControls.setVisible(visible)
+        for widget in self.videoControls.children():
+            try:
+                widget.setVisible(visible)
+            except:
+                pass
+        self.videoControls_2.setVisible(visible)
+        for widget in self.videoControls_2.children():
+            try:
+                widget.setVisible(visible)
+            except:
+                pass
+
+    def window_wait(self, seconds):
+        loop = QtCore.QEventLoop()
+        QtCore.QTimer.singleShot(seconds * 1000, loop.quit)
+        loop.exec_()
+
+        
+    
     def addVideoControls(self):
         # add video controls toolbar with custom style (background color , spacing , hover color)
         self.videoControls = QtWidgets.QToolBar()
-        # self.videoControls.setOrientation(Qt.Horizontal)
-        # self.videoControls.setStyleSheet("QToolBar { background-color: #2d2d2d; spacing: 10px; } QToolBar:hover { background-color: #3d3d3d; }")
         self.videoControls.setMovable(True)
         self.videoControls.setFloatable(True)
-        # self.videoControls.setAllowedAreas(Qt.BottomToolBarArea)
         self.videoControls.setObjectName("videoControls")
         self.videoControls.setStyleSheet("QToolBar#videoControls { border: 50px }")
         self.addToolBar(Qt.BottomToolBarArea, self.videoControls)
+        self.videoControls_2 = QtWidgets.QToolBar()
+        self.videoControls_2.setMovable(True)
+        self.videoControls_2.setFloatable(True)
+        self.videoControls_2.setObjectName("videoControls_2")
+        self.videoControls_2.setStyleSheet("QToolBar#videoControls_2s { border: 50px }")
+        self.addToolBar(Qt.TopToolBarArea, self.videoControls_2)
 
         self.frames_to_skip_slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
         self.frames_to_skip_slider.setMinimum(1)
         self.frames_to_skip_slider.setMaximum(100)
-        self.frames_to_skip_slider.setValue(1)
+        self.frames_to_skip_slider.setValue(3)
         self.frames_to_skip_slider.setTickPosition(QtWidgets.QSlider.TicksBelow)
         self.frames_to_skip_slider.setTickInterval(1)
         self.frames_to_skip_slider.setMaximumWidth(150)
@@ -2846,16 +2892,32 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.previousFrame_button = QtWidgets.QPushButton()
         self.previousFrame_button.setText("<<")
-        self.previousFrame_button.clicked.connect(self.previousFrameClicked)
-        self.videoControls.addWidget(self.previousFrame_button)
+        self.previousFrame_button.clicked.connect(self.previousFrame_buttonClicked)
+        
+        self.previous_1_Frame_button = QtWidgets.QPushButton()
+        self.previous_1_Frame_button.setText("<")
+        self.previous_1_Frame_button.clicked.connect(self.previous_1_Frame_buttonclicked)
+        
         self.playPauseButton = QtWidgets.QPushButton()
         self.playPauseButton.setText("Play")
         self.playPauseButton.setIcon(self.style().standardIcon(QtWidgets.QStyle.SP_MediaPlay))
         self.playPauseButton.clicked.connect(self.playPauseButtonClicked)
-        self.videoControls.addWidget(self.playPauseButton)
+        
         self.nextFrame_button = QtWidgets.QPushButton()
         self.nextFrame_button.setText(">>")
         self.nextFrame_button.clicked.connect(self.nextFrame_buttonClicked)
+        
+        self.next_1_Frame_button = QtWidgets.QPushButton()
+        self.next_1_Frame_button.setText(">")
+        self.next_1_Frame_button.clicked.connect(self.next_1_Frame_buttonClicked)
+        
+        
+        
+        
+        self.videoControls.addWidget(self.previousFrame_button)
+        self.videoControls.addWidget(self.previous_1_Frame_button)
+        self.videoControls.addWidget(self.playPauseButton)
+        self.videoControls.addWidget(self.next_1_Frame_button)
         self.videoControls.addWidget(self.nextFrame_button)
         
         
@@ -2867,7 +2929,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.main_video_frames_slider.setValue(1)
         self.main_video_frames_slider.setTickPosition(QtWidgets.QSlider.TicksBelow)
         self.main_video_frames_slider.setTickInterval(1)
-        self.main_video_frames_slider.setMaximumWidth(500)
+        self.main_video_frames_slider.setMaximumWidth(600)
         self.main_video_frames_slider.valueChanged.connect(self.main_video_frames_slider_changed)
         self.main_video_frames_label_1 = QtWidgets.QLabel()
         self.main_video_frames_label_2 = QtWidgets.QLabel()
@@ -2884,41 +2946,62 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # add the slider to control the video frame
         self.frames_to_track_slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
-        self.frames_to_track_slider.setMinimum(1)
-        self.frames_to_track_slider.setMaximum(50)
-        self.frames_to_track_slider.setValue(1)
+        self.frames_to_track_slider.setMinimum(2)
+        self.frames_to_track_slider.setMaximum(100)
+        self.frames_to_track_slider.setValue(4)
         self.frames_to_track_slider.setTickPosition(QtWidgets.QSlider.TicksBelow)
         self.frames_to_track_slider.setTickInterval(1)
-        self.frames_to_track_slider.setMaximumWidth(150)
+        self.frames_to_track_slider.setMaximumWidth(200)
         self.frames_to_track_slider.valueChanged.connect(self.frames_to_track_slider_changed)
 
         self.frames_to_track_label = QtWidgets.QLabel()
         self.frames_to_track_label.setStyleSheet("QLabel { font-size: 10pt; font-weight: bold; }")  # make the button text red
-        self.videoControls.addWidget(self.frames_to_track_label)
-        self.videoControls.addWidget(self.frames_to_track_slider)
+        self.videoControls_2.addWidget(self.frames_to_track_label)
+        self.videoControls_2.addWidget(self.frames_to_track_slider)
         self.frames_to_track_slider.setValue(10)
 
-        self.dummy_label = QtWidgets.QLabel()
-        self.dummy_label.setText("\t")
-        self.videoControls.addWidget(self.dummy_label)
+        # self.dummy_label = QtWidgets.QLabel()
+        # self.dummy_label.setText(" ")
+        # self.videoControls.addWidget(self.dummy_label)
+
+
 
         self.track_button = QtWidgets.QPushButton()
         # make the button text bigger and bold
         self.track_button.setStyleSheet("QPushButton { font-size: 14pt; font-weight: bold; color: red; }")        # make the button text red
         self.track_button.setText("TRACK")
         self.track_button.clicked.connect(self.track_buttonClicked)
-        self.videoControls.addWidget(self.track_button)
+        self.videoControls_2.addWidget(self.track_button)
         
         
-        # make it invisible by default
-        self.videoControls.setVisible(False)
-        for widget in self.videoControls.children():
-            try:
-                widget.setVisible(False)
-            except:
-                pass
-
-
+        
+        
+        # make a tracking progress bar with a label to show the progress of the tracking (in percentage ) 
+        self.tracking_progress_bar_label = QtWidgets.QLabel()
+        self.tracking_progress_bar_label.setStyleSheet("QLabel { font-size: 10pt; font-weight: bold; }")  # make the button text red
+        self.tracking_progress_bar_label.setText("Tracking Progress")
+        self.videoControls_2.addWidget(self.tracking_progress_bar_label)
+        
+        self.tracking_progress_bar = QtWidgets.QProgressBar()
+        self.tracking_progress_bar.setMaximumWidth(200)
+        self.tracking_progress_bar.setMinimum(0)
+        self.tracking_progress_bar.setMaximum(100)
+        self.tracking_progress_bar.setValue(0)
+        self.videoControls_2.addWidget(self.tracking_progress_bar)
+        
+        
+        
+        self.track_full_video_button = QtWidgets.QPushButton()
+        self.track_full_video_button.setStyleSheet("QPushButton { font-size: 14pt; font-weight: bold; color: red; }")        # make the button text red
+        self.track_full_video_button.setText("TRACK FULL VIDEO")
+        self.track_full_video_button.clicked.connect(self.track_full_video_button_clicked)
+        self.videoControls_2.addWidget(self.track_full_video_button)
+        
+        # self.tracking_progress_bar.setVisible(False) 
+        # self.tracking_progress_bar_label.setVisible(False)
+        
+        
+        self.set_video_controls_visibility(False)
 
 
 
