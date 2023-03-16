@@ -13,7 +13,7 @@ conda activate auto_annotate
 ```
 
 ## 2. Install [Pytorch](https://pytorch.org/)
-depending on your OS and CUDA version 
+depending on your OS & CUDA version 
 
 ```
 conda install pytorch torchvision pytorch-cuda=11.7 -c pytorch -c nvidia
