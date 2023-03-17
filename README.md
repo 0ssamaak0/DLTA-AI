@@ -54,6 +54,12 @@ pip install labelme
 ```
 pip install opencv-python
 ```
+
+## 7. Install pyqtdarktheme
+    
+```
+pip install pyqtdarktheme
+```
 # 7.Running
 run the tool using
 
