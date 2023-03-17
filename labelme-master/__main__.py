@@ -16,6 +16,8 @@ from labelme.config import get_config
 from labelme.logger import logger
 from labelme.utils import newIcon
 
+import qdarktheme
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -167,7 +169,11 @@ def main():
     )
     app = QtWidgets.QApplication(sys.argv)
     app.setApplicationName(__appname__)
+
+    # style
     app.setWindowIcon(newIcon("icon"))
+    qdarktheme.setup_theme("auto")
+
     app.installTranslator(translator)
     win = MainWindow(
         config=config,

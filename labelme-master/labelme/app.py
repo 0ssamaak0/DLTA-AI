@@ -309,7 +309,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.tr("&Open Dir"),
             self.openDirDialog,
             shortcuts["open_dir"],
-            "open",
+            "opendir",
             self.tr(u"Open Dir"),
         )
         openNextImg = action(
