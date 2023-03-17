@@ -60,7 +60,7 @@ pip install opencv-python
 ```
 pip install pyqtdarktheme
 ```
-# 7.Running
+# Running
 run the tool using
 
 ```
