@@ -2420,7 +2420,11 @@ class MainWindow(QtWidgets.QMainWindow):
         if videoFile[0] :
             self.CURRENT_VIDEO_NAME = videoFile[0].split(
                 ".")[-2].split("/")[-1]
-            print('video file name : ' , self.CURRENT_VIDEO_NAME)
+            self.CURRENT_VIDEO_PATH = "/".join(
+                videoFile[0].split(".")[-2].split("/")[:-1])
+
+            # print('video file name : ' , self.CURRENT_VIDEO_NAME)
+            # print("video file path : " , self.CURRENT_VIDEO_PATH)
             cap = cv2.VideoCapture(videoFile[0])
             self.CAP = cap
             # making the total video frames equal to the total frames in the video file - 1 as the indexing starts from 0
@@ -2506,7 +2510,7 @@ class MainWindow(QtWidgets.QMainWindow):
             if self.labelFile.flags is not None:
                 flags.update(self.labelFile.flags)
         else :
-            json_file_name = f'{self.CURRENT_VIDEO_NAME}_tracking_results.json'
+            json_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}_tracking_results.json'
             if os.path.exists(json_file_name):
                 # print('json file exists , loading shapes')
                 self.load_shapes_for_video_frame(json_file_name , index)
@@ -2640,7 +2644,7 @@ class MainWindow(QtWidgets.QMainWindow):
         frame_shape = self.CURRENT_FRAME_IMAGE.shape
         print(frame_shape)
 
-        json_file_name = self.CURRENT_VIDEO_NAME + '_tracking_results.json'
+        json_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}_tracking_results.json'
 
         # first we need to check there is a json file with the same name as the video
         listObj = []
