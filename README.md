@@ -70,7 +70,7 @@ inside Bytetrack directory, run
 ```
 pip install -e .
 ```
-# 7.Running
+# Running
 run the tool using
 
 ```
