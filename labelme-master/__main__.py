@@ -16,7 +16,10 @@ from labelme.config import get_config
 from labelme.logger import logger
 from labelme.utils import newIcon
 
-import qdarktheme
+try:
+    import qdarktheme
+except ImportError:
+    pass
 
 
 def main():
@@ -172,7 +175,11 @@ def main():
 
     # style
     app.setWindowIcon(newIcon("icon"))
-    qdarktheme.setup_theme("auto")
+
+    try:
+        qdarktheme.setup_theme("auto", )
+    except Exception as e:
+        pass
 
     app.installTranslator(translator)
     win = MainWindow(

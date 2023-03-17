@@ -49,8 +49,6 @@ class models_inference():
 
     # experimental
 
-
-<< << << < HEAD
     def full_points(bbox):
         return np.array([[bbox[0], bbox[1]], [bbox[0], bbox[3]], [bbox[2], bbox[3]], [bbox[2], bbox[1]]])
 
@@ -94,52 +92,13 @@ class models_inference():
             result_dict["results"] = res_list
             return result_dict
 
-
-== == == =
-    def decode_file(self, img , model, classdict, threshold=0.3, img_array_flag=False):
-        # def decode_file(self, img_path, threshold=0.3 , selected_model_name=""):
-        # if img_path is none img_path = "test_img_1.webp"
-
-        # with open("saved_models.json") as json_file:
-        #     data = json.load(json_file)
-        #     if selected_model_name == "":
-        #     # read the saved_models.json file and import the config and checkpoint files from the first model
-        #         selected_model_name = list(data.keys())[0]
-        #         config = data[selected_model_name]["config"]
-        #         checkpoint = data[selected_model_name]["checkpoint"]
-        #     else:
-        #         config = data[selected_model_name]["config"]
-        #         checkpoint = data[selected_model_name]["checkpoint"]
-        #     # print(f'selected model : {selected_model_name} \n config : {config} \n\
-        #     #     checkpoint : {checkpoint} \n')
-        print(classdict)
-
-        # torch.cuda.empty_cache()
-
-        # model = init_detector(config, checkpoint, device = torch.device("cuda"))
->>>>>> > e6bbd74e815d8f12d6fe18fe5c16b6059fb5c832
         if img_array_flag:
             results = inference_detector(model, img)
         else:
             results = inference_detector(model, plt.imread(img))
         # results = async_inference_detector(model, plt.imread(img_path))
-<< << << < HEAD
         torch.cuda.empty_cache()
 
-
-== == == =
-
-        # del model
-        torch.cuda.empty_cache()
-
-        # print(f'ram used : {torch.cuda.memory_allocated() / 1024 ** 3} GB')
-        # print(f'ram cached : {torch.cuda.memory_cached() / 1024 ** 3} GB')
-        # print(f'what is using the ram : {torch.cuda.memory_summary()}')
-
-        # results0 = [results[0][0], results[0][2],results[0][3],results[0][5],results[0][7]]
-        # results1 = [results[1][0], results[1][2],results[1][3],results[1][5],results[1][7]]
-
->>>>>> > e6bbd74e815d8f12d6fe18fe5c16b6059fb5c832
         results0 = []
         results1 = []
         for i in classdict.keys():
@@ -148,16 +107,8 @@ class models_inference():
 
         result_dict = {}
         res_list = []
-<< << << < HEAD
 
-
-== == == =
-
-        def full_points(bbox):
-            return np.array([[bbox[0], bbox[1]], [bbox[0], bbox[3]], [bbox[2], bbox[3]], [bbox[2], bbox[1]]])
-
->>>>>> > e6bbd74e815d8f12d6fe18fe5c16b6059fb5c832
-        # classdict = {0:"person", 1:"car", 2:"motorcycle", 3:"bus", 4:"truck"}
+        #classdict = {0:"person", 1:"car", 2:"motorcycle", 3:"bus", 4:"truck"}
         classes_numbering = [keyno for keyno in classdict.keys()]
         for classno in range(len(results0)):
             for instance in range(len(results0[classno])):
@@ -170,11 +121,11 @@ class models_inference():
                 result["bbox"] = results0[classno][instance][:-
                                                              1].astype(np.uint8)
                 if classno == 0:
-<< << << < HEAD
                     result["seg"] = self.mask_to_polygons(
                         results1[classno][instance].astype(np.uint8) , 10)
-                else : 
-                    result["seg"] = self.mask_to_polygons(results1[classno][instance].astype(np.uint8) , 20)
+                else :
+                    result["seg"] = self.mask_to_polygons(
+                        results1[classno][instance].astype(np.uint8) , 20)
                 if show_bbox_flag:
                     # result["bbox"] = full_points(result["bbox"]).tolist()
                     # points = full_points(result["bbox"])
@@ -187,28 +138,11 @@ class models_inference():
                     # result["x4"] = points[3][0]
                     # result["y4"] = points[3][1]
                     x = 30  # nothing
-=======
-                    result["seg"] = self.mask_to_polygons(
-                        results1[classno][instance].astype(np.uint8) , 10)
-                else :
-                    result["seg"] = self.mask_to_polygons(
-                        results1[classno][instance].astype(np.uint8))
-                # result["bbox"] = full_points(result["bbox"]).tolist()
-                # points = full_points(result["bbox"])
-                # result["x1"] = points[0][0]
-                # result["y1"] = points[0][1]
-                # result["x2"] = points[1][0]
-                # result["y2"] = points[1][1]
-                # result["x3"] = points[2][0]
-                # result["y3"] = points[2][1]
-                # result["x4"] = points[3][0]
-                # result["y4"] = points[3][1]
->>>>>>> e6bbd74e815d8f12d6fe18fe5c16b6059fb5c832
                 res_list.append(result)
 
         result_dict["results"] = res_list
         return result_dict
 
 
-# result will have ---> bbox , confidence , class_id , tracker_id , segment  
+# result will have ---> bbox , confidence , class_id , tracker_id , segment
 # result of the detection phase only should be (bbox , confidence , class_id , segment)
