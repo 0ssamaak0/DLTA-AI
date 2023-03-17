@@ -1,7 +1,17 @@
 # still under progress but at least you should install 
 
 ultralytics
-supervision
+supervision=0.3.0
+loguru
+lap
+onemetric
+pip install -e git+https://github.com/samson-wang/cython_bbox.git#egg=cython-bbox
+
+
+
+
+yolox=0.1.0 
+
 
 
 # I will append later the precise libraries
