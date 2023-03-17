@@ -16,7 +16,8 @@ conda activate auto_annotate
 depending on your OS & CUDA version 
 
 ```
-conda install pytorch torchvision pytorch-cuda=11.7 -c pytorch -c nvidia
+conda install pytorch==1.13.1 torchvision==0.14.1 torchaudio==0.13.1 pytorch-cuda=11.7 -c pytorch -c nvidia
+
 ```
 
 ## 3. Install [mmdetection](https://github.com/open-mmlab/mmdetection/blob/master/docs/en/get_started.md/#Installation)
