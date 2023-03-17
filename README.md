@@ -55,10 +55,20 @@ pip install labelme
 pip install opencv-python
 ```
 
-## 7. Install pyqtdarktheme
-    
+## 7. Install other packages
+
 ```
 pip install pyqtdarktheme
+pip install loguru
+pip install yolox
+pip install cython
+pip install cython-bbox
+pip install onemetric
+```
+
+inside Bytetrack directory, run
+```
+pip install -e .
 ```
 # 7.Running
 run the tool using
