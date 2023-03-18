@@ -2010,8 +2010,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
                 dialog.setLayout(layout)
 
-                # print the values of the checkboxes
-
                 result = dialog.exec_()
                 if not result:
                     return
@@ -2019,18 +2017,16 @@ class MainWindow(QtWidgets.QMainWindow):
                 json_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}_tracking_results.json'
                 target_path = f'{self.CURRENT_VIDEO_PATH}'
 
+                pth = self.CURRENT_VIDEO_PATH
                 if coco_checkbox.isChecked():
                     pth = utils.exportCOCOvid(
                         json_file_name, target_path, self.CURRENT_VIDEO_WIDTH, self.CURRENT_VIDEO_HEIGHT, output_name="coco_vid")
-
                 if mot_checkbox.isChecked():
-                    # utils.exportMOT(json_file_name, target_path)
+                    pth = utils.exportMOT(json_file_name, target_path,
+                                          output_name="mot_vid")
 
-                    pass
             elif self.current_annotation_mode == "img" or self.current_annotation_mode == "dir":
                 pth = utils.exportCOCO(self.target_directory, self.save_path)
-                print(self.target_directory)
-                print(self.save_path)
         except Exception as e:
             # Error QMessageBox
             msg = QtWidgets.QMessageBox()
@@ -2340,7 +2336,6 @@ class MainWindow(QtWidgets.QMainWindow):
         return images
 
     def annotate_one(self):
-        # print(self.current_annotation_mode)
         if self.current_annotation_mode == "video":
             shapes = self.intelligenceHelper.get_shapes_of_one(
                 self.CURRENT_FRAME_IMAGE, img_array_flag=True)
@@ -2412,7 +2407,6 @@ class MainWindow(QtWidgets.QMainWindow):
             cap = cv2.VideoCapture(videoFile[0])
             self.CURRENT_VIDEO_HEIGHT = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
             self.CURRENT_VIDEO_WIDTH = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-            print("video height : " , self.CURRENT_VIDEO_HEIGHT)
             self.CAP = cap
             # making the total video frames equal to the total frames in the video file - 1 as the indexing starts from 0
             self.TOTAL_VIDEO_FRAMES = self.CAP.get(
