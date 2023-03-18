@@ -7,6 +7,7 @@ import math
 import os
 import os.path as osp
 import re
+import traceback
 import webbrowser
 import datetime
 import glob
@@ -28,7 +29,7 @@ from .label_file import LabelFile
 from .label_file import LabelFileError
 from .logger import logger
 from .shape import Shape
-from .widgets import BrightnessContrastDialog ,Canvas ,LabelDialog ,LabelListWidget ,LabelListWidgetItem ,ToolBar ,UniqueLabelQListWidget ,ZoomWidget
+from .widgets import BrightnessContrastDialog , Canvas , LabelDialog , LabelListWidget , LabelListWidgetItem , ToolBar , UniqueLabelQListWidget , ZoomWidget
 from .intelligence import Intelligence
 from .intelligence import coco_classes
 
@@ -289,7 +290,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.tr("Quit application"),
         )
         open_ = action(
-            self.tr("&Open"),
+            self.tr("&Open Image"),
             self.openFile,
             shortcuts["open"],
             "open",
@@ -328,7 +329,7 @@ class MainWindow(QtWidgets.QMainWindow):
         )
         export = action(
             self.tr("&Export"),
-            self.exportCOCO,
+            self.exportData,
             shortcuts["export"],
             "export",
             self.tr(u"Export annotations to COCO format"),
@@ -848,8 +849,6 @@ class MainWindow(QtWidgets.QMainWindow):
             open_,
             opendir,
             openVideo,
-            openNextImg,
-            openPrevImg,
             save,
             export,
             deleteFile,
@@ -863,9 +862,10 @@ class MainWindow(QtWidgets.QMainWindow):
             None,
             zoom,
             fitWidth,
+            openNextImg,
+            openPrevImg,
 
         )
-
         self.statusBar().showMessage(self.tr("%s started.") % __appname__)
         self.statusBar().show()
 
@@ -1867,6 +1867,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def openFile(self, _value=False):
 
         self.current_annotation_mode = "img"
+        self.actions.export.setEnabled(False)
         try :
             cv2.destroyWindow('video processing')
         except:
@@ -1945,8 +1946,82 @@ class MainWindow(QtWidgets.QMainWindow):
             self.save_path = self.saveFileDialog()
             self._saveFile(self.save_path)
 
-    def exportCOCO(self):
-        return utils.exportCOCO(self.target_directory, self.save_path)
+    def exportData(self):
+        try:
+            if self.current_annotation_mode == "video":
+                dialog = QtWidgets.QDialog()
+                dialog.setWindowTitle("Choose Export Options")
+                dialog.setWindowModality(Qt.ApplicationModal)
+                dialog.resize(250, 100)
+
+                layout = QtWidgets.QVBoxLayout()
+
+                label = QtWidgets.QLabel("Choose Export Options")
+                layout.addWidget(label)
+
+                coco_checkbox = QtWidgets.QCheckBox(
+                    "COCO Format (Detection / Segmentation)")
+                mot_checkbox = QtWidgets.QCheckBox("MOT Format (Tracking)")
+
+                layout.addWidget(coco_checkbox)
+                layout.addWidget(mot_checkbox)
+
+                buttonBox = QtWidgets.QDialogButtonBox(
+                    QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel)
+                buttonBox.accepted.connect(dialog.accept)
+                buttonBox.rejected.connect(dialog.reject)
+
+                layout.addWidget(buttonBox)
+
+                dialog.setLayout(layout)
+
+                # print the values of the checkboxes
+
+                result = dialog.exec_()
+                if not result:
+                    return
+
+                json_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}_tracking_results.json'
+                target_path = f'{self.CURRENT_VIDEO_PATH}'
+
+                if coco_checkbox.isChecked():
+                    pth = utils.exportCOCOvid(
+                        json_file_name, target_path, self.CURRENT_VIDEO_WIDTH, self.CURRENT_VIDEO_HEIGHT, output_name="coco_vid")
+
+                if mot_checkbox.isChecked():
+                    # utils.exportMOT(json_file_name, target_path)
+
+                    pass
+            elif self.current_annotation_mode == "img" or self.current_annotation_mode == "dir":
+                pth = utils.exportCOCO(self.target_directory, self.save_path)
+                print(self.target_directory)
+                print(self.save_path)
+        except Exception as e:
+            # Error QMessageBox
+            msg = QtWidgets.QMessageBox()
+            msg.setIcon(QtWidgets.QMessageBox.Critical)
+            msg.setText(f"Error\n Check Terminal for more details")
+            msg.setWindowTitle(
+                "Export Error")
+            # print exception and error line to terminal
+            print(e)
+            print(traceback.format_exc())
+            msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
+            msg.exec_()
+        else:
+            # display QMessageBox with ok button and label "Exporting COCO"
+            msg = QtWidgets.QMessageBox()
+            msg.setIcon(QtWidgets.QMessageBox.Information)
+            try:
+                msg.setText(f"Annotations exported successfully to {pth}")
+            except:
+                msg.setText(
+                    f"Annotations exported successfully to Unkown Path")
+            msg.setWindowTitle("Export Success")
+            msg.setIconPixmap(QtGui.QPixmap(
+                'labelme/icons/done.png', 'PNG').scaled(50, 50, QtCore.Qt.KeepAspectRatio))
+            msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
+            msg.exec_()
 
     def saveFileAs(self, _value=False):
         self.actions.export.setEnabled(True)
@@ -2300,6 +2375,9 @@ class MainWindow(QtWidgets.QMainWindow):
             # print('video file name : ' , self.CURRENT_VIDEO_NAME)
             # print("video file path : " , self.CURRENT_VIDEO_PATH)
             cap = cv2.VideoCapture(videoFile[0])
+            self.CURRENT_VIDEO_HEIGHT = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+            self.CURRENT_VIDEO_WIDTH = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+            print("video height : " , self.CURRENT_VIDEO_HEIGHT)
             self.CAP = cap
             # making the total video frames equal to the total frames in the video file - 1 as the indexing starts from 0
             self.TOTAL_VIDEO_FRAMES = self.CAP.get(
@@ -2512,9 +2590,8 @@ class MainWindow(QtWidgets.QMainWindow):
             return -1
 
     def track_buttonClicked(self):
-
         self.tracking_progress_bar.setVisible(True)
-
+        self.actions.export.setEnabled(True)
         frame_shape = self.CURRENT_FRAME_IMAGE.shape
         print(frame_shape)
 
@@ -2802,7 +2879,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.track_button = QtWidgets.QPushButton()
         self.track_button.setStyleSheet(
-            "QPushButton {font-size: 10pt; margin: 5px; padding: 7px; border: 3px solid; border-radius:10px; font-weight: bold; background-color: #0d69f5; color: #FFFFFF;} QPushButton:hover {background-color: #4990ED;}")
+            "QPushButton {font-size: 10pt; margin: 2px 5px; padding: 2px 7px; border: 2px solid; border-radius:10px; font-weight: bold; background-color: #0d69f5; color: #FFFFFF;} QPushButton:hover {background-color: #4990ED;}")
 
         self.track_button.setText("Track")
         self.track_button.clicked.connect(self.track_buttonClicked)
@@ -2824,7 +2901,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.track_full_video_button = QtWidgets.QPushButton()
         self.track_full_video_button.setStyleSheet(
-            "QPushButton {font-size: 10pt; margin: 5px; padding: 7px; border: 3px solid; border-radius:10px; font-weight: bold; background-color: #0d69f5; color: #FFFFFF;} QPushButton:hover {background-color: #4990ED;}")
+            "QPushButton {font-size: 10pt; margin: 2px 5px; padding: 2px 7px; border: 2px solid; border-radius:10px; font-weight: bold; background-color: #0d69f5; color: #FFFFFF;} QPushButton:hover {background-color: #4990ED;}")
 
         self.track_full_video_button.setText("Track Full Video")
         self.track_full_video_button.clicked.connect(
@@ -2848,6 +2925,7 @@ class MainWindow(QtWidgets.QMainWindow):
 # self.CLASS_NAMES_DICT
 # self.CURRENT_FRAME_IMAGE
 # self.CURRENT_VIDEO_NAME
+# self.CURRENT_VIDEO_PATH
 
 # to do
 # remove the video processing tool bar in the other cases

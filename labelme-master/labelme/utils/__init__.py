@@ -27,3 +27,4 @@ from .qt import distancetoline
 from .qt import fmtShortcut
 
 from .export import exportCOCO
+from .export import exportCOCOvid
