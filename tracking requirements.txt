@@ -12,7 +12,7 @@ pip install -e git+https://github.com/samson-wang/cython_bbox.git#egg=cython-bbo
 
 #  to install yolox=0.1.0 --> 
 cd bytetrack
-python3 setup.py develop
+python setup.py develop
 
 
 # I will append later the precise libraries
