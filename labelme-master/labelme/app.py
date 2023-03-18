@@ -48,6 +48,41 @@ import threading
 import warnings
 warnings.filterwarnings("ignore")
 
+def convert_QI_to_cv(incomingImage):
+        '''  Converts a QImage into an opencv MAT format  '''
+
+        incomingImage = incomingImage.convertToFormat(4)
+
+        width = incomingImage.width()
+        height = incomingImage.height()
+
+        ptr = incomingImage.bits()
+        ptr.setsize(incomingImage.byteCount())
+        arr = np.array(ptr).reshape(height, width, 4)  #  Copies the data
+        return arr
+
+def convert_cv_to_qt(cv_img):
+        rgb_image = cv2.cvtColor(cv_img, cv2.COLOR_BGR2RGB)
+        h, w, ch = rgb_image.shape
+        bytes_per_line = ch * w
+        convert_to_Qt_format = QtGui.QImage(rgb_image.data, w, h, bytes_per_line, QtGui.QImage.Format_RGB888)
+        return convert_to_Qt_format
+
+def draw_bb_id(image, x, y , w, h, id, color=(0, 0, 255), thickness=2):
+        img_bb = cv2.rectangle(image, (x, y), (x+w, y+h), color, thickness)
+        img_bb = cv2.rectangle(img_bb, (x, y - 25), (x + 100, y), color, -1)
+        img_bb_id = cv2.putText(img_bb, f'id = {id}', (x + 5, y - 5), cv2.FONT_HERSHEY_SIMPLEX, 
+                        0.7, (255, 255, 255), thickness - 1, cv2.LINE_AA)
+        return img_bb_id
+
+def draw_bb_on_image(image, detectionData, color=(0, 0, 255), thickness=2):
+        img = convert_QI_to_cv(image)
+        
+        for x, y , w, h, id in detectionData:
+                img = draw_bb_id(img, x, y , w, h, id, color, thickness)
+        
+        qimage = convert_cv_to_qt(img)
+        return qimage
 
 @dataclass(frozen=True)
 class BYTETrackerArgs:
@@ -2454,6 +2489,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.image = image
         if self._config["keep_prev"]:
             prev_shapes = self.canvas.shapes
+            
+        # detectionData = [(50, 50, 200, 200, 11), (200, 200, 400, 400, 12), (400, 400, 600, 600, 13)]
+        # image = draw_bb_on_image(image, detectionData)
         self.canvas.loadPixmap(QtGui.QPixmap.fromImage(image))
         flags = {k: False for k in self._config["flags"] or []}
 
@@ -2466,6 +2504,8 @@ class MainWindow(QtWidgets.QMainWindow):
             if os.path.exists(json_file_name):
                 # print('json file exists , loading shapes')
                 self.load_shapes_for_video_frame(json_file_name , index)
+        
+        
         self.loadFlags(flags)
         if self._config["keep_prev"] and self.noShapes():
             self.loadShapes(prev_shapes, replace=False)
@@ -2516,8 +2556,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def frames_to_skip_slider_changed(self):
         self.FRAMES_TO_SKIP = self.frames_to_skip_slider.value()
+        zeros = ( 2 - int(np.log10(self.FRAMES_TO_SKIP + 0.9)) ) * '0'
         self.frames_to_skip_label.setText(
-            'frames to skip: ' + str(self.FRAMES_TO_SKIP))
+            'frames to skip: ' + zeros + str(self.FRAMES_TO_SKIP))
 
     def playPauseButtonClicked(self):
         # we can check the state of the button by checking the button text
@@ -2551,8 +2592,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.CAP.set(cv2.CAP_PROP_POS_FRAMES, frame_idx)
 
         # setting text of labels
+        zeros = ( int(np.log10(self.TOTAL_VIDEO_FRAMES + 0.9)) - int(np.log10(frame_idx + 0.9)) ) * '0'
         self.main_video_frames_label_1.setText(
-            f'frame {frame_idx} / {int(self.TOTAL_VIDEO_FRAMES)}')
+            f'frame {zeros}{frame_idx} / {int(self.TOTAL_VIDEO_FRAMES)}')
         self.frame_time = self.mapFrameToTime(frame_idx)
         frame_text = ("%02d:%02d:%02d:%03d" % (
             self.frame_time[0], self.frame_time[1], self.frame_time[2] , self.frame_time[3]))
