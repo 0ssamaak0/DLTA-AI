@@ -15,7 +15,6 @@ def get_bbox(segmentation):
                 y.append(segmentation[i])
         return [min(x), min(y), max(x) - min(x), max(y) - min(y)]
     except:
-        print("conversion required")
         # convert segmentation into 1D array
         segmentation = [item for sublist in segmentation for item in sublist]
         x = []
@@ -118,7 +117,7 @@ def exportCOCO(target_directory, save_path):
     with open(f"{file_path}/Annotations/{output_name}.json", 'w') as outfile:
         json.dump(file, outfile, indent=4)
 
-    return (f"{file_path}/Annotations/{output_name}.json")
+    return (f"{file_path}/Annotations")
 
 
 def exportCOCOvid(results_file, save_path, vid_width, vid_height, output_name="coco_vid"):
@@ -142,15 +141,15 @@ def exportCOCOvid(results_file, save_path, vid_width, vid_height, output_name="c
         data = json.load(f)
         for frame in data:
             images.append({
-                "id": frame["frame_idx"] + 1,
+                "id": frame["frame_idx"],
                 "width": vid_width,
                 "height": vid_height,
-                "file_name": f"frame {frame['frame_idx'] + 1}",
+                "file_name": f"frame {frame['frame_idx']}",
             })
             for object in frame["frame_data"]:
                 annotations.append({
                     "id": frame["frame_idx"],
-                    "image_id": frame["frame_idx"] + 1,
+                    "image_id": frame["frame_idx"],
                     "category_id": object["class_id"] + 1,
                 })
                 try:
@@ -181,4 +180,25 @@ def exportCOCOvid(results_file, save_path, vid_width, vid_height, output_name="c
     with open(f"{save_path}/Annotations/{output_name}.json", 'w') as outfile:
         json.dump(file, outfile, indent=4)
 
-    return (f"{save_path}/Annotations/{output_name}.json")
+    return (f"{save_path}/Annotations/")
+
+
+def exportMOT(results_file, save_path, output_name="mot_vid"):
+    rows = []
+    with open(results_file) as f:
+        data = json.load(f)
+        for frame in data:
+            for object in frame["frame_data"]:
+                # bbox = get_bbox(object["segment"])
+                rows.append(
+                    f'{frame["frame_idx"]}, {object["tracker_id"]},  {object["bbox"][0]},  {object["bbox"][1]},  {object["bbox"][2]},  {object["bbox"][3]},  {object["confidence"]}, {object["class_id"] + 1}, 1')
+
+    # save rows in a file in save_path, file name is output_name, with .txt extension
+    if not os.path.exists(f"{save_path}/Annotations"):
+        os.makedirs(f"{save_path}/Annotations")
+
+    with open(f"{save_path}/Annotations/{output_name}.txt", 'w') as outfile:
+        # write each row in the file as a new line
+        outfile.write("\n".join(rows))
+
+    return (f"{save_path}/Annotations/")
