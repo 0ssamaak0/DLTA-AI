@@ -5,13 +5,14 @@ supervision=0.3.0
 loguru
 lap
 onemetric
+
+
+
 pip install -e git+https://github.com/samson-wang/cython_bbox.git#egg=cython-bbox
 
-
-
-
-yolox=0.1.0 
-
+#  to install yolox=0.1.0 --> 
+cd bytetrack
+python3 setup.py develop
 
 
 # I will append later the precise libraries
