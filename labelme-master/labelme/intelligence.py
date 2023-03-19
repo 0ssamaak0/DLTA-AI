@@ -103,6 +103,8 @@ class Intelligence():
             x.append(segmentation[i][0])
             y.append(segmentation[i][1])
         # get the bbox in xyxy format
+        if len(x)==0 or len(y)==0:
+            return []
         bbox = [min(x),min(y),max(x) ,max(y)]
         return bbox
         
@@ -137,16 +139,19 @@ class Intelligence():
             #     shape.addPoint(QtCore.QPointF(point[0], point[1]))
             
             
-            # # for point in result["bbox"]:
-            # #     shape.addPoint(QtCore.QPointF(point[0], point[1]))
+            # for point in result["bbox"]:
+            #     shape.addPoint(QtCore.QPointF(point[0], point[1]))
             # shape.close()
             # shapes.append(shape)
-            
             
             shape = Shape()
             shape.label = result["class"]
             shape.content = result["confidence"]
             shape.shape_type="polygon"
+            
+            bboxes = self.get_bbox(result["seg"])
+            shape.bbox = bboxes
+            
             shape.flags = {}
             shape.other_data = {}
             shape.group_id = None
