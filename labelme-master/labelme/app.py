@@ -48,41 +48,6 @@ import threading
 import warnings
 warnings.filterwarnings("ignore")
 
-def convert_QI_to_cv(incomingImage):
-        '''  Converts a QImage into an opencv MAT format  '''
-
-        incomingImage = incomingImage.convertToFormat(4)
-
-        width = incomingImage.width()
-        height = incomingImage.height()
-
-        ptr = incomingImage.bits()
-        ptr.setsize(incomingImage.byteCount())
-        arr = np.array(ptr).reshape(height, width, 4)  #  Copies the data
-        return arr
-
-def convert_cv_to_qt(cv_img):
-        rgb_image = cv2.cvtColor(cv_img, cv2.COLOR_BGR2RGB)
-        h, w, ch = rgb_image.shape
-        bytes_per_line = ch * w
-        convert_to_Qt_format = QtGui.QImage(rgb_image.data, w, h, bytes_per_line, QtGui.QImage.Format_RGB888)
-        return convert_to_Qt_format
-
-def draw_bb_id(image, x, y , w, h, id, color=(0, 0, 255), thickness=2):
-        img_bb = cv2.rectangle(image, (x, y), (x+w, y+h), color, thickness)
-        img_bb = cv2.rectangle(img_bb, (x, y - 25), (x + 100, y), color, -1)
-        img_bb_id = cv2.putText(img_bb, f'id = {id}', (x + 5, y - 5), cv2.FONT_HERSHEY_SIMPLEX, 
-                        0.7, (255, 255, 255), thickness - 1, cv2.LINE_AA)
-        return img_bb_id
-
-def draw_bb_on_image(image, detectionData, color=(0, 0, 255), thickness=2):
-        img = convert_QI_to_cv(image)
-        
-        for x, y , w, h, id in detectionData:
-                img = draw_bb_id(img, x, y , w, h, id, color, thickness)
-        
-        qimage = convert_cv_to_qt(img)
-        return qimage
 
 @dataclass(frozen=True)
 class BYTETrackerArgs:
@@ -292,6 +257,10 @@ class MainWindow(QtWidgets.QMainWindow):
         # for video annotation
         self.frame_time = 0
         self.FRAMES_TO_SKIP = 30
+        self.CURRENT_ANNOATAION_FLAGS = {"traj" : True  ,
+                                        "bbox" : True  ,         
+                                        "id" : True }
+        self.CURRENT_SHAPES_IN_IMG = []
         # make CLASS_NAMES_DICT a dictionary of coco class names
         # self.CLASS_NAMES_DICT =
         # self.frame_number = 0
@@ -1709,9 +1678,14 @@ class MainWindow(QtWidgets.QMainWindow):
         self.filename = filename
         if self._config["keep_prev"]:
             prev_shapes = self.canvas.shapes
+        
         self.canvas.loadPixmap(QtGui.QPixmap.fromImage(image))
         flags = {k: False for k in self._config["flags"] or []}
         if self.labelFile:
+            self.CURRENT_SHAPES_IN_IMG = self.labelFile.shapes
+            print("self.CURRENT_SHAPES_IN_IMG", self.CURRENT_SHAPES_IN_IMG)
+            # image = self.draw_bb_on_image(image  , self.CURRENT_SHAPES_IN_IMG)
+            self.canvas.loadPixmap(QtGui.QPixmap.fromImage(image))
             self.loadLabels(self.labelFile.shapes)
             if self.labelFile.flags is not None:
                 flags.update(self.labelFile.flags)
@@ -1721,6 +1695,9 @@ class MainWindow(QtWidgets.QMainWindow):
             self.setDirty()
         else:
             self.setClean()
+            
+            
+
         self.canvas.setEnabled(True)
         # set zoom values
         is_initial_load = not self.zoom_values
@@ -2336,24 +2313,36 @@ class MainWindow(QtWidgets.QMainWindow):
         return images
 
     def annotate_one(self):
+        # self.CURRENT_ANNOATAION_FLAGS['id'] = False
         if self.current_annotation_mode == "video":
             shapes = self.intelligenceHelper.get_shapes_of_one(
                 self.CURRENT_FRAME_IMAGE, img_array_flag=True)
-            self.loadShapes(shapes)
-            self.actions.editMode.setEnabled(True)
-            self.actions.undoLastPoint.setEnabled(False)
-            self.actions.undo.setEnabled(True)
-            self.setDirty()
         else:
             if os.path.exists(self.filename):
                 self.labelList.clearSelection()
-                shapes = self.intelligenceHelper.get_shapes_of_one(
-                    self.filename)
-                self.loadShapes(shapes)
-                self.actions.editMode.setEnabled(True)
-                self.actions.undoLastPoint.setEnabled(False)
-                self.actions.undo.setEnabled(True)
-                self.setDirty()
+            shapes = self.intelligenceHelper.get_shapes_of_one(
+                self.filename)  
+            
+        # for shape in shapes:
+        #     print(shape["group_id"])
+        #     print(shape["bbox"])
+        
+        
+        
+        # image = self.draw_bb_on_image(self.image  , self.CURRENT_SHAPES_IN_IMG)
+        # self.canvas.loadPixmap(QtGui.QPixmap.fromImage(image))
+        
+        
+        
+                    
+        self.loadShapes(shapes)
+        self.actions.editMode.setEnabled(True)
+        self.actions.undoLastPoint.setEnabled(False)
+        self.actions.undo.setEnabled(True)
+        self.setDirty()
+
+            
+
 
     def annotate_batch(self):
         images = []
@@ -2465,9 +2454,10 @@ class MainWindow(QtWidgets.QMainWindow):
                     shapes.append(shape)
                 continue
 
-        if len(shapes) > 0:
 
-            self.loadLabels(shapes)
+            self.CURRENT_SHAPES_IN_IMG = shapes
+
+
 
     def loadFramefromVideo(self, frame_array, index=0):
         # filename = str(index) + ".jpg"
@@ -2486,19 +2476,27 @@ class MainWindow(QtWidgets.QMainWindow):
             
         # detectionData = [(50, 50, 200, 200, 11), (200, 200, 400, 400, 12), (400, 400, 600, 600, 13)]
         # image = draw_bb_on_image(image, detectionData)
-        self.canvas.loadPixmap(QtGui.QPixmap.fromImage(image))
         flags = {k: False for k in self._config["flags"] or []}
+        self.canvas.loadPixmap(QtGui.QPixmap.fromImage(image))
 
         if self.labelFile:
+            self.CURRENT_SHAPES_IN_IMG = self.labelFile.shapes
+            image = self.draw_bb_on_image(image, self.CURRENT_SHAPES_IN_IMG)
+            self.canvas.loadPixmap(QtGui.QPixmap.fromImage(image))
             self.loadLabels(self.labelFile.shapes)
             if self.labelFile.flags is not None:
                 flags.update(self.labelFile.flags)
+                
         else :
             json_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}_tracking_results.json'
             if os.path.exists(json_file_name):
                 # print('json file exists , loading shapes')
-                self.load_shapes_for_video_frame(json_file_name , index)
-        
+                self.load_shapes_for_video_frame(json_file_name , index)    
+                image = self.draw_bb_on_image(image, self.CURRENT_SHAPES_IN_IMG)
+                self.canvas.loadPixmap(QtGui.QPixmap.fromImage(image))
+                if len(self.CURRENT_SHAPES_IN_IMG) > 0:
+                    self.loadLabels(self.CURRENT_SHAPES_IN_IMG)
+
         
         self.loadFlags(flags)
         if self._config["keep_prev"] and self.noShapes():
@@ -2777,6 +2775,13 @@ class MainWindow(QtWidgets.QMainWindow):
         self.tracking_progress_bar.hide()
         self.tracking_progress_bar.setValue(0)
 
+
+
+
+
+
+
+
     def track_full_video_button_clicked(self):
         self.FRAMES_TO_TRACK = int(
             self.TOTAL_VIDEO_FRAMES - self.INDEX_OF_CURRENT_FRAME + 1)
@@ -2802,6 +2807,66 @@ class MainWindow(QtWidgets.QMainWindow):
         loop = QtCore.QEventLoop()
         QtCore.QTimer.singleShot(seconds * 1000, loop.quit)
         loop.exec_()
+
+
+
+
+
+
+
+
+    def convert_QI_to_cv(self , incomingImage):
+        '''  Converts a QImage into an opencv MAT format  '''
+
+        incomingImage = incomingImage.convertToFormat(4)
+
+        width = incomingImage.width()
+        height = incomingImage.height()
+
+        ptr = incomingImage.bits()
+        ptr.setsize(incomingImage.byteCount())
+        arr = np.array(ptr).reshape(height, width, 4)  #  Copies the data
+        return arr
+
+    def convert_cv_to_qt(self ,cv_img):
+            rgb_image = cv2.cvtColor(cv_img, cv2.COLOR_BGR2RGB)
+            h, w, ch = rgb_image.shape
+            bytes_per_line = ch * w
+            convert_to_Qt_format = QtGui.QImage(rgb_image.data, w, h, bytes_per_line, QtGui.QImage.Format_RGB888)
+            return convert_to_Qt_format
+
+    def draw_bb_id(self ,image, x, y , w, h, id, color=(0, 0, 255), thickness=2):
+        if self.CURRENT_ANNOATAION_FLAGS['bbox']:
+            image = cv2.rectangle(image, (x, y), (x+w, y+h), color, thickness)
+        if self.CURRENT_ANNOATAION_FLAGS['id']:
+            image = cv2.rectangle(image, (x, y - 25), (x + 100, y), color, -1)
+            if not self.CURRENT_ANNOATAION_FLAGS['bbox']:
+                image = cv2.line(image, (x+int(w/2), y + int(h/2)), (x + 50, y - 12), color, thickness)
+            image = cv2.putText(image, f'id = {id}', (x + 5, y - 5), cv2.FONT_HERSHEY_SIMPLEX, 
+                            0.7, (255, 255, 255), thickness - 1, cv2.LINE_AA)
+        
+            
+            return image
+
+
+
+
+    def draw_bb_on_image(self ,image, shapes, color=(0, 0, 255), thickness=2):
+        
+            img = self.convert_QI_to_cv(image)
+            
+            for shape in shapes:
+                id = shape["group_id"]
+                (x1, y1 , x2, y2) = shape["bbox"]
+                x, y , w, h = int(x1), int(y1), int(x2 - x1), int(y2 - y1)
+                img = self.draw_bb_id(img, x, y , w, h, id, color, thickness)
+            
+            qimage = self.convert_cv_to_qt(img)
+            return qimage
+
+
+
+
 
     def addVideoControls(self):
         # add video controls toolbar with custom style (background color , spacing , hover color)
@@ -2962,6 +3027,10 @@ class MainWindow(QtWidgets.QMainWindow):
 # self.CURRENT_FRAME_IMAGE
 # self.CURRENT_VIDEO_NAME
 # self.CURRENT_VIDEO_PATH
+# self.CURRENT_SHAPES_IN_IMG
 
+# self.CURRENT_ANNOATAION_FLAGS = {"traj" : False  ,
+#                                 "bbox" : False  ,         
+#                                   "id" : False }
 # to do
 # remove the video processing tool bar in the other cases
