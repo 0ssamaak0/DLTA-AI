@@ -19,9 +19,13 @@ from qtpy.QtCore import Signal as pyqtSignal
 from qtpy import QtGui
 from qtpy import QtWidgets
 
-from labelme import __appname__
-from labelme import PY2
-from labelme import QT5
+# from labelme import __appname__
+# from labelme import PY2
+# from labelme import QT5
+
+from . import __appname__
+from . import PY2
+from . import QT5
 
 from . import utils
 from .config import get_config
