@@ -177,7 +177,11 @@ def main():
     app.setWindowIcon(newIcon("icon"))
 
     try:
-        qdarktheme.setup_theme("auto", )
+        tool_tip_color = """QToolTip {
+                            color: #111111;
+                            background-color: #EEEEEE;
+                           }"""
+        qdarktheme.setup_theme("auto", additional_qss=tool_tip_color)
     except Exception as e:
         pass
 
