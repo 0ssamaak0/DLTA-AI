@@ -276,7 +276,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # make CLASS_NAMES_DICT a dictionary of coco class names
         # self.CLASS_NAMES_DICT =
         # self.frame_number = 0
-        self.INDEX_OF_CURRENT_FRAME = 0
+        self.INDEX_OF_CURRENT_FRAME = 1
 
         features = QtWidgets.QDockWidget.DockWidgetFeatures()
         for dock in ["flag_dock", "label_dock", "shape_dock", "file_dock"]:
@@ -2417,8 +2417,9 @@ class MainWindow(QtWidgets.QMainWindow):
             self.CURRENT_VIDEO_FPS = self.CAP.get(cv2.CAP_PROP_FPS)
             print("Total Frames : " , self.TOTAL_VIDEO_FRAMES)
             self.main_video_frames_slider.setMaximum(self.TOTAL_VIDEO_FRAMES)
-            self.main_video_frames_slider.setValue(1)
-            self.main_video_frames_slider.setValue(0)
+            self.main_video_frames_slider.setValue(2)
+            self.INDEX_OF_CURRENT_FRAME = 1
+            self.main_video_frames_slider.setValue(self.INDEX_OF_CURRENT_FRAME)
 
             # self.addToolBarBreak
 
@@ -2473,7 +2474,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
 
 
-    def loadFramefromVideo(self, frame_array, index=0):
+    def loadFramefromVideo(self, frame_array, index=1):
         # filename = str(index) + ".jpg"
         #self.filename = filename
         self.resetState()
@@ -2595,7 +2596,7 @@ class MainWindow(QtWidgets.QMainWindow):
         frame_idx = self.main_video_frames_slider.value()
 
         self.INDEX_OF_CURRENT_FRAME = frame_idx
-        self.CAP.set(cv2.CAP_PROP_POS_FRAMES, frame_idx)
+        self.CAP.set(cv2.CAP_PROP_POS_FRAMES, frame_idx - 1)
 
         # setting text of labels
         zeros = ( int(np.log10(self.TOTAL_VIDEO_FRAMES + 0.9)) - int(np.log10(frame_idx + 0.9)) ) * '0'
@@ -2618,8 +2619,9 @@ class MainWindow(QtWidgets.QMainWindow):
         else:
             pass
 
-        # finally update the trackbar
-        # self.main_video_frames_slider.setValue(frame_idx)
+
+
+
 
     def frames_to_track_slider_changed(self):
         self.FRAMES_TO_TRACK = self.frames_to_track_slider.value()
@@ -2921,9 +2923,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.videoControls.addWidget(self.nextFrame_button)
 
         self.main_video_frames_slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
-        self.main_video_frames_slider.setMinimum(0)
+        self.main_video_frames_slider.setMinimum(1)
         self.main_video_frames_slider.setMaximum(100)
-        self.main_video_frames_slider.setValue(1)
+        self.main_video_frames_slider.setValue(2)
         self.main_video_frames_slider.setTickPosition(
             QtWidgets.QSlider.TicksBelow)
         self.main_video_frames_slider.setTickInterval(1)
