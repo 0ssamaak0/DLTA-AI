@@ -17,6 +17,17 @@ warnings.filterwarnings("ignore")
 
 class models_inference():
 
+
+
+    def get_bbox(self,segmentation):
+        x = []
+        y = []
+        for i in range(len(segmentation)):
+            x.append(segmentation[i][0])
+            y.append(segmentation[i][1])
+        # get the bbox in xyxy format
+        bbox = [min(x),min(y),max(x) ,max(y)]
+        return bbox
     def interpolate_polygon(self , polygon, n_points):
         # interpolate polygon to get less points
         polygon = np.array(polygon)
@@ -92,12 +103,22 @@ class models_inference():
             result_dict["results"] = res_list
             return result_dict
 
+
+
+
         if img_array_flag:
             results = inference_detector(model, img)
         else:
             results = inference_detector(model, plt.imread(img))
         # results = async_inference_detector(model, plt.imread(img_path))
         torch.cuda.empty_cache()
+
+
+
+
+
+
+
 
         results0 = []
         results1 = []
@@ -118,14 +139,15 @@ class models_inference():
                 result["class"] = classdict.get(classes_numbering[classno])
                 # Confidence
                 result["confidence"] = str(results0[classno][instance][-1])
-                result["bbox"] = results0[classno][instance][:-
-                                                             1].astype(np.uint8)
                 if classno == 0:
                     result["seg"] = self.mask_to_polygons(
                         results1[classno][instance].astype(np.uint8) , 10)
                 else :
                     result["seg"] = self.mask_to_polygons(
                         results1[classno][instance].astype(np.uint8) , 20)
+                    
+                    
+                # result["bbox"] = self.get_bbox(result["seg"])
                 if show_bbox_flag:
                     # result["bbox"] = full_points(result["bbox"]).tolist()
                     # points = full_points(result["bbox"])
