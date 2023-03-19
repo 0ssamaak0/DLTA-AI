@@ -35,13 +35,15 @@ from .logger import logger
 from .shape import Shape
 from .widgets import BrightnessContrastDialog , Canvas , LabelDialog , LabelListWidget , LabelListWidgetItem , ToolBar , UniqueLabelQListWidget , ZoomWidget
 from .intelligence import Intelligence
-from .intelligence import coco_classes
+from .intelligence import coco_classes , color_palette
 
 from ByteTrack.yolox.tracker.byte_tracker import BYTETracker, STrack
 from onemetric.cv.utils.iou import box_iou_batch
 from dataclasses import dataclass
 from supervision.detection.core import Detections
-from typing import List
+from supervision.draw.color import Color, ColorPalette
+
+from typing import Iterator, List, Optional, Tuple, Union
 
 import numpy as np
 import cv2
@@ -51,6 +53,9 @@ import time
 import threading
 import warnings
 warnings.filterwarnings("ignore")
+
+
+
 
 
 @dataclass(frozen=True)
@@ -263,7 +268,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.FRAMES_TO_SKIP = 30
         self.CURRENT_ANNOATAION_FLAGS = {"traj" : True  ,
                                         "bbox" : True  ,         
-                                        "id" : True }
+                                        "id" : True ,
+                                        "class" : True,
+                                        "mask" : True,
+                                        "polygons" : True}
         self.CURRENT_SHAPES_IN_IMG = []
         # make CLASS_NAMES_DICT a dictionary of coco class names
         # self.CLASS_NAMES_DICT =
@@ -1336,6 +1344,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.labelList.clearSelection()
         self._noSelectionSlot = False
         self.canvas.loadShapes(shapes, replace=replace)
+        for shape in self.canvas.shapes:
+            self.canvas.setShapeVisible(shape, self.CURRENT_ANNOATAION_FLAGS["polygons"])
 
     def loadLabels(self, shapes):
         s = []
@@ -2819,59 +2829,32 @@ class MainWindow(QtWidgets.QMainWindow):
 
 
 
-    def convert_QI_to_cv(self , incomingImage):
-        '''  Converts a QImage into an opencv MAT format  '''
 
-        incomingImage = incomingImage.convertToFormat(4)
 
-        width = incomingImage.width()
-        height = incomingImage.height()
+    def traj_checkBox_changed(self):
+        self.CURRENT_ANNOATAION_FLAGS["traj"] = self.traj_checkBox.isChecked()
+        self.main_video_frames_slider_changed()
+    def mask_checkBox_changed(self):
+        self.CURRENT_ANNOATAION_FLAGS["mask"] = self.mask_checkBox.isChecked()
+        self.main_video_frames_slider_changed()
 
-        ptr = incomingImage.bits()
-        ptr.setsize(incomingImage.byteCount())
-        arr = np.array(ptr).reshape(height, width, 4)  #  Copies the data
-        return arr
+    def class_checkBox_changed(self):
+        self.CURRENT_ANNOATAION_FLAGS["class"] = self.class_checkBox.isChecked()
+        self.main_video_frames_slider_changed()
 
-    def convert_cv_to_qt(self ,cv_img):
-            rgb_image = cv2.cvtColor(cv_img, cv2.COLOR_BGR2RGB)
-            h, w, ch = rgb_image.shape
-            bytes_per_line = ch * w
-            convert_to_Qt_format = QtGui.QImage(rgb_image.data, w, h, bytes_per_line, QtGui.QImage.Format_RGB888)
-            return convert_to_Qt_format
+    def id_checkBox_changed(self):
+        self.CURRENT_ANNOATAION_FLAGS["id"] = self.id_checkBox.isChecked()
+        self.main_video_frames_slider_changed()
 
-    def draw_bb_id(self ,image, x, y , w, h, id, color=(0, 0, 255), thickness=2):
-        if self.CURRENT_ANNOATAION_FLAGS['bbox']:
-            image = cv2.rectangle(image, (x, y), (x+w, y+h), color, thickness)
-        if self.CURRENT_ANNOATAION_FLAGS['id']:
-            image = cv2.rectangle(image, (x, y - 25), (x + 100, y), color, -1)
-            if not self.CURRENT_ANNOATAION_FLAGS['bbox']:
-                image = cv2.line(image, (x+int(w/2), y + int(h/2)), (x + 50, y - 12), color, thickness)
-            image = cv2.putText(image, f'id = {id}', (x + 5, y - 5), cv2.FONT_HERSHEY_SIMPLEX, 
-                            0.7, (255, 255, 255), thickness - 1, cv2.LINE_AA)
-        
-            
-            return image
+    def bbox_checkBox_changed(self):
+        self.CURRENT_ANNOATAION_FLAGS["bbox"] = self.bbox_checkBox.isChecked()
+        self.main_video_frames_slider_changed()
 
 
 
-
-    def draw_bb_on_image(self ,image, shapes, color=(0, 0, 255), thickness=2):
-        
-            img = self.convert_QI_to_cv(image)
-            
-            for shape in shapes:
-                id = shape["group_id"]
-                (x1, y1 , x2, y2) = shape["bbox"]
-                x, y , w, h = int(x1), int(y1), int(x2 - x1), int(y2 - y1)
-                img = self.draw_bb_id(img, x, y , w, h, id, color, thickness)
-            
-            qimage = self.convert_cv_to_qt(img)
-            return qimage
-
-
-
-
-
+    def polygons_visable_checkBox_changed(self):
+        self.CURRENT_ANNOATAION_FLAGS["polygons"] = self.polygons_visable_checkBox.isChecked()
+        self.main_video_frames_slider_changed()
     def addVideoControls(self):
         # add video controls toolbar with custom style (background color , spacing , hover color)
         self.videoControls = QtWidgets.QToolBar()
@@ -3013,10 +2996,148 @@ class MainWindow(QtWidgets.QMainWindow):
             self.track_full_video_button_clicked)
         self.videoControls_2.addWidget(self.track_full_video_button)
 
-        # self.tracking_progress_bar.setVisible(False)
-        # self.tracking_progress_bar_label.setVisible(False)
+
+        # add 5 checkboxes to control the CURRENT ANNOATAION FLAGS including (bbox , id , class , mask , traj)
+        self.bbox_checkBox = QtWidgets.QCheckBox()
+        self.bbox_checkBox.setText("bbox")
+        self.bbox_checkBox.setChecked(True)
+        self.bbox_checkBox.stateChanged.connect(self.bbox_checkBox_changed)
+        self.videoControls_2.addWidget(self.bbox_checkBox)
+
+        self.id_checkBox = QtWidgets.QCheckBox()
+        self.id_checkBox.setText("id")
+        self.id_checkBox.setChecked(True)
+        self.id_checkBox.stateChanged.connect(self.id_checkBox_changed)
+        self.videoControls_2.addWidget(self.id_checkBox)
+
+        self.class_checkBox = QtWidgets.QCheckBox()
+        self.class_checkBox.setText("class")
+        self.class_checkBox.setChecked(True)
+        self.class_checkBox.stateChanged.connect(self.class_checkBox_changed)
+        self.videoControls_2.addWidget(self.class_checkBox)
+
+        self.mask_checkBox = QtWidgets.QCheckBox()
+        self.mask_checkBox.setText("mask")
+        self.mask_checkBox.setChecked(True)
+        self.mask_checkBox.stateChanged.connect(self.mask_checkBox_changed)
+        self.videoControls_2.addWidget(self.mask_checkBox)
+
+        self.traj_checkBox = QtWidgets.QCheckBox()
+        self.traj_checkBox.setText("traj")
+        self.traj_checkBox.setChecked(True)
+        self.traj_checkBox.stateChanged.connect(self.traj_checkBox_changed)
+        self.videoControls_2.addWidget(self.traj_checkBox)
+        
+        self.polygons_visable_checkBox = QtWidgets.QCheckBox()
+        self.polygons_visable_checkBox.setText("polygons visablity")
+        self.polygons_visable_checkBox.setChecked(True)
+        self.polygons_visable_checkBox.stateChanged.connect(self.polygons_visable_checkBox_changed)
+        self.videoControls_2.addWidget(self.polygons_visable_checkBox)
+
 
         self.set_video_controls_visibility(False)
+
+
+
+
+
+
+
+
+    def convert_QI_to_cv(self , incomingImage):
+        '''  Converts a QImage into an opencv MAT format  '''
+
+        incomingImage = incomingImage.convertToFormat(4)
+
+        width = incomingImage.width()
+        height = incomingImage.height()
+
+        ptr = incomingImage.bits()
+        ptr.setsize(incomingImage.byteCount())
+        arr = np.array(ptr).reshape(height, width, 4)  #  Copies the data
+        return arr
+
+    def convert_cv_to_qt(self ,cv_img):
+            rgb_image = cv2.cvtColor(cv_img, cv2.COLOR_BGR2RGB)
+            h, w, ch = rgb_image.shape
+            bytes_per_line = ch * w
+            convert_to_Qt_format = QtGui.QImage(rgb_image.data, w, h, bytes_per_line, QtGui.QImage.Format_RGB888)
+            return convert_to_Qt_format
+
+    def draw_bb_id(self ,image, x, y , w, h, id,label, color=(0, 0, 255), thickness=1):
+        if self.CURRENT_ANNOATAION_FLAGS['bbox']:
+            image = cv2.rectangle(image, (x, y), (x+w, y+h), color, thickness)
+            
+            
+        if self.CURRENT_ANNOATAION_FLAGS['id']  or self.CURRENT_ANNOATAION_FLAGS['class']:
+            if self.CURRENT_ANNOATAION_FLAGS['id']  and self.CURRENT_ANNOATAION_FLAGS['class']:
+                text = f'#{id} {label}'
+            if self.CURRENT_ANNOATAION_FLAGS['id']  and not self.CURRENT_ANNOATAION_FLAGS['class']:
+                text = f'#{id}'
+            if not self.CURRENT_ANNOATAION_FLAGS['id']  and self.CURRENT_ANNOATAION_FLAGS['class']:
+                text = f'{label}'
+                
+                
+            text_width, text_height = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 0.7, thickness)[0]
+            text_x = x + 10
+            text_y = y - 10
+
+            text_background_x1 = x
+            text_background_y1 = y - 2 * 10 - text_height
+
+            text_background_x2 = x + 2 * 10 + text_width
+            text_background_y2 = y
+            cv2.rectangle(
+                img=image,
+                pt1=(text_background_x1, text_background_y1),
+                pt2=(text_background_x2, text_background_y2),
+                color=color,
+                thickness=cv2.FILLED,
+            )
+            cv2.putText(
+                img=image,
+                text=text,
+                org=(text_x, text_y),
+                fontFace=cv2.FONT_HERSHEY_SIMPLEX,
+                fontScale=0.7,
+                color=(0, 0, 0),
+                thickness=thickness,
+                lineType=cv2.LINE_AA,
+            )    
+                
+
+                
+        # there is no bbox but there is id or class
+        if (not self.CURRENT_ANNOATAION_FLAGS['bbox']) and (self.CURRENT_ANNOATAION_FLAGS['id'] or self.CURRENT_ANNOATAION_FLAGS['class']):
+            image = cv2.line(image, (x+int(w/2), y + int(h/2)), (x + 50, y - 12), color, thickness+1)
+        
+            
+        return image
+
+
+
+
+    def draw_bb_on_image(self ,image, shapes):
+
+        
+        img = self.convert_QI_to_cv(image)
+        
+        for shape in shapes:
+            id = shape["group_id"]
+            label = shape["label"]
+            
+            # color calculation
+            idx = coco_classes.index(label)
+            idx = idx % len(color_palette)
+            color = color_palette[idx]
+            
+            (x1, y1 , x2, y2) = shape["bbox"]
+            x, y , w, h = int(x1), int(y1), int(x2 - x1), int(y2 - y1)
+            img = self.draw_bb_id(img, x, y , w, h, id,label, color, thickness = 1)
+        
+        qimage = self.convert_cv_to_qt(img)
+        return qimage
+
 
 
 # important parameters across the gui
@@ -3035,6 +3156,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
 # self.CURRENT_ANNOATAION_FLAGS = {"traj" : False  ,
 #                                 "bbox" : False  ,         
-#                                   "id" : False }
+#                                   "id" : False , 
+#                                   "class" : True,
+#                                   "mask" : True}
 # to do
 # remove the video processing tool bar in the other cases

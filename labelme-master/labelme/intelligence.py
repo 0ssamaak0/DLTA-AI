@@ -24,6 +24,26 @@ warnings.filterwarnings("ignore")
 from ultralytics import YOLO
 
 coco_classes = ['person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', 'truck', 'boat', 'traffic light', 'fire hydrant', 'stop sign', 'parking meter', 'bench', 'bird', 'cat', 'dog', 'horse', 'sheep', 'cow', 'elephant', 'bear', 'zebra', 'giraffe', 'backpack', 'umbrella', 'handbag', 'tie', 'suitcase', 'frisbee', 'skis', 'snowboard', 'sports ball', 'kite', 'baseball bat', 'baseball glove', 'skateboard', 'surfboard', 'tennis racket', 'bottle', 'wine glass', 'cup', 'fork', 'knife', 'spoon', 'bowl', 'banana', 'apple', 'sandwich', 'orange', 'broccoli', 'carrot', 'hot dog', 'pizza', 'donut', 'cake', 'chair', 'couch', 'potted plant', 'bed', 'dining table', 'toilet', 'tv', 'laptop', 'mouse', 'remote', 'keyboard', 'cell phone', 'microwave', 'oven', 'toaster', 'sink', 'refrigerator', 'book', 'clock', 'vase', 'scissors', 'teddy bear', 'hair drier', 'toothbrush']
+# make a list of 12 unique colors as we will use them to draw bounding boxes of different classes in different colors
+# so the calor palette will be used to draw bounding boxes of different classes in different colors
+# the color pallette should have the famous 12 colors as red, green, blue, yellow, cyan, magenta, white, black, gray, brown, pink, and orange in bgr format
+color_palette = [(75, 25, 230),
+                (75, 180, 60),
+                (25, 225, 255),
+                (200, 130, 0),
+                (49, 130, 245),
+                (180, 30, 145),
+                (240, 240, 70),
+                (230, 50, 240),
+                (60, 245, 210),
+                (190, 190, 250),
+                (128, 128, 0),
+                (255, 190, 230),
+                (40, 110, 170),
+                (200, 250, 255),
+                (0, 0, 128),
+                (195, 255, 170)] 
+
 
 class IntelligenceWorker(QThread):
     sinOut = pyqtSignal(int,int)
