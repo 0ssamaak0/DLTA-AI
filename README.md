@@ -55,7 +55,7 @@ pip install labelme
 pip install opencv-python
 ```
 
-## 7. Install other packages
+## 7. Install other packages 
 
 ```
 pip install pyqtdarktheme
