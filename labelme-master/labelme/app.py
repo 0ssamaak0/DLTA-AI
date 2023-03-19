@@ -2625,8 +2625,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def frames_to_track_slider_changed(self):
         self.FRAMES_TO_TRACK = self.frames_to_track_slider.value()
+        zeros = ( 2 - int(np.log10(self.FRAMES_TO_TRACK + 0.9)) ) * '0'
         self.frames_to_track_label.setText(
-            f'track for {self.FRAMES_TO_TRACK} frames')
+            f'track for {zeros}{self.FRAMES_TO_TRACK} frames')
 
     def move_frame_by_frame(self):
         self.main_video_frames_slider.setValue(self.INDEX_OF_CURRENT_FRAME + 1)
