@@ -267,12 +267,13 @@ class MainWindow(QtWidgets.QMainWindow):
         self.frame_time = 0
         self.FRAMES_TO_SKIP = 30
         self.TrackingMode = False
-        self.CURRENT_ANNOATAION_FLAGS = {"traj" : True  ,
+        self.CURRENT_ANNOATAION_FLAGS = {"traj" : False  ,
                                         "bbox" : True  ,         
                                         "id" : True ,
                                         "class" : True,
                                         "mask" : True,
                                         "polygons" : True}
+        self.CURRENT_ANNOATAION_TRAJECTORIES = {}
         self.CURRENT_SHAPES_IN_IMG = []
         # make CLASS_NAMES_DICT a dictionary of coco class names
         # self.CLASS_NAMES_DICT =
@@ -2387,6 +2388,7 @@ class MainWindow(QtWidgets.QMainWindow):
         return frameHours, frameMinutes, frameSeconds , frameMilliseconds
 
     def openVideo(self):
+        self.CURRENT_ANNOATAION_TRAJECTORIES = {}
         # self.videoControls.show()
         self.current_annotation_mode = "video"
         try :
@@ -3082,7 +3084,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.traj_checkBox = QtWidgets.QCheckBox()
         self.traj_checkBox.setText("traj")
-        self.traj_checkBox.setChecked(True)
+        self.traj_checkBox.setChecked(False)
         self.traj_checkBox.stateChanged.connect(self.traj_checkBox_changed)
         self.videoControls_2.addWidget(self.traj_checkBox)
         
@@ -3173,7 +3175,19 @@ class MainWindow(QtWidgets.QMainWindow):
         return image
 
 
-
+    def draw_trajectories(self ,img, shapes):
+        for shape in shapes:
+            id = shape["group_id"]
+            pts = self.CURRENT_ANNOATAION_TRAJECTORIES['id_'+str(id)]
+            color = self.CURRENT_ANNOATAION_TRAJECTORIES['id_color_'+str(id)]
+            for i in range(1, len(pts)):
+                thickness = 2
+                thickness = int(np.sqrt(30 / float(i + 1)) * 2)
+                if pts[i - 1] is None or pts[i] is None:
+                    continue
+                cv2.line(img, pts[i - 1], pts[i], color, thickness)
+                    
+        return img
 
     def draw_bb_on_image(self ,image, shapes):
 
@@ -3192,8 +3206,21 @@ class MainWindow(QtWidgets.QMainWindow):
             (x1, y1 , x2, y2) = shape["bbox"]
             x, y , w, h = int(x1), int(y1), int(x2 - x1), int(y2 - y1)
             img = self.draw_bb_id(img, x, y , w, h, id,label, color, thickness = 1)
+            
+            if self.CURRENT_ANNOATAION_FLAGS['traj']:   
+                center = ( int((x1 + x2) / 2), int((y1 + y2) / 2) )
+                try:
+                    self.CURRENT_ANNOATAION_TRAJECTORIES['id_'+str(id)].appendleft(center)
+                except:
+                    self.CURRENT_ANNOATAION_TRAJECTORIES['id_'+str(id)] = collections.deque(maxlen = 30)
+                    self.CURRENT_ANNOATAION_TRAJECTORIES['id_'+str(id)].appendleft(center)
+                    self.CURRENT_ANNOATAION_TRAJECTORIES['id_color_'+str(id)] = color
         
-        qimage = self.convert_cv_to_qt(img)
+        
+        if self.CURRENT_ANNOATAION_FLAGS['traj']:   
+            img = self.draw_trajectories(img, shapes)
+        
+        qimage = self.convert_cv_to_qt(img, )
         return qimage
 
 
