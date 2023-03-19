@@ -78,12 +78,22 @@ class models_inference():
             polygons = []
             result_dict = {}
 
-            for segment in segments:
+            for seg_idx , segment in enumerate(segments):
                 # segment is a array of points that make up the polygon of the mask and are set relative to the image size so we need to scale them to the image size
                 for i in range(len(segment)):
                     segment[i][0] = segment[i][0] * w
                     segment[i][1] = segment[i][1] * h
-                segment_points = self.interpolate_polygon(segment , 20)
+                    
+                    
+                    
+                # segment_points = self.interpolate_polygon(segment , 20)
+                # if class is person we need to interpolate the polygon to get less points to make the polygon smaller
+                if results.boxes.cls.cpu().numpy().astype(int)[seg_idx] == 0:
+                    segment_points = self.interpolate_polygon(segment , 10)
+                else :
+                    segment_points = self.interpolate_polygon(segment , 20)
+                
+                
                 polygons.append(segment_points)
 
             # detection is a tuple of  (box, confidence, class_id, tracker_id)
