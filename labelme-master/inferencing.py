@@ -94,6 +94,9 @@ class models_inference():
                     segment_points = self.interpolate_polygon(segment , 20)
                 
                 
+                # convert the segment_points to integer values
+                segment_points = segment_points.astype(int)
+                
                 polygons.append(segment_points)
 
             # detection is a tuple of  (box, confidence, class_id, tracker_id)
@@ -106,9 +109,14 @@ class models_inference():
                 result = {}
                 result["class"] = classdict.get(int(detection[2]))
                 result["confidence"] = str(detection[1])
-                result["bbox"] = detection[0].astype(np.uint8)
+                result["bbox"] = detection[0].astype(int)
                 result["seg"] = polygons[ind]
                 ind += 1
+                if result["class"] == None:
+                    continue
+                if len(result["seg"]) < 3:
+                    continue
+                
                 res_list.append(result)
             result_dict["results"] = res_list
             return result_dict
@@ -170,6 +178,12 @@ class models_inference():
                     # result["x4"] = points[3][0]
                     # result["y4"] = points[3][1]
                     x = 30  # nothing
+                    
+                    
+                if result["class"] == None:
+                    continue
+                if len(result["seg"]) < 3:
+                    continue
                 res_list.append(result)
 
         result_dict["results"] = res_list
