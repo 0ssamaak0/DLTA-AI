@@ -3243,6 +3243,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     continue 
                 if pts[i] == (-1, - 1) or pts[i - 1] == (-1, - 1) :
                     break
+                
                 cv2.line(img, pts[i - 1], pts[i], color, thickness)
         return img
 
@@ -3265,7 +3266,7 @@ class MainWindow(QtWidgets.QMainWindow):
             img = self.draw_bb_id(img, x, y , w, h, id,label, color, thickness = 1)
             center = ( int((x1 + x2) / 2), int((y1 + y2) / 2) )
             try:
-                self.CURRENT_ANNOATAION_TRAJECTORIES['id_'+str(id)][self.INDEX_OF_CURRENT_FRAME] = center
+                self.CURRENT_ANNOATAION_TRAJECTORIES['id_'+str(id)][self.INDEX_OF_CURRENT_FRAME - 1] = center
             except:
                 self.CURRENT_ANNOATAION_TRAJECTORIES['id_'+str(id)] = [(-1, - 1)] * int(self.TOTAL_VIDEO_FRAMES)
                 self.CURRENT_ANNOATAION_TRAJECTORIES['id_'+str(id)][self.INDEX_OF_CURRENT_FRAME - 1] = center
