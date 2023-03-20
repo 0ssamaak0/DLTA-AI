@@ -1,4 +1,5 @@
 
+import copy
 from supervision.detection.core import Detections
 import supervision as sv
 from typing import List
@@ -144,14 +145,17 @@ class models_inference():
             results0.append(results[0][i])
             results1.append(results[1][i])
         
-        # self.annotating_models[model.__class__.__name__] = results1
-        # print(self.annotating_models.keys())
+        self.annotating_models[model.__class__.__name__] = [results0 , results1]
+        print(self.annotating_models.keys())
 
         # # if the length of the annotating_models is greater than 1 we need to merge the masks
         # if len(self.annotating_models.keys()) > 1:
         #     print("merging masks")
-        #     results1 =  self.merge_masks()
+        #     results0,results1 =  self.merge_masks()
 
+        #     assert len(results0) == len(results1)
+        #     for i in range(len(results0)):
+        #         assert len(results0[i]) == len(results1[i])
 
         result_dict = {}
         res_list = []
@@ -200,48 +204,94 @@ class models_inference():
 
 
     def merge_masks(self):
-        result = []
-        # copy the annotating_models dict to pop all the masks we have merged
-        annotating_models_copy = self.annotating_models.copy()
+        result0 = []
+        result1 = []
+
+        # count the number of instances in each model
+        counts = count_instances(self.annotating_models)
+        # print the counts of each model
+        for model in counts.keys():
+            print("model {} has {} instances".format(model, counts[model]))
+
+        classnos = []
+        for model in self.annotating_models.keys():
+            classnos.append(len(self.annotating_models[model][1]))
+        merged_counts = 0
+        # initialize the result list with the same number of classes as the model with the most classes
+        for i in range(max(classnos)):
+            result1.append([])
+            result0.append([])
+
+        # deep copy the annotating_models dict to pop all the masks we have merged (try delete it for future optimisation)
+        annotating_models_copy = copy.deepcopy(self.annotating_models)
         # merge masks of the same class
         for model in self.annotating_models.keys():
-            for classno in range(len(self.annotating_models[model])):
-                for instance in range(len(self.annotating_models[model][classno])):
-                    for model2 in self.annotating_models.keys():
-                        if model != model2:
-                            # check if the class exists in the other model
-                            if classno in range(len(self.annotating_models[model2])):
-                                # check if the instance exists in the other model
-                                if instance in range(len(self.annotating_models[model2][classno])):
-                                    for instance2 in range(len(self.annotating_models[model2][classno])):
-                                        # get the intersection percentage of the two masks
-                                        intersection = np.logical_and(self.annotating_models[model][classno][instance] , self.annotating_models[model2][classno][instance2])
-                                        intersection = np.sum(intersection)
-                                        union = np.logical_or(self.annotating_models[model][classno][instance] , self.annotating_models[model2][classno][instance2])
-                                        union = np.sum(union)
-                                        iou = intersection / union
-                                        if iou > 0.5:
-                                            # store the merged mask in result
-                                            result.append(np.logical_or(self.annotating_models[model][classno][instance] , self.annotating_models[model2][classno][instance2]))
-                                            # remove the mask from both models
-                                            annotating_models_copy[model][classno].pop(instance)
-                                            annotating_models_copy[model2][classno].pop(instance2)
-                                            break
-                                    if len(self.annotating_models[model][classno]) == 0:
-                                        break
-                            if len(self.annotating_models[model][classno]) == 0:
-                                break
-                # add the remaining masks to the result
-                for model in annotating_models_copy.keys():
-                    for classno in range(len(annotating_models_copy[model])):
-                        for instance in range(len(annotating_models_copy[model][classno])):
-                            result.append(annotating_models_copy[model][classno][instance])
-                # clear the annotating_models and add the result to it
-                self.annotating_models = {}
-                self.annotating_models["merged"] = result
-                return result
+            for classno in range(len(self.annotating_models[model][1])):
+                # check if an instance exists in the model in this class
+                if len(self.annotating_models[model][1][classno]) > 0:
+                    for instance in range(len(self.annotating_models[model][1][classno])):
+                        for model2 in self.annotating_models.keys():
+                            if model != model2 and (model2 > model):
+                                #print(type(annotating_models_copy[model][0][classno]),type(annotating_models_copy[model2][0][classno]))
+                                # check if the class exists in the other model
+                                if classno in range(len(self.annotating_models[model2][1])):
+                                    # check if an instance exists in the other model
+                                    if len(self.annotating_models[model2][1][classno]) > 0:
+                                        for instance2 in range(len(self.annotating_models[model2][1][classno])):
+                                            # get the intersection percentage of the two masks
+                                            intersection = np.logical_and(self.annotating_models[model][1][classno][instance] , self.annotating_models[model2][1][classno][instance2])
+                                            intersection = np.sum(intersection)
+                                            union = np.logical_or(self.annotating_models[model][1][classno][instance] , self.annotating_models[model2][1][classno][instance2])
+                                            union = np.sum(union)
+                                            iou = intersection / union
+                                            #print('iou of class ' + str(classno) + ' instance ' + str(instance) + ' and instance ' + str(instance2) + ' is ' + str(iou))
+                                            if iou > 0.5:
+                                                #print('merging masks of class ' + str(classno) + ' instance ' + str(instance) + ' and instance ' + str(instance2) + ' of models ' + model + ' and ' + model2)
+                                                merged_counts += 1
+                                                # store the merged mask in result1
+                                                result1[classno].append(np.logical_or(self.annotating_models[model][1][classno][instance] , self.annotating_models[model2][1][classno][instance2]))
+                                                # merge their bboxes and store the result in result0
+                                                bbox1 = self.annotating_models[model][0][classno][instance]
+                                                bbox2 = self.annotating_models[model2][0][classno][instance2]
+                                                bbox = [min(bbox1[0], bbox2[0]), min(bbox1[1], bbox2[1]), max(bbox1[2], bbox2[2]), max(bbox1[3], bbox2[3]), ((bbox1[4] + bbox2[4]) / 2)]
+                                                result0[classno].append(bbox)
+                                                # remove the mask from both models
+                                                annotating_models_copy[model][1][classno][instance] = None
+                                                annotating_models_copy[model2][1][classno][instance2] = None
+                                                annotating_models_copy[model][0][classno][instance] = None
+                                                annotating_models_copy[model2][0][classno][instance2] = None
+                                                # continue to the next instance of the first model
+                                                break
+                                                
+
+        counts_here = {}                        
+        # add the remaining masks to the result
+        for model in annotating_models_copy.keys():
+            counts_here[model] = 0
+            for classno in range(len(annotating_models_copy[model][1])):
+                for instance in range(len(annotating_models_copy[model][1][classno])):
+                    if annotating_models_copy[model][1][classno][instance] is not None:
+                        counts_here[model] += 1
+                        #print('adding mask of class ' + str(classno) + ' instance ' + str(instance) + ' of model ' + model)
+                        result1[classno].append(annotating_models_copy[model][1][classno][instance])
+                        result0[classno].append(annotating_models_copy[model][0][classno][instance])
+        # clear the annotating_models and add the result to it
+        self.annotating_models = {}
+        self.annotating_models["merged"] = [result0 , result1]
+        for model in counts_here.keys():
+            print("model {} has {} instances".format(model, counts_here[model]))
+        print("merged {} instances".format(merged_counts))
+        return result0 , result1
     
 
                                 
 # result will have ---> bbox , confidence , class_id , tracker_id , segment
 # result of the detection phase only should be (bbox , confidence , class_id , segment)
+def count_instances(annotating_models):
+    # separate the counts for each model
+    counts = {}
+    for model in annotating_models.keys():
+        counts[model] = 0
+        for classno in range(len(annotating_models[model][1])):
+            counts[model] += len(annotating_models[model][1][classno])
+    return counts
