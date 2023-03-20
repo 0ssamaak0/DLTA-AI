@@ -16,7 +16,8 @@ warnings.filterwarnings("ignore")
 
 
 class models_inference():
-
+    def __init__(self):
+        self.annotating_models = {}
 
 
     def get_bbox(self,segmentation):
@@ -78,12 +79,25 @@ class models_inference():
             polygons = []
             result_dict = {}
 
-            for segment in segments:
+            for seg_idx , segment in enumerate(segments):
                 # segment is a array of points that make up the polygon of the mask and are set relative to the image size so we need to scale them to the image size
                 for i in range(len(segment)):
                     segment[i][0] = segment[i][0] * w
                     segment[i][1] = segment[i][1] * h
-                segment_points = self.interpolate_polygon(segment , 20)
+                    
+                    
+                    
+                # segment_points = self.interpolate_polygon(segment , 20)
+                # if class is person we need to interpolate the polygon to get less points to make the polygon smaller
+                if results.boxes.cls.cpu().numpy().astype(int)[seg_idx] == 0:
+                    segment_points = self.interpolate_polygon(segment , 10)
+                else :
+                    segment_points = self.interpolate_polygon(segment , 20)
+                
+                
+                # convert the segment_points to integer values
+                segment_points = segment_points.astype(int)
+                
                 polygons.append(segment_points)
 
             # detection is a tuple of  (box, confidence, class_id, tracker_id)
@@ -96,9 +110,14 @@ class models_inference():
                 result = {}
                 result["class"] = classdict.get(int(detection[2]))
                 result["confidence"] = str(detection[1])
-                result["bbox"] = detection[0].astype(np.uint8)
+                result["bbox"] = detection[0].astype(int)
                 result["seg"] = polygons[ind]
                 ind += 1
+                if result["class"] == None:
+                    continue
+                if len(result["seg"]) < 3:
+                    continue
+                
                 res_list.append(result)
             result_dict["results"] = res_list
             return result_dict
@@ -119,24 +138,32 @@ class models_inference():
 
 
 
-
         results0 = []
         results1 = []
         for i in classdict.keys():
             results0.append(results[0][i])
             results1.append(results[1][i])
+        
+        # self.annotating_models[model.__class__.__name__] = results1
+        # print(self.annotating_models.keys())
+
+        # # if the length of the annotating_models is greater than 1 we need to merge the masks
+        # if len(self.annotating_models.keys()) > 1:
+        #     print("merging masks")
+        #     results1 =  self.merge_masks()
+
 
         result_dict = {}
         res_list = []
 
         #classdict = {0:"person", 1:"car", 2:"motorcycle", 3:"bus", 4:"truck"}
-        classes_numbering = [keyno for keyno in classdict.keys()]
+        self.classes_numbering = [keyno for keyno in classdict.keys()]
         for classno in range(len(results0)):
             for instance in range(len(results0[classno])):
                 if float(results0[classno][instance][-1]) < float(threshold):
                     continue
                 result = {}
-                result["class"] = classdict.get(classes_numbering[classno])
+                result["class"] = classdict.get(self.classes_numbering[classno])
                 # Confidence
                 result["confidence"] = str(results0[classno][instance][-1])
                 if classno == 0:
@@ -160,11 +187,61 @@ class models_inference():
                     # result["x4"] = points[3][0]
                     # result["y4"] = points[3][1]
                     x = 30  # nothing
+                    
+                    
+                if result["class"] == None:
+                    continue
+                if len(result["seg"]) < 3:
+                    continue
                 res_list.append(result)
 
         result_dict["results"] = res_list
         return result_dict
 
 
+    def merge_masks(self):
+        result = []
+        # copy the annotating_models dict to pop all the masks we have merged
+        annotating_models_copy = self.annotating_models.copy()
+        # merge masks of the same class
+        for model in self.annotating_models.keys():
+            for classno in range(len(self.annotating_models[model])):
+                for instance in range(len(self.annotating_models[model][classno])):
+                    for model2 in self.annotating_models.keys():
+                        if model != model2:
+                            # check if the class exists in the other model
+                            if classno in range(len(self.annotating_models[model2])):
+                                # check if the instance exists in the other model
+                                if instance in range(len(self.annotating_models[model2][classno])):
+                                    for instance2 in range(len(self.annotating_models[model2][classno])):
+                                        # get the intersection percentage of the two masks
+                                        intersection = np.logical_and(self.annotating_models[model][classno][instance] , self.annotating_models[model2][classno][instance2])
+                                        intersection = np.sum(intersection)
+                                        union = np.logical_or(self.annotating_models[model][classno][instance] , self.annotating_models[model2][classno][instance2])
+                                        union = np.sum(union)
+                                        iou = intersection / union
+                                        if iou > 0.5:
+                                            # store the merged mask in result
+                                            result.append(np.logical_or(self.annotating_models[model][classno][instance] , self.annotating_models[model2][classno][instance2]))
+                                            # remove the mask from both models
+                                            annotating_models_copy[model][classno].pop(instance)
+                                            annotating_models_copy[model2][classno].pop(instance2)
+                                            break
+                                    if len(self.annotating_models[model][classno]) == 0:
+                                        break
+                            if len(self.annotating_models[model][classno]) == 0:
+                                break
+                # add the remaining masks to the result
+                for model in annotating_models_copy.keys():
+                    for classno in range(len(annotating_models_copy[model])):
+                        for instance in range(len(annotating_models_copy[model][classno])):
+                            result.append(annotating_models_copy[model][classno][instance])
+                # clear the annotating_models and add the result to it
+                self.annotating_models = {}
+                self.annotating_models["merged"] = result
+                return result
+    
+
+                                
 # result will have ---> bbox , confidence , class_id , tracker_id , segment
 # result of the detection phase only should be (bbox , confidence , class_id , segment)
