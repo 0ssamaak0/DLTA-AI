@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+import sys
 import collections
 import functools
 import json
@@ -3235,15 +3235,15 @@ class MainWindow(QtWidgets.QMainWindow):
     def draw_trajectories(self ,img, shapes):
         for shape in shapes:
             id = shape["group_id"]
-            pts = self.CURRENT_ANNOATAION_TRAJECTORIES['id_'+str(id)]
+            pts = self.CURRENT_ANNOATAION_TRAJECTORIES['id_'+str(id)][max(self.INDEX_OF_CURRENT_FRAME - 30, 0) : self.INDEX_OF_CURRENT_FRAME] 
             color = self.CURRENT_ANNOATAION_TRAJECTORIES['id_color_'+str(id)]
-            for i in range(1, len(pts)):
-                thickness = 2
-                thickness = int(np.sqrt(30 / float(i + 1)) * 2)
-                if pts[i - 1] is None or pts[i] is None:
-                    continue
+            for i in range(len(pts) - 1, 0, - 1):
+                thickness = int(np.sqrt(30 / float(30 - i + 1)) * 2)
+                if pts[i - 1] is None or pts[i] is None :
+                    continue 
+                if pts[i] == (-1, - 1) or pts[i - 1] == (-1, - 1) :
+                    break
                 cv2.line(img, pts[i - 1], pts[i], color, thickness)
-                    
         return img
 
     def draw_bb_on_image(self ,image, shapes):
@@ -3263,16 +3263,16 @@ class MainWindow(QtWidgets.QMainWindow):
             (x1, y1 , x2, y2) = shape["bbox"]
             x, y , w, h = int(x1), int(y1), int(x2 - x1), int(y2 - y1)
             img = self.draw_bb_id(img, x, y , w, h, id,label, color, thickness = 1)
+            center = ( int((x1 + x2) / 2), int((y1 + y2) / 2) )
+            try:
+                self.CURRENT_ANNOATAION_TRAJECTORIES['id_'+str(id)][self.INDEX_OF_CURRENT_FRAME] = center
+            except:
+                self.CURRENT_ANNOATAION_TRAJECTORIES['id_'+str(id)] = [(-1, - 1)] * int(self.TOTAL_VIDEO_FRAMES)
+                self.CURRENT_ANNOATAION_TRAJECTORIES['id_'+str(id)][self.INDEX_OF_CURRENT_FRAME - 1] = center
+                self.CURRENT_ANNOATAION_TRAJECTORIES['id_color_'+str(id)] = color
             
-            if self.CURRENT_ANNOATAION_FLAGS['traj']:   
-                center = ( int((x1 + x2) / 2), int((y1 + y2) / 2) )
-                try:
-                    self.CURRENT_ANNOATAION_TRAJECTORIES['id_'+str(id)].appendleft(center)
-                except:
-                    self.CURRENT_ANNOATAION_TRAJECTORIES['id_'+str(id)] = collections.deque(maxlen = 30)
-                    self.CURRENT_ANNOATAION_TRAJECTORIES['id_'+str(id)].appendleft(center)
-                    self.CURRENT_ANNOATAION_TRAJECTORIES['id_color_'+str(id)] = color
-        
+        # print(sys.getsizeof(self.CURRENT_ANNOATAION_TRAJECTORIES))
+        # print(len(self.CURRENT_ANNOATAION_TRAJECTORIES))
         
         if self.CURRENT_ANNOATAION_FLAGS['traj']:   
             img = self.draw_trajectories(img, shapes)
