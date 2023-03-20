@@ -299,6 +299,15 @@ class Intelligence():
         points= np.array(points, np.uint16).flatten().tolist()
         return points
     
+    def clear_annotating_models(self):
+        self.reader.annotating_models.clear()
+
+
+
+
+
+
+
     def saveLabelFile(self, filename, detectedShapes):
         lf = LabelFile()
         

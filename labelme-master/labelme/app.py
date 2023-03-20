@@ -277,6 +277,9 @@ class MainWindow(QtWidgets.QMainWindow):
         # self.CLASS_NAMES_DICT =
         # self.frame_number = 0
         self.INDEX_OF_CURRENT_FRAME = 1
+        # for image annotation
+        self.last_file_opened = ""
+
 
         features = QtWidgets.QDockWidget.DockWidgetFeatures()
         for dock in ["flag_dock", "label_dock", "shape_dock", "file_dock"]:
@@ -2332,10 +2335,15 @@ class MainWindow(QtWidgets.QMainWindow):
             shapes = self.intelligenceHelper.get_shapes_of_one(
                 self.CURRENT_FRAME_IMAGE, img_array_flag=True)
         else:
+            if self.filename != self.last_file_opened:
+                self.last_file_opened = self.filename
+                self.intelligenceHelper.clear_annotating_models()
+                
             if os.path.exists(self.filename):
                 self.labelList.clearSelection()
             shapes = self.intelligenceHelper.get_shapes_of_one(
-                self.filename)  
+                self.filename)
+              
             
         # for shape in shapes:
         #     print(shape["group_id"])
