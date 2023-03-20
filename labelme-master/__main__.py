@@ -175,13 +175,26 @@ def main():
 
     # style
     app.setWindowIcon(newIcon("icon"))
-
+    qss = """
+    QMenuBar::item {
+        padding: 10px;
+        margin: 0 5px
+    }
+    QMenu{
+        border-radius: 5px;
+    }
+    QMenu::item{
+        padding: 8px;
+        margin: 5px;
+        border-radius: 5px;
+    }
+    QToolTip {
+            color: #111111;
+            background-color: #EEEEEE;
+            }
+    """
     try:
-        tool_tip_color = """QToolTip {
-                            color: #111111;
-                            background-color: #EEEEEE;
-                           }"""
-        qdarktheme.setup_theme("auto", additional_qss=tool_tip_color)
+        qdarktheme.setup_theme("auto", additional_qss=qss)
     except Exception as e:
         pass
 
