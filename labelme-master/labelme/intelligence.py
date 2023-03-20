@@ -24,6 +24,26 @@ warnings.filterwarnings("ignore")
 from ultralytics import YOLO
 
 coco_classes = ['person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', 'truck', 'boat', 'traffic light', 'fire hydrant', 'stop sign', 'parking meter', 'bench', 'bird', 'cat', 'dog', 'horse', 'sheep', 'cow', 'elephant', 'bear', 'zebra', 'giraffe', 'backpack', 'umbrella', 'handbag', 'tie', 'suitcase', 'frisbee', 'skis', 'snowboard', 'sports ball', 'kite', 'baseball bat', 'baseball glove', 'skateboard', 'surfboard', 'tennis racket', 'bottle', 'wine glass', 'cup', 'fork', 'knife', 'spoon', 'bowl', 'banana', 'apple', 'sandwich', 'orange', 'broccoli', 'carrot', 'hot dog', 'pizza', 'donut', 'cake', 'chair', 'couch', 'potted plant', 'bed', 'dining table', 'toilet', 'tv', 'laptop', 'mouse', 'remote', 'keyboard', 'cell phone', 'microwave', 'oven', 'toaster', 'sink', 'refrigerator', 'book', 'clock', 'vase', 'scissors', 'teddy bear', 'hair drier', 'toothbrush']
+# make a list of 12 unique colors as we will use them to draw bounding boxes of different classes in different colors
+# so the calor palette will be used to draw bounding boxes of different classes in different colors
+# the color pallette should have the famous 12 colors as red, green, blue, yellow, cyan, magenta, white, black, gray, brown, pink, and orange in bgr format
+color_palette = [(75, 25, 230),
+                (75, 180, 60),
+                (25, 225, 255),
+                (200, 130, 0),
+                (49, 130, 245),
+                (180, 30, 145),
+                (240, 240, 70),
+                (230, 50, 240),
+                (60, 245, 210),
+                (190, 190, 250),
+                (128, 128, 0),
+                (255, 190, 230),
+                (40, 110, 170),
+                (200, 250, 255),
+                (0, 0, 128),
+                (195, 255, 170)] 
+
 
 class IntelligenceWorker(QThread):
     sinOut = pyqtSignal(int,int)
@@ -124,46 +144,21 @@ class Intelligence():
         shapes = []
         for result in results:
             
-            # dont show bbox for now
-            
-            # shape = Shape()
-            # shape.label = result["class"]
-            # shape.content = result["confidence"]
-            # shape.shape_type="polygon"
-            # shape.flags = {}
-            # shape.other_data = {}
-            
-            # x_min , y_min , w , h = self.get_bbox(result["seg"])
-            # (x1,y1) , (x2,y2) , (x3,y3) , (x4,y4) = [(x_min,y_min) , (x_min+w,y_min) , (x_min+w,y_min+h) , (x_min,y_min+h)]
-            # for point in [(x1,y1) , (x2,y2) , (x3,y3) , (x4,y4)]:
-            #     shape.addPoint(QtCore.QPointF(point[0], point[1]))
+  
+            shape = {}
+            shape["label"] = result["class"]
+            shape["content"] = result["confidence"]
+            shape["group_id"] = None
+            shape["shape_type"]= "polygon"
+            shape["bbox"] = self.get_bbox(result["seg"])
             
             
-            # for point in result["bbox"]:
-            #     shape.addPoint(QtCore.QPointF(point[0], point[1]))
-            # shape.close()
-            # shapes.append(shape)
+            shape["flags"] = {}
+            shape["other_data"] = {}
             
-            shape = Shape()
-            shape.label = result["class"]
-            shape.content = result["confidence"]
-            shape.shape_type="polygon"
-            
-            bboxes = self.get_bbox(result["seg"])
-            shape.bbox = bboxes
-            
-            shape.flags = {}
-            shape.other_data = {}
-            shape.group_id = None
-            
-            # bbox = shape["bbox"]
-            # shape_type = shape["shape_type"]
-            
-            for i in range(len(result["seg"])):
-                x = result["seg"][i][0]
-                y = result["seg"][i][1]
-                shape.addPoint(QtCore.QPointF(x, y))
-            shape.close()
+            # shape_points is result["seg"] flattened
+            shape["points"] = [item for sublist in result["seg"] for item in sublist]
+
             shapes.append(shape)
             
             #self.addLabel(shape)
@@ -279,6 +274,15 @@ class Intelligence():
         points= np.array(points, np.uint16).flatten().tolist()
         return points
     
+    def clear_annotating_models(self):
+        self.reader.annotating_models.clear()
+
+
+
+
+
+
+
     def saveLabelFile(self, filename, detectedShapes):
         lf = LabelFile()
         
