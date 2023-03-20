@@ -144,46 +144,21 @@ class Intelligence():
         shapes = []
         for result in results:
             
-            # dont show bbox for now
-            
-            # shape = Shape()
-            # shape.label = result["class"]
-            # shape.content = result["confidence"]
-            # shape.shape_type="polygon"
-            # shape.flags = {}
-            # shape.other_data = {}
-            
-            # x_min , y_min , w , h = self.get_bbox(result["seg"])
-            # (x1,y1) , (x2,y2) , (x3,y3) , (x4,y4) = [(x_min,y_min) , (x_min+w,y_min) , (x_min+w,y_min+h) , (x_min,y_min+h)]
-            # for point in [(x1,y1) , (x2,y2) , (x3,y3) , (x4,y4)]:
-            #     shape.addPoint(QtCore.QPointF(point[0], point[1]))
+  
+            shape = {}
+            shape["label"] = result["class"]
+            shape["content"] = result["confidence"]
+            shape["group_id"] = None
+            shape["shape_type"]= "polygon"
+            shape["bbox"] = self.get_bbox(result["seg"])
             
             
-            # for point in result["bbox"]:
-            #     shape.addPoint(QtCore.QPointF(point[0], point[1]))
-            # shape.close()
-            # shapes.append(shape)
+            shape["flags"] = {}
+            shape["other_data"] = {}
             
-            shape = Shape()
-            shape.label = result["class"]
-            shape.content = result["confidence"]
-            shape.shape_type="polygon"
-            
-            bboxes = self.get_bbox(result["seg"])
-            shape.bbox = bboxes
-            
-            shape.flags = {}
-            shape.other_data = {}
-            shape.group_id = None
-            
-            # bbox = shape["bbox"]
-            # shape_type = shape["shape_type"]
-            
-            for i in range(len(result["seg"])):
-                x = result["seg"][i][0]
-                y = result["seg"][i][1]
-                shape.addPoint(QtCore.QPointF(x, y))
-            shape.close()
+            # shape_points is result["seg"] flattened
+            shape["points"] = [item for sublist in result["seg"] for item in sublist]
+
             shapes.append(shape)
             
             #self.addLabel(shape)
