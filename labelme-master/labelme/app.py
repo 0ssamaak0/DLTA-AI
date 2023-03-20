@@ -266,6 +266,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # for video annotation
         self.frame_time = 0
         self.FRAMES_TO_SKIP = 30
+        self.TRACK_ASSIGNED_OBJECTS_ONLY = False
         self.TrackingMode = False
         self.CURRENT_ANNOATAION_FLAGS = {"traj" : False  ,
                                         "bbox" : True  ,         
@@ -1344,6 +1345,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def loadShapes(self, shapes, replace=True):
         self._noSelectionSlot = True
+        # sort shapes by group_id but only if its not None
+        shapes = sorted(shapes, key=lambda x: int(x.group_id) if x.group_id is not None else 0)
         for shape in shapes:
             self.addLabel(shape)
         self.labelList.clearSelection()
@@ -1375,7 +1378,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 content=content,
             )
             for i in range(0, len(points), 2):
-                shape.addPoint(QtCore.QPointF(points[i], points[i + 1]))
+                shape.addPoint(QtCore.QPointF(points[i], points[i + 1] ))
             shape.close()
 
             default_flags = {}
@@ -2356,10 +2359,10 @@ class MainWindow(QtWidgets.QMainWindow):
         # image = self.draw_bb_on_image(self.image  , self.CURRENT_SHAPES_IN_IMG)
         # self.canvas.loadPixmap(QtGui.QPixmap.fromImage(image))
         
-        
+        # clear shapes already in canvas
+        self.labelList.clear()
         self.CURRENT_SHAPES_IN_IMG = shapes
         self.loadLabels(self.CURRENT_SHAPES_IN_IMG)
-        # self.loadShapes(shapes)
         self.actions.editMode.setEnabled(True)
         self.actions.undoLastPoint.setEnabled(False)
         self.actions.undo.setEnabled(True)
@@ -2657,6 +2660,22 @@ class MainWindow(QtWidgets.QMainWindow):
         except:
             # this means that the class name is not in the coco dataset
             return -1
+        
+        
+        
+    def track_assigned_objects_button_clicked(self):
+        # first check if there is objects in self.canvas.shapes list or not . if not then output a error message and return
+        if len(self.canvas.shapes) == 0:
+            self.errorMessage(
+                "found No objects to track", 
+                "you need to assign at least one object to track",
+            )
+            return
+        
+        
+        self.TRACK_ASSIGNED_OBJECTS_ONLY = True
+        self.track_buttonClicked()
+        self.TRACK_ASSIGNED_OBJECTS_ONLY = False
 
     def track_buttonClicked(self):
         self.tracking_progress_bar.setVisible(True)
@@ -2706,10 +2725,11 @@ class MainWindow(QtWidgets.QMainWindow):
                 print(shape.label)
 
         self.TrackingMode = True
+        tracks_to_follow = None
+
         for i in range(self.FRAMES_TO_TRACK):
             if existing_annotation:
-                print('\n\n\n\n\nloading existing annotation/n/n')
-                existing_annotation = False
+                print('\n\n\n\n\nloading existing annotation\n\n')
                 shapes = self.canvas.shapes
                 shapes = self.convert_qt_shapes_to_shapes(shapes)
             else :
@@ -2722,6 +2742,7 @@ class MainWindow(QtWidgets.QMainWindow):
             class_ids = []
             segments = []
             # current_objects_ids = []
+
             for s in shapes:
                 label = s["label"]
                 points = s["points"]
@@ -2763,12 +2784,13 @@ class MainWindow(QtWidgets.QMainWindow):
             detections.tracker_id = np.array(tracker_id)
 
 
-            # print(f'detections : {len(detections)}')
             # print(f'tracks : {len(tracker_id)}')
             
         
-            # print(f'len of shapes = {len(shapes)}')
-            # print(f'len of detections.tracker_id = {len(detections.tracker_id)}') 
+            print(f'len of shapes = {len(shapes)}')
+            print(f'detections : {len(detections)}')
+            print(f'len of tracker_id = {len(tracker_id)}') 
+            print(f'len of detections.tracker_id = {detections.tracker_id.shape}') 
             # # masks shapes when traker_id is None
             
             # make new list of shapes to be added to CURRENT_SHAPES_IN_IMG 
@@ -2782,6 +2804,20 @@ class MainWindow(QtWidgets.QMainWindow):
             mask = np.array(
                 [tracker_id is not None for tracker_id in detections.tracker_id], dtype=bool)
             detections.filter(mask=mask, inplace=True)
+            if i == 0 and existing_annotation:
+                tracks_to_follow = detections.tracker_id
+                existing_annotation = False
+
+            # if it is first iteration of the for loop and self.TRACK_ASSIGNED_OBJECTS_ONLY is True we mask both detections and shapes with tracks_to_follow
+            if self.TRACK_ASSIGNED_OBJECTS_ONLY and tracks_to_follow is not None:
+                self.CURRENT_SHAPES_IN_IMG = [shape_ for shape_ in shapes if shape_["group_id"] in tracks_to_follow]
+                mask = np.array(
+                    [tracker_id in tracks_to_follow for tracker_id in detections.tracker_id], dtype=bool)
+                detections.filter(mask=mask, inplace=True)
+            # self.CURRENT_SHAPES_IN_IMG = [shape_ for shape_ in shapes if shape_["group_id"] is not None]
+            # mask = np.array(
+            #     [tracker_id is not None for tracker_id in detections.tracker_id], dtype=bool)
+            # detections.filter(mask=mask, inplace=True)
 
         # to understand the json output file structure it is a dictionary of frames and each frame is a dictionary of tracker_ids and each tracker_id is a dictionary of bbox , confidence , class_id , segment
             json_frame = {}
@@ -2922,7 +2958,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def polygons_visable_checkBox_changed(self):
         self.CURRENT_ANNOATAION_FLAGS["polygons"] = self.polygons_visable_checkBox.isChecked()
-        self.main_video_frames_slider_changed()
+        for shape in self.canvas.shapes:
+            self.canvas.setShapeVisible(shape, self.CURRENT_ANNOATAION_FLAGS["polygons"])
     def addVideoControls(self):
         # add video controls toolbar with custom style (background color , spacing , hover color)
         self.videoControls = QtWidgets.QToolBar()
@@ -3041,7 +3078,25 @@ class MainWindow(QtWidgets.QMainWindow):
         self.track_button.clicked.connect(self.track_buttonClicked)
         self.videoControls_2.addWidget(self.track_button)
 
+        self.track_assigned_objects = QtWidgets.QPushButton()
+        self.track_assigned_objects.setStyleSheet(
+            "QPushButton {font-size: 10pt; margin: 2px 5px; padding: 2px 7px; border: 2px solid; border-radius:10px; font-weight: bold; background-color: #0d69f5; color: #FFFFFF;} QPushButton:hover {background-color: #4990ED;}")
+
+        self.track_assigned_objects.setText("Track Only assigned objects")
+        self.track_assigned_objects.clicked.connect(
+            self.track_assigned_objects_button_clicked)
+        self.videoControls_2.addWidget(self.track_assigned_objects)
         # make a tracking progress bar with a label to show the progress of the tracking (in percentage )
+        self.track_full_video_button = QtWidgets.QPushButton()
+        self.track_full_video_button.setStyleSheet(
+            "QPushButton {font-size: 10pt; margin: 2px 5px; padding: 2px 7px; border: 2px solid; border-radius:10px; font-weight: bold; background-color: #0d69f5; color: #FFFFFF;} QPushButton:hover {background-color: #4990ED;}")
+
+        self.track_full_video_button.setText("Track Full Video")
+        self.track_full_video_button.clicked.connect(
+            self.track_full_video_button_clicked)
+        self.videoControls_2.addWidget(self.track_full_video_button)
+        
+        
         self.tracking_progress_bar_label = QtWidgets.QLabel()
         self.tracking_progress_bar_label.setStyleSheet(
             "QLabel { font-size: 10pt; font-weight: bold; }")
@@ -3055,14 +3110,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.tracking_progress_bar.setValue(0)
         self.videoControls_2.addWidget(self.tracking_progress_bar)
 
-        self.track_full_video_button = QtWidgets.QPushButton()
-        self.track_full_video_button.setStyleSheet(
-            "QPushButton {font-size: 10pt; margin: 2px 5px; padding: 2px 7px; border: 2px solid; border-radius:10px; font-weight: bold; background-color: #0d69f5; color: #FFFFFF;} QPushButton:hover {background-color: #4990ED;}")
-
-        self.track_full_video_button.setText("Track Full Video")
-        self.track_full_video_button.clicked.connect(
-            self.track_full_video_button_clicked)
-        self.videoControls_2.addWidget(self.track_full_video_button)
+        
+        
 
 
         # add 5 checkboxes to control the CURRENT ANNOATAION FLAGS including (bbox , id , class , mask , traj)
@@ -3177,7 +3226,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 
         # there is no bbox but there is id or class
         if (not self.CURRENT_ANNOATAION_FLAGS['bbox']) and (self.CURRENT_ANNOATAION_FLAGS['id'] or self.CURRENT_ANNOATAION_FLAGS['class']):
-            image = cv2.line(image, (x+int(w/2), y + int(h/2)), (x + 50, y - 12), color, thickness+1)
+            image = cv2.line(image, (x+int(w/2), y + int(h/2)), (x + 50, y - 5), color, thickness+1)
         
             
         return image
