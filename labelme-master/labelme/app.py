@@ -1248,7 +1248,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if shape.group_id is None:
             item.setText(shape.label)
         else:
-            item.setText(f' ID {shape.group_id}:\t\t{shape.label}')
+            item.setText(f' ID {shape.group_id}: {shape.label}')
         self.setDirty()
         if not self.uniqLabelList.findItemsByLabel(shape.label):
             item = QtWidgets.QListWidgetItem()
@@ -1299,7 +1299,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if shape.group_id is None:
             text = shape.label
         else:
-            text = f' ID {shape.group_id}:\t\t{shape.label}'
+            text = f' ID {shape.group_id}: {shape.label}'
         label_list_item = LabelListWidgetItem(text, shape)
         self.labelList.addItem(label_list_item)
         if not self.uniqLabelList.findItemsByLabel(shape.label):
@@ -1902,7 +1902,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self._config["keep_prev"] = keep_prev
 
     def openFile(self, _value=False):
-
         self.current_annotation_mode = "img"
         self.actions.export.setEnabled(False)
         try :
@@ -1930,6 +1929,8 @@ class MainWindow(QtWidgets.QMainWindow):
         filename = str(filename)
         if filename:
             self.loadFile(filename)
+            self.set_video_controls_visibility(False)
+
 
     def changeOutputDirDialog(self, _value=False):
         default_output_dir = self.output_dir
@@ -2226,10 +2227,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def openDirDialog(self, _value=False, dirpath=None):
         self.current_annotation_mode = "dir"
-        try :
-            cv2.destroyWindow('video processing')
-        except:
-            pass
         if not self.mayContinue():
             return
 
@@ -2252,6 +2249,7 @@ class MainWindow(QtWidgets.QMainWindow):
         )
         self.target_directory = targetDirPath
         self.importDirImages(targetDirPath)
+        self.set_video_controls_visibility(False)
 
     @property
     def imageList(self):
@@ -2369,6 +2367,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # clear shapes already in lablelist (fixes saving multiple shapes of same object bug)
         self.labelList.clear()
         self.CURRENT_SHAPES_IN_IMG = shapes
+        self.canvas.loadPixmap(QtGui.QPixmap.fromImage(self.image))
         self.loadLabels(self.CURRENT_SHAPES_IN_IMG)
         self.actions.editMode.setEnabled(True)
         self.actions.undoLastPoint.setEnabled(False)
