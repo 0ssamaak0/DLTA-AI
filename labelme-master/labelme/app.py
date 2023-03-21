@@ -272,7 +272,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.FRAMES_TO_SKIP = 30
         self.TRACK_ASSIGNED_OBJECTS_ONLY = False
         self.TrackingMode = False
-        self.CURRENT_ANNOATAION_FLAGS = {"traj" : True  ,
+        self.CURRENT_ANNOATAION_FLAGS = {"traj" : False  ,
                                         "bbox" : True  ,         
                                         "id" : True ,
                                         "class" : True,
@@ -3298,7 +3298,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.traj_checkBox = QtWidgets.QCheckBox()
         self.traj_checkBox.setText("traj")
-        self.traj_checkBox.setChecked(True)
+        self.traj_checkBox.setChecked(False)
         self.traj_checkBox.stateChanged.connect(self.traj_checkBox_changed)
         self.videoControls_2.addWidget(self.traj_checkBox)
         
