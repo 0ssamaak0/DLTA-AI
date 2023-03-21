@@ -3375,11 +3375,8 @@ class MainWindow(QtWidgets.QMainWindow):
         for shape in shapes:
             id = shape["group_id"]
             pts = self.CURRENT_ANNOATAION_TRAJECTORIES['id_'+str(id)][max(self.INDEX_OF_CURRENT_FRAME - x, 0) : self.INDEX_OF_CURRENT_FRAME] 
-            color = self.CURRENT_ANNOATAION_TRAJECTORIES['id_color_'+str(id)]
-            
             for i in range(len(pts) - 1, 0, - 1):
-                # thickness = int(np.sqrt(x / float(len(pts) - i + 1)) * 2.5)
-                thickness = (len(pts) - i <= 10) * 2 + (len(pts) - i <= 20) * 2 + (len(pts) - i <= 30) * 2 + 3
+                thickness = (len(pts) - i <= 10) * 1 + (len(pts) - i <= 20) * 1 + (len(pts) - i <= 30) * 1 + 4
                 if pts[i - 1] is None or pts[i] is None :
                     continue
                 if pts[i] == (-1, - 1) or pts[i - 1] == (-1, - 1) :
@@ -3389,10 +3386,21 @@ class MainWindow(QtWidgets.QMainWindow):
                     label) if label in coco_classes else -1
                 idx = idx % len(color_palette)
                 color = color_palette[idx] if idx != -1 else (0, 0, 255)
+                color = tuple(int(0.9 * x) for x in color)
                 cv2.line(img, pts[i - 1], pts[i], color, thickness)
                 if((len(pts) - 1 - i) % 10 == 0):
-                    cv2.circle(img, pts[i], 2, (0, 0, 0), -1)
+                    cv2.circle(img, pts[i], 3, (0, 0, 0), -1)
         return img
+
+    def draw_mask_on_image(self, img, shapes):
+        for shape in shapes:
+            id = shape["group_id"]
+            points = shape["points"]
+            pts = np.array([ [x, y] for x, y in zip(points[0::2], points[1::2]) ])
+            color = self.CURRENT_ANNOATAION_TRAJECTORIES['id_color_'+str(id)]
+            cv2.fillPoly(img, pts=[pts], color=color)
+        return img
+        
 
     def draw_bb_on_image(self , image, shapes , imgage_qt_flag=True):
         img = image
@@ -3438,6 +3446,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # print(sys.getsizeof(self.CURRENT_ANNOATAION_TRAJECTORIES))
         # print(len(self.CURRENT_ANNOATAION_TRAJECTORIES))
+
+        if(self.CURRENT_ANNOATAION_FLAGS['mask']):
+            img = self.draw_mask_on_image(img, shapes)
 
         if self.CURRENT_ANNOATAION_FLAGS['traj']:
             img = self.draw_trajectories(img, shapes)
