@@ -277,7 +277,7 @@ class MainWindow(QtWidgets.QMainWindow):
                                          "polygons" : True}
         self.CURRENT_ANNOATAION_TRAJECTORIES = {}
         self.CURRENT_ANNOATAION_TRAJECTORIES['length'] = 30              # keep it like that, don't change it
-        self.CURRENT_ANNOATAION_TRAJECTORIES['alpha'] = 0.2              # keep it like that, don't change it
+        self.CURRENT_ANNOATAION_TRAJECTORIES['alpha'] = 0.35              # keep it like that, don't change it
         self.CURRENT_SHAPES_IN_IMG = []
         # make CLASS_NAMES_DICT a dictionary of coco class names
         # self.CLASS_NAMES_DICT =
@@ -3390,8 +3390,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 img = cv2.addWeighted(original_img, alpha, img, 1 - alpha, 0)
             
             for i in range(len(pts_traj) - 1, 0, - 1):
-                # thickness = (len(pts_traj) - i <= 10) * 1 + (len(pts_traj) - i <= 20) * 1 + (len(pts_traj) - i <= 30) * 1 + 4
-                thickness = 4
+                thickness = (len(pts_traj) - i <= 10) * 1 + (len(pts_traj) - i <= 20) * 1 + (len(pts_traj) - i <= 30) * 1 + 3
+                # thickness = 4
                 if pts_traj[i - 1] is None or pts_traj[i] is None :
                     continue
                 if pts_traj[i] == (-1, - 1) or pts_traj[i - 1] == (-1, - 1) :
@@ -3427,41 +3427,34 @@ class MainWindow(QtWidgets.QMainWindow):
                                   label, color, thickness=1)
             center = (int((x1 + x2) / 2), int((y1 + y2) / 2))
             try:
+                centers_rec = self.CURRENT_ANNOATAION_TRAJECTORIES['id_' + str(id)]
                 try:
-                    (xp, yp) = self.CURRENT_ANNOATAION_TRAJECTORIES['id_' + str(
-                        id)][self.INDEX_OF_CURRENT_FRAME - 2]
+                    (xp, yp) = centers_rec[self.INDEX_OF_CURRENT_FRAME - 2]
                     (xn, yn) = center
                     if (xp == -1 or xn == -1):
                         c = 5 / 0
-                        
                     r = 0.5
                     x = r * xn + (1 - r) * xp
                     y = r * yn + (1 - r) * yp
                     center = (int(x), int(y))
-                    self.CURRENT_ANNOATAION_TRAJECTORIES['id_' + str(
-                        id)][self.INDEX_OF_CURRENT_FRAME - 1] = center
                 except:
-                    self.CURRENT_ANNOATAION_TRAJECTORIES['id_' + str(
-                        id)][self.INDEX_OF_CURRENT_FRAME - 1] = center
+                    pass
+                centers_rec[self.INDEX_OF_CURRENT_FRAME - 1] = center
+                self.CURRENT_ANNOATAION_TRAJECTORIES['id_' + str(id)] = centers_rec
             except:
-                self.CURRENT_ANNOATAION_TRAJECTORIES['id_' + str(
-                    id)] = [(-1, - 1)] * int(self.TOTAL_VIDEO_FRAMES)
-                self.CURRENT_ANNOATAION_TRAJECTORIES['id_' + str(
-                    id)][self.INDEX_OF_CURRENT_FRAME - 1] = center
+                centers_rec = [(-1, - 1)] * int(self.TOTAL_VIDEO_FRAMES)
+                centers_rec[self.INDEX_OF_CURRENT_FRAME - 1] = center
+                self.CURRENT_ANNOATAION_TRAJECTORIES['id_' + str(id)] = centers_rec
                 self.CURRENT_ANNOATAION_TRAJECTORIES['id_color_' +
                                                      str(id)] = color
 
         # print(sys.getsizeof(self.CURRENT_ANNOATAION_TRAJECTORIES))
-        # print(len(self.CURRENT_ANNOATAION_TRAJECTORIES))
 
-        #if(self.CURRENT_ANNOATAION_FLAGS['mask']):
-        #img = self.draw_mask_on_image(img, shapes)
-
-        #if self.CURRENT_ANNOATAION_FLAGS['traj']:
         img = self.draw_trajectories(img, shapes)
 
         if imgage_qt_flag:
             img = self.convert_cv_to_qt(img, )
+            
         return img
 
 
