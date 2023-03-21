@@ -192,6 +192,9 @@ def main():
             color: #111111;
             background-color: #EEEEEE;
             }
+    QCheckBox{
+        margin: 0 7px;
+    }
     """
     try:
         qdarktheme.setup_theme("auto", additional_qss=qss)
