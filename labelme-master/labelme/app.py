@@ -3059,6 +3059,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def save_current_frame_annotation_button_clicked(self):
         self.save_current_frame_annotation()
+        self.main_video_frames_slider_changed()
         
     def save_current_frame_annotation(self):
         json_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}_tracking_results.json'
