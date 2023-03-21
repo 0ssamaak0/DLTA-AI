@@ -3382,7 +3382,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 cv2.fillPoly(img, pts=[pts_poly], color=color_poly)
             
             for i in range(len(pts_traj) - 1, 0, - 1):
-                thickness = (len(pts_traj) - i <= 10) * 1 + (len(pts_traj) - i <= 20) * 1 + (len(pts_traj) - i <= 30) * 1 + 4
+                # thickness = (len(pts_traj) - i <= 10) * 1 + (len(pts_traj) - i <= 20) * 1 + (len(pts_traj) - i <= 30) * 1 + 4
+                thickness = 4
                 if pts_traj[i - 1] is None or pts_traj[i] is None :
                     continue
                 if pts_traj[i] == (-1, - 1) or pts_traj[i - 1] == (-1, - 1) :
@@ -3423,8 +3424,10 @@ class MainWindow(QtWidgets.QMainWindow):
                     (xn, yn) = center
                     if (xp == -1 or xn == -1):
                         c = 5 / 0
-                    x = 0.6 * xn + 0.4 * xp
-                    y = 0.6 * yn + 0.4 * yp
+                        
+                    r = 0.5
+                    x = r * xn + (1 - r) * xp
+                    y = r * yn + (1 - r) * yp
                     center = (int(x), int(y))
                     self.CURRENT_ANNOATAION_TRAJECTORIES['id_' + str(
                         id)][self.INDEX_OF_CURRENT_FRAME - 1] = center
