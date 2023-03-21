@@ -1332,9 +1332,9 @@ class MainWindow(QtWidgets.QMainWindow):
             # label_id = self.uniqLabelList.indexFromItem(item).row() + 1
             # label_id += self._config["shift_auto_shape_color"]
             # return LABEL_COLORMAP[label_id % len(LABEL_COLORMAP)]
-            idx = coco_classes.index(label)
+            idx = coco_classes.index(label) if label in coco_classes else -1 
             idx = idx % len(color_palette)
-            color = color_palette[idx]
+            color = color_palette[idx] if idx != -1 else (0, 0, 255)
             # convert color from bgr to rgb
             return color[::-1]
         
@@ -2483,7 +2483,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 frame_objects = listObj[i]['frame_data']
                 for object_ in frame_objects:
                     shape = {}
-                    shape["label"] = coco_classes[object_['class_id']]
+                    shape["label"] = object_["class_name"]
                     shape["group_id"] = str(object_['tracker_id'])
                     shape["content"] = str(object_['confidence'])
                     shape["bbox"] = object_['bbox']
@@ -2640,7 +2640,7 @@ class MainWindow(QtWidgets.QMainWindow):
         frame_text = ("%02d:%02d:%02d:%03d" % (
             self.frame_time[0], self.frame_time[1], self.frame_time[2] , self.frame_time[3]))
         video_duration = self.mapFrameToTime(self.TOTAL_VIDEO_FRAMES)
-        video_duration_text = ("%02d:%02d:%02d:%03d     " % (
+        video_duration_text = ("%02d:%02d:%02d:%03d" % (
             video_duration[0], video_duration[1], video_duration[2] , video_duration[3]))
         final_text = frame_text + " / " + video_duration_text
         self.main_video_frames_label_2.setText(f'time {final_text}')
@@ -2782,7 +2782,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     confidences.append(1.0)
                 else :
                     confidences.append(float(s["content"]))
-                class_ids.append(int(self.class_name_to_id(label)))
+                class_ids.append(coco_classes.index(label)if label in coco_classes else -1)
 
             boxes = np.array(boxes , dtype=int)
             confidences = np.array(confidences)
@@ -2848,7 +2848,6 @@ class MainWindow(QtWidgets.QMainWindow):
             json_frame = {}
             json_frame.update({'frame_idx' : self.INDEX_OF_CURRENT_FRAME})
             json_frame_object_list = []
-            tracked_objects_list = []
             for j in range(len(detections.tracker_id)):
                 json_tracked_object = {}
                 json_tracked_object['tracker_id'] = int(
@@ -2857,6 +2856,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
                 json_tracked_object['confidence'] = str(
                     detections.confidence[j])
+                json_tracked_object['class_name'] = self.CURRENT_SHAPES_IN_IMG[j]["label"]
                 json_tracked_object['class_id'] = int(detections.class_id[j])
                 points = self.CURRENT_SHAPES_IN_IMG[j]["points"]
                 segment = [[int(points[z]), int(points[z + 1])] for z in range(0, len(points), 2)]
@@ -3041,7 +3041,74 @@ class MainWindow(QtWidgets.QMainWindow):
         msg.exec_()
 
         
-    
+    def clear_video_annotations_button_clicked(self):
+        # just delete the json file and reload the video
+        # to delete the json file we need to know the name of the json file which is the same as the video name
+        json_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}_tracking_results.json'
+        # now delete the json file if it exists 
+        if os.path.exists(json_file_name):
+            os.remove(json_file_name)
+        msg = QtWidgets.QMessageBox()
+        msg.setIcon(QtWidgets.QMessageBox.Information)
+        msg.setText("All video frames annotations are cleared")
+        msg.setWindowTitle("clear annotations")
+        msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
+        msg.exec_()
+        self.main_video_frames_slider.setValue(2)
+        self.main_video_frames_slider.setValue(1)
+
+    def save_current_frame_annotation_button_clicked(self):
+        self.save_current_frame_annotation()
+        
+    def save_current_frame_annotation(self):
+        json_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}_tracking_results.json'
+        if not os.path.exists(json_file_name):
+            with open(json_file_name, 'w') as jf:
+                json.dump([], jf)
+            jf.close()
+        with open(json_file_name, 'r') as jf:
+            listObj = json.load(jf)
+        jf.close()
+        
+        json_frame = {}
+        json_frame.update({'frame_idx' : self.INDEX_OF_CURRENT_FRAME})
+        json_frame_object_list = []
+        
+        shapes = self.convert_qt_shapes_to_shapes(self.canvas.shapes)
+        for shape in shapes:
+            json_tracked_object = {}
+            json_tracked_object['tracker_id'] = int(shape["group_id"]) if shape["group_id"] != None else -1
+            bbox = shape["bbox"]
+            bbox = [int(bbox[0]), int(bbox[1]), int(bbox[2]), int(bbox[3])]
+            json_tracked_object['bbox'] = bbox
+            json_tracked_object['confidence'] = str(shape["content"] if shape["content"] != None else 1) 
+            json_tracked_object['class_name'] = shape["label"]
+            json_tracked_object['class_id'] = coco_classes.index(shape["label"]) if shape["label"] in coco_classes else -1
+            points = shape["points"]
+            segment = [[int(points[z]), int(points[z + 1])] for z in range(0, len(points), 2)]
+            json_tracked_object['segment'] = segment
+
+            json_frame_object_list.append(json_tracked_object)
+        json_frame.update({'frame_data' : json_frame_object_list})
+
+        for h in range(len(listObj)):
+            if listObj[h]['frame_idx'] == self.INDEX_OF_CURRENT_FRAME:
+                listObj.pop(h)
+                break
+
+        listObj.append(json_frame)
+            
+            
+        listObj = sorted(listObj, key=lambda k: k['frame_idx'])
+        with open(json_file_name, 'w') as json_file:
+            json.dump(listObj, json_file ,
+                        indent=4,
+                        separators=(',', ': '))
+        json_file.close()
+        print ("saved frame annotation")
+        
+        
+        
     def addVideoControls(self):
         # add video controls toolbar with custom style (background color , spacing , hover color)
         self.videoControls = QtWidgets.QToolBar()
@@ -3128,6 +3195,19 @@ class MainWindow(QtWidgets.QMainWindow):
         self.videoControls.addWidget(self.main_video_frames_label_1)
         self.videoControls.addWidget(self.main_video_frames_slider)
         self.videoControls.addWidget(self.main_video_frames_label_2)
+        
+        
+        self.clear_video_annotations_button = QtWidgets.QPushButton()
+        self.clear_video_annotations_button.setStyleSheet(self.buttons_text_style_sheet)
+        self.clear_video_annotations_button.setText("Clear Video Annotations")
+        self.clear_video_annotations_button.clicked.connect(
+            self.clear_video_annotations_button_clicked)
+        self.videoControls.addWidget(self.clear_video_annotations_button)
+
+
+        # now we start the videocontrols_2 toolbar widgets
+
+
 
         # add the slider to control the video frame
         self.frames_to_track_slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
@@ -3148,9 +3228,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.videoControls_2.addWidget(self.frames_to_track_slider)
         self.frames_to_track_slider.setValue(10)
 
-        # self.dummy_label = QtWidgets.QLabel()
-        # self.dummy_label.setText(" ")
-        # self.videoControls.addWidget(self.dummy_label)
+
 
         self.track_button = QtWidgets.QPushButton()
         self.track_button.setStyleSheet(self.buttons_text_style_sheet)
@@ -3228,6 +3306,17 @@ class MainWindow(QtWidgets.QMainWindow):
         self.videoControls_2.addWidget(self.polygons_visable_checkBox)
 
 
+
+        # save current frame 
+        self.save_current_frame_annotation_button = QtWidgets.QPushButton()
+        self.save_current_frame_annotation_button.setStyleSheet(self.buttons_text_style_sheet)
+
+        self.save_current_frame_annotation_button.setText("save current frame")
+        self.save_current_frame_annotation_button.clicked.connect(
+            self.save_current_frame_annotation_button_clicked)
+        self.videoControls_2.addWidget(self.save_current_frame_annotation_button)
+
+
         # add export as video button
         self.export_as_video_button = QtWidgets.QPushButton()
         self.export_as_video_button.setStyleSheet(self.buttons_text_style_sheet)
@@ -3236,6 +3325,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.export_as_video_button.clicked.connect(
             self.export_as_video_button_clicked)
         self.videoControls_2.addWidget(self.export_as_video_button)
+
+        # add a button to clear all video annotations 
+
+
+
 
         self.set_video_controls_visibility(False)
 
@@ -3328,9 +3422,10 @@ class MainWindow(QtWidgets.QMainWindow):
                     continue 
                 if pts[i] == (-1, - 1) or pts[i - 1] == (-1, - 1) :
                     break
-                idx = coco_classes.index(shape["label"])
+                label = shape["label"]
+                idx = coco_classes.index(label) if label in coco_classes else -1 
                 idx = idx % len(color_palette)
-                color = color_palette[idx]
+                color = color_palette[idx] if idx != -1 else (0, 0, 255)
                 cv2.line(img, pts[i - 1], pts[i], color, thickness)
         return img
 
@@ -3344,9 +3439,9 @@ class MainWindow(QtWidgets.QMainWindow):
             label = shape["label"]
             
             # color calculation
-            idx = coco_classes.index(label)
+            idx = coco_classes.index(label) if label in coco_classes else -1 
             idx = idx % len(color_palette)
-            color = color_palette[idx]
+            color = color_palette[idx] if idx != -1 else (0, 0, 255)
             
             (x1, y1 , x2, y2) = shape["bbox"]
             x, y , w, h = int(x1), int(y1), int(x2 - x1), int(y2 - y1)
