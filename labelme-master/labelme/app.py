@@ -2791,12 +2791,12 @@ class MainWindow(QtWidgets.QMainWindow):
             # print(f'tracks : {len(tracker_id)}')
             
         
-            print(f'len of shapes = {len(shapes)}')
-            print(f'detections : {detections}')
-            print(f'len of tracker_id = {len(tracker_id)}') 
-            print(f'len of detections.tracker_id = {detections.tracker_id}') 
-            print(f'tracker_id = {tracker_id}') 
-            print(f'tracks = {tracks}') 
+            # print(f'len of shapes = {len(shapes)}')
+            # print(f'detections : {detections}')
+            # print(f'len of tracker_id = {len(tracker_id)}') 
+            # print(f'len of detections.tracker_id = {detections.tracker_id}') 
+            # print(f'tracker_id = {tracker_id}') 
+            # print(f'tracks = {tracks}') 
             # # masks shapes when traker_id is None
             
             # make new list of shapes to be added to CURRENT_SHAPES_IN_IMG 
@@ -3247,7 +3247,7 @@ class MainWindow(QtWidgets.QMainWindow):
             pts = self.CURRENT_ANNOATAION_TRAJECTORIES['id_'+str(id)][max(self.INDEX_OF_CURRENT_FRAME - 30, 0) : self.INDEX_OF_CURRENT_FRAME] 
             color = self.CURRENT_ANNOATAION_TRAJECTORIES['id_color_'+str(id)]
             for i in range(len(pts) - 1, 0, - 1):
-                thickness = int(np.sqrt(30 / float(len(pts) - i + 1)) * 2)
+                thickness = int(np.sqrt(30 / float(len(pts) - i + 1)) * 2.5)
                 if pts[i - 1] is None or pts[i] is None :
                     continue 
                 if pts[i] == (-1, - 1) or pts[i - 1] == (-1, - 1) :
