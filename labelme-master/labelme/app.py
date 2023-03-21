@@ -277,6 +277,7 @@ class MainWindow(QtWidgets.QMainWindow):
                                          "polygons" : True}
         self.CURRENT_ANNOATAION_TRAJECTORIES = {}
         self.CURRENT_ANNOATAION_TRAJECTORIES['length'] = 30              # keep it like that, don't change it
+        self.CURRENT_ANNOATAION_TRAJECTORIES['alpha'] = 0.2              # keep it like that, don't change it
         self.CURRENT_SHAPES_IN_IMG = []
         # make CLASS_NAMES_DICT a dictionary of coco class names
         # self.CLASS_NAMES_DICT =
@@ -2401,8 +2402,10 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def openVideo(self):
         length_Value = self.CURRENT_ANNOATAION_TRAJECTORIES['length']
+        alpha_Value = self.CURRENT_ANNOATAION_TRAJECTORIES['alpha']
         self.CURRENT_ANNOATAION_TRAJECTORIES.clear() 
         self.CURRENT_ANNOATAION_TRAJECTORIES['length'] = length_Value
+        self.CURRENT_ANNOATAION_TRAJECTORIES['alpha'] = alpha_Value
         
         # self.videoControls.show()
         self.current_annotation_mode = "video"
@@ -3381,7 +3384,10 @@ class MainWindow(QtWidgets.QMainWindow):
             color_poly = self.CURRENT_ANNOATAION_TRAJECTORIES['id_color_'+str(id)]
             
             if self.CURRENT_ANNOATAION_FLAGS['mask']:
+                original_img = img.copy()
                 cv2.fillPoly(img, pts=[pts_poly], color=color_poly)
+                alpha = self.CURRENT_ANNOATAION_TRAJECTORIES['alpha']
+                img = cv2.addWeighted(original_img, alpha, img, 1 - alpha, 0)
             
             for i in range(len(pts_traj) - 1, 0, - 1):
                 # thickness = (len(pts_traj) - i <= 10) * 1 + (len(pts_traj) - i <= 20) * 1 + (len(pts_traj) - i <= 30) * 1 + 4
@@ -3391,10 +3397,11 @@ class MainWindow(QtWidgets.QMainWindow):
                 if pts_traj[i] == (-1, - 1) or pts_traj[i - 1] == (-1, - 1) :
                     break
                 
-                color = tuple(int(0.95 * x) for x in color_poly)
+                # color_traj = tuple(int(0.95 * x) for x in color_poly)
+                color_traj = color_poly
                 
                 if self.CURRENT_ANNOATAION_FLAGS['traj']:
-                    cv2.line(img, pts_traj[i - 1], pts_traj[i], color, thickness)
+                    cv2.line(img, pts_traj[i - 1], pts_traj[i], color_traj, thickness)
                     if((len(pts_traj) - 1 - i) % 10 == 0):
                         cv2.circle(img, pts_traj[i], 3, (0, 0, 0), -1)
         
