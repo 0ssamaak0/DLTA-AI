@@ -71,6 +71,10 @@ class models_inference():
             results = model(img , conf=float(threshold))
             results = results[0]
             w , h = results.orig_img.shape[1] , results.orig_img.shape[0]
+            # if len results is 0 then return empty dict
+            if results.masks is None:
+                return {"results":{}}
+
             segments = results.masks.segments
             detections = Detections(
                 xyxy=results.boxes.xyxy.cpu().numpy(),
@@ -146,7 +150,7 @@ class models_inference():
             results1.append(results[1][i])
         
         self.annotating_models[model.__class__.__name__] = [results0 , results1]
-        print(self.annotating_models.keys())
+        # print(self.annotating_models.keys())
 
         # # if the length of the annotating_models is greater than 1 we need to merge the masks
         # if len(self.annotating_models.keys()) > 1:
