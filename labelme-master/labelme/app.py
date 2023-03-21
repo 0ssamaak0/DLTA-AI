@@ -3091,6 +3091,13 @@ class MainWindow(QtWidgets.QMainWindow):
         json_file.close()
         print("saved frame annotation")
 
+
+    def trajectory_length_lineEdit_changed(self):
+        text = self.trajectory_length_lineEdit.text()
+        self.CURRENT_ANNOATAION_TRAJECTORIES['length'] = int(text) if text != '' else 1
+        self.main_video_frames_slider_changed()
+
+
     def addVideoControls(self):
         # add video controls toolbar with custom style (background color , spacing , hover color)
         self.videoControls = QtWidgets.QToolBar()
@@ -3272,7 +3279,18 @@ class MainWindow(QtWidgets.QMainWindow):
         self.traj_checkBox.setChecked(False)
         self.traj_checkBox.stateChanged.connect(self.traj_checkBox_changed)
         self.videoControls_2.addWidget(self.traj_checkBox)
-
+        
+        # make qlineedit to alter the  self.CURRENT_ANNOATAION_TRAJECTORIES['length']  value
+        self.trajectory_length_lineEdit = QtWidgets.QLineEdit()
+        self.trajectory_length_lineEdit.setText(str(30))
+        self.trajectory_length_lineEdit.setMaximumWidth(50)
+        self.trajectory_length_lineEdit.textChanged.connect(self.trajectory_length_lineEdit_changed)
+        
+        
+        self.videoControls_2.addWidget(self.trajectory_length_lineEdit)
+        
+        
+        
         self.polygons_visable_checkBox = QtWidgets.QCheckBox()
         self.polygons_visable_checkBox.setText("show polygons")
         self.polygons_visable_checkBox.setChecked(True)
@@ -3385,7 +3403,8 @@ class MainWindow(QtWidgets.QMainWindow):
             
             if self.CURRENT_ANNOATAION_FLAGS['mask']:
                 original_img = img.copy()
-                cv2.fillPoly(img, pts=[pts_poly], color=color_poly)
+                if pts_poly is not None:
+                    cv2.fillPoly(img, pts=[pts_poly], color=color_poly)
                 alpha = self.CURRENT_ANNOATAION_TRAJECTORIES['alpha']
                 img = cv2.addWeighted(original_img, alpha, img, 1 - alpha, 0)
             
