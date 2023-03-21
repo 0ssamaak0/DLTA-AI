@@ -58,6 +58,7 @@ class models_inference():
         polygon = [(polygon[0][i], polygon[0][i + 1])
                    for i in np.arange(0, len(polygon[0]), 2)]
         polygon = self.interpolate_polygon(polygon, n_points)
+        polygon = [[int(sublist[0]) , int(sublist[1])] for sublist in polygon ]
         return polygon
 
     # experimental
