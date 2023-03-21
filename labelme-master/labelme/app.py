@@ -126,6 +126,8 @@ class MainWindow(QtWidgets.QMainWindow):
         output_file=None,
         output_dir=None,
     ):
+        self.buttons_text_style_sheet ="QPushButton {font-size: 10pt; margin: 2px 5px; padding: 2px 7px; border: 2px solid; border-radius:10px; font-weight: bold; background-color: #0d69f5; color: #FFFFFF;} QPushButton:hover {background-color: #4990ED;}"
+
         if output is not None:
             logger.warning(
                 "argument output is deprecated, use output_file instead"
@@ -282,6 +284,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.INDEX_OF_CURRENT_FRAME = 1
         # for image annotation
         self.last_file_opened = ""
+
 
 
         features = QtWidgets.QDockWidget.DockWidgetFeatures()
@@ -2453,6 +2456,8 @@ class MainWindow(QtWidgets.QMainWindow):
         # content = shape["content"]
         # group_id = shape["group_id"]
         # other_data = shape["other_data"]
+        
+        
     def load_shapes_for_video_frame(self , json_file_name, index):
         # this function loads the shapes for the video frame from the json file
         # first we read the json file in the form of a list
@@ -2590,7 +2595,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.FRAMES_TO_SKIP = self.frames_to_skip_slider.value()
         zeros = ( 2 - int(np.log10(self.FRAMES_TO_SKIP + 0.9)) ) * '0'
         self.frames_to_skip_label.setText(
-            'frames to skip: ' + zeros + str(self.FRAMES_TO_SKIP))
+            'frames to skip by: ' + zeros + str(self.FRAMES_TO_SKIP))
 
     def playPauseButtonClicked(self):
         # we can check the state of the button by checking the button text
@@ -2746,7 +2751,13 @@ class MainWindow(QtWidgets.QMainWindow):
             class_ids = []
             segments = []
             # current_objects_ids = []
+            if len(shapes) == 0:
+                print("no detection in this frame")
+                if i != self.FRAMES_TO_TRACK - 1:
+                    self.main_video_frames_slider.setValue(self.INDEX_OF_CURRENT_FRAME + 1)
+                self.tracking_progress_bar.setValue(int((i + 1) / self.FRAMES_TO_TRACK * 100))
 
+                continue
             for s in shapes:
                 label = s["label"]
                 points = s["points"]
@@ -2969,6 +2980,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.CURRENT_ANNOATAION_FLAGS["polygons"] = self.polygons_visable_checkBox.isChecked()
         for shape in self.canvas.shapes:
             self.canvas.setShapeVisible(shape, self.CURRENT_ANNOATAION_FLAGS["polygons"])
+            
+            
+    def export_as_video_button_clicked(self):
+        pass
     def addVideoControls(self):
         # add video controls toolbar with custom style (background color , spacing , hover color)
         self.videoControls = QtWidgets.QToolBar()
@@ -3041,7 +3056,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.main_video_frames_slider.setTickPosition(
             QtWidgets.QSlider.TicksBelow)
         self.main_video_frames_slider.setTickInterval(1)
-        self.main_video_frames_slider.setMaximumWidth(600)
+        self.main_video_frames_slider.setMaximumWidth(750)
         self.main_video_frames_slider.valueChanged.connect(
             self.main_video_frames_slider_changed)
         self.main_video_frames_label_1 = QtWidgets.QLabel()
@@ -3080,26 +3095,20 @@ class MainWindow(QtWidgets.QMainWindow):
         # self.videoControls.addWidget(self.dummy_label)
 
         self.track_button = QtWidgets.QPushButton()
-        self.track_button.setStyleSheet(
-            "QPushButton {font-size: 10pt; margin: 2px 5px; padding: 2px 7px; border: 2px solid; border-radius:10px; font-weight: bold; background-color: #0d69f5; color: #FFFFFF;} QPushButton:hover {background-color: #4990ED;}")
-
+        self.track_button.setStyleSheet(self.buttons_text_style_sheet)
         self.track_button.setText("Track")
         self.track_button.clicked.connect(self.track_buttonClicked)
         self.videoControls_2.addWidget(self.track_button)
 
         self.track_assigned_objects = QtWidgets.QPushButton()
-        self.track_assigned_objects.setStyleSheet(
-            "QPushButton {font-size: 10pt; margin: 2px 5px; padding: 2px 7px; border: 2px solid; border-radius:10px; font-weight: bold; background-color: #0d69f5; color: #FFFFFF;} QPushButton:hover {background-color: #4990ED;}")
-
+        self.track_assigned_objects.setStyleSheet(self.buttons_text_style_sheet)
         self.track_assigned_objects.setText("Track Only assigned objects")
         self.track_assigned_objects.clicked.connect(
             self.track_assigned_objects_button_clicked)
         self.videoControls_2.addWidget(self.track_assigned_objects)
         # make a tracking progress bar with a label to show the progress of the tracking (in percentage )
         self.track_full_video_button = QtWidgets.QPushButton()
-        self.track_full_video_button.setStyleSheet(
-            "QPushButton {font-size: 10pt; margin: 2px 5px; padding: 2px 7px; border: 2px solid; border-radius:10px; font-weight: bold; background-color: #0d69f5; color: #FFFFFF;} QPushButton:hover {background-color: #4990ED;}")
-
+        self.track_full_video_button.setStyleSheet(self.buttons_text_style_sheet)
         self.track_full_video_button.setText("Track Full Video")
         self.track_full_video_button.clicked.connect(
             self.track_full_video_button_clicked)
@@ -3160,6 +3169,15 @@ class MainWindow(QtWidgets.QMainWindow):
         self.polygons_visable_checkBox.stateChanged.connect(self.polygons_visable_checkBox_changed)
         self.videoControls_2.addWidget(self.polygons_visable_checkBox)
 
+
+        # add export as video button
+        self.export_as_video_button = QtWidgets.QPushButton()
+        self.export_as_video_button.setStyleSheet(self.buttons_text_style_sheet)
+
+        self.export_as_video_button.setText("Export as video")
+        self.export_as_video_button.clicked.connect(
+            self.export_as_video_button_clicked)
+        self.videoControls_2.addWidget(self.export_as_video_button)
 
         self.set_video_controls_visibility(False)
 
@@ -3253,7 +3271,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 if pts[i] == (-1, - 1) or pts[i - 1] == (-1, - 1) :
                     break
                 
-                cv2.line(img, pts[i - 1], pts[i], color, thickness)
+                cv2.line(img, pts[i - 1], pts[i], color_palette[coco_classes.index(shape["label"])], thickness)
         return img
 
     def draw_bb_on_image(self ,image, shapes):
@@ -3291,7 +3309,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.CURRENT_ANNOATAION_TRAJECTORIES['id_'+str(id)][self.INDEX_OF_CURRENT_FRAME - 1] = center
                 self.CURRENT_ANNOATAION_TRAJECTORIES['id_color_'+str(id)] = color
             
-        print(sys.getsizeof(self.CURRENT_ANNOATAION_TRAJECTORIES))
+        # print(sys.getsizeof(self.CURRENT_ANNOATAION_TRAJECTORIES))
         # print(len(self.CURRENT_ANNOATAION_TRAJECTORIES))
         
         if self.CURRENT_ANNOATAION_FLAGS['traj']:   
