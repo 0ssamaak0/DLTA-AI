@@ -276,7 +276,7 @@ class MainWindow(QtWidgets.QMainWindow):
                                          "mask" : True,
                                          "polygons" : True}
         self.CURRENT_ANNOATAION_TRAJECTORIES = {}
-        self.CURRENT_ANNOATAION_TRAJECTORIES['length'] = 70
+        self.CURRENT_ANNOATAION_TRAJECTORIES['length'] = 30              # keep it like that, don't change it
         self.CURRENT_SHAPES_IN_IMG = []
         # make CLASS_NAMES_DICT a dictionary of coco class names
         # self.CLASS_NAMES_DICT =
@@ -2400,8 +2400,10 @@ class MainWindow(QtWidgets.QMainWindow):
         return frameHours, frameMinutes, frameSeconds , frameMilliseconds
 
     def openVideo(self):
-        self.CURRENT_ANNOATAION_TRAJECTORIES = {}
-        self.CURRENT_ANNOATAION_TRAJECTORIES['length'] = 70
+        length_Value = self.CURRENT_ANNOATAION_TRAJECTORIES['length']
+        self.CURRENT_ANNOATAION_TRAJECTORIES.clear() 
+        self.CURRENT_ANNOATAION_TRAJECTORIES['length'] = length_Value
+        
         # self.videoControls.show()
         self.current_annotation_mode = "video"
         try :
