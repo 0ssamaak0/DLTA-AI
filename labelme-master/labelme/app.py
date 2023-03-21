@@ -55,9 +55,6 @@ import warnings
 warnings.filterwarnings("ignore")
 
 
-
-
-
 @dataclass(frozen=True)
 class BYTETrackerArgs:
     track_thresh: float = 0.6  # tracking confidence threshold
@@ -128,7 +125,7 @@ class MainWindow(QtWidgets.QMainWindow):
         output_file=None,
         output_dir=None,
     ):
-        self.buttons_text_style_sheet ="QPushButton {font-size: 10pt; margin: 2px 5px; padding: 2px 7px; border: 2px solid; border-radius:10px; font-weight: bold; background-color: #0d69f5; color: #FFFFFF;} QPushButton:hover {background-color: #4990ED;}"
+        self.buttons_text_style_sheet = "QPushButton {font-size: 10pt; margin: 2px 5px; padding: 2px 7px; border: 2px solid; border-radius:10px; font-weight: bold; background-color: #0d69f5; color: #FFFFFF;} QPushButton:hover {background-color: #4990ED;}"
 
         if output is not None:
             logger.warning(
@@ -273,11 +270,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.TRACK_ASSIGNED_OBJECTS_ONLY = False
         self.TrackingMode = False
         self.CURRENT_ANNOATAION_FLAGS = {"traj" : False  ,
-                                        "bbox" : True  ,         
-                                        "id" : True ,
-                                        "class" : True,
-                                        "mask" : True,
-                                        "polygons" : True}
+                                         "bbox" : True  ,
+                                         "id" : True ,
+                                         "class" : True,
+                                         "mask" : True,
+                                         "polygons" : True}
         self.CURRENT_ANNOATAION_TRAJECTORIES = {}
         self.CURRENT_SHAPES_IN_IMG = []
         # make CLASS_NAMES_DICT a dictionary of coco class names
@@ -286,8 +283,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.INDEX_OF_CURRENT_FRAME = 1
         # for image annotation
         self.last_file_opened = ""
-
-
 
         features = QtWidgets.QDockWidget.DockWidgetFeatures()
         for dock in ["flag_dock", "label_dock", "shape_dock", "file_dock"]:
@@ -1334,12 +1329,12 @@ class MainWindow(QtWidgets.QMainWindow):
             # label_id = self.uniqLabelList.indexFromItem(item).row() + 1
             # label_id += self._config["shift_auto_shape_color"]
             # return LABEL_COLORMAP[label_id % len(LABEL_COLORMAP)]
-            idx = coco_classes.index(label) if label in coco_classes else -1 
+            idx = coco_classes.index(label) if label in coco_classes else -1
             idx = idx % len(color_palette)
             color = color_palette[idx] if idx != -1 else (0, 0, 255)
             # convert color from bgr to rgb
             return color[::-1]
-        
+
         elif (
             self._config["shape_color"] == "manual"
             and self._config["label_colors"]
@@ -1357,14 +1352,16 @@ class MainWindow(QtWidgets.QMainWindow):
     def loadShapes(self, shapes, replace=True):
         self._noSelectionSlot = True
         # sort shapes by group_id but only if its not None
-        shapes = sorted(shapes, key=lambda x: int(x.group_id) if x.group_id is not None else 0)
+        shapes = sorted(shapes, key=lambda x: int(x.group_id)
+                        if x.group_id is not None else 0)
         for shape in shapes:
             self.addLabel(shape)
         self.labelList.clearSelection()
         self._noSelectionSlot = False
         self.canvas.loadShapes(shapes, replace=replace)
         for shape in self.canvas.shapes:
-            self.canvas.setShapeVisible(shape, self.CURRENT_ANNOATAION_FLAGS["polygons"])
+            self.canvas.setShapeVisible(
+                shape, self.CURRENT_ANNOATAION_FLAGS["polygons"])
 
     def loadLabels(self, shapes):
         s = []
@@ -1389,7 +1386,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 content=content,
             )
             for i in range(0, len(points), 2):
-                shape.addPoint(QtCore.QPointF(points[i], points[i + 1] ))
+                shape.addPoint(QtCore.QPointF(points[i], points[i + 1]))
             shape.close()
 
             default_flags = {}
@@ -1711,7 +1708,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.filename = filename
         if self._config["keep_prev"]:
             prev_shapes = self.canvas.shapes
-        
+
         self.canvas.loadPixmap(QtGui.QPixmap.fromImage(image))
         flags = {k: False for k in self._config["flags"] or []}
         if self.labelFile:
@@ -1728,8 +1725,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self.setDirty()
         else:
             self.setClean()
-            
-            
 
         self.canvas.setEnabled(True)
         # set zoom values
@@ -1938,7 +1933,6 @@ class MainWindow(QtWidgets.QMainWindow):
         if filename:
             self.loadFile(filename)
             self.set_video_controls_visibility(False)
-
 
     def changeOutputDirDialog(self, _value=False):
         default_output_dir = self.output_dir
@@ -2352,25 +2346,20 @@ class MainWindow(QtWidgets.QMainWindow):
             if self.filename != self.last_file_opened:
                 self.last_file_opened = self.filename
                 self.intelligenceHelper.clear_annotating_models()
-                
+
             if os.path.exists(self.filename):
                 self.labelList.clearSelection()
             shapes = self.intelligenceHelper.get_shapes_of_one(
                 self.filename)
-              
-            
+
         # for shape in shapes:
         #     print(shape["group_id"])
         #     print(shape["bbox"])
-        
-        
-        
+
         # image = self.draw_bb_on_image(self.image  , self.CURRENT_SHAPES_IN_IMG)
         # self.canvas.loadPixmap(QtGui.QPixmap.fromImage(image))
-        
-        
-        
-        # make all annotation_flags false except polygons visablity
+
+        # make all annotation_flags false except show polygons
 
         # clear shapes already in lablelist (fixes saving multiple shapes of same object bug)
         self.labelList.clear()
@@ -2381,9 +2370,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.actions.undoLastPoint.setEnabled(False)
         self.actions.undo.setEnabled(True)
         self.setDirty()
-
-            
-
 
     def annotate_batch(self):
         images = []
@@ -2440,7 +2426,8 @@ class MainWindow(QtWidgets.QMainWindow):
             self.CURRENT_VIDEO_WIDTH = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
             self.CAP = cap
             # making the total video frames equal to the total frames in the video file - 1 as the indexing starts from 0
-            self.TOTAL_VIDEO_FRAMES = int(self.CAP.get(cv2.CAP_PROP_FRAME_COUNT) - 1)
+            self.TOTAL_VIDEO_FRAMES = int(
+                self.CAP.get(cv2.CAP_PROP_FRAME_COUNT) - 1)
             self.CURRENT_VIDEO_FPS = self.CAP.get(cv2.CAP_PROP_FPS)
             print("Total Frames : " , self.TOTAL_VIDEO_FRAMES)
             self.main_video_frames_slider.setMaximum(self.TOTAL_VIDEO_FRAMES)
@@ -2462,8 +2449,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # content = shape["content"]
         # group_id = shape["group_id"]
         # other_data = shape["other_data"]
-        
-        
+
     def load_shapes_for_video_frame(self , json_file_name, index):
         # this function loads the shapes for the video frame from the json file
         # first we read the json file in the form of a list
@@ -2498,10 +2484,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     shapes.append(shape)
                 continue
 
-
             self.CURRENT_SHAPES_IN_IMG = shapes
-
-
 
     def loadFramefromVideo(self, frame_array, index=1):
         # filename = str(index) + ".jpg"
@@ -2517,7 +2500,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.image = image
         if self._config["keep_prev"]:
             prev_shapes = self.canvas.shapes
-            
+
         # detectionData = [(50, 50, 200, 200, 11), (200, 200, 400, 400, 12), (400, 400, 600, 600, 13)]
         # image = draw_bb_on_image(image, detectionData)
         flags = {k: False for k in self._config["flags"] or []}
@@ -2529,26 +2512,27 @@ class MainWindow(QtWidgets.QMainWindow):
             self.canvas.loadPixmap(QtGui.QPixmap.fromImage(image))
             if len(self.CURRENT_SHAPES_IN_IMG) > 0:
                 self.loadLabels(self.CURRENT_SHAPES_IN_IMG)
-        else:   
+        else:
             if self.labelFile:
                 self.CURRENT_SHAPES_IN_IMG = self.labelFile.shapes
-                image = self.draw_bb_on_image(image, self.CURRENT_SHAPES_IN_IMG)
+                image = self.draw_bb_on_image(
+                    image, self.CURRENT_SHAPES_IN_IMG)
                 self.canvas.loadPixmap(QtGui.QPixmap.fromImage(image))
                 self.loadLabels(self.labelFile.shapes)
                 if self.labelFile.flags is not None:
                     flags.update(self.labelFile.flags)
-                    
+
             else :
                 json_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}_tracking_results.json'
                 if os.path.exists(json_file_name):
                     # print('json file exists , loading shapes')
-                    self.load_shapes_for_video_frame(json_file_name , index)    
-                    image = self.draw_bb_on_image(image, self.CURRENT_SHAPES_IN_IMG)
+                    self.load_shapes_for_video_frame(json_file_name , index)
+                    image = self.draw_bb_on_image(
+                        image, self.CURRENT_SHAPES_IN_IMG)
                     self.canvas.loadPixmap(QtGui.QPixmap.fromImage(image))
                     if len(self.CURRENT_SHAPES_IN_IMG) > 0:
                         self.loadLabels(self.CURRENT_SHAPES_IN_IMG)
 
-        
         self.loadFlags(flags)
         # if self._config["keep_prev"] and self.noShapes():
         #     self.loadShapes(prev_shapes, replace=False)
@@ -2599,7 +2583,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def frames_to_skip_slider_changed(self):
         self.FRAMES_TO_SKIP = self.frames_to_skip_slider.value()
-        zeros = ( 2 - int(np.log10(self.FRAMES_TO_SKIP + 0.9)) ) * '0'
+        zeros = (2 - int(np.log10(self.FRAMES_TO_SKIP + 0.9))) * '0'
         self.frames_to_skip_label.setText(
             'frames to skip by: ' + zeros + str(self.FRAMES_TO_SKIP))
 
@@ -2635,7 +2619,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.CAP.set(cv2.CAP_PROP_POS_FRAMES, frame_idx - 1)
 
         # setting text of labels
-        zeros = ( int(np.log10(self.TOTAL_VIDEO_FRAMES + 0.9)) - int(np.log10(frame_idx + 0.9)) ) * '0'
+        zeros = (int(np.log10(self.TOTAL_VIDEO_FRAMES + 0.9)) -
+                 int(np.log10(frame_idx + 0.9))) * '0'
         self.main_video_frames_label_1.setText(
             f'frame {zeros}{frame_idx} / {int(self.TOTAL_VIDEO_FRAMES)}')
         self.frame_time = self.mapFrameToTime(frame_idx)
@@ -2655,13 +2640,9 @@ class MainWindow(QtWidgets.QMainWindow):
         else:
             pass
 
-
-
-
-
     def frames_to_track_slider_changed(self):
         self.FRAMES_TO_TRACK = self.frames_to_track_slider.value()
-        zeros = ( 2 - int(np.log10(self.FRAMES_TO_TRACK + 0.9)) ) * '0'
+        zeros = (2 - int(np.log10(self.FRAMES_TO_TRACK + 0.9))) * '0'
         self.frames_to_track_label.setText(
             f'track for {zeros}{self.FRAMES_TO_TRACK} frames')
 
@@ -2675,19 +2656,16 @@ class MainWindow(QtWidgets.QMainWindow):
         except:
             # this means that the class name is not in the coco dataset
             return -1
-        
-        
-        
+
     def track_assigned_objects_button_clicked(self):
         # first check if there is objects in self.canvas.shapes list or not . if not then output a error message and return
         if len(self.canvas.shapes) == 0:
             self.errorMessage(
-                "found No objects to track", 
+                "found No objects to track",
                 "you need to assign at least one object to track",
             )
             return
-        
-        
+
         self.TRACK_ASSIGNED_OBJECTS_ONLY = True
         self.track_buttonClicked()
         self.TRACK_ASSIGNED_OBJECTS_ONLY = False
@@ -2713,7 +2691,7 @@ class MainWindow(QtWidgets.QMainWindow):
             with open(json_file_name, 'w') as jf:
                 json.dump(listObj, jf)
             jf.close()
-            
+
         # with open (json_file_name, 'r') as json_file:
         #     json_object = json.load(json_file)
         #     print(json_object)
@@ -2752,7 +2730,6 @@ class MainWindow(QtWidgets.QMainWindow):
                 shapes = self.intelligenceHelper.get_shapes_of_one(
                     self.CURRENT_FRAME_IMAGE, img_array_flag=True)
 
-
             boxes = []
             confidences = []
             class_ids = []
@@ -2761,8 +2738,10 @@ class MainWindow(QtWidgets.QMainWindow):
             if len(shapes) == 0:
                 print("no detection in this frame")
                 if i != self.FRAMES_TO_TRACK - 1:
-                    self.main_video_frames_slider.setValue(self.INDEX_OF_CURRENT_FRAME + 1)
-                self.tracking_progress_bar.setValue(int((i + 1) / self.FRAMES_TO_TRACK * 100))
+                    self.main_video_frames_slider.setValue(
+                        self.INDEX_OF_CURRENT_FRAME + 1)
+                self.tracking_progress_bar.setValue(
+                    int((i + 1) / self.FRAMES_TO_TRACK * 100))
 
                 continue
             for s in shapes:
@@ -2784,7 +2763,8 @@ class MainWindow(QtWidgets.QMainWindow):
                     confidences.append(1.0)
                 else :
                     confidences.append(float(s["content"]))
-                class_ids.append(coco_classes.index(label)if label in coco_classes else -1)
+                class_ids.append(coco_classes.index(
+                    label)if label in coco_classes else -1)
 
             boxes = np.array(boxes , dtype=int)
             confidences = np.array(confidences)
@@ -2795,7 +2775,6 @@ class MainWindow(QtWidgets.QMainWindow):
                 class_id=class_ids,
             )
 
-
             tracks = self.byte_tracker.update(
                 output_results=detections2boxes(detections=detections),
                 img_info=frame_shape,
@@ -2805,29 +2784,28 @@ class MainWindow(QtWidgets.QMainWindow):
                 detections=detections, tracks=tracks)
             detections.tracker_id = np.array(tracker_id)
 
-
             # print(f'tracks : {len(tracker_id)}')
-            
-        
+
             # print(f'len of shapes = {len(shapes)}')
             # print(f'detections : {detections}')
-            # print(f'len of tracker_id = {len(tracker_id)}') 
-            # print(f'len of detections.tracker_id = {detections.tracker_id}') 
-            # print(f'tracker_id = {tracker_id}') 
-            # print(f'tracks = {tracks}') 
+            # print(f'len of tracker_id = {len(tracker_id)}')
+            # print(f'len of detections.tracker_id = {detections.tracker_id}')
+            # print(f'tracker_id = {tracker_id}')
+            # print(f'tracks = {tracks}')
             # # masks shapes when traker_id is None
-            
-            # make new list of shapes to be added to CURRENT_SHAPES_IN_IMG 
+
+            # make new list of shapes to be added to CURRENT_SHAPES_IN_IMG
 
             if len(detections) != len(tracker_id):
                 # pad the tracker_id with None
                 tracker_id = [None] * (len(detections) - len(tracker_id))
                 detections.tracker_id = np.array(tracker_id)
-            
+
             # filtering out detections without trackers
             for a, shape_ in enumerate(shapes):
                 shape_["group_id"] = tracker_id[a]
-            self.CURRENT_SHAPES_IN_IMG = [shape_ for shape_ in shapes if shape_["group_id"] is not None]
+            self.CURRENT_SHAPES_IN_IMG = [
+                shape_ for shape_ in shapes if shape_["group_id"] is not None]
             mask = np.array(
                 [tracker_id is not None for tracker_id in detections.tracker_id], dtype=bool)
             detections.filter(mask=mask, inplace=True)
@@ -2837,7 +2815,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
             # if it is first iteration of the for loop and self.TRACK_ASSIGNED_OBJECTS_ONLY is True we mask both detections and shapes with tracks_to_follow
             if self.TRACK_ASSIGNED_OBJECTS_ONLY and tracks_to_follow is not None:
-                self.CURRENT_SHAPES_IN_IMG = [shape_ for shape_ in shapes if shape_["group_id"] in tracks_to_follow]
+                self.CURRENT_SHAPES_IN_IMG = [
+                    shape_ for shape_ in shapes if shape_["group_id"] in tracks_to_follow]
                 mask = np.array(
                     [tracker_id in tracks_to_follow for tracker_id in detections.tracker_id], dtype=bool)
                 detections.filter(mask=mask, inplace=True)
@@ -2861,7 +2840,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 json_tracked_object['class_name'] = self.CURRENT_SHAPES_IN_IMG[j]["label"]
                 json_tracked_object['class_id'] = int(detections.class_id[j])
                 points = self.CURRENT_SHAPES_IN_IMG[j]["points"]
-                segment = [[int(points[z]), int(points[z + 1])] for z in range(0, len(points), 2)]
+                segment = [[int(points[z]), int(points[z + 1])]
+                           for z in range(0, len(points), 2)]
                 json_tracked_object['segment'] = segment
 
                 json_frame_object_list.append(json_tracked_object)
@@ -2890,7 +2870,8 @@ class MainWindow(QtWidgets.QMainWindow):
             # self.window_wait(1)
             print('finished tracking for frame ' , self.INDEX_OF_CURRENT_FRAME)
             if i != self.FRAMES_TO_TRACK - 1:
-                self.main_video_frames_slider.setValue(self.INDEX_OF_CURRENT_FRAME + 1)
+                self.main_video_frames_slider.setValue(
+                    self.INDEX_OF_CURRENT_FRAME + 1)
             self.tracking_progress_bar.setValue(
                 int((i + 1) / self.FRAMES_TO_TRACK * 100))
 
@@ -2909,23 +2890,21 @@ class MainWindow(QtWidgets.QMainWindow):
         self.tracking_progress_bar.hide()
         self.tracking_progress_bar.setValue(0)
 
-
-
     def convert_qt_shapes_to_shapes(self, qt_shapes):
         shapes = []
         for s in qt_shapes:
             shapes.append(dict(
-                    label=s.label.encode("utf-8") if PY2 else s.label,
-                    # convert points into 1D array
-                    points=self.flattener(s.points),
-                    bbox=self.intelligenceHelper.get_bbox([(p.x(), p.y()) for p in s.points]),
-                    group_id=s.group_id,
-                    content=s.content,
-                    shape_type=s.shape_type,
-                    flags=s.flags,
-                ))
+                label=s.label.encode("utf-8") if PY2 else s.label,
+                # convert points into 1D array
+                points=self.flattener(s.points),
+                bbox=self.intelligenceHelper.get_bbox(
+                    [(p.x(), p.y()) for p in s.points]),
+                group_id=s.group_id,
+                content=s.content,
+                shape_type=s.shape_type,
+                flags=s.flags,
+            ))
         return shapes
-
 
     def track_full_video_button_clicked(self):
         self.FRAMES_TO_TRACK = int(
@@ -2953,24 +2932,17 @@ class MainWindow(QtWidgets.QMainWindow):
         QtCore.QTimer.singleShot(seconds * 1000, loop.quit)
         loop.exec_()
 
-
-
-
-
-
-
-
-
-
     def traj_checkBox_changed(self):
         self.CURRENT_ANNOATAION_FLAGS["traj"] = self.traj_checkBox.isChecked()
         self.main_video_frames_slider_changed()
+
     def mask_checkBox_changed(self):
         self.CURRENT_ANNOATAION_FLAGS["mask"] = self.mask_checkBox.isChecked()
         self.main_video_frames_slider_changed()
 
     def class_checkBox_changed(self):
-        self.CURRENT_ANNOATAION_FLAGS["class"] = self.class_checkBox.isChecked()
+        self.CURRENT_ANNOATAION_FLAGS["class"] = self.class_checkBox.isChecked(
+        )
         self.main_video_frames_slider_changed()
 
     def id_checkBox_changed(self):
@@ -2981,26 +2953,26 @@ class MainWindow(QtWidgets.QMainWindow):
         self.CURRENT_ANNOATAION_FLAGS["bbox"] = self.bbox_checkBox.isChecked()
         self.main_video_frames_slider_changed()
 
-
-
     def polygons_visable_checkBox_changed(self):
-        self.CURRENT_ANNOATAION_FLAGS["polygons"] = self.polygons_visable_checkBox.isChecked()
+        self.CURRENT_ANNOATAION_FLAGS["polygons"] = self.polygons_visable_checkBox.isChecked(
+        )
         for shape in self.canvas.shapes:
-            self.canvas.setShapeVisible(shape, self.CURRENT_ANNOATAION_FLAGS["polygons"])
-            
-            
+            self.canvas.setShapeVisible(
+                shape, self.CURRENT_ANNOATAION_FLAGS["polygons"])
+
     def export_as_video_button_clicked(self):
         json_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}_tracking_results.json'
         input_video_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}.mp4'
         output_video_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}_tracking_results.mp4'
         input_cap = cv2.VideoCapture(input_video_file_name)
-        output_cap = cv2.VideoWriter(output_video_file_name, cv2.VideoWriter_fourcc(*'mp4v'), 30, (int(self.CURRENT_VIDEO_WIDTH), int(self.CURRENT_VIDEO_HEIGHT)))
+        output_cap = cv2.VideoWriter(output_video_file_name, cv2.VideoWriter_fourcc(
+            *'mp4v'), 30, (int(self.CURRENT_VIDEO_WIDTH), int(self.CURRENT_VIDEO_HEIGHT)))
         with open(json_file_name, 'r') as jf:
             listObj = json.load(jf)
         jf.close()
-        
+
         # make a progress bar for exporting video (with percentage of progress)   TO DO LATER
-        
+
         for target_frame_idx in range(self.TOTAL_VIDEO_FRAMES):
             print(target_frame_idx)
             self.INDEX_OF_CURRENT_FRAME = target_frame_idx + 1
@@ -3027,9 +2999,9 @@ class MainWindow(QtWidgets.QMainWindow):
             if len(shapes) == 0:
                 output_cap.write(image)
                 continue
-            image =  self.draw_bb_on_image(image, shapes , imgage_qt_flag = False)
+            image = self.draw_bb_on_image(image, shapes , imgage_qt_flag=False)
             output_cap.write(image)
-        
+
         input_cap.release()
         output_cap.release()
         print("done exporting video")
@@ -3042,12 +3014,11 @@ class MainWindow(QtWidgets.QMainWindow):
         msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
         msg.exec_()
 
-        
     def clear_video_annotations_button_clicked(self):
         # just delete the json file and reload the video
         # to delete the json file we need to know the name of the json file which is the same as the video name
         json_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}_tracking_results.json'
-        # now delete the json file if it exists 
+        # now delete the json file if it exists
         if os.path.exists(json_file_name):
             os.remove(json_file_name)
         msg = QtWidgets.QMessageBox()
@@ -3059,11 +3030,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.main_video_frames_slider.setValue(2)
         self.main_video_frames_slider.setValue(1)
 
-    def save_current_frame_annotation_button_clicked(self):
-        self.save_current_frame_annotation()
+    def update_current_frame_annotation_button_clicked(self):
+        self.update_current_frame_annotation()
         self.main_video_frames_slider_changed()
-        
-    def save_current_frame_annotation(self):
+
+    def update_current_frame_annotation(self):
         json_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}_tracking_results.json'
         if not os.path.exists(json_file_name):
             with open(json_file_name, 'w') as jf:
@@ -3072,23 +3043,27 @@ class MainWindow(QtWidgets.QMainWindow):
         with open(json_file_name, 'r') as jf:
             listObj = json.load(jf)
         jf.close()
-        
+
         json_frame = {}
         json_frame.update({'frame_idx' : self.INDEX_OF_CURRENT_FRAME})
         json_frame_object_list = []
-        
+
         shapes = self.convert_qt_shapes_to_shapes(self.canvas.shapes)
         for shape in shapes:
             json_tracked_object = {}
-            json_tracked_object['tracker_id'] = int(shape["group_id"]) if shape["group_id"] != None else -1
+            json_tracked_object['tracker_id'] = int(
+                shape["group_id"]) if shape["group_id"] != None else -1
             bbox = shape["bbox"]
             bbox = [int(bbox[0]), int(bbox[1]), int(bbox[2]), int(bbox[3])]
             json_tracked_object['bbox'] = bbox
-            json_tracked_object['confidence'] = str(shape["content"] if shape["content"] != None else 1) 
+            json_tracked_object['confidence'] = str(
+                shape["content"] if shape["content"] != None else 1)
             json_tracked_object['class_name'] = shape["label"]
-            json_tracked_object['class_id'] = coco_classes.index(shape["label"]) if shape["label"] in coco_classes else -1
+            json_tracked_object['class_id'] = coco_classes.index(
+                shape["label"]) if shape["label"] in coco_classes else -1
             points = shape["points"]
-            segment = [[int(points[z]), int(points[z + 1])] for z in range(0, len(points), 2)]
+            segment = [[int(points[z]), int(points[z + 1])]
+                       for z in range(0, len(points), 2)]
             json_tracked_object['segment'] = segment
 
             json_frame_object_list.append(json_tracked_object)
@@ -3100,18 +3075,15 @@ class MainWindow(QtWidgets.QMainWindow):
                 break
 
         listObj.append(json_frame)
-            
-            
+
         listObj = sorted(listObj, key=lambda k: k['frame_idx'])
         with open(json_file_name, 'w') as json_file:
             json.dump(listObj, json_file ,
-                        indent=4,
-                        separators=(',', ': '))
+                      indent=4,
+                      separators=(',', ': '))
         json_file.close()
-        print ("saved frame annotation")
-        
-        
-        
+        print("saved frame annotation")
+
     def addVideoControls(self):
         # add video controls toolbar with custom style (background color , spacing , hover color)
         self.videoControls = QtWidgets.QToolBar()
@@ -3198,19 +3170,16 @@ class MainWindow(QtWidgets.QMainWindow):
         self.videoControls.addWidget(self.main_video_frames_label_1)
         self.videoControls.addWidget(self.main_video_frames_slider)
         self.videoControls.addWidget(self.main_video_frames_label_2)
-        
-        
+
         self.clear_video_annotations_button = QtWidgets.QPushButton()
-        self.clear_video_annotations_button.setStyleSheet(self.buttons_text_style_sheet)
+        self.clear_video_annotations_button.setStyleSheet(
+            self.buttons_text_style_sheet)
         self.clear_video_annotations_button.setText("Clear Video Annotations")
         self.clear_video_annotations_button.clicked.connect(
             self.clear_video_annotations_button_clicked)
         self.videoControls.addWidget(self.clear_video_annotations_button)
 
-
         # now we start the videocontrols_2 toolbar widgets
-
-
 
         # add the slider to control the video frame
         self.frames_to_track_slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
@@ -3231,8 +3200,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.videoControls_2.addWidget(self.frames_to_track_slider)
         self.frames_to_track_slider.setValue(10)
 
-
-
         self.track_button = QtWidgets.QPushButton()
         self.track_button.setStyleSheet(self.buttons_text_style_sheet)
         self.track_button.setText("Track")
@@ -3240,20 +3207,21 @@ class MainWindow(QtWidgets.QMainWindow):
         self.videoControls_2.addWidget(self.track_button)
 
         self.track_assigned_objects = QtWidgets.QPushButton()
-        self.track_assigned_objects.setStyleSheet(self.buttons_text_style_sheet)
+        self.track_assigned_objects.setStyleSheet(
+            self.buttons_text_style_sheet)
         self.track_assigned_objects.setText("Track Only assigned objects")
         self.track_assigned_objects.clicked.connect(
             self.track_assigned_objects_button_clicked)
         self.videoControls_2.addWidget(self.track_assigned_objects)
         # make a tracking progress bar with a label to show the progress of the tracking (in percentage )
         self.track_full_video_button = QtWidgets.QPushButton()
-        self.track_full_video_button.setStyleSheet(self.buttons_text_style_sheet)
+        self.track_full_video_button.setStyleSheet(
+            self.buttons_text_style_sheet)
         self.track_full_video_button.setText("Track Full Video")
         self.track_full_video_button.clicked.connect(
             self.track_full_video_button_clicked)
         self.videoControls_2.addWidget(self.track_full_video_button)
-        
-        
+
         self.tracking_progress_bar_label = QtWidgets.QLabel()
         self.tracking_progress_bar_label.setStyleSheet(
             "QLabel { font-size: 10pt; font-weight: bold; }")
@@ -3266,10 +3234,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.tracking_progress_bar.setMaximum(100)
         self.tracking_progress_bar.setValue(0)
         self.videoControls_2.addWidget(self.tracking_progress_bar)
-
-        
-        
-
 
         # add 5 checkboxes to control the CURRENT ANNOATAION FLAGS including (bbox , id , class , mask , traj)
         self.bbox_checkBox = QtWidgets.QCheckBox()
@@ -3301,47 +3265,39 @@ class MainWindow(QtWidgets.QMainWindow):
         self.traj_checkBox.setChecked(False)
         self.traj_checkBox.stateChanged.connect(self.traj_checkBox_changed)
         self.videoControls_2.addWidget(self.traj_checkBox)
-        
+
         self.polygons_visable_checkBox = QtWidgets.QCheckBox()
-        self.polygons_visable_checkBox.setText("polygons visablity")
+        self.polygons_visable_checkBox.setText("show polygons")
         self.polygons_visable_checkBox.setChecked(True)
-        self.polygons_visable_checkBox.stateChanged.connect(self.polygons_visable_checkBox_changed)
+        self.polygons_visable_checkBox.stateChanged.connect(
+            self.polygons_visable_checkBox_changed)
         self.videoControls_2.addWidget(self.polygons_visable_checkBox)
 
+        # save current frame
+        self.update_current_frame_annotation_button = QtWidgets.QPushButton()
+        self.update_current_frame_annotation_button.setStyleSheet(
+            self.buttons_text_style_sheet)
 
-
-        # save current frame 
-        self.save_current_frame_annotation_button = QtWidgets.QPushButton()
-        self.save_current_frame_annotation_button.setStyleSheet(self.buttons_text_style_sheet)
-
-        self.save_current_frame_annotation_button.setText("save current frame")
-        self.save_current_frame_annotation_button.clicked.connect(
-            self.save_current_frame_annotation_button_clicked)
-        self.videoControls_2.addWidget(self.save_current_frame_annotation_button)
-
+        self.update_current_frame_annotation_button.setText(
+            "Update current frame")
+        self.update_current_frame_annotation_button.clicked.connect(
+            self.update_current_frame_annotation_button_clicked)
+        self.videoControls_2.addWidget(
+            self.update_current_frame_annotation_button)
 
         # add export as video button
         self.export_as_video_button = QtWidgets.QPushButton()
-        self.export_as_video_button.setStyleSheet(self.buttons_text_style_sheet)
+        self.export_as_video_button.setStyleSheet(
+            self.buttons_text_style_sheet)
 
         self.export_as_video_button.setText("Export as video")
         self.export_as_video_button.clicked.connect(
             self.export_as_video_button_clicked)
         self.videoControls_2.addWidget(self.export_as_video_button)
 
-        # add a button to clear all video annotations 
-
-
-
+        # add a button to clear all video annotations
 
         self.set_video_controls_visibility(False)
-
-
-
-
-
-
-
 
     def convert_QI_to_cv(self , incomingImage):
         '''  Converts a QImage into an opencv MAT format  '''
@@ -3353,31 +3309,32 @@ class MainWindow(QtWidgets.QMainWindow):
 
         ptr = incomingImage.bits()
         ptr.setsize(incomingImage.byteCount())
-        arr = np.array(ptr).reshape(height, width, 4)  #  Copies the data
+        arr = np.array(ptr).reshape(height, width, 4)  # Copies the data
         return arr
 
-    def convert_cv_to_qt(self ,cv_img):
-            rgb_image = cv2.cvtColor(cv_img, cv2.COLOR_BGR2RGB)
-            h, w, ch = rgb_image.shape
-            bytes_per_line = ch * w
-            convert_to_Qt_format = QtGui.QImage(rgb_image.data, w, h, bytes_per_line, QtGui.QImage.Format_RGB888)
-            return convert_to_Qt_format
+    def convert_cv_to_qt(self , cv_img):
+        rgb_image = cv2.cvtColor(cv_img, cv2.COLOR_BGR2RGB)
+        h, w, ch = rgb_image.shape
+        bytes_per_line = ch * w
+        convert_to_Qt_format = QtGui.QImage(
+            rgb_image.data, w, h, bytes_per_line, QtGui.QImage.Format_RGB888)
+        return convert_to_Qt_format
 
-    def draw_bb_id(self ,image, x, y , w, h, id,label, color=(0, 0, 255), thickness=1):
+    def draw_bb_id(self , image, x, y , w, h, id, label, color=(0, 0, 255), thickness=1):
         if self.CURRENT_ANNOATAION_FLAGS['bbox']:
-            image = cv2.rectangle(image, (x, y), (x+w, y+h), color, thickness+1)
-            
-            
-        if self.CURRENT_ANNOATAION_FLAGS['id']  or self.CURRENT_ANNOATAION_FLAGS['class']:
-            if self.CURRENT_ANNOATAION_FLAGS['id']  and self.CURRENT_ANNOATAION_FLAGS['class']:
+            image = cv2.rectangle(
+                image, (x, y), (x + w, y + h), color, thickness + 1)
+
+        if self.CURRENT_ANNOATAION_FLAGS['id'] or self.CURRENT_ANNOATAION_FLAGS['class']:
+            if self.CURRENT_ANNOATAION_FLAGS['id'] and self.CURRENT_ANNOATAION_FLAGS['class']:
                 text = f'#{id} {label}'
-            if self.CURRENT_ANNOATAION_FLAGS['id']  and not self.CURRENT_ANNOATAION_FLAGS['class']:
+            if self.CURRENT_ANNOATAION_FLAGS['id'] and not self.CURRENT_ANNOATAION_FLAGS['class']:
                 text = f'#{id}'
-            if not self.CURRENT_ANNOATAION_FLAGS['id']  and self.CURRENT_ANNOATAION_FLAGS['class']:
+            if not self.CURRENT_ANNOATAION_FLAGS['id'] and self.CURRENT_ANNOATAION_FLAGS['class']:
                 text = f'{label}'
-                
-                
-            text_width, text_height = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 0.7, thickness)[0]
+
+            text_width, text_height = cv2.getTextSize(
+                text, cv2.FONT_HERSHEY_SIMPLEX, 0.7, thickness)[0]
             text_x = x + 10
             text_y = y - 10
 
@@ -3402,81 +3359,86 @@ class MainWindow(QtWidgets.QMainWindow):
                 color=(0, 0, 0),
                 thickness=thickness,
                 lineType=cv2.LINE_AA,
-            )    
-                
+            )
 
-                
         # there is no bbox but there is id or class
         if (not self.CURRENT_ANNOATAION_FLAGS['bbox']) and (self.CURRENT_ANNOATAION_FLAGS['id'] or self.CURRENT_ANNOATAION_FLAGS['class']):
-            image = cv2.line(image, (x+int(w/2), y + int(h/2)), (x + 50, y - 5), color, thickness+1)
-        
-            
+            image = cv2.line(image, (x + int(w / 2), y + int(h / 2)),
+                             (x + 50, y - 5), color, thickness + 1)
+
         return image
 
-
-    def draw_trajectories(self ,img, shapes):
+    def draw_trajectories(self , img, shapes):
         for shape in shapes:
             id = shape["group_id"]
-            pts = self.CURRENT_ANNOATAION_TRAJECTORIES['id_'+str(id)][max(self.INDEX_OF_CURRENT_FRAME - 30, 0) : self.INDEX_OF_CURRENT_FRAME] 
-            color = self.CURRENT_ANNOATAION_TRAJECTORIES['id_color_'+str(id)]
+            pts = self.CURRENT_ANNOATAION_TRAJECTORIES['id_' + str(id)][max(
+                self.INDEX_OF_CURRENT_FRAME - 30, 0) : self.INDEX_OF_CURRENT_FRAME]
+            color = self.CURRENT_ANNOATAION_TRAJECTORIES['id_color_' + str(id)]
             for i in range(len(pts) - 1, 0, - 1):
                 thickness = int(np.sqrt(30 / float(len(pts) - i + 1)) * 2.5)
                 if pts[i - 1] is None or pts[i] is None :
-                    continue 
+                    continue
                 if pts[i] == (-1, - 1) or pts[i - 1] == (-1, - 1) :
                     break
                 label = shape["label"]
-                idx = coco_classes.index(label) if label in coco_classes else -1 
+                idx = coco_classes.index(
+                    label) if label in coco_classes else -1
                 idx = idx % len(color_palette)
                 color = color_palette[idx] if idx != -1 else (0, 0, 255)
                 cv2.line(img, pts[i - 1], pts[i], color, thickness)
         return img
 
-    def draw_bb_on_image(self ,image, shapes , imgage_qt_flag = True):
+    def draw_bb_on_image(self , image, shapes , imgage_qt_flag=True):
         img = image
         if imgage_qt_flag:
             img = self.convert_QI_to_cv(image)
-        
+
         for shape in shapes:
             id = shape["group_id"]
             label = shape["label"]
-            
+
             # color calculation
-            idx = coco_classes.index(label) if label in coco_classes else -1 
+            idx = coco_classes.index(label) if label in coco_classes else -1
             idx = idx % len(color_palette)
             color = color_palette[idx] if idx != -1 else (0, 0, 255)
-            
+
             (x1, y1 , x2, y2) = shape["bbox"]
             x, y , w, h = int(x1), int(y1), int(x2 - x1), int(y2 - y1)
-            img = self.draw_bb_id(img, x, y , w, h, id,label, color, thickness = 1)
-            center = ( int((x1 + x2) / 2), int((y1 + y2) / 2) )
+            img = self.draw_bb_id(img, x, y , w, h, id,
+                                  label, color, thickness=1)
+            center = (int((x1 + x2) / 2), int((y1 + y2) / 2))
             try:
                 try:
-                    (xp, yp) = self.CURRENT_ANNOATAION_TRAJECTORIES['id_'+str(id)][self.INDEX_OF_CURRENT_FRAME - 2]
+                    (xp, yp) = self.CURRENT_ANNOATAION_TRAJECTORIES['id_' + str(
+                        id)][self.INDEX_OF_CURRENT_FRAME - 2]
                     (xn, yn) = center
-                    if(xp == -1 or xn == -1):
-                        c = 5 / 0;
+                    if (xp == -1 or xn == -1):
+                        c = 5 / 0
                     x = 0.6 * xn + 0.4 * xp
                     y = 0.6 * yn + 0.4 * yp
                     center = (int(x), int(y))
-                    self.CURRENT_ANNOATAION_TRAJECTORIES['id_'+str(id)][self.INDEX_OF_CURRENT_FRAME - 1] = center
+                    self.CURRENT_ANNOATAION_TRAJECTORIES['id_' + str(
+                        id)][self.INDEX_OF_CURRENT_FRAME - 1] = center
                 except:
-                    self.CURRENT_ANNOATAION_TRAJECTORIES['id_'+str(id)][self.INDEX_OF_CURRENT_FRAME - 1] = center
+                    self.CURRENT_ANNOATAION_TRAJECTORIES['id_' + str(
+                        id)][self.INDEX_OF_CURRENT_FRAME - 1] = center
             except:
-                self.CURRENT_ANNOATAION_TRAJECTORIES['id_'+str(id)] = [(-1, - 1)] * int(self.TOTAL_VIDEO_FRAMES)
-                self.CURRENT_ANNOATAION_TRAJECTORIES['id_'+str(id)][self.INDEX_OF_CURRENT_FRAME - 1] = center
-                self.CURRENT_ANNOATAION_TRAJECTORIES['id_color_'+str(id)] = color
-            
+                self.CURRENT_ANNOATAION_TRAJECTORIES['id_' + str(
+                    id)] = [(-1, - 1)] * int(self.TOTAL_VIDEO_FRAMES)
+                self.CURRENT_ANNOATAION_TRAJECTORIES['id_' + str(
+                    id)][self.INDEX_OF_CURRENT_FRAME - 1] = center
+                self.CURRENT_ANNOATAION_TRAJECTORIES['id_color_' +
+                                                     str(id)] = color
+
         # print(sys.getsizeof(self.CURRENT_ANNOATAION_TRAJECTORIES))
         # print(len(self.CURRENT_ANNOATAION_TRAJECTORIES))
-        
-        if self.CURRENT_ANNOATAION_FLAGS['traj']:   
+
+        if self.CURRENT_ANNOATAION_FLAGS['traj']:
             img = self.draw_trajectories(img, shapes)
-            
+
         if imgage_qt_flag:
             img = self.convert_cv_to_qt(img, )
         return img
-
 
 
 # important parameters across the gui
@@ -3494,8 +3456,8 @@ class MainWindow(QtWidgets.QMainWindow):
 # self.CURRENT_SHAPES_IN_IMG
 
 # self.CURRENT_ANNOATAION_FLAGS = {"traj" : False  ,
-#                                 "bbox" : False  ,         
-#                                   "id" : False , 
+#                                 "bbox" : False  ,
+#                                   "id" : False ,
 #                                   "class" : True,
 #                                   "mask" : True}
 # to do
