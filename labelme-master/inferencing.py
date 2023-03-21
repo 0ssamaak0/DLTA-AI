@@ -114,7 +114,7 @@ class models_inference():
 
                 result = {}
                 result["class"] = classdict.get(int(detection[2]))
-                result["confidence"] = str(detection[1])
+                result["confidence"] = str(round(detection[1] , 2))
                 result["bbox"] = detection[0].astype(int)
                 result["seg"] = polygons[ind]
                 ind += 1
@@ -173,7 +173,7 @@ class models_inference():
                 result = {}
                 result["class"] = classdict.get(self.classes_numbering[classno])
                 # Confidence
-                result["confidence"] = str(results0[classno][instance][-1])
+                result["confidence"] = str(round(results0[classno][instance][-1] , 2))
                 if classno == 0:
                     result["seg"] = self.mask_to_polygons(
                         results1[classno][instance].astype(np.uint8) , 10)
