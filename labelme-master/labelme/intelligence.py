@@ -108,7 +108,10 @@ class Intelligence():
             return selected_model_name, model
         
         model = init_detector(config, 
-                            checkpoint, device = torch.device("cuda" if torch.cuda.is_available() else "cpu"))
+                            checkpoint,
+                            device = torch.device("cuda" if torch.cuda.is_available() else "cpu"))
+                        #    cfg_options= dict(iou_threshold=0.2))
+
         # "C:\Users\Shehab\Desktop\l001\ANNOTATION_TOOL\mmdetection\mmdetection\configs\yolact\yolact_r50_1x8_coco.py"
         # model = init_detector("C:/Users/Shehab/Desktop/mmdetection/mmdetection/configs/detectors/htc_r50_sac_1x_coco.py",
                             # "C:/Users/Shehab/Desktop/mmdetection/mmdetection/checkpoints/htc_r50_sac_1x_coco-bfa60c54.pth", device = torch.device("cuda"))
