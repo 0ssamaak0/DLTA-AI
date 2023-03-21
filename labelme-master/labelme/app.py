@@ -3368,14 +3368,16 @@ class MainWindow(QtWidgets.QMainWindow):
 
         return image
 
-    def draw_trajectories(self , img, shapes):
+    def draw_trajectories(self ,img, shapes):
+        x = self.CURRENT_ANNOATAION_TRAJECTORIES['length']
         for shape in shapes:
             id = shape["group_id"]
-            pts = self.CURRENT_ANNOATAION_TRAJECTORIES['id_' + str(id)][max(
-                self.INDEX_OF_CURRENT_FRAME - 30, 0) : self.INDEX_OF_CURRENT_FRAME]
-            color = self.CURRENT_ANNOATAION_TRAJECTORIES['id_color_' + str(id)]
+            pts = self.CURRENT_ANNOATAION_TRAJECTORIES['id_'+str(id)][max(self.INDEX_OF_CURRENT_FRAME - x, 0) : self.INDEX_OF_CURRENT_FRAME] 
+            color = self.CURRENT_ANNOATAION_TRAJECTORIES['id_color_'+str(id)]
+            
             for i in range(len(pts) - 1, 0, - 1):
-                thickness = int(np.sqrt(30 / float(len(pts) - i + 1)) * 2.5)
+                # thickness = int(np.sqrt(x / float(len(pts) - i + 1)) * 2.5)
+                thickness = (len(pts) - i <= 10) * 2 + (len(pts) - i <= 20) * 2 + (len(pts) - i <= 30) * 2 + 3
                 if pts[i - 1] is None or pts[i] is None :
                     continue
                 if pts[i] == (-1, - 1) or pts[i - 1] == (-1, - 1) :
@@ -3386,6 +3388,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 idx = idx % len(color_palette)
                 color = color_palette[idx] if idx != -1 else (0, 0, 255)
                 cv2.line(img, pts[i - 1], pts[i], color, thickness)
+                if(len(pts) - i > 0 and ((len(pts) - i) % 10 == 0)):
+                    cv2.circle(img, pts[i], 2, (0, 0, 0), -1)
         return img
 
     def draw_bb_on_image(self , image, shapes , imgage_qt_flag=True):
