@@ -2433,8 +2433,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.CURRENT_VIDEO_WIDTH = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
             self.CAP = cap
             # making the total video frames equal to the total frames in the video file - 1 as the indexing starts from 0
-            self.TOTAL_VIDEO_FRAMES = self.CAP.get(
-                cv2.CAP_PROP_FRAME_COUNT) - 1
+            self.TOTAL_VIDEO_FRAMES = int(self.CAP.get(cv2.CAP_PROP_FRAME_COUNT) - 1)
             self.CURRENT_VIDEO_FPS = self.CAP.get(cv2.CAP_PROP_FPS)
             print("Total Frames : " , self.TOTAL_VIDEO_FRAMES)
             self.main_video_frames_slider.setMaximum(self.TOTAL_VIDEO_FRAMES)
@@ -2707,6 +2706,7 @@ class MainWindow(QtWidgets.QMainWindow):
             with open(json_file_name, 'w') as jf:
                 json.dump(listObj, jf)
             jf.close()
+            
         # with open (json_file_name, 'r') as json_file:
         #     json_object = json.load(json_file)
         #     print(json_object)
@@ -2983,7 +2983,60 @@ class MainWindow(QtWidgets.QMainWindow):
             
             
     def export_as_video_button_clicked(self):
-        pass
+        json_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}_tracking_results.json'
+        input_video_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}.mp4'
+        output_video_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}_tracking_results.mp4'
+        input_cap = cv2.VideoCapture(input_video_file_name)
+        output_cap = cv2.VideoWriter(output_video_file_name, cv2.VideoWriter_fourcc(*'mp4v'), 30, (int(self.CURRENT_VIDEO_WIDTH), int(self.CURRENT_VIDEO_HEIGHT)))
+        with open(json_file_name, 'r') as jf:
+            listObj = json.load(jf)
+        jf.close()
+        
+        # make a progress bar for exporting video (with percentage of progress)   TO DO LATER
+        
+        for target_frame_idx in range(self.TOTAL_VIDEO_FRAMES):
+            print(target_frame_idx)
+            self.INDEX_OF_CURRENT_FRAME = target_frame_idx + 1
+            ret, image = input_cap.read()
+            shapes = []
+            for i in range(len(listObj)):
+                frame_idx = listObj[i]['frame_idx']
+                if int(frame_idx) == target_frame_idx:
+                    frame_objects = listObj[i]['frame_data']
+                    for object_ in frame_objects:
+                        shape = {}
+                        shape["label"] = coco_classes[object_['class_id']]
+                        shape["group_id"] = str(object_['tracker_id'])
+                        shape["content"] = str(object_['confidence'])
+                        shape["bbox"] = object_['bbox']
+                        points = object_['segment']
+                        points = np.array(points, np.int16).flatten().tolist()
+                        shape["points"] = points
+                        shape["shape_type"] = "polygon"
+                        shape["other_data"] = {}
+                        shape["flags"] = {}
+                        shapes.append(shape)
+                    continue
+            if len(shapes) == 0:
+                output_cap.write(image)
+                continue
+            image =  self.draw_bb_on_image(image, shapes , imgage_qt_flag = False)
+            output_cap.write(image)
+        
+        input_cap.release()
+        output_cap.release()
+        print("done exporting video")
+        self.INDEX_OF_CURRENT_FRAME = self.main_video_frames_slider.value()
+        # show message saying that the video is exported
+        msg = QtWidgets.QMessageBox()
+        msg.setIcon(QtWidgets.QMessageBox.Information)
+        msg.setText("Done Exporting Video")
+        msg.setWindowTitle("Export Video")
+        msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
+        msg.exec_()
+
+        
+    
     def addVideoControls(self):
         # add video controls toolbar with custom style (background color , spacing , hover color)
         self.videoControls = QtWidgets.QToolBar()
@@ -3274,10 +3327,10 @@ class MainWindow(QtWidgets.QMainWindow):
                 cv2.line(img, pts[i - 1], pts[i], color_palette[coco_classes.index(shape["label"])], thickness)
         return img
 
-    def draw_bb_on_image(self ,image, shapes):
-
-        
-        img = self.convert_QI_to_cv(image)
+    def draw_bb_on_image(self ,image, shapes , imgage_qt_flag = True):
+        img = image
+        if imgage_qt_flag:
+            img = self.convert_QI_to_cv(image)
         
         for shape in shapes:
             id = shape["group_id"]
@@ -3314,9 +3367,10 @@ class MainWindow(QtWidgets.QMainWindow):
         
         if self.CURRENT_ANNOATAION_FLAGS['traj']:   
             img = self.draw_trajectories(img, shapes)
-        
-        qimage = self.convert_cv_to_qt(img, )
-        return qimage
+            
+        if imgage_qt_flag:
+            img = self.convert_cv_to_qt(img, )
+        return img
 
 
 
