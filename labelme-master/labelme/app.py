@@ -1328,10 +1328,16 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def _get_rgb_by_label(self, label):
         if self._config["shape_color"] == "auto":
-            item = self.uniqLabelList.findItemsByLabel(label)[0]
-            label_id = self.uniqLabelList.indexFromItem(item).row() + 1
-            label_id += self._config["shift_auto_shape_color"]
-            return LABEL_COLORMAP[label_id % len(LABEL_COLORMAP)]
+            # item = self.uniqLabelList.findItemsByLabel(label)[0]
+            # label_id = self.uniqLabelList.indexFromItem(item).row() + 1
+            # label_id += self._config["shift_auto_shape_color"]
+            # return LABEL_COLORMAP[label_id % len(LABEL_COLORMAP)]
+            idx = coco_classes.index(label)
+            idx = idx % len(color_palette)
+            color = color_palette[idx]
+            # convert color from bgr to rgb
+            return color[::-1]
+        
         elif (
             self._config["shape_color"] == "manual"
             and self._config["label_colors"]
@@ -3322,8 +3328,10 @@ class MainWindow(QtWidgets.QMainWindow):
                     continue 
                 if pts[i] == (-1, - 1) or pts[i - 1] == (-1, - 1) :
                     break
-                
-                cv2.line(img, pts[i - 1], pts[i], color_palette[coco_classes.index(shape["label"])], thickness)
+                idx = coco_classes.index(shape["label"])
+                idx = idx % len(color_palette)
+                color = color_palette[idx]
+                cv2.line(img, pts[i - 1], pts[i], color, thickness)
         return img
 
     def draw_bb_on_image(self ,image, shapes , imgage_qt_flag = True):
