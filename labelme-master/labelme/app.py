@@ -2359,7 +2359,11 @@ class MainWindow(QtWidgets.QMainWindow):
         # image = self.draw_bb_on_image(self.image  , self.CURRENT_SHAPES_IN_IMG)
         # self.canvas.loadPixmap(QtGui.QPixmap.fromImage(image))
         
-        # clear shapes already in canvas
+        
+        
+        # make all annotation_flags false except polygons visablity
+
+        # clear shapes already in lablelist (fixes saving multiple shapes of same object bug)
         self.labelList.clear()
         self.CURRENT_SHAPES_IN_IMG = shapes
         self.loadLabels(self.CURRENT_SHAPES_IN_IMG)
@@ -2788,14 +2792,19 @@ class MainWindow(QtWidgets.QMainWindow):
             
         
             print(f'len of shapes = {len(shapes)}')
-            print(f'detections : {len(detections)}')
+            print(f'detections : {detections}')
             print(f'len of tracker_id = {len(tracker_id)}') 
-            print(f'len of detections.tracker_id = {detections.tracker_id.shape}') 
+            print(f'len of detections.tracker_id = {detections.tracker_id}') 
+            print(f'tracker_id = {tracker_id}') 
+            print(f'tracks = {tracks}') 
             # # masks shapes when traker_id is None
             
             # make new list of shapes to be added to CURRENT_SHAPES_IN_IMG 
 
-            
+            if len(detections) != len(tracker_id):
+                # pad the tracker_id with None
+                tracker_id = [None] * (len(detections) - len(tracker_id))
+                detections.tracker_id = np.array(tracker_id)
             
             # filtering out detections without trackers
             for a, shape_ in enumerate(shapes):
