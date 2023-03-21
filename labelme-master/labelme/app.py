@@ -276,6 +276,7 @@ class MainWindow(QtWidgets.QMainWindow):
                                          "mask" : True,
                                          "polygons" : True}
         self.CURRENT_ANNOATAION_TRAJECTORIES = {}
+        self.CURRENT_ANNOATAION_TRAJECTORIES['length'] = 70
         self.CURRENT_SHAPES_IN_IMG = []
         # make CLASS_NAMES_DICT a dictionary of coco class names
         # self.CLASS_NAMES_DICT =
@@ -2400,6 +2401,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def openVideo(self):
         self.CURRENT_ANNOATAION_TRAJECTORIES = {}
+        self.CURRENT_ANNOATAION_TRAJECTORIES['length'] = 70
         # self.videoControls.show()
         self.current_annotation_mode = "video"
         try :
@@ -3388,7 +3390,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 idx = idx % len(color_palette)
                 color = color_palette[idx] if idx != -1 else (0, 0, 255)
                 cv2.line(img, pts[i - 1], pts[i], color, thickness)
-                if(len(pts) - i > 0 and ((len(pts) - i) % 10 == 0)):
+                if((len(pts) - 1 - i) % 10 == 0):
                     cv2.circle(img, pts[i], 2, (0, 0, 0), -1)
         return img
 
