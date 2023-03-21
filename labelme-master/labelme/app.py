@@ -3441,12 +3441,13 @@ class MainWindow(QtWidgets.QMainWindow):
                     pass
                 centers_rec[self.INDEX_OF_CURRENT_FRAME - 1] = center
                 self.CURRENT_ANNOATAION_TRAJECTORIES['id_' + str(id)] = centers_rec
+                self.CURRENT_ANNOATAION_TRAJECTORIES['id_color_' +str(id)] = color
             except:
                 centers_rec = [(-1, - 1)] * int(self.TOTAL_VIDEO_FRAMES)
                 centers_rec[self.INDEX_OF_CURRENT_FRAME - 1] = center
                 self.CURRENT_ANNOATAION_TRAJECTORIES['id_' + str(id)] = centers_rec
-                self.CURRENT_ANNOATAION_TRAJECTORIES['id_color_' +
-                                                     str(id)] = color
+                self.CURRENT_ANNOATAION_TRAJECTORIES['id_color_' +str(id)] = color
+
 
         # print(sys.getsizeof(self.CURRENT_ANNOATAION_TRAJECTORIES))
 
