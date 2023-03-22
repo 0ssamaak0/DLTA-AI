@@ -2214,14 +2214,60 @@ class MainWindow(QtWidgets.QMainWindow):
         ):
             deleted_shapes = self.canvas.deleteSelected()
             deleted_ids = [shape.group_id for shape in deleted_shapes]
-            self.delete_ids_from_all_frames(deleted_ids)
             self.remLabels(deleted_shapes)
             self.setDirty()
             if self.noShapes():
                 for action in self.actions.onShapesPresent:
                     action.setEnabled(False)
+            ###########################
+            dialog = QtWidgets.QDialog()
+            dialog.setWindowTitle("Choose Deletion Options")
+            dialog.setWindowModality(Qt.ApplicationModal)
+            dialog.resize(250, 100)
 
-    def delete_ids_from_all_frames(self, deleted_ids):
+            layout = QtWidgets.QVBoxLayout()
+
+            label = QtWidgets.QLabel("Choose Deletion Options")
+            layout.addWidget(label)
+
+            prev = QtWidgets.QRadioButton("this frame and previous frames")
+            next = QtWidgets.QRadioButton("this frame and next frames")
+            all = QtWidgets.QRadioButton("across all frames (previous and next)")
+            only = QtWidgets.QRadioButton("this frame only")
+            self.label = QtWidgets.QLabel('across all frames (previous and next)', self)
+            
+            all.toggle()
+            
+            prev.toggled.connect(self.update_deletion_mode)
+            next.toggled.connect(self.update_deletion_mode)
+            all.toggled.connect(self.update_deletion_mode)
+            only.toggled.connect(self.update_deletion_mode)
+            
+
+            layout.addWidget(prev)
+            layout.addWidget(next)
+            layout.addWidget(all)
+            layout.addWidget(only)
+            
+
+            buttonBox = QtWidgets.QDialogButtonBox(
+                QtWidgets.QDialogButtonBox.Ok)
+            buttonBox.accepted.connect(dialog.accept)
+            layout.addWidget(buttonBox)
+            dialog.setLayout(layout)
+            result = dialog.exec_()
+            if result == QtWidgets.QDialog.Accepted:
+                print(self.label.text())
+                self.delete_ids_from_all_frames(deleted_ids, mode = self.label.text())
+                self.main_video_frames_slider_changed()
+            ###########################
+            
+    def update_deletion_mode(self,_):
+        rbtn = self.sender()
+        if rbtn.isChecked() == True:
+            self.label.setText(rbtn.text())
+
+    def delete_ids_from_all_frames(self, deleted_ids, mode = 'across all frames (previous and next)'):
         json_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}_tracking_results.json'
         if not os.path.exists(json_file_name):
             with open(json_file_name, 'w') as jf:
@@ -2233,17 +2279,30 @@ class MainWindow(QtWidgets.QMainWindow):
         for i in range(len(listObj)):
             frame_idx = listObj[i]['frame_idx']
             for object_ in listObj[i]['frame_data']:
-                print(f'before --> frame: {listObj[i]["frame_idx"]}, id: {object_["tracker_id"]}')
+                if mode == 'this frame and previous frames' and frame_idx > self.INDEX_OF_CURRENT_FRAME :
+                    continue
+                if mode == 'this frame and next frames' and frame_idx < self.INDEX_OF_CURRENT_FRAME :
+                    continue
+                if mode == 'this frame only' and frame_idx != self.INDEX_OF_CURRENT_FRAME :
+                    continue
                 id = str(object_['tracker_id'])
-                if(id in deleted_ids):
-                    print("removed successfully")
+                if id in deleted_ids:
                     listObj[i]['frame_data'].remove(object_)
+                    if mode == 'this frame and previous frames' :
+                        self.CURRENT_ANNOATAION_TRAJECTORIES['id_'+id][0 : self.INDEX_OF_CURRENT_FRAME] = [(-1, -1)] * self.INDEX_OF_CURRENT_FRAME
+                    if mode == 'this frame and next frames' :
+                        self.CURRENT_ANNOATAION_TRAJECTORIES['id_'+id][self.INDEX_OF_CURRENT_FRAME - 1:] = [(-1, -1)] * (self.TOTAL_VIDEO_FRAMES - self.INDEX_OF_CURRENT_FRAME + 1)
+                    if mode == 'this frame only' :
+                        self.CURRENT_ANNOATAION_TRAJECTORIES['id_'+id][self.INDEX_OF_CURRENT_FRAME - 1] = (-1, -1)
+                    else:
+                        self.CURRENT_ANNOATAION_TRAJECTORIES['id_'+str(id)] = [(-1, -1)] * self.TOTAL_VIDEO_FRAMES
         listObj = sorted(listObj, key=lambda k: k['frame_idx'])
         with open(json_file_name, 'w') as json_file:
             json.dump(listObj, json_file ,
                       indent=4,
                       separators=(',', ': '))
         json_file.close()
+        
 
     def copyShape(self):
         self.canvas.endMove(copy=True)
@@ -3049,6 +3108,11 @@ class MainWindow(QtWidgets.QMainWindow):
         msg.exec_()
 
     def clear_video_annotations_button_clicked(self):
+        length_Value = self.CURRENT_ANNOATAION_TRAJECTORIES['length']
+        alpha_Value = self.CURRENT_ANNOATAION_TRAJECTORIES['alpha']
+        self.CURRENT_ANNOATAION_TRAJECTORIES.clear() 
+        self.CURRENT_ANNOATAION_TRAJECTORIES['length'] = length_Value
+        self.CURRENT_ANNOATAION_TRAJECTORIES['alpha'] = alpha_Value
         # just delete the json file and reload the video
         # to delete the json file we need to know the name of the json file which is the same as the video name
         json_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}_tracking_results.json'
