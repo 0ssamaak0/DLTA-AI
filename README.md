@@ -1,6 +1,8 @@
 # Labelmm
 Auto Annotation tool for instance segmentation based on [Labelme](https://github.com/wkentaro/labelme), using [mmdetection](https://github.com/open-mmlab/mmdetection) framework
 
+![pic5](https://user-images.githubusercontent.com/85165808/227048466-e354d66c-9072-41a9-bef5-dcd88988500c.png)
+
 
 # Installation
 ## 1. Install [Anaconda](https://www.anaconda.com) or [Miniconda](https://docs.conda.io/en/latest/miniconda.html)
