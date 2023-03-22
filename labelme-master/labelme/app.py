@@ -2132,7 +2132,7 @@ class MainWindow(QtWidgets.QMainWindow):
         answer = mb.warning(self, self.tr("Attention"), msg, mb.Yes | mb.No)
         if answer != mb.Yes:
             return
-
+        
         label_file = self.getLabelFile()
         if osp.exists(label_file):
             os.remove(label_file)
@@ -2212,11 +2212,38 @@ class MainWindow(QtWidgets.QMainWindow):
         if yes == QtWidgets.QMessageBox.warning(
             self, self.tr("Attention"), msg, yes | no, yes
         ):
-            self.remLabels(self.canvas.deleteSelected())
+            deleted_shapes = self.canvas.deleteSelected()
+            deleted_ids = [shape.group_id for shape in deleted_shapes]
+            self.delete_ids_from_all_frames(deleted_ids)
+            self.remLabels(deleted_shapes)
             self.setDirty()
             if self.noShapes():
                 for action in self.actions.onShapesPresent:
                     action.setEnabled(False)
+
+    def delete_ids_from_all_frames(self, deleted_ids):
+        json_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}_tracking_results.json'
+        if not os.path.exists(json_file_name):
+            with open(json_file_name, 'w') as jf:
+                json.dump([], jf)
+            jf.close()
+        with open(json_file_name, 'r') as jf:
+            listObj = json.load(jf)
+        jf.close()
+        for i in range(len(listObj)):
+            frame_idx = listObj[i]['frame_idx']
+            for object_ in listObj[i]['frame_data']:
+                print(f'before --> frame: {listObj[i]["frame_idx"]}, id: {object_["tracker_id"]}')
+                id = str(object_['tracker_id'])
+                if(id in deleted_ids):
+                    print("removed successfully")
+                    listObj[i]['frame_data'].remove(object_)
+        listObj = sorted(listObj, key=lambda k: k['frame_idx'])
+        with open(json_file_name, 'w') as json_file:
+            json.dump(listObj, json_file ,
+                      indent=4,
+                      separators=(',', ': '))
+        json_file.close()
 
     def copyShape(self):
         self.canvas.endMove(copy=True)
@@ -3054,7 +3081,7 @@ class MainWindow(QtWidgets.QMainWindow):
         json_frame = {}
         json_frame.update({'frame_idx' : self.INDEX_OF_CURRENT_FRAME})
         json_frame_object_list = []
-
+        
         shapes = self.convert_qt_shapes_to_shapes(self.canvas.shapes)
         for shape in shapes:
             json_tracked_object = {}
