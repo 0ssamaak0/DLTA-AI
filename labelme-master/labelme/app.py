@@ -3284,8 +3284,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.trajectory_length_lineEdit = QtWidgets.QLineEdit()
         self.trajectory_length_lineEdit.setText(str(30))
         self.trajectory_length_lineEdit.setMaximumWidth(50)
-        self.trajectory_length_lineEdit.textChanged.connect(self.trajectory_length_lineEdit_changed)
-        
+        self.trajectory_length_lineEdit.editingFinished.connect(self.trajectory_length_lineEdit_changed)
         
         self.videoControls_2.addWidget(self.trajectory_length_lineEdit)
         
