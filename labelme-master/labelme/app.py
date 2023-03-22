@@ -2258,7 +2258,9 @@ class MainWindow(QtWidgets.QMainWindow):
             result = dialog.exec_()
             if result == QtWidgets.QDialog.Accepted:
                 print(self.label.text())
-                self.delete_ids_from_all_frames(deleted_ids, mode = self.label.text())
+                for deleted_id in deleted_ids:
+                    self.delete_ids_from_all_frames([deleted_id], mode = self.label.text())
+                # self.delete_ids_from_all_frames(deleted_ids, mode = self.label.text())
                 self.main_video_frames_slider_changed()
             ###########################
             
