@@ -1248,6 +1248,32 @@ class MainWindow(QtWidgets.QMainWindow):
             item.setText(shape.label)
         else:
             item.setText(f' ID {shape.group_id}: {shape.label}')
+            ###########################################################
+            json_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}_tracking_results.json'
+            if not os.path.exists(json_file_name):
+                with open(json_file_name, 'w') as jf:
+                    json.dump([], jf)
+                jf.close()
+            with open(json_file_name, 'r') as jf:
+                listObj = json.load(jf)
+            jf.close()
+            
+            for i in range(len(listObj)):
+                for object_ in listObj[i]['frame_data']:
+                    if object_['tracker_id'] == shape.group_id:
+                        listObj[i]['frame_data'].remove(object_)
+                        object_['class_name'] = shape.label
+                        object_['confidence'] = 1.0
+                        object_['class_id'] = 0                                # TODO: change this to the class id
+                        listObj[i]['frame_data'].append(object_)
+            listObj = sorted(listObj, key=lambda k: k['frame_idx'])
+            with open(json_file_name, 'w') as json_file:
+                json.dump(listObj, json_file ,
+                        indent=4,
+                        separators=(',', ': '))
+            json_file.close()
+            self.main_video_frames_slider_changed()
+            ###########################################################
         self.setDirty()
         if not self.uniqLabelList.findItemsByLabel(shape.label):
             item = QtWidgets.QListWidgetItem()
