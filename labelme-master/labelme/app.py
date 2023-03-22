@@ -1264,7 +1264,7 @@ class MainWindow(QtWidgets.QMainWindow):
                         listObj[i]['frame_data'].remove(object_)
                         object_['class_name'] = shape.label
                         object_['confidence'] = 1.0
-                        object_['class_id'] = 0                                # TODO: change this to the class id
+                        object_['class_id'] = coco_classes.index(shape.label) if shape.label in coco_classes else -1                                # TODO: change this to the class id
                         listObj[i]['frame_data'].append(object_)
             listObj = sorted(listObj, key=lambda k: k['frame_idx'])
             with open(json_file_name, 'w') as json_file:
