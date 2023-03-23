@@ -1297,12 +1297,14 @@ class MainWindow(QtWidgets.QMainWindow):
                     records[listobjframe - first_frame_idx] = object_
                     listObj[i]['frame_data'].remove(object_)
                     break
-        
+        first_iter_flag = True
         for i in range(len(records)):
             if(records[i] != None):
                 RECORDS.append(records[i])
                 continue
-            
+            if first_iter_flag:
+                first_iter_flag = False
+                prev_idx = i - 1
             prev = records[i - 1]
             # prev_center = self.center(prev['bbox'])
             prev_center = self.centerOFmass(prev['segment'])
@@ -1313,6 +1315,7 @@ class MainWindow(QtWidgets.QMainWindow):
             next_idx = i + 1
             for j in range(i + 1, len(records)):
                 if(records[j] != None):
+                    
                     next = records[j]
                     next_idx = j
                     break
@@ -1320,19 +1323,34 @@ class MainWindow(QtWidgets.QMainWindow):
             frame_ratio = 1 / (next_idx - (i - 1))
             x_factor = 1 + frame_ratio * (next['bbox'][2] - prev['bbox'][2]) / prev['bbox'][2]
             y_factor = 1 + frame_ratio * (next['bbox'][3] - prev['bbox'][3]) / prev['bbox'][3]
-            # 20   40
-            # 21 
-            # 1+ 0.05 * (40 - 20) / 20 = 1.05
+
             
             current_center = np.array(prev_center) + (np.array(self.centerOFmass(next['segment'])) - np.array(prev_center)) * frame_ratio
             current_center = current_center.tolist()
             current_center = [int(current_center[i]) for i in range(len(current_center))]
             
             current['bbox'] = self.get_current_bbox(current_center, x_factor, y_factor, prev['bbox'], prev)
-            
             current['segment'] = [[ int(x_factor * (prev_segment[i][0] - prev_center[0]) + current_center[0]),
                                     int(y_factor * (prev_segment[i][1] - prev_center[1]) + current_center[1]) ] 
                                   for i in range(len(prev_segment))]
+            
+            # next_idx ,prev_idx , i , records[next_idx]['bbox'] , records[prev_idx]['bbox']
+            # print(records[prev_idx]['segment'])
+            # print(records[next_idx]['segment'])
+            # print(prev_idx ,next_idx , i, records[prev_idx]['bbox'] , records[next_idx]['bbox'] , sep = '\n')
+            
+            
+            cur_bbox = ((next_idx - i)/(next_idx - prev_idx ))*np.array(records[prev_idx]['bbox']) + ((i - prev_idx)/(next_idx -prev_idx ))*np.array(records[next_idx]['bbox'])
+            cur_bbox = [int(cur_bbox[i]) for i in range(len(cur_bbox))]
+            
+            cur_segment = ((next_idx - i)/(next_idx -prev_idx ))*np.array(records[prev_idx]['segment']) + ((i - prev_idx)/(next_idx -prev_idx ))*np.array(records[next_idx]['segment'])
+            cur_segment = [[int(sublist[0]) , int(sublist[1])] for sublist in cur_segment ]
+            current['bbox'] = cur_bbox
+            current['segment'] = cur_segment
+            
+            
+
+            
             records[i] = current.copy()
             RECORDS.append(records[i])
             
