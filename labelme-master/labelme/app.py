@@ -1249,15 +1249,7 @@ class MainWindow(QtWidgets.QMainWindow):
         else:
             item.setText(f' ID {shape.group_id}: {shape.label}')
             ###########################################################
-            json_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}_tracking_results.json'
-            if not os.path.exists(json_file_name):
-                with open(json_file_name, 'w') as jf:
-                    json.dump([], jf)
-                jf.close()
-            with open(json_file_name, 'r') as jf:
-                listObj = json.load(jf)
-            jf.close()
-            
+            listObj = self.load_objects_from_json()
             for i in range(len(listObj)):
                 for object_ in listObj[i]['frame_data']:
                     if object_['tracker_id'] == shape.group_id:
@@ -1267,18 +1259,120 @@ class MainWindow(QtWidgets.QMainWindow):
                         object_['class_id'] = coco_classes.index(shape.label) if shape.label in coco_classes else -1                                # TODO: change this to the class id
                         listObj[i]['frame_data'].append(object_)
             listObj = sorted(listObj, key=lambda k: k['frame_idx'])
-            with open(json_file_name, 'w') as json_file:
-                json.dump(listObj, json_file ,
-                        indent=4,
-                        separators=(',', ': '))
-            json_file.close()
-            self.main_video_frames_slider_changed()
+            self.load_objects_to_json(listObj)
+            ###########################################################
+            self.interpolate(id = shape.group_id, label = shape.label)
             ###########################################################
         self.setDirty()
         if not self.uniqLabelList.findItemsByLabel(shape.label):
             item = QtWidgets.QListWidgetItem()
             item.setData(Qt.UserRole, shape.label)
             self.uniqLabelList.addItem(item)
+            
+    def interpolate(self, id, label):
+        first_frame_idx = -1
+        last_frame_idx = -1
+        centers = self.CURRENT_ANNOATAION_TRAJECTORIES['id_'+str(id)]
+        for i in range(len(centers)):
+            if(centers[i][0] != -1 and centers[i + 1][0] == -1):
+                first_frame_idx = i + 1
+                break
+        for i in range(len(centers)-1, -1, -1):
+            if(centers[i][0] != -1 and centers[i - 1][0] == -1):
+                last_frame_idx = i + 1
+                break
+        if(first_frame_idx >= last_frame_idx):
+            return
+        
+        listObj = self.load_objects_from_json()
+        records = [None for i in range(first_frame_idx, last_frame_idx + 1)]
+        RECORDS = []
+        for i in range(len(listObj)):
+            listobjframe = listObj[i]['frame_idx']
+            if(listobjframe < first_frame_idx or listobjframe > last_frame_idx):
+                continue
+            frameobjects = listObj[i]['frame_data']
+            for object_ in frameobjects:
+                if(object_['tracker_id'] == id):
+                    records[listobjframe - first_frame_idx] = object_
+                    listObj[i]['frame_data'].remove(object_)
+                    break
+        
+        for i in range(len(records)):
+            if(records[i] != None):
+                RECORDS.append(records[i])
+                continue
+            
+            prev = records[i - 1]
+            prev_center = self.center(prev['bbox'])
+            prev_segment = prev['segment']
+            current = prev
+            
+            next = records[i + 1]
+            next_idx = i + 1
+            for j in range(i + 1, len(records)):
+                if(records[j] != None):
+                    next = records[j]
+                    next_idx = j
+                    break
+                
+            frame_ratio = 1 / (next_idx - i + 1)
+            x_factor = 1 + frame_ratio * (next['bbox'][2] - prev['bbox'][2]) / prev['bbox'][2]
+            y_factor = 1 + frame_ratio * (next['bbox'][3] - prev['bbox'][3]) / prev['bbox'][3]
+            
+            current_center = np.array(prev_center) + (np.array(self.center(next['bbox'])) - np.array(prev_center)) * frame_ratio
+            current_center = current_center.tolist()
+            current_center = [int(current_center[i]) for i in range(len(current_center))]
+            
+            current['bbox'] = self.get_current_bbox(current_center, x_factor, y_factor, prev['bbox'])
+            
+            current['segment'] = [[ int(x_factor * (prev_segment[i][0] - prev_center[0]) + current_center[0]),
+                                    int(y_factor * (prev_segment[i][1] - prev_center[1]) + current_center[1]) ] 
+                                  for i in range(len(prev_segment))]
+            records[i] = current.copy()
+            RECORDS.append(records[i])
+            
+        for i in range(len(listObj)):
+            listobjframe = listObj[i]['frame_idx']
+            if(listobjframe < first_frame_idx or listobjframe > last_frame_idx):
+                continue
+            listObj[i]['frame_data'].append(RECORDS[listobjframe - first_frame_idx])
+        print(RECORDS)
+            
+        self.load_objects_to_json(listObj)
+        
+        
+    def center(self, bbox):
+        return [int(bbox[0] + (bbox[2] / 2)), int(bbox[1] + ( bbox[3] / 2))]
+    
+    def get_current_bbox(self, current_center, x_factor, y_factor, prev_bbox):
+        prev_center = self.center(prev_bbox)
+        current_bbox = [0,0,0,0]
+        current_bbox[0] = int(current_center[0] + x_factor * (prev_bbox[0] - prev_center[0]))
+        current_bbox[1] = int(current_center[1] + y_factor * (prev_bbox[1] - prev_center[1]))
+        current_bbox[2] = int(x_factor * prev_bbox[2])
+        current_bbox[3] = int(y_factor * prev_bbox[3])
+        return current_bbox
+        
+    def load_objects_from_json(self):
+        json_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}_tracking_results.json'
+        if not os.path.exists(json_file_name):
+            with open(json_file_name, 'w') as jf:
+                json.dump([], jf)
+            jf.close()
+        with open(json_file_name, 'r') as jf:
+            listObj = json.load(jf)
+        jf.close()
+        return listObj
+
+    def load_objects_to_json(self, listObj):
+        json_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}_tracking_results.json'
+        with open(json_file_name, 'w') as json_file:
+            json.dump(listObj, json_file ,
+                    indent=4,
+                    separators=(',', ': '))
+        json_file.close()
+        self.main_video_frames_slider_changed()
 
     def fileSearchChanged(self):
         self.importDirImages(
@@ -2260,9 +2354,9 @@ class MainWindow(QtWidgets.QMainWindow):
             next = QtWidgets.QRadioButton("this frame and next frames")
             all = QtWidgets.QRadioButton("across all frames (previous and next)")
             only = QtWidgets.QRadioButton("this frame only")
-            self.label = QtWidgets.QLabel('across all frames (previous and next)', self)
+            self.label = QtWidgets.QLabel('this frame only', self)
             
-            all.toggle()
+            only.toggle()
             
             prev.toggled.connect(self.update_deletion_mode)
             next.toggled.connect(self.update_deletion_mode)
