@@ -1304,7 +1304,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 continue
             
             prev = records[i - 1]
-            prev_center = self.center(prev['bbox'])
+            # prev_center = self.center(prev['bbox'])
+            prev_center = self.centerOFmass(prev['segment'])
             prev_segment = prev['segment']
             current = prev
             
@@ -1316,15 +1317,18 @@ class MainWindow(QtWidgets.QMainWindow):
                     next_idx = j
                     break
                 
-            frame_ratio = 1 / (next_idx - i + 1)
+            frame_ratio = 1 / (next_idx - (i - 1))
             x_factor = 1 + frame_ratio * (next['bbox'][2] - prev['bbox'][2]) / prev['bbox'][2]
             y_factor = 1 + frame_ratio * (next['bbox'][3] - prev['bbox'][3]) / prev['bbox'][3]
+            # 20   40
+            # 21 
+            # 1+ 0.05 * (40 - 20) / 20 = 1.05
             
-            current_center = np.array(prev_center) + (np.array(self.center(next['bbox'])) - np.array(prev_center)) * frame_ratio
+            current_center = np.array(prev_center) + (np.array(self.centerOFmass(next['segment'])) - np.array(prev_center)) * frame_ratio
             current_center = current_center.tolist()
             current_center = [int(current_center[i]) for i in range(len(current_center))]
             
-            current['bbox'] = self.get_current_bbox(current_center, x_factor, y_factor, prev['bbox'])
+            current['bbox'] = self.get_current_bbox(current_center, x_factor, y_factor, prev['bbox'], prev)
             
             current['segment'] = [[ int(x_factor * (prev_segment[i][0] - prev_center[0]) + current_center[0]),
                                     int(y_factor * (prev_segment[i][1] - prev_center[1]) + current_center[1]) ] 
@@ -1337,7 +1341,6 @@ class MainWindow(QtWidgets.QMainWindow):
             if(listobjframe < first_frame_idx or listobjframe > last_frame_idx):
                 continue
             listObj[i]['frame_data'].append(RECORDS[listobjframe - first_frame_idx])
-        print(RECORDS)
             
         self.load_objects_to_json(listObj)
         
@@ -1345,8 +1348,16 @@ class MainWindow(QtWidgets.QMainWindow):
     def center(self, bbox):
         return [int(bbox[0] + (bbox[2] / 2)), int(bbox[1] + ( bbox[3] / 2))]
     
-    def get_current_bbox(self, current_center, x_factor, y_factor, prev_bbox):
-        prev_center = self.center(prev_bbox)
+    def centerOFmass(self, points):
+        sumX = 0
+        sumY = 0
+        for point in points:
+            sumX += point[0]
+            sumY += point[1]
+        return [int(sumX / len(points)), int(sumY / len(points))]
+    
+    def get_current_bbox(self, current_center, x_factor, y_factor, prev_bbox, prev):
+        prev_center = self.centerOFmass(prev['segment'])
         current_bbox = [0,0,0,0]
         current_bbox[0] = int(current_center[0] + x_factor * (prev_bbox[0] - prev_center[0]))
         current_bbox[1] = int(current_center[1] + y_factor * (prev_bbox[1] - prev_center[1]))
