@@ -1334,7 +1334,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 first_frame_idx = i + 1
                 break
         for i in range(len(centers)-1, -1, -1):
-            if(centers[i][0] != -1 and centers[i - 1][0] == -1):
+            if(centers[i][0] != -1 ):#and centers[i - 1][0] == -1):
                 last_frame_idx = i + 1
                 break
         if(first_frame_idx >= last_frame_idx):
@@ -1367,13 +1367,18 @@ class MainWindow(QtWidgets.QMainWindow):
             next = records[i + 1]
             next_idx = i + 1
             for j in range(i + 1, len(records)):
+                print('j: ', j)
                 if(records[j] != None):
-                    
+                    print('entered')
                     next = records[j]
                     next_idx = j
                     break
-            
+            print('i: ', i, '   frame: ', i + first_frame_idx)
+            print('prev_idx: ', prev_idx, 'next_idx: ', next_idx)
+            print(records[prev_idx])
+            print(records[next_idx])
             cur_bbox = ((next_idx - i)/(next_idx - prev_idx ))*np.array(records[prev_idx]['bbox']) + ((i - prev_idx)/(next_idx -prev_idx ))*np.array(records[next_idx]['bbox'])
+            print('cur_bbox: ', cur_bbox)
             cur_bbox = [int(cur_bbox[i]) for i in range(len(cur_bbox))]
             
             prev_segment = prev['segment']
@@ -1401,8 +1406,9 @@ class MainWindow(QtWidgets.QMainWindow):
         for frame in range(first_frame_idx, last_frame_idx + 1):
             if(frame not in appended_frames):
                 listObj.append({'frame_idx': frame, 'frame_data': [RECORDS[max(frame - first_frame_idx - 1, 0)]]})
-                    
+        print(1)
         self.load_objects_to_json(listObj)
+        print(2)
         self.main_video_frames_slider_changed()
     
     def addPoints(self, shape, n):
@@ -2766,7 +2772,6 @@ class MainWindow(QtWidgets.QMainWindow):
             return
         for i in range(len(listobj)):
             listobjframe = listobj[i]['frame_idx']
-            
             for object in listobj[i]['frame_data']:
                 id = object['tracker_id']
                 label = object['class_name']
@@ -2774,9 +2779,10 @@ class MainWindow(QtWidgets.QMainWindow):
                 idx = coco_classes.index(label) if label in coco_classes else -1
                 idx = idx % len(color_palette)
                 color = color_palette[idx] if idx != -1 else (0, 0, 255)
+                center = self.centerOFmass(object['segment'])
                 try:
                     centers_rec = self.CURRENT_ANNOATAION_TRAJECTORIES['id_' + str(id)]
-                    center = self.centerOFmass(object['segment'])
+                    
                     try:
                         (xp, yp) = centers_rec[listobjframe - 2]
                         (xn, yn) = center
@@ -2807,6 +2813,8 @@ class MainWindow(QtWidgets.QMainWindow):
         
         for shape in self.canvas.shapes:
             self.canvas.deleteShape(shape)
+            
+        self.CURRENT_SHAPES_IN_IMG = []
         
         # self.videoControls.show()
         self.current_annotation_mode = "video"
