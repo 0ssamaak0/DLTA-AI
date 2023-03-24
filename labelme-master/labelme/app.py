@@ -1349,9 +1349,6 @@ class MainWindow(QtWidgets.QMainWindow):
                 first_iter_flag = False
                 prev_idx = i - 1
             prev = records[i - 1]
-            # prev_center = self.center(prev['bbox'])
-            prev_center = self.centerOFmass(prev['segment'])
-            prev_segment = prev['segment']
             current = prev
             
             next = records[i + 1]
@@ -1366,6 +1363,12 @@ class MainWindow(QtWidgets.QMainWindow):
             cur_bbox = ((next_idx - i)/(next_idx - prev_idx ))*np.array(records[prev_idx]['bbox']) + ((i - prev_idx)/(next_idx -prev_idx ))*np.array(records[next_idx]['bbox'])
             cur_bbox = [int(cur_bbox[i]) for i in range(len(cur_bbox))]
             
+            prev_segment = prev['segment']
+            next_segment = next['segment']
+            (prev_segment, next_segment) = self.getGoodShapes(prev_segment, next_segment)
+            prev['segment'] = prev_segment
+            next['segment'] = next_segment
+            
             cur_segment = ((next_idx - i)/(next_idx -prev_idx ))*np.array(records[prev_idx]['segment']) + ((i - prev_idx)/(next_idx -prev_idx ))*np.array(records[next_idx]['segment'])
             cur_segment = [[int(sublist[0]) , int(sublist[1])] for sublist in cur_segment ]
             current['bbox'] = cur_bbox
@@ -1374,14 +1377,85 @@ class MainWindow(QtWidgets.QMainWindow):
             records[i] = current.copy()
             RECORDS.append(records[i])
             
+        appended_frames = []
         for i in range(len(listObj)):
             listobjframe = listObj[i]['frame_idx']
             if(listobjframe < first_frame_idx or listobjframe > last_frame_idx):
                 continue
-            listObj[i]['frame_data'].append(RECORDS[listobjframe - first_frame_idx])
+            listObj[i]['frame_data'].append(RECORDS[max(listobjframe - first_frame_idx - 1, 0)])
+            appended_frames.append(listobjframe)
             
+        for frame in range(first_frame_idx, last_frame_idx + 1):
+            if(frame not in appended_frames):
+                listObj.append({'frame_idx': frame, 'frame_data': [RECORDS[max(frame - first_frame_idx - 1, 0)]]})
+                    
         self.load_objects_to_json(listObj)
         self.main_video_frames_slider_changed()
+    
+    def addPoints(self, shape, n):
+        res = shape.copy()
+        sub = 1.0 * n / len(shape)
+        if sub == 0:
+            return res
+        if sub < 1:
+            dist = int(len(shape) / n) - 1
+            for i in range(len(shape) - 1):
+                dif = [shape[i + 1][0] - shape[i][0], shape[i + 1][1] - shape[i][1]]
+                newPoint = [shape[i][0] + dif[0] * 0.5, shape[i][1] + dif[1] * 0.5]
+                res.append(newPoint)
+                n -= 1
+                if n == 0:
+                    return res
+        else:
+            now = int(sub)
+            for i in range(len(shape) - 1):
+                dif = [shape[i + 1][0] - shape[i][0], shape[i + 1][1] - shape[i][1]]
+                for j in range(1, now):
+                    newPoint = [shape[i][0] + dif[0] * j / now, shape[i][1] + dif[1] * j / now]
+                    res.append(newPoint)
+            return self.addPoints(res, n - len(res))
+
+    def allign(self, shape1, shape2):
+        shape1_center = self.centerOFmass(shape1)
+        shape1_org = [[shape1[i][0] - shape1_center[0], shape1[i][1] - shape1_center[1]] for i in range(len(shape1))]
+        shape2_center = self.centerOFmass(shape2)
+        shape2_org = [[shape2[i][0] - shape2_center[0], shape2[i][1] - shape2_center[1]] for i in range(len(shape2))]
+        
+        shape1_slope = np.arctan2(np.array(shape1_org)[:, 1], np.array(shape1_org)[:, 0]).tolist()
+        shape2_slope = np.arctan2(np.array(shape2_org)[:, 1], np.array(shape2_org)[:, 0]).tolist()
+        
+        shape1_alligned = []
+        shape2_alligned = []
+
+        for i in range(len(shape1_slope)):
+            x1 = np.argmax(shape1_slope)
+            x2 = np.argmax(shape2_slope)
+            shape1_alligned.append(shape1_org[x1])
+            shape2_alligned.append(shape2_org[x2])
+            shape1_org.pop(x1)
+            shape2_org.pop(x2)
+            shape1_slope.pop(x1)
+            shape2_slope.pop(x2)
+        
+        shape1_alligned = [ [shape1_alligned[i][0] + shape1_center[0], shape1_alligned[i][1] + shape1_center[1]] for i in range(len(shape1_alligned)) ]
+        shape2_alligned = [ [shape2_alligned[i][0] + shape2_center[0], shape2_alligned[i][1] + shape2_center[1]] for i in range(len(shape2_alligned)) ]
+        
+        return (shape1_alligned, shape2_alligned)
+    
+    def reducepoints(self, polygon, n):
+        indcies = [int(i) for i in np.linspace(0, len(polygon), num=n, endpoint=False)]
+        res = [polygon[i] for i in indcies]    
+        return res
+    
+    def getGoodShapes(self, shape1, shape2):
+        shape1 = self.addPoints(shape1, 20 - len(shape1))
+        shape2 = self.addPoints(shape2, 20 - len(shape2))
+        #(shape1, shape2) = self.allign(shape1, shape2)
+        #shape1 = self.reducepoints(shape1, 20)
+        #shape2 = self.reducepoints(shape2, 20)
+        shape1 = [[int(shape1[i][0]), int(shape1[i][1])] for i in range(len(shape1))]
+        shape2 = [[int(shape2[i][0]), int(shape2[i][1])] for i in range(len(shape2))]
+        return (shape1, shape2)
     
     def centerOFmass(self, points):
         sumX = 0
