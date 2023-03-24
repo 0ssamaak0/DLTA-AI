@@ -2715,6 +2715,44 @@ class MainWindow(QtWidgets.QMainWindow):
             (frameTime - frameHours * 3600 - frameMinutes * 60 - frameSeconds) * 1000)
         # print them in formal time format
         return frameHours, frameMinutes, frameSeconds , frameMilliseconds
+    
+    def calc_trajectory_when_open_video(self, ):
+        listobj = self.load_objects_from_json()
+        if len(listobj) == 0:
+            return
+        for i in range(len(listobj)):
+            listobjframe = listobj[i]['frame_idx']
+            
+            for object in listobj[i]['frame_data']:
+                id = object['tracker_id']
+                label = object['class_name']
+                # color calculation
+                idx = coco_classes.index(label) if label in coco_classes else -1
+                idx = idx % len(color_palette)
+                color = color_palette[idx] if idx != -1 else (0, 0, 255)
+                try:
+                    centers_rec = self.CURRENT_ANNOATAION_TRAJECTORIES['id_' + str(id)]
+                    center = self.centerOFmass(object['segment'])
+                    try:
+                        (xp, yp) = centers_rec[listobjframe - 2]
+                        (xn, yn) = center
+                        if (xp == -1 or xn == -1):
+                            c = 5 / 0
+                        r = 0.5
+                        x = r * xn + (1 - r) * xp
+                        y = r * yn + (1 - r) * yp
+                        center = (int(x), int(y))
+                    except:
+                        pass
+                    centers_rec[listobjframe - 1] = center
+                    self.CURRENT_ANNOATAION_TRAJECTORIES['id_' + str(id)] = centers_rec
+                    self.CURRENT_ANNOATAION_TRAJECTORIES['id_color_' +str(id)] = color
+                except:
+                    centers_rec = [(-1, - 1)] * int(self.TOTAL_VIDEO_FRAMES)
+                    centers_rec[listobjframe - 1] = center
+                    self.CURRENT_ANNOATAION_TRAJECTORIES['id_' + str(id)] = centers_rec
+                    self.CURRENT_ANNOATAION_TRAJECTORIES['id_color_' +str(id)] = color
+        
 
     def openVideo(self):
         length_Value = self.CURRENT_ANNOATAION_TRAJECTORIES['length']
@@ -2722,6 +2760,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.CURRENT_ANNOATAION_TRAJECTORIES.clear() 
         self.CURRENT_ANNOATAION_TRAJECTORIES['length'] = length_Value
         self.CURRENT_ANNOATAION_TRAJECTORIES['alpha'] = alpha_Value
+        
+        
         
         # self.videoControls.show()
         self.current_annotation_mode = "video"
@@ -2763,6 +2803,8 @@ class MainWindow(QtWidgets.QMainWindow):
             self.set_video_controls_visibility(True)
 
             self.byte_tracker = BYTETracker(BYTETrackerArgs())
+        
+        self.calc_trajectory_when_open_video()
 
         # label = shape["label"]
         # points = shape["points"]
