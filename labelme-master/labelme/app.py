@@ -640,7 +640,15 @@ class MainWindow(QtWidgets.QMainWindow):
             self.tr("Modify the label of the selected polygon"),
             enabled=False,
         )
-
+        interpolate = action(
+            self.tr("&Interpolate"),
+            self.interpolateMENU,
+            shortcuts["interpolate"],
+            "edit",
+            self.tr("Interpolate the selected polygon"),
+            enabled=True,
+        )
+        
         fill_drawing = action(
             self.tr("Fill Drawing Polygon"),
             self.canvas.setFillDrawing,
@@ -759,6 +767,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 createLineStripMode,
                 editMode,
                 edit,
+                interpolate,
                 copy,
                 delete,
                 undo,
@@ -1214,19 +1223,15 @@ class MainWindow(QtWidgets.QMainWindow):
     def editLabel(self, item=None):
         if item and not isinstance(item, LabelListWidgetItem):
             raise TypeError("item must be LabelListWidgetItem type")
-        print(1)
         if not self.canvas.editing():
             return
-        print(2)
         if not item:
             item = self.currentItem()
         if item is None:
             return
-        print(3)
         shape = item.shape()
         if shape is None:
             return
-        print(4)
         text, flags, group_id, content = self.labelDialog.popUp(
             text=shape.label,
             flags=shape.flags,
@@ -1235,7 +1240,6 @@ class MainWindow(QtWidgets.QMainWindow):
         )
         if text is None:
             return
-        print(5)
         if not self.validateLabel(text):
             self.errorMessage(
                 self.tr("Invalid label"),
@@ -1244,7 +1248,6 @@ class MainWindow(QtWidgets.QMainWindow):
                 ),
             )
             return
-        print(6)
         shape.label = text
         shape.flags = flags
         shape.group_id = group_id
@@ -1252,7 +1255,6 @@ class MainWindow(QtWidgets.QMainWindow):
         if shape.group_id is None:
             item.setText(shape.label)
         else:
-            print(7)
             item.setText(f' ID {shape.group_id}: {shape.label}')
             ###########################################################
             listObj = self.load_objects_from_json()
@@ -1268,6 +1270,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.load_objects_to_json(listObj)
             self.main_video_frames_slider_changed()
             ###########################################################
+            print('interpolating id: ', shape.group_id, 'label: ', shape.label)
             self.interpolate(id = shape.group_id, label = shape.label)
             ###########################################################
         self.setDirty()
@@ -1275,7 +1278,38 @@ class MainWindow(QtWidgets.QMainWindow):
             item = QtWidgets.QListWidgetItem()
             item.setData(Qt.UserRole, shape.label)
             self.uniqLabelList.addItem(item)
-            print(8)
+            
+    def interpolateMENU(self, item=None):
+        if item and not isinstance(item, LabelListWidgetItem):
+            raise TypeError("item must be LabelListWidgetItem type")
+        if not self.canvas.editing():
+            return
+        if not item:
+            item = self.currentItem()
+        if item is None:
+            return
+        shape = item.shape()
+        if shape is None:
+            return
+        text=shape.label
+        flags=shape.flags
+        group_id=shape.group_id
+        content=shape.content
+        if text is None:
+            return
+        if not self.validateLabel(text):
+            self.errorMessage(
+                self.tr("Invalid label"),
+                self.tr("Invalid label '{}' with validation type '{}'").format(
+                    text, self._config["validate_label"]
+                ),
+            )
+            return
+        if shape.group_id is None:
+            item.setText(shape.label)
+        else:
+            print('interpolating id: ', shape.group_id, 'label: ', shape.label)
+            self.interpolate(id = shape.group_id, label = shape.label)
             
     def interpolate(self, id, label):
         first_frame_idx = -1
@@ -2365,13 +2399,13 @@ class MainWindow(QtWidgets.QMainWindow):
             self.label = QtWidgets.QLabel('this frame only', self)
             if self.label == 'this frame and previous frames':
                 prev.toggle()
-            elif self.label == 'this frame and next frames':
+            if self.label == 'this frame and next frames':
                 next.toggle()
-            elif self.label == 'across all frames (previous and next)': 
+            if self.label == 'across all frames (previous and next)': 
                 all.toggle()
-            elif self.label == 'this frame only':
+            if self.label == 'this frame only':
                 only.toggle()
-            elif self.label == 'in a specific range of frames':
+            if self.label == 'in a specific range of frames':
                 from_to.toggle()
 
             
@@ -2402,7 +2436,6 @@ class MainWindow(QtWidgets.QMainWindow):
                 print(self.label.text())
                 for deleted_id in deleted_ids:
                     self.delete_ids_from_all_frames([deleted_id], mode = self.label.text(), from_frame = from_frame.value(), to_frame = to_frame.value())
-                # self.delete_ids_from_all_frames(deleted_ids, mode = self.label.text())
                 self.main_video_frames_slider_changed()
             ###########################
             
