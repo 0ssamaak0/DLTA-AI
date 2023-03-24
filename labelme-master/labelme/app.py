@@ -1271,6 +1271,50 @@ class MainWindow(QtWidgets.QMainWindow):
             self.load_objects_to_json(listObj)
             self.main_video_frames_slider_changed()
             ###########################################################
+        self.setDirty()
+        if not self.uniqLabelList.findItemsByLabel(shape.label):
+            item = QtWidgets.QListWidgetItem()
+            item.setData(Qt.UserRole, shape.label)
+            self.uniqLabelList.addItem(item)
+            
+    def interpolateMENU(self, item=None):
+        if item and not isinstance(item, LabelListWidgetItem):
+            raise TypeError("item must be LabelListWidgetItem type")
+        if not self.canvas.editing():
+            return
+        if not item:
+            item = self.currentItem()
+        if item is None:
+            return
+        shape = item.shape()
+        if shape is None:
+            return
+        text, flags, group_id, content = self.labelDialog.popUp(
+            text=shape.label,
+            flags=shape.flags,
+            group_id=shape.group_id,
+            content=shape.content,
+            interpolateFLAG=True
+        )
+        if text is None:
+            return
+        if not self.validateLabel(text):
+            self.errorMessage(
+                self.tr("Invalid label"),
+                self.tr("Invalid label '{}' with validation type '{}'").format(
+                    text, self._config["validate_label"]
+                ),
+            )
+            return
+        shape.label = text
+        shape.flags = flags
+        shape.group_id = group_id
+        shape.content = content
+        if shape.group_id is None:
+            item.setText(shape.label)
+        else:
+            item.setText(f' ID {shape.group_id}: {shape.label}')
+            ###########################################################
             print('interpolating id: ', shape.group_id, 'label: ', shape.label)
             self.interpolate(id = shape.group_id, label = shape.label)
             ###########################################################
@@ -1280,8 +1324,6 @@ class MainWindow(QtWidgets.QMainWindow):
             item.setData(Qt.UserRole, shape.label)
             self.uniqLabelList.addItem(item)
             
-    def interpolateMENU(self, item=None):
-        self.editLabel(item=item)
             
     def interpolate(self, id, label):
         first_frame_idx = -1
@@ -2524,6 +2566,8 @@ class MainWindow(QtWidgets.QMainWindow):
                         self.CURRENT_ANNOATAION_TRAJECTORIES['id_'+id][self.INDEX_OF_CURRENT_FRAME - 1:] = [(-1, -1)] * (self.TOTAL_VIDEO_FRAMES - self.INDEX_OF_CURRENT_FRAME + 1)
                     if mode == 'this frame only' :
                         self.CURRENT_ANNOATAION_TRAJECTORIES['id_'+id][self.INDEX_OF_CURRENT_FRAME - 1] = (-1, -1)
+                    if mode == 'in a specific range of frames' :
+                        self.CURRENT_ANNOATAION_TRAJECTORIES['id_'+id][from_frame - 1 : to_frame] = [(-1, -1)] * (to_frame - from_frame)
                     else:
                         self.CURRENT_ANNOATAION_TRAJECTORIES['id_'+str(id)] = [(-1, -1)] * self.TOTAL_VIDEO_FRAMES
         listObj = sorted(listObj, key=lambda k: k['frame_idx'])
@@ -2776,7 +2820,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self, self.tr("%s - Choose Video") % __appname__, ".",
             self.tr("Video files (*.mp4 *.avi)")
         )
-
+            
         if videoFile[0] :
             self.CURRENT_VIDEO_NAME = videoFile[0].split(
                 ".")[-2].split("/")[-1]
@@ -2805,7 +2849,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
             self.byte_tracker = BYTETracker(BYTETrackerArgs())
         
-        self.calc_trajectory_when_open_video()
+            self.calc_trajectory_when_open_video()
 
         # label = shape["label"]
         # points = shape["points"]
