@@ -1406,9 +1406,8 @@ class MainWindow(QtWidgets.QMainWindow):
         for frame in range(first_frame_idx, last_frame_idx + 1):
             if(frame not in appended_frames):
                 listObj.append({'frame_idx': frame, 'frame_data': [RECORDS[max(frame - first_frame_idx - 1, 0)]]})
-        print(1)
         self.load_objects_to_json(listObj)
-        print(2)
+        self.calc_trajectory_when_open_video()
         self.main_video_frames_slider_changed()
     
     def addPoints(self, shape, n):
