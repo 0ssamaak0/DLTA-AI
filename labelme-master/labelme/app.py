@@ -2761,7 +2761,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.CURRENT_ANNOATAION_TRAJECTORIES['length'] = length_Value
         self.CURRENT_ANNOATAION_TRAJECTORIES['alpha'] = alpha_Value
         
-        
+        for shape in self.canvas.shapes:
+            self.canvas.deleteShape(shape)
         
         # self.videoControls.show()
         self.current_annotation_mode = "video"
