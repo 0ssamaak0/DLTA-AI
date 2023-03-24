@@ -1214,16 +1214,19 @@ class MainWindow(QtWidgets.QMainWindow):
     def editLabel(self, item=None):
         if item and not isinstance(item, LabelListWidgetItem):
             raise TypeError("item must be LabelListWidgetItem type")
-
+        print(1)
         if not self.canvas.editing():
             return
+        print(2)
         if not item:
             item = self.currentItem()
         if item is None:
             return
+        print(3)
         shape = item.shape()
         if shape is None:
             return
+        print(4)
         text, flags, group_id, content = self.labelDialog.popUp(
             text=shape.label,
             flags=shape.flags,
@@ -1232,6 +1235,7 @@ class MainWindow(QtWidgets.QMainWindow):
         )
         if text is None:
             return
+        print(5)
         if not self.validateLabel(text):
             self.errorMessage(
                 self.tr("Invalid label"),
@@ -1240,6 +1244,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 ),
             )
             return
+        print(6)
         shape.label = text
         shape.flags = flags
         shape.group_id = group_id
@@ -1247,6 +1252,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if shape.group_id is None:
             item.setText(shape.label)
         else:
+            print(7)
             item.setText(f' ID {shape.group_id}: {shape.label}')
             ###########################################################
             listObj = self.load_objects_from_json()
@@ -1260,6 +1266,7 @@ class MainWindow(QtWidgets.QMainWindow):
                         listObj[i]['frame_data'].append(object_)
             listObj = sorted(listObj, key=lambda k: k['frame_idx'])
             self.load_objects_to_json(listObj)
+            self.main_video_frames_slider_changed()
             ###########################################################
             self.interpolate(id = shape.group_id, label = shape.label)
             ###########################################################
@@ -1268,6 +1275,7 @@ class MainWindow(QtWidgets.QMainWindow):
             item = QtWidgets.QListWidgetItem()
             item.setData(Qt.UserRole, shape.label)
             self.uniqLabelList.addItem(item)
+            print(8)
             
     def interpolate(self, id, label):
         first_frame_idx = -1
@@ -1319,26 +1327,6 @@ class MainWindow(QtWidgets.QMainWindow):
                     next = records[j]
                     next_idx = j
                     break
-                
-            frame_ratio = 1 / (next_idx - (i - 1))
-            x_factor = 1 + frame_ratio * (next['bbox'][2] - prev['bbox'][2]) / prev['bbox'][2]
-            y_factor = 1 + frame_ratio * (next['bbox'][3] - prev['bbox'][3]) / prev['bbox'][3]
-
-            
-            current_center = np.array(prev_center) + (np.array(self.centerOFmass(next['segment'])) - np.array(prev_center)) * frame_ratio
-            current_center = current_center.tolist()
-            current_center = [int(current_center[i]) for i in range(len(current_center))]
-            
-            current['bbox'] = self.get_current_bbox(current_center, x_factor, y_factor, prev['bbox'], prev)
-            current['segment'] = [[ int(x_factor * (prev_segment[i][0] - prev_center[0]) + current_center[0]),
-                                    int(y_factor * (prev_segment[i][1] - prev_center[1]) + current_center[1]) ] 
-                                  for i in range(len(prev_segment))]
-            
-            # next_idx ,prev_idx , i , records[next_idx]['bbox'] , records[prev_idx]['bbox']
-            # print(records[prev_idx]['segment'])
-            # print(records[next_idx]['segment'])
-            # print(prev_idx ,next_idx , i, records[prev_idx]['bbox'] , records[next_idx]['bbox'] , sep = '\n')
-            
             
             cur_bbox = ((next_idx - i)/(next_idx - prev_idx ))*np.array(records[prev_idx]['bbox']) + ((i - prev_idx)/(next_idx -prev_idx ))*np.array(records[next_idx]['bbox'])
             cur_bbox = [int(cur_bbox[i]) for i in range(len(cur_bbox))]
@@ -1347,9 +1335,6 @@ class MainWindow(QtWidgets.QMainWindow):
             cur_segment = [[int(sublist[0]) , int(sublist[1])] for sublist in cur_segment ]
             current['bbox'] = cur_bbox
             current['segment'] = cur_segment
-            
-            
-
             
             records[i] = current.copy()
             RECORDS.append(records[i])
@@ -1361,10 +1346,7 @@ class MainWindow(QtWidgets.QMainWindow):
             listObj[i]['frame_data'].append(RECORDS[listobjframe - first_frame_idx])
             
         self.load_objects_to_json(listObj)
-        
-        
-    def center(self, bbox):
-        return [int(bbox[0] + (bbox[2] / 2)), int(bbox[1] + ( bbox[3] / 2))]
+        self.main_video_frames_slider_changed()
     
     def centerOFmass(self, points):
         sumX = 0
@@ -1373,15 +1355,6 @@ class MainWindow(QtWidgets.QMainWindow):
             sumX += point[0]
             sumY += point[1]
         return [int(sumX / len(points)), int(sumY / len(points))]
-    
-    def get_current_bbox(self, current_center, x_factor, y_factor, prev_bbox, prev):
-        prev_center = self.centerOFmass(prev['segment'])
-        current_bbox = [0,0,0,0]
-        current_bbox[0] = int(current_center[0] + x_factor * (prev_bbox[0] - prev_center[0]))
-        current_bbox[1] = int(current_center[1] + y_factor * (prev_bbox[1] - prev_center[1]))
-        current_bbox[2] = int(x_factor * prev_bbox[2])
-        current_bbox[3] = int(y_factor * prev_bbox[3])
-        return current_bbox
         
     def load_objects_from_json(self):
         json_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}_tracking_results.json'
@@ -1401,8 +1374,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     indent=4,
                     separators=(',', ': '))
         json_file.close()
-        self.main_video_frames_slider_changed()
-
+        
     def fileSearchChanged(self):
         self.importDirImages(
             self.lastOpenDir,
@@ -2383,20 +2355,41 @@ class MainWindow(QtWidgets.QMainWindow):
             next = QtWidgets.QRadioButton("this frame and next frames")
             all = QtWidgets.QRadioButton("across all frames (previous and next)")
             only = QtWidgets.QRadioButton("this frame only")
-            self.label = QtWidgets.QLabel('this frame only', self)
             
-            only.toggle()
+            from_to = QtWidgets.QRadioButton("in a specific range of frames")
+            from_frame = QtWidgets.QSpinBox()
+            to_frame = QtWidgets.QSpinBox()
+            from_frame.setRange(1, self.TOTAL_VIDEO_FRAMES)
+            to_frame.setRange(1, self.TOTAL_VIDEO_FRAMES)
+            
+            self.label = QtWidgets.QLabel('this frame only', self)
+            if self.label == 'this frame and previous frames':
+                prev.toggle()
+            elif self.label == 'this frame and next frames':
+                next.toggle()
+            elif self.label == 'across all frames (previous and next)': 
+                all.toggle()
+            elif self.label == 'this frame only':
+                only.toggle()
+            elif self.label == 'in a specific range of frames':
+                from_to.toggle()
+
+            
             
             prev.toggled.connect(self.update_deletion_mode)
             next.toggled.connect(self.update_deletion_mode)
             all.toggled.connect(self.update_deletion_mode)
             only.toggled.connect(self.update_deletion_mode)
+            from_to.toggled.connect(self.update_deletion_mode)
             
 
             layout.addWidget(prev)
             layout.addWidget(next)
             layout.addWidget(all)
             layout.addWidget(only)
+            layout.addWidget(from_to)
+            layout.addWidget(from_frame)
+            layout.addWidget(to_frame)
             
 
             buttonBox = QtWidgets.QDialogButtonBox(
@@ -2408,7 +2401,7 @@ class MainWindow(QtWidgets.QMainWindow):
             if result == QtWidgets.QDialog.Accepted:
                 print(self.label.text())
                 for deleted_id in deleted_ids:
-                    self.delete_ids_from_all_frames([deleted_id], mode = self.label.text())
+                    self.delete_ids_from_all_frames([deleted_id], mode = self.label.text(), from_frame = from_frame.value(), to_frame = to_frame.value())
                 # self.delete_ids_from_all_frames(deleted_ids, mode = self.label.text())
                 self.main_video_frames_slider_changed()
             ###########################
@@ -2418,7 +2411,9 @@ class MainWindow(QtWidgets.QMainWindow):
         if rbtn.isChecked() == True:
             self.label.setText(rbtn.text())
 
-    def delete_ids_from_all_frames(self, deleted_ids, mode = 'across all frames (previous and next)'):
+    def delete_ids_from_all_frames(self, deleted_ids, mode, from_frame, to_frame):
+        from_frame = np.min([from_frame, to_frame])
+        to_frame = np.max([from_frame, to_frame])
         json_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}_tracking_results.json'
         if not os.path.exists(json_file_name):
             with open(json_file_name, 'w') as jf:
@@ -2435,6 +2430,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 if mode == 'this frame and next frames' and frame_idx < self.INDEX_OF_CURRENT_FRAME :
                     continue
                 if mode == 'this frame only' and frame_idx != self.INDEX_OF_CURRENT_FRAME :
+                    continue
+                if mode == 'in a specific range of frames' and (frame_idx < from_frame or frame_idx > to_frame):
                     continue
                 id = str(object_['tracker_id'])
                 if id in deleted_ids:
