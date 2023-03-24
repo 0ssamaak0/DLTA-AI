@@ -1281,36 +1281,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.uniqLabelList.addItem(item)
             
     def interpolateMENU(self, item=None):
-        if item and not isinstance(item, LabelListWidgetItem):
-            raise TypeError("item must be LabelListWidgetItem type")
-        if not self.canvas.editing():
-            return
-        if not item:
-            item = self.currentItem()
-        if item is None:
-            return
-        shape = item.shape()
-        if shape is None:
-            return
-        text=shape.label
-        flags=shape.flags
-        group_id=shape.group_id
-        content=shape.content
-        if text is None:
-            return
-        if not self.validateLabel(text):
-            self.errorMessage(
-                self.tr("Invalid label"),
-                self.tr("Invalid label '{}' with validation type '{}'").format(
-                    text, self._config["validate_label"]
-                ),
-            )
-            return
-        if shape.group_id is None:
-            item.setText(shape.label)
-        else:
-            print('interpolating id: ', shape.group_id, 'label: ', shape.label)
-            self.interpolate(id = shape.group_id, label = shape.label)
+        self.editLabel(item=item)
             
     def interpolate(self, id, label):
         first_frame_idx = -1
