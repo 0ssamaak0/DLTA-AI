@@ -1330,7 +1330,7 @@ class MainWindow(QtWidgets.QMainWindow):
         last_frame_idx = -1
         centers = self.CURRENT_ANNOATAION_TRAJECTORIES['id_'+str(id)]
         for i in range(len(centers)):
-            if(centers[i][0] != -1 and centers[i + 1][0] == -1):
+            if(centers[i][0] != -1 ):#and centers[i + 1][0] == -1):
                 first_frame_idx = i + 1
                 break
         for i in range(len(centers)-1, -1, -1):
@@ -1353,6 +1353,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     records[listobjframe - first_frame_idx] = object_
                     listObj[i]['frame_data'].remove(object_)
                     break
+        records_org = records.copy()
         first_iter_flag = True
         for i in range(len(records)):
             if(records[i] != None):
@@ -1367,18 +1368,11 @@ class MainWindow(QtWidgets.QMainWindow):
             next = records[i + 1]
             next_idx = i + 1
             for j in range(i + 1, len(records)):
-                print('j: ', j)
                 if(records[j] != None):
-                    print('entered')
                     next = records[j]
                     next_idx = j
                     break
-            print('i: ', i, '   frame: ', i + first_frame_idx)
-            print('prev_idx: ', prev_idx, 'next_idx: ', next_idx)
-            print(records[prev_idx])
-            print(records[next_idx])
             cur_bbox = ((next_idx - i)/(next_idx - prev_idx ))*np.array(records[prev_idx]['bbox']) + ((i - prev_idx)/(next_idx -prev_idx ))*np.array(records[next_idx]['bbox'])
-            print('cur_bbox: ', cur_bbox)
             cur_bbox = [int(cur_bbox[i]) for i in range(len(cur_bbox))]
             
             prev_segment = prev['segment']
@@ -1400,7 +1394,10 @@ class MainWindow(QtWidgets.QMainWindow):
             listobjframe = listObj[i]['frame_idx']
             if(listobjframe < first_frame_idx or listobjframe > last_frame_idx):
                 continue
-            listObj[i]['frame_data'].append(RECORDS[max(listobjframe - first_frame_idx - 1, 0)])
+            appended = records_org[listobjframe - first_frame_idx]
+            if appended == None:
+                appended = RECORDS[listobjframe - first_frame_idx]
+            listObj[i]['frame_data'].append(appended)
             appended_frames.append(listobjframe)
             
         for frame in range(first_frame_idx, last_frame_idx + 1):
