@@ -279,6 +279,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.CURRENT_ANNOATAION_TRAJECTORIES['length'] = 30              # keep it like that, don't change it
         self.CURRENT_ANNOATAION_TRAJECTORIES['alpha'] = 0.35              # keep it like that, don't change it
         self.CURRENT_SHAPES_IN_IMG = []
+        self.config = {'deleteDefault' : "this frame only"}
         # make CLASS_NAMES_DICT a dictionary of coco class names
         # self.CLASS_NAMES_DICT =
         # self.frame_number = 0
@@ -2395,26 +2396,29 @@ class MainWindow(QtWidgets.QMainWindow):
             to_frame = QtWidgets.QSpinBox()
             from_frame.setRange(1, self.TOTAL_VIDEO_FRAMES)
             to_frame.setRange(1, self.TOTAL_VIDEO_FRAMES)
+            from_frame.valueChanged.connect(lambda: from_to.toggle())
+            to_frame.valueChanged.connect(lambda: from_to.toggle())
             
-            self.label = QtWidgets.QLabel('this frame only', self)
-            if self.label == 'this frame and previous frames':
+            
+            
+            if self.config['deleteDefault'] == 'this frame and previous frames':
                 prev.toggle()
-            if self.label == 'this frame and next frames':
+            if self.config['deleteDefault'] == 'this frame and next frames':
                 next.toggle()
-            if self.label == 'across all frames (previous and next)': 
+            if self.config['deleteDefault'] == 'across all frames (previous and next)': 
                 all.toggle()
-            if self.label == 'this frame only':
+            if self.config['deleteDefault'] == 'this frame only':
                 only.toggle()
-            if self.label == 'in a specific range of frames':
+            if self.config['deleteDefault'] == 'in a specific range of frames':
                 from_to.toggle()
 
             
             
-            prev.toggled.connect(self.update_deletion_mode)
-            next.toggled.connect(self.update_deletion_mode)
-            all.toggled.connect(self.update_deletion_mode)
-            only.toggled.connect(self.update_deletion_mode)
-            from_to.toggled.connect(self.update_deletion_mode)
+            prev.toggled.connect(lambda: self.config.update({'deleteDefault': 'this frame and previous frames'}))
+            next.toggled.connect(lambda: self.config.update({'deleteDefault': 'this frame and next frames'}))
+            all.toggled.connect(lambda: self.config.update({'deleteDefault': 'across all frames (previous and next)'}))
+            only.toggled.connect(lambda: self.config.update({'deleteDefault': 'this frame only'}))
+            from_to.toggled.connect(lambda: self.config.update({'deleteDefault': 'in a specific range of frames'}))
             
 
             layout.addWidget(prev)
@@ -2433,16 +2437,16 @@ class MainWindow(QtWidgets.QMainWindow):
             dialog.setLayout(layout)
             result = dialog.exec_()
             if result == QtWidgets.QDialog.Accepted:
-                print(self.label.text())
+                print(self.config['deleteDefault'])
                 for deleted_id in deleted_ids:
-                    self.delete_ids_from_all_frames([deleted_id], mode = self.label.text(), from_frame = from_frame.value(), to_frame = to_frame.value())
+                    self.delete_ids_from_all_frames([deleted_id], mode = self.config['deleteDefault'], from_frame = from_frame.value(), to_frame = to_frame.value())
                 self.main_video_frames_slider_changed()
             ###########################
             
     def update_deletion_mode(self,_):
         rbtn = self.sender()
         if rbtn.isChecked() == True:
-            self.label.setText(rbtn.text())
+            self.config['deleteDefault'] = rbtn.text()
 
     def delete_ids_from_all_frames(self, deleted_ids, mode, from_frame, to_frame):
         from_frame = np.min([from_frame, to_frame])
