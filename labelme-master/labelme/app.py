@@ -279,7 +279,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.CURRENT_ANNOATAION_TRAJECTORIES['length'] = 30              # keep it like that, don't change it
         self.CURRENT_ANNOATAION_TRAJECTORIES['alpha'] = 0.35              # keep it like that, don't change it
         self.CURRENT_SHAPES_IN_IMG = []
-        self.config = {'deleteDefault' : "this frame only"}
+        self.config = {'deleteDefault' : "this frame only", 
+                       'interpolationDefault' : "interpolate only missed frames between detected frames"}
         # make CLASS_NAMES_DICT a dictionary of coco class names
         # self.CLASS_NAMES_DICT =
         # self.frame_number = 0
@@ -1266,7 +1267,6 @@ class MainWindow(QtWidgets.QMainWindow):
         else:
             item.setText(f' ID {shape.group_id}: {shape.label}')
             ###########################################################
-            print(f' old_group_id: {old_group_id}, new_group_id: {new_group_id}')
             listObj = self.load_objects_from_json()
             for i in range(len(listObj)):
                 for object_ in listObj[i]['frame_data']:
@@ -1287,6 +1287,7 @@ class MainWindow(QtWidgets.QMainWindow):
                         
             listObj = sorted(listObj, key=lambda k: k['frame_idx'])
             self.load_objects_to_json(listObj)
+            self.calc_trajectory_when_open_video()
             self.main_video_frames_slider_changed()
             ###########################################################
         self.setDirty()
@@ -1333,8 +1334,41 @@ class MainWindow(QtWidgets.QMainWindow):
         else:
             item.setText(f' ID {shape.group_id}: {shape.label}')
             ###########################################################
-            print('interpolating id: ', shape.group_id, 'label: ', shape.label)
-            self.interpolate(id = shape.group_id, label = shape.label)
+            dialog = QtWidgets.QDialog()
+            dialog.setWindowTitle("Choose Interpolation Options")
+            dialog.setWindowModality(Qt.ApplicationModal)
+            dialog.resize(250, 100)
+
+            layout = QtWidgets.QVBoxLayout()
+
+            label = QtWidgets.QLabel("Choose Interpolation Options")
+            layout.addWidget(label)
+
+            only_missed = QtWidgets.QRadioButton("interpolate only missed frames between detected frames")
+            only_edited = QtWidgets.QRadioButton("interpolate all frames between your edits (ie. frames with confedence = 1)")
+            
+            if self.config['interpolationDefault'] == 'interpolate only missed frames between detected frames':
+                only_missed.toggle()
+            if self.config['interpolationDefault'] == 'interpolate all frames between your edits (ie. frames with confedence = 1)':
+                only_edited.toggle()
+            
+            only_missed.toggled.connect(lambda: self.config.update({'interpolationDefault': 'interpolate only missed frames between detected frames'}))
+            only_edited.toggled.connect(lambda: self.config.update({'interpolationDefault': 'interpolate all frames between your edits (ie. frames with confedence = 1)'}))
+
+            layout.addWidget(only_missed)
+            layout.addWidget(only_edited)
+            
+
+            buttonBox = QtWidgets.QDialogButtonBox(
+                QtWidgets.QDialogButtonBox.Ok)
+            buttonBox.accepted.connect(dialog.accept)
+            layout.addWidget(buttonBox)
+            dialog.setLayout(layout)
+            result = dialog.exec_()
+            if result == QtWidgets.QDialog.Accepted:
+                print(self.config['interpolationDefault'])
+                only_edited = True if self.config['interpolationDefault'] == 'interpolate all frames between your edits (ie. frames with confedence = 1)' else False
+                self.interpolate(id = shape.group_id, label = shape.label, only_edited = only_edited)
             ###########################################################
         self.setDirty()
         if not self.uniqLabelList.findItemsByLabel(shape.label):
@@ -1343,7 +1377,8 @@ class MainWindow(QtWidgets.QMainWindow):
             self.uniqLabelList.addItem(item)
             
             
-    def interpolate(self, id, label):
+            
+    def interpolate(self, id, label, only_edited = False):
         first_frame_idx = -1
         last_frame_idx = -1
         centers = self.CURRENT_ANNOATAION_TRAJECTORIES['id_'+str(id)]
@@ -2549,11 +2584,6 @@ class MainWindow(QtWidgets.QMainWindow):
                     self.delete_ids_from_all_frames([deleted_id], mode = self.config['deleteDefault'], from_frame = from_frame.value(), to_frame = to_frame.value())
                 self.main_video_frames_slider_changed()
             ###########################
-            
-    def update_deletion_mode(self,_):
-        rbtn = self.sender()
-        if rbtn.isChecked() == True:
-            self.config['deleteDefault'] = rbtn.text()
 
     def delete_ids_from_all_frames(self, deleted_ids, mode, from_frame, to_frame):
         from_frame = np.min([from_frame, to_frame])
