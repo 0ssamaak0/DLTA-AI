@@ -1270,6 +1270,12 @@ class MainWindow(QtWidgets.QMainWindow):
             listObj = self.load_objects_from_json()
             for i in range(len(listObj)):
                 for object_ in listObj[i]['frame_data']:
+                    if object_['tracker_id'] == new_group_id:
+                        listObj[i]['frame_data'].remove(object_)
+                        object_['class_name'] = shape.label
+                        object_['confidence'] = 1.0
+                        object_['class_id'] = coco_classes.index(shape.label) if shape.label in coco_classes else -1
+                        listObj[i]['frame_data'].append(object_)
                     if object_['tracker_id'] == old_group_id:
                         listObj[i]['frame_data'].remove(object_)
                         object_['class_name'] = shape.label
@@ -1277,6 +1283,8 @@ class MainWindow(QtWidgets.QMainWindow):
                         object_['class_id'] = coco_classes.index(shape.label) if shape.label in coco_classes else -1
                         object_['tracker_id'] = new_group_id
                         listObj[i]['frame_data'].append(object_)
+                    
+                        
             listObj = sorted(listObj, key=lambda k: k['frame_idx'])
             self.load_objects_to_json(listObj)
             self.main_video_frames_slider_changed()
