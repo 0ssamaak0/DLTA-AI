@@ -280,7 +280,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.CURRENT_ANNOATAION_TRAJECTORIES['alpha'] = 0.35              # keep it like that, don't change it
         self.CURRENT_SHAPES_IN_IMG = []
         self.config = {'deleteDefault' : "this frame only", 
-                       'interpolationDefault' : "interpolate only missed frames between detected frames"}
+                       'interpolationDefault' : "interpolate only missed frames between detected frames",
+                       'creationDefault' : "Create new shape (ie. not detected before)"}
         # make CLASS_NAMES_DICT a dictionary of coco class names
         # self.CLASS_NAMES_DICT =
         # self.frame_number = 0
@@ -425,7 +426,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         createMode = action(
             self.tr("Create Polygons"),
-            lambda: self.toggleDrawMode(False, createMode="polygon"),
+            self.createMode_options,
             shortcuts["create_polygon"],
             "objects",
             self.tr("Start drawing polygons"),
@@ -1222,6 +1223,117 @@ class MainWindow(QtWidgets.QMainWindow):
                     return True
         return False
 
+    def createMode_options(self):
+        dialog = QtWidgets.QDialog()
+        dialog.setWindowTitle("Choose Creation Options")
+        dialog.setWindowModality(Qt.ApplicationModal)
+        dialog.resize(250, 100)
+
+        layout = QtWidgets.QVBoxLayout()
+
+        label = QtWidgets.QLabel("Choose Creation Options")
+        layout.addWidget(label)
+
+        new = QtWidgets.QRadioButton("Create new shape (ie. not detected before)")
+        existing = QtWidgets.QRadioButton("Copy existing shape (ie. detected before)")
+        
+        if self.config['creationDefault'] == 'Create new shape (ie. not detected before)':
+            new.toggle()
+        if self.config['creationDefault'] == 'Copy existing shape (ie. detected before)':
+            existing.toggle()
+        
+        new.toggled.connect(lambda: self.config.update({'creationDefault': 'Create new shape (ie. not detected before)'}))
+        existing.toggled.connect(lambda: self.config.update({'creationDefault': 'Copy existing shape (ie. detected before)'}))
+
+        layout.addWidget(new)
+        layout.addWidget(existing)
+        
+
+        buttonBox = QtWidgets.QDialogButtonBox(
+                        QtWidgets.QDialogButtonBox.Ok)
+        buttonBox.accepted.connect(dialog.accept)
+        layout.addWidget(buttonBox)
+        dialog.setLayout(layout)
+        result = dialog.exec_()
+        if result == QtWidgets.QDialog.Accepted:
+            if self.config['creationDefault'] == 'Create new shape (ie. not detected before)':
+                self.toggleDrawMode(False, createMode="polygon")
+            elif self.config['creationDefault'] == 'Copy existing shape (ie. detected before)':
+                dialog = QtWidgets.QDialog()
+                dialog.setWindowTitle("Choose Which ID to Copy")
+                dialog.setWindowModality(Qt.ApplicationModal)
+                dialog.resize(250, 100)
+
+                layout = QtWidgets.QVBoxLayout()
+
+                label = QtWidgets.QLabel("Choose Which ID to Copy")
+                layout.addWidget(label)
+
+                shape_id = QtWidgets.QSpinBox()
+                shape_id.setMinimum(1)
+                layout.addWidget(shape_id)
+                buttonBox = QtWidgets.QDialogButtonBox(
+                    QtWidgets.QDialogButtonBox.Ok)
+                buttonBox.accepted.connect(dialog.accept)
+                layout.addWidget(buttonBox)
+                dialog.setLayout(layout)
+                result = dialog.exec_()
+                if result == QtWidgets.QDialog.Accepted:
+                    self.copy_existing_shape(shape_id.value())
+        
+    def copy_existing_shape(self, shape_id):
+        listobj = self.load_objects_from_json()
+        prev_frame = -1
+        prev_shape = None
+        next_frame = self.TOTAL_VIDEO_FRAMES + 2
+        next_shape = None
+        for i in range(len(listobj)):
+            listobjframe = listobj[i]['frame_idx']
+            if listobjframe > next_frame or listobjframe < prev_frame:
+                continue
+            for object_ in listobj[i]['frame_data']:
+                if object_['tracker_id'] == shape_id:
+                    if listobjframe > self.INDEX_OF_CURRENT_FRAME and listobjframe < next_frame:
+                        next_frame = listobjframe
+                        next_shape = object_
+                    if listobjframe < self.INDEX_OF_CURRENT_FRAME and listobjframe > prev_frame:
+                        prev_frame = listobjframe
+                        prev_shape = object_
+        
+        shape = None
+        
+        if prev_shape is None and next_shape is None:
+            print("No shape found with that ID")
+            return
+        elif prev_shape is None:
+            shape = next_shape
+        elif next_shape is None:
+            shape = prev_shape
+        elif self.INDEX_OF_CURRENT_FRAME - prev_frame < next_frame - self.INDEX_OF_CURRENT_FRAME:
+            shape = prev_shape
+        else:
+            shape = next_shape
+        
+        flag = True
+        for i in range(len(listobj)):
+            
+            listobjframe = listobj[i]['frame_idx']
+            if listobjframe != self.INDEX_OF_CURRENT_FRAME:
+                continue
+            
+            for object_ in listobj[i]['frame_data']:
+                if object_['tracker_id'] == shape_id:
+                    flag = False
+                    break
+            if flag:
+                listobj[i]['frame_data'].append(shape)
+                break
+            
+        self.load_objects_to_json(listobj)
+        self.calc_trajectory_when_open_video()
+        self.main_video_frames_slider_changed()
+            
+        
     def editLabel(self, item=None):
         if item and not isinstance(item, LabelListWidgetItem):
             raise TypeError("item must be LabelListWidgetItem type")
@@ -1368,7 +1480,7 @@ class MainWindow(QtWidgets.QMainWindow):
             if result == QtWidgets.QDialog.Accepted:
                 print(self.config['interpolationDefault'])
                 only_edited = True if self.config['interpolationDefault'] == 'interpolate all frames between your edits (ie. frames with confedence = 1)' else False
-                self.interpolate(id = shape.group_id, label = shape.label, only_edited = only_edited)
+                self.interpolate(id = shape.group_id, only_edited = only_edited)
             ###########################################################
         self.setDirty()
         if not self.uniqLabelList.findItemsByLabel(shape.label):
@@ -1376,7 +1488,8 @@ class MainWindow(QtWidgets.QMainWindow):
             item.setData(Qt.UserRole, shape.label)
             self.uniqLabelList.addItem(item)
           
-    def interpolate(self, id, label, only_edited = False):
+    def interpolate(self, id, only_edited = False):
+        only_missed = not only_edited
         
         first_frame_idx = -1
         last_frame_idx = -1
