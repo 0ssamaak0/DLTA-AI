@@ -1233,12 +1233,20 @@ class MainWindow(QtWidgets.QMainWindow):
         shape = item.shape()
         if shape is None:
             return
-        text, flags, group_id, content = self.labelDialog.popUp(
+        text, flags, old_group_id, content = self.labelDialog.popUp(
+            text=shape.label,
+            flags=shape.flags,
+            group_id=shape.group_id,
+            content=shape.content,
+            skip_flag = True
+        )
+        text, flags, new_group_id, content = self.labelDialog.popUp(
             text=shape.label,
             flags=shape.flags,
             group_id=shape.group_id,
             content=shape.content
         )
+        
         if text is None:
             return
         if not self.validateLabel(text):
@@ -1251,21 +1259,23 @@ class MainWindow(QtWidgets.QMainWindow):
             return
         shape.label = text
         shape.flags = flags
-        shape.group_id = group_id
+        shape.group_id = new_group_id
         shape.content = content
         if shape.group_id is None:
             item.setText(shape.label)
         else:
             item.setText(f' ID {shape.group_id}: {shape.label}')
             ###########################################################
+            print(f' old_group_id: {old_group_id}, new_group_id: {new_group_id}')
             listObj = self.load_objects_from_json()
             for i in range(len(listObj)):
                 for object_ in listObj[i]['frame_data']:
-                    if object_['tracker_id'] == shape.group_id:
+                    if object_['tracker_id'] == old_group_id:
                         listObj[i]['frame_data'].remove(object_)
                         object_['class_name'] = shape.label
                         object_['confidence'] = 1.0
-                        object_['class_id'] = coco_classes.index(shape.label) if shape.label in coco_classes else -1                                # TODO: change this to the class id
+                        object_['class_id'] = coco_classes.index(shape.label) if shape.label in coco_classes else -1
+                        object_['tracker_id'] = new_group_id
                         listObj[i]['frame_data'].append(object_)
             listObj = sorted(listObj, key=lambda k: k['frame_idx'])
             self.load_objects_to_json(listObj)
@@ -1294,7 +1304,7 @@ class MainWindow(QtWidgets.QMainWindow):
             flags=shape.flags,
             group_id=shape.group_id,
             content=shape.content,
-            interpolateFLAG=True
+            skip_flag=True
         )
         if text is None:
             return
