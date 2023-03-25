@@ -1375,25 +1375,26 @@ class MainWindow(QtWidgets.QMainWindow):
             item = QtWidgets.QListWidgetItem()
             item.setData(Qt.UserRole, shape.label)
             self.uniqLabelList.addItem(item)
-            
-            
-            
+          
     def interpolate(self, id, label, only_edited = False):
+        
         first_frame_idx = -1
         last_frame_idx = -1
-        centers = self.CURRENT_ANNOATAION_TRAJECTORIES['id_'+str(id)]
-        for i in range(len(centers)):
-            if(centers[i][0] != -1 ):#and centers[i + 1][0] == -1):
-                first_frame_idx = i + 1
-                break
-        for i in range(len(centers)-1, -1, -1):
-            if(centers[i][0] != -1 ):#and centers[i - 1][0] == -1):
-                last_frame_idx = i + 1
-                break
+        listObj = self.load_objects_from_json()
+        for i in range(len(listObj)):
+            listobjframe = listObj[i]['frame_idx']
+            frameobjects = listObj[i]['frame_data']
+            for object_ in frameobjects:
+                if(object_['tracker_id'] == id):
+                    first_frame_idx = min( first_frame_idx, listobjframe) if first_frame_idx != -1 else listobjframe
+                    last_frame_idx  = max( last_frame_idx , listobjframe) if last_frame_idx  != -1 else listobjframe
+        if(first_frame_idx == -1 or last_frame_idx == -1):
+            return
         if(first_frame_idx >= last_frame_idx):
             return
         
-        listObj = self.load_objects_from_json()
+        print(first_frame_idx, last_frame_idx)
+        
         records = [None for i in range(first_frame_idx, last_frame_idx + 1)]
         RECORDS = []
         for i in range(len(listObj)):
