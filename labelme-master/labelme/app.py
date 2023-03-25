@@ -1324,6 +1324,12 @@ class MainWindow(QtWidgets.QMainWindow):
             for object_ in listobj[i]['frame_data']:
                 if object_['tracker_id'] == shape_id:
                     flag = False
+                    msg = QtWidgets.QMessageBox()
+                    msg.setIcon(QtWidgets.QMessageBox.Information)
+                    msg.setText("A Shape with that ID already exists in this frame.")
+                    msg.setWindowTitle("ID already exists")
+                    msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
+                    msg.exec_()
                     break
             if flag:
                 listobj[i]['frame_data'].append(shape)
