@@ -64,6 +64,8 @@ class models_inference():
             return self.addPoints(res, n + len(shape) - len(res))
         
     def reducePoints(self, polygon, n):
+        if n >= len(polygon):
+            return polygon
         distances = polygon.copy()
         for i in range(len(polygon)):
             mid = (np.array(polygon[i - 1]) + np.array(polygon[(i + 1) % len(polygon)])) / 2
@@ -91,7 +93,7 @@ class models_inference():
     def interpolate_polygon(self , polygon, n_points):
         # interpolate polygon to get less points
         polygon = np.array(polygon)
-        if len(polygon) < 30:
+        if len(polygon) < 25:
             return polygon
         return np.array(self.reducePoints(polygon.tolist() , n_points))
         x = polygon[:, 0]
@@ -102,7 +104,7 @@ class models_inference():
         return np.array([x_new, y_new]).T
 
     # function to masks into polygons
-    def mask_to_polygons(self , mask, n_points=30):
+    def mask_to_polygons(self , mask, n_points=25):
         # Find contours
         contours = cv2.findContours(
             mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)[0]
@@ -152,12 +154,12 @@ class models_inference():
                     
                     
                     
-                # segment_points = self.interpolate_polygon(segment , 30)
+                # segment_points = self.interpolate_polygon(segment , 25)
                 # if class is person we need to interpolate the polygon to get less points to make the polygon smaller
                 if results.boxes.cls.cpu().numpy().astype(int)[seg_idx] == 0:
                     segment_points = self.interpolate_polygon(segment , 10)
                 else :
-                    segment_points = self.interpolate_polygon(segment , 30)
+                    segment_points = self.interpolate_polygon(segment , 25)
                 
                 
                 # convert the segment_points to integer values
@@ -239,7 +241,7 @@ class models_inference():
                         results1[classno][instance].astype(np.uint8) , 10)
                 else :
                     result["seg"] = self.mask_to_polygons(
-                        results1[classno][instance].astype(np.uint8) , 30)
+                        results1[classno][instance].astype(np.uint8) , 25)
                     
                     
                 # result["bbox"] = self.get_bbox(result["seg"])
@@ -254,7 +256,7 @@ class models_inference():
                     # result["y3"] = points[2][1]
                     # result["x4"] = points[3][0]
                     # result["y4"] = points[3][1]
-                    x = 30  # nothing
+                    x = 25  # nothing
                     
                     
                 if result["class"] == None:
