@@ -70,17 +70,27 @@ class models_inference():
         for i in range(len(polygon)):
             mid = (np.array(polygon[i - 1]) + np.array(polygon[(i + 1) % len(polygon)])) / 2
             dif =  np.array(polygon[i]) - mid
-            dist = np.sqrt(dif[0] * dif[0] + dif[1] * dif[1])
-            distances[i] = dist
+            dist_mid = np.sqrt(dif[0] * dif[0] + dif[1] * dif[1])
+            
+            dif_right = np.array(polygon[(i + 1) % len(polygon)]) - np.array(polygon[i])
+            dist_right = np.sqrt(dif_right[0] * dif_right[0] + dif_right[1] * dif_right[1])
+            
+            dif_left = np.array(polygon[i - 1]) - np.array(polygon[i])
+            dist_left = np.sqrt(dif_left[0] * dif_left[0] + dif_left[1] * dif_left[1])
+            
+            distances[i] = min(dist_mid, dist_right, dist_left)
         distances = [distances[i] + random.random() for i in range(len(distances))]
         ratio = 1.0 * n / len(polygon)
         threshold = np.percentile(distances, 100 - ratio * 100)
-        res = []
-        for i in range(len(polygon)):
+        
+        i = 0
+        while i < len(polygon):
             if distances[i] < threshold:
-                continue
-            res.append(polygon[i])
-        return res
+                polygon[i] = None
+                i += 1
+            i += 1
+        res = [x for x in polygon if x is not None]
+        return self.reducePoints(res, n)
     
     def handlePoints(self, polygon, n):
         if n == len(polygon):
