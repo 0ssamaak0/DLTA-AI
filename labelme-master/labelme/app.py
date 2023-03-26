@@ -18,6 +18,7 @@ from qtpy.QtCore import QThread
 from qtpy.QtCore import Signal as pyqtSignal
 from qtpy import QtGui
 from qtpy import QtWidgets
+import random
 
 # from labelme import __appname__
 # from labelme import PY2
@@ -1628,6 +1629,7 @@ class MainWindow(QtWidgets.QMainWindow):
             dif =  np.array(polygon[i]) - mid
             dist = np.sqrt(dif[0] * dif[0] + dif[1] * dif[1])
             distances[i] = dist
+        distances = [distances[i] + random.random() for i in range(len(distances))]
         ratio = 1.0 * n / len(polygon)
         threshold = np.percentile(distances, 100 - ratio * 100)
         res = []
@@ -1635,8 +1637,6 @@ class MainWindow(QtWidgets.QMainWindow):
             if distances[i] < threshold:
                 continue
             res.append(polygon[i])
-        if len(res) != n:
-            return self.handlePoints(self.handlePoints(res, 3 * n), n)
         return res
     
     def handlePoints(self, polygon, n):

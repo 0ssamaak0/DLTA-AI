@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 from scipy.interpolate import splprep, splev
 import json
 import warnings
+import random
 warnings.filterwarnings("ignore")
 
 
@@ -30,11 +31,69 @@ class models_inference():
         # get the bbox in xyxy format
         bbox = [min(x),min(y),max(x) ,max(y)]
         return bbox
+    
+    def addPoints(self, shape, n):
+        res = shape.copy()
+        sub = 1.0 * n / (len(shape) - 1)
+        if sub == 0:
+            return res
+        if sub < 1:
+            res = []
+            res.append(shape[0])
+            flag = True
+            for i in range(len(shape) - 1):
+                dif = [shape[i + 1][0] - shape[i][0], shape[i + 1][1] - shape[i][1]]
+                newPoint = [shape[i][0] + dif[0] * 0.5, shape[i][1] + dif[1] * 0.5]
+                if flag:
+                    res.append(newPoint)
+                res.append(shape[i + 1])
+                n -= 1
+                if n == 0:
+                    flag = False
+            return res
+        else:
+            now = int(sub) + 1
+            res = []
+            res.append(shape[0])
+            for i in range(len(shape) - 1):
+                dif = [shape[i + 1][0] - shape[i][0], shape[i + 1][1] - shape[i][1]]
+                for j in range(1, now):
+                    newPoint = [shape[i][0] + dif[0] * j / now, shape[i][1] + dif[1] * j / now]
+                    res.append(newPoint)
+                res.append(shape[i + 1])
+            return self.addPoints(res, n + len(shape) - len(res))
+        
+    def reducePoints(self, polygon, n):
+        distances = polygon.copy()
+        for i in range(len(polygon)):
+            mid = (np.array(polygon[i - 1]) + np.array(polygon[(i + 1) % len(polygon)])) / 2
+            dif =  np.array(polygon[i]) - mid
+            dist = np.sqrt(dif[0] * dif[0] + dif[1] * dif[1])
+            distances[i] = dist
+        distances = [distances[i] + random.random() for i in range(len(distances))]
+        ratio = 1.0 * n / len(polygon)
+        threshold = np.percentile(distances, 100 - ratio * 100)
+        res = []
+        for i in range(len(polygon)):
+            if distances[i] < threshold:
+                continue
+            res.append(polygon[i])
+        return res
+    
+    def handlePoints(self, polygon, n):
+        if n == len(polygon):
+            return polygon
+        elif n > len(polygon):
+            return self.addPoints(polygon, n - len(polygon))
+        else:
+            return self.reducePoints(polygon, n)
+
     def interpolate_polygon(self , polygon, n_points):
         # interpolate polygon to get less points
         polygon = np.array(polygon)
-        if len(polygon) < 20:
+        if len(polygon) < 30:
             return polygon
+        return np.array(self.reducePoints(polygon.tolist() , n_points))
         x = polygon[:, 0]
         y = polygon[:, 1]
         tck, u = splprep([x, y], s=0, per=1)
@@ -43,7 +102,7 @@ class models_inference():
         return np.array([x_new, y_new]).T
 
     # function to masks into polygons
-    def mask_to_polygons(self , mask, n_points=20):
+    def mask_to_polygons(self , mask, n_points=30):
         # Find contours
         contours = cv2.findContours(
             mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)[0]
@@ -93,12 +152,12 @@ class models_inference():
                     
                     
                     
-                # segment_points = self.interpolate_polygon(segment , 20)
+                # segment_points = self.interpolate_polygon(segment , 30)
                 # if class is person we need to interpolate the polygon to get less points to make the polygon smaller
                 if results.boxes.cls.cpu().numpy().astype(int)[seg_idx] == 0:
                     segment_points = self.interpolate_polygon(segment , 10)
                 else :
-                    segment_points = self.interpolate_polygon(segment , 20)
+                    segment_points = self.interpolate_polygon(segment , 30)
                 
                 
                 # convert the segment_points to integer values
@@ -180,7 +239,7 @@ class models_inference():
                         results1[classno][instance].astype(np.uint8) , 10)
                 else :
                     result["seg"] = self.mask_to_polygons(
-                        results1[classno][instance].astype(np.uint8) , 20)
+                        results1[classno][instance].astype(np.uint8) , 30)
                     
                     
                 # result["bbox"] = self.get_bbox(result["seg"])
