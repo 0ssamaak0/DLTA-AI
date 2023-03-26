@@ -1315,12 +1315,13 @@ class MainWindow(QtWidgets.QMainWindow):
             shape = next_shape
         
         flag = True
+        exists = False
         for i in range(len(listobj)):
             
             listobjframe = listobj[i]['frame_idx']
             if listobjframe != self.INDEX_OF_CURRENT_FRAME:
                 continue
-            
+            exists = True
             for object_ in listobj[i]['frame_data']:
                 if object_['tracker_id'] == shape_id:
                     flag = False
@@ -1331,9 +1332,16 @@ class MainWindow(QtWidgets.QMainWindow):
                     msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
                     msg.exec_()
                     break
+            
             if flag:
                 listobj[i]['frame_data'].append(shape)
                 break
+        
+        if not exists:
+                frame = {'frame_idx': self.INDEX_OF_CURRENT_FRAME, 'frame_data': [shape]}
+                listobj.append(frame)
+                listobj = sorted(listobj, key=lambda k: k['frame_idx'])
+            
             
         self.load_objects_to_json(listobj)
         self.calc_trajectory_when_open_video()
@@ -1580,26 +1588,36 @@ class MainWindow(QtWidgets.QMainWindow):
     
     def addPoints(self, shape, n):
         res = shape.copy()
-        sub = 1.0 * n / len(shape)
+        sub = 1.0 * n / (len(shape) - 1)
         if sub == 0:
             return res
         if sub < 1:
-            dist = int(len(shape) / n) - 1
+            res = []
+            res.append(shape[0])
+            flag = True
             for i in range(len(shape) - 1):
                 dif = [shape[i + 1][0] - shape[i][0], shape[i + 1][1] - shape[i][1]]
                 newPoint = [shape[i][0] + dif[0] * 0.5, shape[i][1] + dif[1] * 0.5]
-                res.append(newPoint)
+                if flag:
+                    res.append(newPoint)
+                res.append(shape[i + 1])
                 n -= 1
                 if n == 0:
-                    return res
+                    flag = False
+            return res
         else:
-            now = int(sub)
+            now = int(sub) + 1
+            res = []
+            res.append(shape[0])
             for i in range(len(shape) - 1):
                 dif = [shape[i + 1][0] - shape[i][0], shape[i + 1][1] - shape[i][1]]
                 for j in range(1, now):
                     newPoint = [shape[i][0] + dif[0] * j / now, shape[i][1] + dif[1] * j / now]
                     res.append(newPoint)
-            return self.addPoints(res, n - len(res))
+                res.append(shape[i + 1])
+            print(n + len(shape) - len(res))
+            print(res)
+            return self.addPoints(res, n + len(shape) - len(res))
 
     def allign(self, shape1, shape2):
         shape1_center = self.centerOFmass(shape1)
@@ -1634,8 +1652,12 @@ class MainWindow(QtWidgets.QMainWindow):
         return res
     
     def getGoodShapes(self, shape1, shape2):
-        shape1 = self.addPoints(shape1, 20 - len(shape1))
-        shape2 = self.addPoints(shape2, 20 - len(shape2))
+        if len(shape1) != len(shape2):
+            length = max(len(shape1), len(shape2))
+            shape1 = self.addPoints(shape1, length - len(shape1))
+            shape2 = self.addPoints(shape2, length - len(shape2))
+        #shape1 = self.addPoints(shape1, 20 - len(shape1))
+        #shape2 = self.addPoints(shape2, 20 - len(shape2))
         #(shape1, shape2) = self.allign(shape1, shape2)
         #shape1 = self.reducepoints(shape1, 20)
         #shape2 = self.reducepoints(shape2, 20)
@@ -2681,10 +2703,10 @@ class MainWindow(QtWidgets.QMainWindow):
             from_to.toggled.connect(lambda: self.config.update({'deleteDefault': 'in a specific range of frames'}))
             
 
+            layout.addWidget(only)
             layout.addWidget(prev)
             layout.addWidget(next)
             layout.addWidget(all)
-            layout.addWidget(only)
             layout.addWidget(from_to)
             layout.addWidget(from_frame)
             layout.addWidget(to_frame)
