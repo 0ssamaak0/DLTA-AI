@@ -1966,6 +1966,22 @@ class MainWindow(QtWidgets.QMainWindow):
                 ),
             )
             text = ""
+        listobj = self.load_objects_from_json()
+        for i in range(len(listobj)):
+            listobjframe = listobj[i]['frame_idx']
+            if listobjframe != self.INDEX_OF_CURRENT_FRAME:
+                continue
+            for object_ in listobj[i]['frame_data']:
+                if object_['tracker_id'] == group_id:
+                    msg = QtWidgets.QMessageBox()
+                    msg.setIcon(QtWidgets.QMessageBox.Information)
+                    msg.setText("A Shape with that ID already exists in this frame.")
+                    msg.setWindowTitle("ID already exists")
+                    msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
+                    msg.exec_()
+                    text = False
+                    break
+                
         if text:
             self.labelList.clearSelection()
             shape = self.canvas.setLastLabel(text, flags)
@@ -1979,6 +1995,8 @@ class MainWindow(QtWidgets.QMainWindow):
         else:
             self.canvas.undoLastLine()
             self.canvas.shapesBackups.pop()
+        
+        self.update_current_frame_annotation_button_clicked()
 
     def scrollRequest(self, delta, orientation):
         units = -delta * 0.1  # natural scroll
