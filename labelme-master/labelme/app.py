@@ -1556,7 +1556,11 @@ class MainWindow(QtWidgets.QMainWindow):
             
             prev_segment = prev['segment']
             next_segment = next['segment']
-            (prev_segment, next_segment) = self.getGoodShapes(prev_segment, next_segment)
+            if len(prev_segment) != len(next_segment) :
+                biglen = max(len(prev_segment), len(next_segment))
+                prev_segment = self.handlePoints(prev_segment, biglen)
+                next_segment = self.handlePoints(next_segment, biglen)
+            (prev_segment, next_segment) = self.allign(prev_segment, next_segment)
             prev['segment'] = prev_segment
             next['segment'] = next_segment
             
@@ -1615,9 +1619,33 @@ class MainWindow(QtWidgets.QMainWindow):
                     newPoint = [shape[i][0] + dif[0] * j / now, shape[i][1] + dif[1] * j / now]
                     res.append(newPoint)
                 res.append(shape[i + 1])
-            print(n + len(shape) - len(res))
-            print(res)
             return self.addPoints(res, n + len(shape) - len(res))
+        
+    def reducePoints(self, polygon, n):
+        distances = polygon.copy()
+        for i in range(len(polygon)):
+            mid = (np.array(polygon[i - 1]) + np.array(polygon[(i + 1) % len(polygon)])) / 2
+            dif =  np.array(polygon[i]) - mid
+            dist = np.sqrt(dif[0] * dif[0] + dif[1] * dif[1])
+            distances[i] = dist
+        ratio = 1.0 * n / len(polygon)
+        threshold = np.percentile(distances, 100 - ratio * 100)
+        res = []
+        for i in range(len(polygon)):
+            if distances[i] < threshold:
+                continue
+            res.append(polygon[i])
+        if len(res) != n:
+            return self.handlePoints(self.handlePoints(res, 3 * n), n)
+        return res
+    
+    def handlePoints(self, polygon, n):
+        if n == len(polygon):
+            return polygon
+        elif n > len(polygon):
+            return self.addPoints(polygon, n - len(polygon))
+        else:
+            return self.reducePoints(polygon, n)
 
     def allign(self, shape1, shape2):
         shape1_center = self.centerOFmass(shape1)
@@ -1645,25 +1673,6 @@ class MainWindow(QtWidgets.QMainWindow):
         shape2_alligned = [ [shape2_alligned[i][0] + shape2_center[0], shape2_alligned[i][1] + shape2_center[1]] for i in range(len(shape2_alligned)) ]
         
         return (shape1_alligned, shape2_alligned)
-    
-    def reducepoints(self, polygon, n):
-        indcies = [int(i) for i in np.linspace(0, len(polygon), num=n, endpoint=False)]
-        res = [polygon[i] for i in indcies]    
-        return res
-    
-    def getGoodShapes(self, shape1, shape2):
-        if len(shape1) != len(shape2):
-            length = max(len(shape1), len(shape2))
-            shape1 = self.addPoints(shape1, length - len(shape1))
-            shape2 = self.addPoints(shape2, length - len(shape2))
-        #shape1 = self.addPoints(shape1, 20 - len(shape1))
-        #shape2 = self.addPoints(shape2, 20 - len(shape2))
-        #(shape1, shape2) = self.allign(shape1, shape2)
-        #shape1 = self.reducepoints(shape1, 20)
-        #shape2 = self.reducepoints(shape2, 20)
-        shape1 = [[int(shape1[i][0]), int(shape1[i][1])] for i in range(len(shape1))]
-        shape2 = [[int(shape2[i][0]), int(shape2[i][1])] for i in range(len(shape2))]
-        return (shape1, shape2)
     
     def centerOFmass(self, points):
         sumX = 0
