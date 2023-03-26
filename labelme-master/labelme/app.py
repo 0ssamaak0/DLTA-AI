@@ -1512,8 +1512,6 @@ class MainWindow(QtWidgets.QMainWindow):
         if(first_frame_idx >= last_frame_idx):
             return
         
-        print(first_frame_idx, last_frame_idx)
-        
         records = [None for i in range(first_frame_idx, last_frame_idx + 1)]
         RECORDS = []
         for i in range(len(listObj)):
@@ -1524,9 +1522,9 @@ class MainWindow(QtWidgets.QMainWindow):
             for object_ in frameobjects:
                 if(object_['tracker_id'] == id):
                     records[listobjframe - first_frame_idx] = object_
-                    listObj[i]['frame_data'].remove(object_)
                     break
         records_org = records.copy()
+        
         first_iter_flag = True
         for i in range(len(records)):
             if(records[i] != None):
@@ -1569,8 +1567,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 continue
             appended = records_org[listobjframe - first_frame_idx]
             if appended == None:
-                appended = RECORDS[listobjframe - first_frame_idx]
-            listObj[i]['frame_data'].append(appended)
+                appended = RECORDS[max(listobjframe - first_frame_idx - 1, 0)]
+                listObj[i]['frame_data'].append(appended)
             appended_frames.append(listobjframe)
             
         for frame in range(first_frame_idx, last_frame_idx + 1):
