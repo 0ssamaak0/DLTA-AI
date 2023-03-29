@@ -38,11 +38,14 @@ from .widgets import BrightnessContrastDialog , Canvas , LabelDialog , LabelList
 from .intelligence import Intelligence
 from .intelligence import coco_classes , color_palette
 
-from ByteTrack.yolox.tracker.byte_tracker import BYTETracker, STrack
 from onemetric.cv.utils.iou import box_iou_batch
 from dataclasses import dataclass
 from supervision.detection.core import Detections
 from supervision.draw.color import Color, ColorPalette
+from trackers.multi_tracker_zoo import create_tracker
+from ultralytics.yolo.utils.torch_utils import select_device
+import torch
+
 
 from typing import Iterator, List, Optional, Tuple, Union
 
@@ -56,16 +59,27 @@ import warnings
 warnings.filterwarnings("ignore")
 
 
-@dataclass(frozen=True)
-class BYTETrackerArgs:
-    track_thresh: float = 0.6  # tracking confidence threshold
-    track_buffer: int = 30   # the frames for keep lost tracks
-    match_thresh: float = 0.8  # matching threshold for tracking
-    conf_thres: float = 0.5122620708221085
-    frame_rate: int = 30     # FPS
-    aspect_ratio_thresh: float = 3.0
-    min_box_area: float = 1.0
-    mot20: bool = False
+# FILE = Path(__file__).resolve()
+# ROOT = FILE.parents[0]  # yolov5 strongsort root directory
+# WEIGHTS = ROOT / 'weights'
+
+# if str(ROOT) not in sys.path:
+#     sys.path.append(str(ROOT))  # add ROOT to PATH
+# if str(ROOT / 'trackers' / 'strongsort') not in sys.path:
+#     sys.path.append(str(ROOT / 'trackers' / 'strongsort'))  # add strong_sort ROOT to PATH
+# ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
+
+
+
+conf_thres=0.25  # confidence threshold
+iou_thres=0.45  # NMS IOU threshold
+max_det=1000 # maximum detections per image
+device = select_device('0')
+tracking_method = 'strongsort'
+tracking_config = f'trackers/{tracking_method}/configs/{tracking_method}.yaml'
+reid_weights = Path('osnet_x1_0_msmt17.pt')
+# reid_weights = Path('osnet_ms_d_c.pth.tar')
+
 
 
 # converts Detections into format that can be consumed by match_detections_with_tracks function
@@ -75,33 +89,6 @@ def detections2boxes(detections: Detections) -> np.ndarray:
         detections.confidence[:, np.newaxis]
     ))
 
-
-def tracks2boxes(tracks: List[STrack]) -> np.ndarray:
-    return np.array([
-        track.tlbr
-        for track
-        in tracks
-    ], dtype=float)
-
-
-def match_detections_with_tracks(
-    detections: Detections,
-    tracks: List[STrack]
-) -> Detections:
-    if not np.any(detections.xyxy) or len(tracks) == 0:
-        return np.empty((0,))
-
-    tracks_boxes = tracks2boxes(tracks=tracks)
-    iou = box_iou_batch(tracks_boxes, detections.xyxy)
-    track2detection = np.argmax(iou, axis=1)
-
-    tracker_ids = [None] * len(detections)
-
-    for tracker_index, detection_index in enumerate(track2detection):
-        if iou[tracker_index, detection_index] != 0:
-            tracker_ids[detection_index] = tracks[tracker_index].track_id
-
-    return tracker_ids
 
 
 # FIXME
@@ -653,6 +640,15 @@ class MainWindow(QtWidgets.QMainWindow):
             enabled=True,
         )
         
+        scale = action(
+            self.tr("&Scale"),
+            self.scaleMENU,
+            shortcuts["scale"],
+            "edit",
+            self.tr("Scale the selected polygon"),
+            enabled=True,
+        )
+        
         fill_drawing = action(
             self.tr("Fill Drawing Polygon"),
             self.canvas.setFillDrawing,
@@ -772,6 +768,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 editMode,
                 edit,
                 interpolate,
+                scale,
                 copy,
                 delete,
                 undo,
@@ -1574,6 +1571,101 @@ class MainWindow(QtWidgets.QMainWindow):
         self.load_objects_to_json(listObj)
         self.calc_trajectory_when_open_video()
         self.main_video_frames_slider_changed()
+    
+    def scaleMENU(self, item=None):
+        
+        if item and not isinstance(item, LabelListWidgetItem):
+            raise TypeError("item must be LabelListWidgetItem type")
+        if not self.canvas.editing():
+            return
+        if not item:
+            item = self.currentItem()
+        if item is None:
+            return
+        shape = item.shape()
+        if shape is None:
+            return
+        text, flags, group_id, content = self.labelDialog.popUp(
+            text=shape.label,
+            flags=shape.flags,
+            group_id=shape.group_id,
+            content=shape.content,
+            skip_flag=True
+        )
+        if text is None:
+            return
+        if not self.validateLabel(text):
+            self.errorMessage(
+                self.tr("Invalid label"),
+                self.tr("Invalid label '{}' with validation type '{}'").format(
+                    text, self._config["validate_label"]
+                ),
+            )
+            return
+        shape.label = text
+        shape.flags = flags
+        shape.group_id = group_id
+        shape.content = content
+        if shape.group_id is None:
+            item.setText(shape.label)
+        else:
+            item.setText(f' ID {shape.group_id}: {shape.label}')
+            dialog = QtWidgets.QDialog()
+            dialog.setWindowTitle("Scaling")
+            dialog.setWindowModality(Qt.ApplicationModal)
+            dialog.resize(400, 400)
+
+            layout = QtWidgets.QVBoxLayout()
+
+            label = QtWidgets.QLabel("Scaling object with ID: "+str(shape.group_id)+"\n ")
+            label.setStyleSheet(
+            "QLabel { font-weight: bold; }")
+            layout.addWidget(label)
+            
+            xLabel = QtWidgets.QLabel()
+            xLabel.setText("Width(x) factor is: "+"100" + "%")
+            yLabel = QtWidgets.QLabel()
+            yLabel.setText("Hight(y) factor is: "+"100" + "%")
+
+            xSlider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
+            xSlider.setMinimum(1)
+            xSlider.setMaximum(200)
+            xSlider.setValue(100)
+            xSlider.setTickPosition(
+                QtWidgets.QSlider.TicksBelow)
+            xSlider.setTickInterval(1)
+            xSlider.setMaximumWidth(750)
+            xSlider.valueChanged.connect( lambda: print(shape.points))
+            xSlider.valueChanged.connect( lambda: xLabel.setText("Width(x) factor is: " + str(xSlider.value()) + "%"))
+
+            ySlider = QtWidgets.QSlider(QtCore.Qt.Vertical)
+            ySlider.setMinimum(1)
+            ySlider.setMaximum(200)
+            ySlider.setValue(100)
+            ySlider.setTickPosition(
+                QtWidgets.QSlider.TicksBelow)
+            ySlider.setTickInterval(1)
+            ySlider.setMaximumWidth(750)
+            #ySlider.valueChanged.connect( lambda: self.scale(id, xSlider.value(), ySlider.value()))
+            ySlider.valueChanged.connect( lambda: yLabel.setText("Hight(y) factor is: " + str(ySlider.value()) + "%"))
+
+            layout.addWidget(xLabel)
+            layout.addWidget(yLabel)
+            layout.addWidget(xSlider)
+            layout.addWidget(ySlider)        
+
+            buttonBox = QtWidgets.QDialogButtonBox(
+                            QtWidgets.QDialogButtonBox.Ok)
+            buttonBox.accepted.connect(dialog.accept)
+            layout.addWidget(buttonBox)
+            dialog.setLayout(layout)
+            result = dialog.exec_()
+            if result == QtWidgets.QDialog.Accepted:
+                return
+            else:
+                #self.scale(id, 100, 100)
+                return
+        
     
     def addPoints(self, shape, n):
         res = shape.copy()
@@ -3062,7 +3154,10 @@ class MainWindow(QtWidgets.QMainWindow):
 
             self.set_video_controls_visibility(True)
 
-            self.byte_tracker = BYTETracker(BYTETrackerArgs())
+            self.tracker = create_tracker(tracking_method, tracking_config, reid_weights, device, False)
+            if hasattr(self.tracker, 'model'):
+                if hasattr(self.tracker.model, 'warmup'):
+                    self.tracker.model.warmup()
         
             self.calc_trajectory_when_open_video()
 
@@ -3345,8 +3440,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.TrackingMode = True
         tracks_to_follow = None
+        bs = 1
+        curr_frame, prev_frame = None, None
 
         for i in range(self.FRAMES_TO_TRACK):
+            
             if existing_annotation:
                 print('\n\n\n\n\nloading existing annotation\n\n')
                 shapes = self.canvas.shapes
@@ -3355,6 +3453,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 shapes = self.intelligenceHelper.get_shapes_of_one(
                     self.CURRENT_FRAME_IMAGE, img_array_flag=True)
 
+            curr_frame = self.CURRENT_FRAME_IMAGE
             boxes = []
             confidences = []
             class_ids = []
@@ -3363,11 +3462,8 @@ class MainWindow(QtWidgets.QMainWindow):
             if len(shapes) == 0:
                 print("no detection in this frame")
                 if i != self.FRAMES_TO_TRACK - 1:
-                    self.main_video_frames_slider.setValue(
-                        self.INDEX_OF_CURRENT_FRAME + 1)
-                self.tracking_progress_bar.setValue(
-                    int((i + 1) / self.FRAMES_TO_TRACK * 100))
-
+                    self.main_video_frames_slider.setValue(self.INDEX_OF_CURRENT_FRAME + 1)
+                self.tracking_progress_bar.setValue(int((i + 1) / self.FRAMES_TO_TRACK * 100))
                 continue
             for s in shapes:
                 label = s["label"]
@@ -3399,18 +3495,101 @@ class MainWindow(QtWidgets.QMainWindow):
                 confidence=confidences,
                 class_id=class_ids,
             )
+            boxes = torch.from_numpy(detections.xyxy)
+            confidences = torch.from_numpy(detections.confidence)
+            class_ids = torch.from_numpy(detections.class_id)
+            dets = torch.cat((boxes , confidences.unsqueeze(1) , class_ids.unsqueeze(1)) , dim=1).cpu()
 
-            tracks = self.byte_tracker.update(
-                output_results=detections2boxes(detections=detections),
-                img_info=frame_shape,
-                img_size=frame_shape
-            )
-            tracker_id = match_detections_with_tracks(
-                detections=detections, tracks=tracks)
-            detections.tracker_id = np.array(tracker_id)
+
+
+            if hasattr(self.tracker, 'tracker') and hasattr(self.tracker, 'camera_update'):
+                if prev_frame is not None and curr_frame is not None:  # camera motion compensation
+                    self.tracker.camera_update(prev_frame, curr_frame)
+            prev_frame = curr_frame
+            
+            with torch.no_grad():
+                tracks = self.tracker.update(dets , self.CURRENT_FRAME_IMAGE)
+            
+            
+            # print('shapes :' , len(shapes))
+            # print('tracks :' , len(tracks))
+            # print([float(shape['content']) for shape in shapes])
+            # print( [track[6].item() for track in tracks] , '\n\n' )
+            # print([shape['bbox'] for shape in shapes])
+            # print( [track[0:4].tolist() for track in tracks] , '\n\n' )
+            # print([coco_classes.index(shape['label']) for shape in shapes])
+            # print( [int(track[5].item()) for track in tracks] , '\n\n')
+            # similar shapes (perform where the bboxes are the same in both shapes and tracks)
+            similar_shapes = []
+            new_shapes = []
+            for t in tracks:
+                # we will find that has the most similar bbox then we will check the class and confidence and if they are the same we will add it to the similar shapes if not we will check the other shapes for the the next similar bbox
+                similarity = []
+                for s in shapes:
+                    # we will calculate iou manually by calculating the area of the intersection and the area of the union
+                    intersection = [max(t[0] , s['bbox'][0]) , max(t[1] , s['bbox'][1]) , min(t[2] , s['bbox'][2]) , min(t[3] , s['bbox'][3])]
+                    intersection_area = (intersection[2] - intersection[0]) * (intersection[3] - intersection[1])
+                    union = [min(t[0] , s['bbox'][0]) , min(t[1] , s['bbox'][1]) , max(t[2] , s['bbox'][2]) , max(t[3] , s['bbox'][3])]
+                    union_area = (union[2] - union[0]) * (union[3] - union[1])
+                    iou = intersection_area / union_area
+                    # print (iou)
+                    similarity.append(iou)
+                    
+                most_similar_shape = shapes[similarity.index(max(similarity))]
+                
+                # print('track bbox :' , t[0:4].tolist())
+                # print ('most similar shape bbox :' , most_similar_shape['bbox'])
+                similar_shapes.append(most_similar_shape)
+                
+                
+                
+                bbox = t[0:4]
+                # convert nan to 0 in the bbox
+                bbox = np.nan_to_num(bbox)
+                id = t[4]
+                cls = int(t[5])
+                conf = t[6]
+                shape = {
+                    "label": coco_classes[cls],
+                    "content": str(conf),
+                    "group_id": id,
+                    "shape_type": "polygon",
+                    "bbox": [int(bbox[0]), int(bbox[1]), int(bbox[2]), int(bbox[3])],
+                    "flags": {},
+                    "other_data": {},
+                    "points": most_similar_shape['points']
+                }
+                new_shapes.append(shape)
+                
+                
+            print('similar shapes :' , len(similar_shapes))
+            shapes = new_shapes
+            # tracker_id = match_detections_with_tracks(
+            #     detections=detections, tracks=tracks)
+            # detections.tracker_id = np.array(tracker_id)
 
             # print(f'tracks : {len(tracker_id)}')
-
+            # shapes = []
+            # for sss, (output) in enumerate(tracks):
+        
+            #     bbox = output[0:4]
+            #     # convert nan to 0 in the bbox
+            #     bbox = np.nan_to_num(bbox)
+            #     id = output[4]
+            #     cls = int(output[5])
+            #     conf = output[6]
+                
+            #     shape = {
+            #         "label": coco_classes[cls],
+            #         "content": str(conf),
+            #         "group_id": id,
+            #         "shape_type": "polygon",
+            #         "bbox": [int(bbox[0]), int(bbox[1]), int(bbox[2]), int(bbox[3])],
+            #         "flags": {},
+            #         "other_data": {},
+            #         "points": 
+            #     }
+                
             # print(f'len of shapes = {len(shapes)}')
             # print(f'detections : {detections}')
             # print(f'len of tracker_id = {len(tracker_id)}')
@@ -3420,20 +3599,22 @@ class MainWindow(QtWidgets.QMainWindow):
             # # masks shapes when traker_id is None
 
             # make new list of shapes to be added to CURRENT_SHAPES_IN_IMG
-
-            if len(detections) != len(tracker_id):
-                # pad the tracker_id with None
-                tracker_id = [None] * (len(detections) - len(tracker_id))
-                detections.tracker_id = np.array(tracker_id)
+            # tracker_id = []
+            # if len(detections) != len(tracker_id):
+            # #     # pad the tracker_id with None
+            #     tracker_id = [None] * (len(detections) - len(tracker_id))
+            #     detections.tracker_id = np.array(tracker_id)
 
             # filtering out detections without trackers
-            for a, shape_ in enumerate(shapes):
-                shape_["group_id"] = tracker_id[a]
+            # for a, shape_ in enumerate(shapes):
+            #     shape_["group_id"] = tracker_id[a]
             self.CURRENT_SHAPES_IN_IMG = [
                 shape_ for shape_ in shapes if shape_["group_id"] is not None]
-            mask = np.array(
-                [tracker_id is not None for tracker_id in detections.tracker_id], dtype=bool)
-            detections.filter(mask=mask, inplace=True)
+            # mask = np.array(
+            #     [tracker_id is not None for tracker_id in detections.tracker_id], dtype=bool)
+            # detections.filter(mask=mask, inplace=True)
+            detections.tracker_id = np.array(
+                [shape_["group_id"] for shape_ in self.CURRENT_SHAPES_IN_IMG])
             if i == 0 and existing_annotation:
                 tracks_to_follow = detections.tracker_id
                 existing_annotation = False
@@ -3442,9 +3623,9 @@ class MainWindow(QtWidgets.QMainWindow):
             if self.TRACK_ASSIGNED_OBJECTS_ONLY and tracks_to_follow is not None:
                 self.CURRENT_SHAPES_IN_IMG = [
                     shape_ for shape_ in shapes if shape_["group_id"] in tracks_to_follow]
-                mask = np.array(
-                    [tracker_id in tracks_to_follow for tracker_id in detections.tracker_id], dtype=bool)
-                detections.filter(mask=mask, inplace=True)
+                # mask = np.array(
+                #     [tracker_id in tracks_to_follow for tracker_id in detections.tracker_id], dtype=bool)
+                # detections.filter(mask=mask, inplace=True)
             # self.CURRENT_SHAPES_IN_IMG = [shape_ for shape_ in shapes if shape_["group_id"] is not None]
             # mask = np.array(
             #     [tracker_id is not None for tracker_id in detections.tracker_id], dtype=bool)
@@ -3454,17 +3635,14 @@ class MainWindow(QtWidgets.QMainWindow):
             json_frame = {}
             json_frame.update({'frame_idx' : self.INDEX_OF_CURRENT_FRAME})
             json_frame_object_list = []
-            for j in range(len(detections.tracker_id)):
+            for j in range(len(shapes)):
                 json_tracked_object = {}
-                json_tracked_object['tracker_id'] = int(
-                    detections.tracker_id[j])
-                json_tracked_object['bbox'] = detections.xyxy[j].tolist()
-
-                json_tracked_object['confidence'] = str(
-                    detections.confidence[j])
-                json_tracked_object['class_name'] = self.CURRENT_SHAPES_IN_IMG[j]["label"]
-                json_tracked_object['class_id'] = int(detections.class_id[j])
-                points = self.CURRENT_SHAPES_IN_IMG[j]["points"]
+                json_tracked_object['tracker_id'] = shapes[j]["group_id"]
+                json_tracked_object['bbox'] = shapes[j]["bbox"]
+                json_tracked_object['confidence'] = shapes[j]["content"]
+                json_tracked_object['class_name'] = shapes[j]["label"]
+                json_tracked_object['class_id'] = coco_classes.index(shapes[j]["label"])
+                points = shapes[j]["points"]
                 segment = [[int(points[z]), int(points[z + 1])]
                            for z in range(0, len(points), 2)]
                 json_tracked_object['segment'] = segment
@@ -3514,6 +3692,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.tracking_progress_bar.hide()
         self.tracking_progress_bar.setValue(0)
+
 
     def convert_qt_shapes_to_shapes(self, qt_shapes):
         shapes = []

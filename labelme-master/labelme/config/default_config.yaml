@@ -101,4 +101,5 @@ shortcuts:
   add_point_to_edge: Ctrl+Shift+P
   edit_label: Ctrl+E
   interpolate: Ctrl+I
+  scale: Ctrl+SS
   toggle_keep_prev_mode: Ctrl+P

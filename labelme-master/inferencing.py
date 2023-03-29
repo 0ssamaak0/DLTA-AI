@@ -137,9 +137,21 @@ class models_inference():
     def full_points(bbox):
         return np.array([[bbox[0], bbox[1]], [bbox[0], bbox[3]], [bbox[2], bbox[3]], [bbox[2], bbox[1]]])
 
+    @torch.no_grad()
     def decode_file(self, img , model, classdict, threshold=0.3, img_array_flag=False , show_bbox_flag=False):
 
-        if model.__class__.__name__ == "YOLO":
+        if model.__class__.__name__ == "YOLO":  
+            # img is h,w,c and i want to devide it by 255 to get it in the range of 0 to 1
+            # img = cv2.resize(img , (640, 384))
+            # img = np.array(img , dtype=np.float32)
+            # img /= 255.0
+            # img = torch.from_numpy(img).to(device) 
+            # img = torch.from_numpy(img)
+            # img = img.permute(2, 0, 1)
+            # if len(img.shape) == 3:
+            #     img = img[None]  # expand for batch dim
+            # print(img.shape , img[0].shape)
+            # print(img)
             results = model(img , conf=float(threshold))
             results = results[0]
             w , h = results.orig_img.shape[1] , results.orig_img.shape[0]
