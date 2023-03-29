@@ -653,6 +653,15 @@ class MainWindow(QtWidgets.QMainWindow):
             enabled=True,
         )
         
+        scale = action(
+            self.tr("&Scale"),
+            self.scaleMENU,
+            shortcuts["scale"],
+            "edit",
+            self.tr("Scale the selected polygon"),
+            enabled=True,
+        )
+        
         fill_drawing = action(
             self.tr("Fill Drawing Polygon"),
             self.canvas.setFillDrawing,
@@ -772,6 +781,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 editMode,
                 edit,
                 interpolate,
+                scale,
                 copy,
                 delete,
                 undo,
@@ -1574,6 +1584,101 @@ class MainWindow(QtWidgets.QMainWindow):
         self.load_objects_to_json(listObj)
         self.calc_trajectory_when_open_video()
         self.main_video_frames_slider_changed()
+    
+    def scaleMENU(self, item=None):
+        
+        if item and not isinstance(item, LabelListWidgetItem):
+            raise TypeError("item must be LabelListWidgetItem type")
+        if not self.canvas.editing():
+            return
+        if not item:
+            item = self.currentItem()
+        if item is None:
+            return
+        shape = item.shape()
+        if shape is None:
+            return
+        text, flags, group_id, content = self.labelDialog.popUp(
+            text=shape.label,
+            flags=shape.flags,
+            group_id=shape.group_id,
+            content=shape.content,
+            skip_flag=True
+        )
+        if text is None:
+            return
+        if not self.validateLabel(text):
+            self.errorMessage(
+                self.tr("Invalid label"),
+                self.tr("Invalid label '{}' with validation type '{}'").format(
+                    text, self._config["validate_label"]
+                ),
+            )
+            return
+        shape.label = text
+        shape.flags = flags
+        shape.group_id = group_id
+        shape.content = content
+        if shape.group_id is None:
+            item.setText(shape.label)
+        else:
+            item.setText(f' ID {shape.group_id}: {shape.label}')
+            dialog = QtWidgets.QDialog()
+            dialog.setWindowTitle("Scaling")
+            dialog.setWindowModality(Qt.ApplicationModal)
+            dialog.resize(400, 400)
+
+            layout = QtWidgets.QVBoxLayout()
+
+            label = QtWidgets.QLabel("Scaling object with ID: "+str(shape.group_id)+"\n ")
+            label.setStyleSheet(
+            "QLabel { font-weight: bold; }")
+            layout.addWidget(label)
+            
+            xLabel = QtWidgets.QLabel()
+            xLabel.setText("Width(x) factor is: "+"100" + "%")
+            yLabel = QtWidgets.QLabel()
+            yLabel.setText("Hight(y) factor is: "+"100" + "%")
+
+            xSlider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
+            xSlider.setMinimum(1)
+            xSlider.setMaximum(200)
+            xSlider.setValue(100)
+            xSlider.setTickPosition(
+                QtWidgets.QSlider.TicksBelow)
+            xSlider.setTickInterval(1)
+            xSlider.setMaximumWidth(750)
+            xSlider.valueChanged.connect( lambda: print(shape.points))
+            xSlider.valueChanged.connect( lambda: xLabel.setText("Width(x) factor is: " + str(xSlider.value()) + "%"))
+
+            ySlider = QtWidgets.QSlider(QtCore.Qt.Vertical)
+            ySlider.setMinimum(1)
+            ySlider.setMaximum(200)
+            ySlider.setValue(100)
+            ySlider.setTickPosition(
+                QtWidgets.QSlider.TicksBelow)
+            ySlider.setTickInterval(1)
+            ySlider.setMaximumWidth(750)
+            #ySlider.valueChanged.connect( lambda: self.scale(id, xSlider.value(), ySlider.value()))
+            ySlider.valueChanged.connect( lambda: yLabel.setText("Hight(y) factor is: " + str(ySlider.value()) + "%"))
+
+            layout.addWidget(xLabel)
+            layout.addWidget(yLabel)
+            layout.addWidget(xSlider)
+            layout.addWidget(ySlider)        
+
+            buttonBox = QtWidgets.QDialogButtonBox(
+                            QtWidgets.QDialogButtonBox.Ok)
+            buttonBox.accepted.connect(dialog.accept)
+            layout.addWidget(buttonBox)
+            dialog.setLayout(layout)
+            result = dialog.exec_()
+            if result == QtWidgets.QDialog.Accepted:
+                return
+            else:
+                #self.scale(id, 100, 100)
+                return
+        
     
     def addPoints(self, shape, n):
         res = shape.copy()
