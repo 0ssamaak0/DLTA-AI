@@ -1610,6 +1610,22 @@ class MainWindow(QtWidgets.QMainWindow):
             item.setText(shape.label)
         else:
             item.setText(f' ID {shape.group_id}: {shape.label}')
+            
+            shape = self.convert_qt_shapes_to_shapes([shape])[0]
+            tracker_id = shape['group_id']
+            bbox = [shape['bbox'][0], shape['bbox'][1], shape['bbox'][2] - shape['bbox'][0], shape['bbox'][3] - shape['bbox'][1]]
+            confidence = shape['content']
+            class_name = shape['label']
+            class_id = coco_classes.index(class_name) if class_name in coco_classes else -1
+            segmentXYXY = shape['points']
+            segment = [[segmentXYXY[i], segmentXYXY[i+1]] for i in range(0, len(segmentXYXY), 2)]
+            SHAPE = {'tracker_id': tracker_id, 
+                     'bbox': bbox, 
+                     'confidence': confidence, 
+                     'class_name': class_name, 
+                     'class_id': class_id, 
+                     'segment': segment}
+            
             dialog = QtWidgets.QDialog()
             dialog.setWindowTitle("Scaling")
             dialog.setWindowModality(Qt.ApplicationModal)
@@ -1617,7 +1633,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
             layout = QtWidgets.QVBoxLayout()
 
-            label = QtWidgets.QLabel("Scaling object with ID: "+str(shape.group_id)+"\n ")
+            label = QtWidgets.QLabel("Scaling object with ID: "+str(SHAPE['tracker_id'])+"\n ")
             label.setStyleSheet(
             "QLabel { font-weight: bold; }")
             layout.addWidget(label)
@@ -1628,26 +1644,27 @@ class MainWindow(QtWidgets.QMainWindow):
             yLabel.setText("Hight(y) factor is: "+"100" + "%")
 
             xSlider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
-            xSlider.setMinimum(1)
-            xSlider.setMaximum(200)
+            xSlider.setMinimum(50)
+            xSlider.setMaximum(150)
             xSlider.setValue(100)
             xSlider.setTickPosition(
                 QtWidgets.QSlider.TicksBelow)
             xSlider.setTickInterval(1)
             xSlider.setMaximumWidth(750)
-            xSlider.valueChanged.connect( lambda: print(shape.points))
             xSlider.valueChanged.connect( lambda: xLabel.setText("Width(x) factor is: " + str(xSlider.value()) + "%"))
+            xSlider.valueChanged.connect( lambda: self.scale(SHAPE, xSlider.value(), ySlider.value()))
 
             ySlider = QtWidgets.QSlider(QtCore.Qt.Vertical)
-            ySlider.setMinimum(1)
-            ySlider.setMaximum(200)
+            ySlider.setMinimum(50)
+            ySlider.setMaximum(150)
             ySlider.setValue(100)
             ySlider.setTickPosition(
                 QtWidgets.QSlider.TicksBelow)
             ySlider.setTickInterval(1)
             ySlider.setMaximumWidth(750)
-            #ySlider.valueChanged.connect( lambda: self.scale(id, xSlider.value(), ySlider.value()))
             ySlider.valueChanged.connect( lambda: yLabel.setText("Hight(y) factor is: " + str(ySlider.value()) + "%"))
+            ySlider.valueChanged.connect( lambda: self.scale(SHAPE, xSlider.value(), ySlider.value()))
+
 
             layout.addWidget(xLabel)
             layout.addWidget(yLabel)
@@ -1663,9 +1680,44 @@ class MainWindow(QtWidgets.QMainWindow):
             if result == QtWidgets.QDialog.Accepted:
                 return
             else:
-                #self.scale(id, 100, 100)
+                self.scale(SHAPE, 100, 100)
                 return
+    
+    def scale(self, oldshape, ratioX, ratioY):
+        ratioX  = ratioX/100
+        ratioY  = ratioY/100
+        shape = oldshape.copy()
+        segment = shape['segment']
+        tr0, tr1, w, h = shape['bbox']
+        segment = [ [(p[0] - tr0) * ratioX + tr0, (p[1] - tr1) * ratioY + tr1] for p in segment]
+        w = w * ratioX
+        h = h * ratioY
+        shape['segment'] = segment
+        shape['bbox'] = [tr0, tr1, w, h]
         
+        listobj = self.load_objects_from_json()
+        for i in range(len(listobj)):
+            listobjframe = listobj[i]['frame_idx']
+            if listobjframe != self.INDEX_OF_CURRENT_FRAME :
+                continue
+            for objectt in listobj[i]['frame_data']:
+                if objectt['tracker_id'] == shape['tracker_id']:
+                    objectt['segment'] = shape['segment']
+                    objectt['bbox'] = self.get_bbox_xywh(shape['segment'])
+                    break
+        
+        self.load_objects_to_json(listobj)
+        self.calc_trajectory_when_open_video()
+        self.main_video_frames_slider_changed()
+         
+    def get_bbox_xywh(self, segment):
+        segment = np.array(segment)
+        x0 = np.min(segment[:, 0])
+        y0 = np.min(segment[:, 1])
+        x1 = np.max(segment[:, 0])
+        y1 = np.max(segment[:, 1])
+        return [x0, y0, x1 , y1 ]
+    
     
     def addPoints(self, shape, n):
         res = shape.copy()
