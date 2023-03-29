@@ -75,7 +75,11 @@ conf_thres=0.25  # confidence threshold
 iou_thres=0.45  # NMS IOU threshold
 max_det=1000 # maximum detections per image
 device = select_device('0')
+# tracking_method = 'bytetrack'
 tracking_method = 'strongsort'
+# tracking_method = 'deepocsort'
+# tracking_method = 'ocsort'
+# tracking_method = 'botsort'
 tracking_config = f'trackers/{tracking_method}/configs/{tracking_method}.yaml'
 reid_weights = Path('osnet_x1_0_msmt17.pt')
 # reid_weights = Path('osnet_ms_d_c.pth.tar')
@@ -3595,12 +3599,13 @@ class MainWindow(QtWidgets.QMainWindow):
                 
                 
                 
-                bbox = t[0:4]
+                # bbox = t[0:4]
+                # bbox = np.nan_to_num(bbox)
                 # convert nan to 0 in the bbox
-                bbox = np.nan_to_num(bbox)
+                bbox = most_similar_shape['bbox']
                 id = t[4]
-                cls = int(t[5])
-                conf = t[6]
+                cls = coco_classes.index(most_similar_shape['label'])
+                conf = most_similar_shape['content']
                 shape = {
                     "label": coco_classes[cls],
                     "content": str(conf),
