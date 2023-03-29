@@ -1238,6 +1238,10 @@ class MainWindow(QtWidgets.QMainWindow):
         new = QtWidgets.QRadioButton("Create new shape (ie. not detected before)")
         existing = QtWidgets.QRadioButton("Copy existing shape (ie. detected before)")
         
+        shape_id = QtWidgets.QSpinBox()
+        shape_id.setMinimum(1)
+        shape_id.valueChanged.connect(lambda: existing.toggle())
+        
         if self.config['creationDefault'] == 'Create new shape (ie. not detected before)':
             new.toggle()
         if self.config['creationDefault'] == 'Copy existing shape (ie. detected before)':
@@ -1248,7 +1252,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         layout.addWidget(new)
         layout.addWidget(existing)
-        
+        layout.addWidget(shape_id)
 
         buttonBox = QtWidgets.QDialogButtonBox(
                         QtWidgets.QDialogButtonBox.Ok)
@@ -1260,27 +1264,7 @@ class MainWindow(QtWidgets.QMainWindow):
             if self.config['creationDefault'] == 'Create new shape (ie. not detected before)':
                 self.toggleDrawMode(False, createMode="polygon")
             elif self.config['creationDefault'] == 'Copy existing shape (ie. detected before)':
-                dialog = QtWidgets.QDialog()
-                dialog.setWindowTitle("Choose Which ID to Copy")
-                dialog.setWindowModality(Qt.ApplicationModal)
-                dialog.resize(250, 100)
-
-                layout = QtWidgets.QVBoxLayout()
-
-                label = QtWidgets.QLabel("Choose Which ID to Copy")
-                layout.addWidget(label)
-
-                shape_id = QtWidgets.QSpinBox()
-                shape_id.setMinimum(1)
-                layout.addWidget(shape_id)
-                buttonBox = QtWidgets.QDialogButtonBox(
-                    QtWidgets.QDialogButtonBox.Ok)
-                buttonBox.accepted.connect(dialog.accept)
-                layout.addWidget(buttonBox)
-                dialog.setLayout(layout)
-                result = dialog.exec_()
-                if result == QtWidgets.QDialog.Accepted:
-                    self.copy_existing_shape(shape_id.value())
+                self.copy_existing_shape(shape_id.value())
         
     def copy_existing_shape(self, shape_id):
         listobj = self.load_objects_from_json()
@@ -3661,6 +3645,12 @@ class MainWindow(QtWidgets.QMainWindow):
         self.CURRENT_ANNOATAION_TRAJECTORIES.clear() 
         self.CURRENT_ANNOATAION_TRAJECTORIES['length'] = length_Value
         self.CURRENT_ANNOATAION_TRAJECTORIES['alpha'] = alpha_Value
+        
+        for shape in self.canvas.shapes:
+            self.canvas.deleteShape(shape)
+            
+        self.CURRENT_SHAPES_IN_IMG = []
+        
         # just delete the json file and reload the video
         # to delete the json file we need to know the name of the json file which is the same as the video name
         json_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}_tracking_results.json'
