@@ -1170,7 +1170,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.actions.editMode.setEnabled(not edit)
 
     def setEditMode(self):
-        self.update_current_frame_annotation_button_clicked()
         self.toggleDrawMode(True)
 
     def updateFileMenu(self):
@@ -1224,7 +1223,6 @@ class MainWindow(QtWidgets.QMainWindow):
         return False
 
     def createMode_options(self):
-        self.update_current_frame_annotation_button_clicked()
         dialog = QtWidgets.QDialog()
         dialog.setWindowTitle("Choose Creation Options")
         dialog.setWindowModality(Qt.ApplicationModal)
@@ -1334,7 +1332,6 @@ class MainWindow(QtWidgets.QMainWindow):
             
         
     def editLabel(self, item=None):
-        self.update_current_frame_annotation_button_clicked()
         if item and not isinstance(item, LabelListWidgetItem):
             raise TypeError("item must be LabelListWidgetItem type")
         if not self.canvas.editing():
@@ -1409,7 +1406,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self.uniqLabelList.addItem(item)
             
     def interpolateMENU(self, item=None):
-        self.update_current_frame_annotation_button_clicked()
         if item and not isinstance(item, LabelListWidgetItem):
             raise TypeError("item must be LabelListWidgetItem type")
         if not self.canvas.editing():
@@ -1593,7 +1589,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.main_video_frames_slider_changed()
     
     def scaleMENU(self, item=None):
-        self.update_current_frame_annotation_button_clicked()
+        
         if item and not isinstance(item, LabelListWidgetItem):
             raise TypeError("item must be LabelListWidgetItem type")
         if not self.canvas.editing():
@@ -2829,7 +2825,6 @@ class MainWindow(QtWidgets.QMainWindow):
                     action.setEnabled(False)
 
     def deleteSelectedShape(self):
-        self.update_current_frame_annotation_button_clicked()
         yes, no = QtWidgets.QMessageBox.Yes, QtWidgets.QMessageBox.No
         msg = self.tr(
             "You are about to permanently delete {} polygons, "
@@ -3177,7 +3172,6 @@ class MainWindow(QtWidgets.QMainWindow):
         
 
     def openVideo(self):
-        self.update_current_frame_annotation_button_clicked()
         length_Value = self.CURRENT_ANNOATAION_TRAJECTORIES['length']
         alpha_Value = self.CURRENT_ANNOATAION_TRAJECTORIES['alpha']
         self.CURRENT_ANNOATAION_TRAJECTORIES.clear() 
