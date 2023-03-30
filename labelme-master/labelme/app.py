@@ -1459,13 +1459,13 @@ class MainWindow(QtWidgets.QMainWindow):
             
             if self.config['interpolationDefault'] == 'interpolate only missed frames between detected frames':
                 only_missed.toggle()
-            if self.config['interpolationDefault'] == 'interpolate all frames between your edits (ie. frames with confedence = 1)':
+            if self.config['interpolationDefault'] == 'interpolate all frames between your KEY frames':
                 only_edited.toggle()
             if self.config['interpolationDefault'] == 'mark this frame as KEY frame for this id':
                 mark_as_key.toggle()
             
             only_missed.toggled.connect(lambda: self.config.update({'interpolationDefault': 'interpolate only missed frames between detected frames'}))
-            only_edited.toggled.connect(lambda: self.config.update({'interpolationDefault': 'interpolate all frames between your edits (ie. frames with confedence = 1)'}))
+            only_edited.toggled.connect(lambda: self.config.update({'interpolationDefault': 'interpolate all frames between your KEY frames'}))
             mark_as_key.toggled.connect(lambda: self.config.update({'interpolationDefault': 'mark this frame as KEY frame for this id'}))
 
             layout.addWidget(only_missed)
@@ -1483,7 +1483,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     self.mark_as_key(shape.group_id)
                     return
                 else:
-                    only_edited = True if self.config['interpolationDefault'] == 'interpolate all frames between your edits (ie. frames with confedence = 1)' else False
+                    only_edited = True if self.config['interpolationDefault'] == 'interpolate all frames between your KEY frames' else False
                     self.interpolate(id = shape.group_id, only_edited = only_edited)
                 print(self.config['interpolationDefault'])
             ###########################################################
