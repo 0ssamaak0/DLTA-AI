@@ -270,6 +270,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.config = {'deleteDefault' : "this frame only", 
                        'interpolationDefault' : "interpolate only missed frames between detected frames",
                        'creationDefault' : "Create new shape (ie. not detected before)"}
+        self.key_frames = {}
         # make CLASS_NAMES_DICT a dictionary of coco class names
         # self.CLASS_NAMES_DICT =
         # self.frame_number = 0
@@ -1453,19 +1454,23 @@ class MainWindow(QtWidgets.QMainWindow):
             layout.addWidget(label)
 
             only_missed = QtWidgets.QRadioButton("interpolate only missed frames between detected frames")
-            only_edited = QtWidgets.QRadioButton("interpolate all frames between your edits (ie. frames with confedence = 1)")
+            only_edited = QtWidgets.QRadioButton("interpolate all frames between your KEY frames")
+            mark_as_key = QtWidgets.QRadioButton("mark this frame as KEY frame for this id")
             
             if self.config['interpolationDefault'] == 'interpolate only missed frames between detected frames':
                 only_missed.toggle()
             if self.config['interpolationDefault'] == 'interpolate all frames between your edits (ie. frames with confedence = 1)':
                 only_edited.toggle()
+            if self.config['interpolationDefault'] == 'mark this frame as KEY frame for this id':
+                mark_as_key.toggle()
             
             only_missed.toggled.connect(lambda: self.config.update({'interpolationDefault': 'interpolate only missed frames between detected frames'}))
             only_edited.toggled.connect(lambda: self.config.update({'interpolationDefault': 'interpolate all frames between your edits (ie. frames with confedence = 1)'}))
+            mark_as_key.toggled.connect(lambda: self.config.update({'interpolationDefault': 'mark this frame as KEY frame for this id'}))
 
             layout.addWidget(only_missed)
             layout.addWidget(only_edited)
-            
+            layout.addWidget(mark_as_key)
 
             buttonBox = QtWidgets.QDialogButtonBox(
                 QtWidgets.QDialogButtonBox.Ok)
@@ -1474,9 +1479,13 @@ class MainWindow(QtWidgets.QMainWindow):
             dialog.setLayout(layout)
             result = dialog.exec_()
             if result == QtWidgets.QDialog.Accepted:
+                if self.config['interpolationDefault'] == 'mark this frame as KEY frame for this id':
+                    self.mark_as_key(shape.group_id)
+                    return
+                else:
+                    only_edited = True if self.config['interpolationDefault'] == 'interpolate all frames between your edits (ie. frames with confedence = 1)' else False
+                    self.interpolate(id = shape.group_id, only_edited = only_edited)
                 print(self.config['interpolationDefault'])
-                only_edited = True if self.config['interpolationDefault'] == 'interpolate all frames between your edits (ie. frames with confedence = 1)' else False
-                self.interpolate(id = shape.group_id, only_edited = only_edited)
             ###########################################################
         self.setDirty()
         if not self.uniqLabelList.findItemsByLabel(shape.label):
@@ -1484,6 +1493,13 @@ class MainWindow(QtWidgets.QMainWindow):
             item.setData(Qt.UserRole, shape.label)
             self.uniqLabelList.addItem(item)
           
+    def mark_as_key(self, id):
+        try:
+            self.key_frames['id_' + str(id)].append(self.INDEX_OF_CURRENT_FRAME)
+        except:
+            self.key_frames['id_' + str(id)] = [self.INDEX_OF_CURRENT_FRAME]
+        print(self.key_frames)     
+        
     def interpolate(self, id, only_edited = False):
         only_missed = not only_edited
         
