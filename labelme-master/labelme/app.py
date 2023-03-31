@@ -1178,6 +1178,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.actions.editMode.setEnabled(not edit)
 
     def setEditMode(self):
+        self.update_current_frame_annotation()
         self.toggleDrawMode(True)
 
     def updateFileMenu(self):
@@ -1231,6 +1232,7 @@ class MainWindow(QtWidgets.QMainWindow):
         return False
 
     def createMode_options(self):
+        self.update_current_frame_annotation()
         dialog = QtWidgets.QDialog()
         dialog.setWindowTitle("Choose Creation Options")
         dialog.setWindowModality(Qt.ApplicationModal)
@@ -1340,6 +1342,7 @@ class MainWindow(QtWidgets.QMainWindow):
             
         
     def editLabel(self, item=None):
+        self.update_current_frame_annotation()
         if item and not isinstance(item, LabelListWidgetItem):
             raise TypeError("item must be LabelListWidgetItem type")
         if not self.canvas.editing():
@@ -1414,6 +1417,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.uniqLabelList.addItem(item)
             
     def interpolateMENU(self, item=None):
+        self.update_current_frame_annotation()
         if item and not isinstance(item, LabelListWidgetItem):
             raise TypeError("item must be LabelListWidgetItem type")
         if not self.canvas.editing():
@@ -1493,6 +1497,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.uniqLabelList.addItem(item)
           
     def mark_as_key(self, item=None):
+        self.update_current_frame_annotation()
         if item and not isinstance(item, LabelListWidgetItem):
             raise TypeError("item must be LabelListWidgetItem type")
         if not self.canvas.editing():
@@ -1712,7 +1717,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.main_video_frames_slider_changed()
     
     def scaleMENU(self, item=None):
-        
+        self.update_current_frame_annotation()
         if item and not isinstance(item, LabelListWidgetItem):
             raise TypeError("item must be LabelListWidgetItem type")
         if not self.canvas.editing():
@@ -3928,27 +3933,33 @@ class MainWindow(QtWidgets.QMainWindow):
         loop.exec_()
 
     def traj_checkBox_changed(self):
+        self.update_current_frame_annotation()
         self.CURRENT_ANNOATAION_FLAGS["traj"] = self.traj_checkBox.isChecked()
         self.main_video_frames_slider_changed()
 
     def mask_checkBox_changed(self):
+        self.update_current_frame_annotation()
         self.CURRENT_ANNOATAION_FLAGS["mask"] = self.mask_checkBox.isChecked()
         self.main_video_frames_slider_changed()
 
     def class_checkBox_changed(self):
+        self.update_current_frame_annotation()
         self.CURRENT_ANNOATAION_FLAGS["class"] = self.class_checkBox.isChecked(
         )
         self.main_video_frames_slider_changed()
 
     def id_checkBox_changed(self):
+        self.update_current_frame_annotation()
         self.CURRENT_ANNOATAION_FLAGS["id"] = self.id_checkBox.isChecked()
         self.main_video_frames_slider_changed()
 
     def bbox_checkBox_changed(self):
+        self.update_current_frame_annotation()
         self.CURRENT_ANNOATAION_FLAGS["bbox"] = self.bbox_checkBox.isChecked()
         self.main_video_frames_slider_changed()
 
     def polygons_visable_checkBox_changed(self):
+        self.update_current_frame_annotation()
         self.CURRENT_ANNOATAION_FLAGS["polygons"] = self.polygons_visable_checkBox.isChecked(
         )
         for shape in self.canvas.shapes:
@@ -3956,6 +3967,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 shape, self.CURRENT_ANNOATAION_FLAGS["polygons"])
 
     def export_as_video_button_clicked(self):
+        self.update_current_frame_annotation()
         json_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}_tracking_results.json'
         input_video_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}.mp4'
         output_video_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}_tracking_results.mp4'
