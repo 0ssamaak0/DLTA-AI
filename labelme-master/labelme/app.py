@@ -273,7 +273,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.CURRENT_SHAPES_IN_IMG = []
         self.config = {'deleteDefault' : "this frame only", 
                        'interpolationDefault' : "interpolate only missed frames between detected frames",
-                       'creationDefault' : "Create new shape (ie. not detected before)"}
+                       'creationDefault' : "Create new shape (ie. not detected before)",
+                       'EditDefault' : "Edit only this frame"}
+        self.key_frames = {}
         # make CLASS_NAMES_DICT a dictionary of coco class names
         # self.CLASS_NAMES_DICT =
         # self.frame_number = 0
@@ -643,7 +645,14 @@ class MainWindow(QtWidgets.QMainWindow):
             self.tr("Interpolate the selected polygon"),
             enabled=True,
         )
-        
+        mark_as_key = action(
+            self.tr("&Mark as key"),
+            self.mark_as_key,
+            shortcuts["mark_as_key"],
+            "edit",
+            self.tr("Mark this frame as KEY for interpolation"),
+            enabled=True,
+        )
         scale = action(
             self.tr("&Scale"),
             self.scaleMENU,
@@ -772,6 +781,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 editMode,
                 edit,
                 interpolate,
+                mark_as_key,
                 scale,
                 copy,
                 delete,
@@ -1173,6 +1183,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.actions.editMode.setEnabled(not edit)
 
     def setEditMode(self):
+        self.update_current_frame_annotation()
         self.toggleDrawMode(True)
 
     def updateFileMenu(self):
@@ -1226,6 +1237,7 @@ class MainWindow(QtWidgets.QMainWindow):
         return False
 
     def createMode_options(self):
+        self.update_current_frame_annotation()
         dialog = QtWidgets.QDialog()
         dialog.setWindowTitle("Choose Creation Options")
         dialog.setWindowModality(Qt.ApplicationModal)
@@ -1241,6 +1253,7 @@ class MainWindow(QtWidgets.QMainWindow):
         
         shape_id = QtWidgets.QSpinBox()
         shape_id.setMinimum(1)
+        shape_id.setMaximum(1000000)
         shape_id.valueChanged.connect(lambda: existing.toggle())
         
         if self.config['creationDefault'] == 'Create new shape (ie. not detected before)':
@@ -1335,6 +1348,7 @@ class MainWindow(QtWidgets.QMainWindow):
             
         
     def editLabel(self, item=None):
+        self.update_current_frame_annotation()
         if item and not isinstance(item, LabelListWidgetItem):
             raise TypeError("item must be LabelListWidgetItem type")
         if not self.canvas.editing():
@@ -1377,10 +1391,50 @@ class MainWindow(QtWidgets.QMainWindow):
         if shape.group_id is None:
             item.setText(shape.label)
         else:
-            item.setText(f' ID {shape.group_id}: {shape.label}')
+            
             ###########################################################
+            all_frames = False
+            only_this_frame = False
+            if old_group_id != new_group_id:
+                dialog = QtWidgets.QDialog()
+                dialog.setWindowTitle("Choose Edit Options")
+                dialog.setWindowModality(Qt.ApplicationModal)
+                dialog.resize(250, 100)
+
+                layout = QtWidgets.QVBoxLayout()
+
+                label = QtWidgets.QLabel("Choose Edit Options")
+                layout.addWidget(label)
+
+                only = QtWidgets.QRadioButton("Edit only this frame")
+                all  = QtWidgets.QRadioButton("Edit all frames with this ID")
+                
+                if self.config['EditDefault'] == 'Edit only this frame':
+                    only.toggle()
+                if self.config['EditDefault'] == 'Edit all frames with this ID':
+                    all.toggle()
+                
+                only.toggled.connect(lambda: self.config.update({'EditDefault': 'Edit only this frame'}))
+                all.toggled.connect(lambda: self.config.update({'EditDefault': 'Edit all frames with this ID'}))
+                
+                layout.addWidget(only)
+                layout.addWidget(all)
+
+                buttonBox = QtWidgets.QDialogButtonBox(
+                    QtWidgets.QDialogButtonBox.Ok)
+                buttonBox.accepted.connect(dialog.accept)
+                layout.addWidget(buttonBox)
+                dialog.setLayout(layout)
+                result = dialog.exec_()
+                if result == QtWidgets.QDialog.Accepted:
+                    all_frames = True if self.config['EditDefault'] == 'Edit all frames with this ID' else False
+                    only_this_frame = True if self.config['EditDefault'] == 'Edit only this frame' else False
+            
             listObj = self.load_objects_from_json()
             for i in range(len(listObj)):
+                listObjframe = listObj[i]['frame_idx']
+                if only_this_frame and listObjframe != self.INDEX_OF_CURRENT_FRAME:
+                    continue
                 for object_ in listObj[i]['frame_data']:
                     if object_['tracker_id'] == new_group_id:
                         listObj[i]['frame_data'].remove(object_)
@@ -1388,13 +1442,27 @@ class MainWindow(QtWidgets.QMainWindow):
                         object_['confidence'] = 1.0
                         object_['class_id'] = coco_classes.index(shape.label) if shape.label in coco_classes else -1
                         listObj[i]['frame_data'].append(object_)
-                    if object_['tracker_id'] == old_group_id:
+                        
+                    elif object_['tracker_id'] == old_group_id:
                         listObj[i]['frame_data'].remove(object_)
                         object_['class_name'] = shape.label
                         object_['confidence'] = 1.0
                         object_['class_id'] = coco_classes.index(shape.label) if shape.label in coco_classes else -1
                         object_['tracker_id'] = new_group_id
                         listObj[i]['frame_data'].append(object_)
+                
+                sum = 0
+                for object_ in listObj[i]['frame_data']:
+                    if object_['tracker_id'] == new_group_id:
+                        sum += 1
+                        if sum > 1:
+                            msg = QtWidgets.QMessageBox()
+                            msg.setIcon(QtWidgets.QMessageBox.Information)
+                            msg.setText(f"Two shapes with the same ID exists in at least one frame.\nApparantly, a shape with ID ({new_group_id}) already exists with another shape with ID ({old_group_id}) like in frame ({listObjframe}) and the edit will result in two shapes with the same ID ({new_group_id}).\n\n The edit is NOT performed.")
+                            msg.setWindowTitle("ID already exists")
+                            msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
+                            msg.exec_()
+                            return
                     
                         
             listObj = sorted(listObj, key=lambda k: k['frame_idx'])
@@ -1409,6 +1477,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.uniqLabelList.addItem(item)
             
     def interpolateMENU(self, item=None):
+        self.update_current_frame_annotation()
         if item and not isinstance(item, LabelListWidgetItem):
             raise TypeError("item must be LabelListWidgetItem type")
         if not self.canvas.editing():
@@ -1444,7 +1513,6 @@ class MainWindow(QtWidgets.QMainWindow):
         if shape.group_id is None:
             item.setText(shape.label)
         else:
-            item.setText(f' ID {shape.group_id}: {shape.label}')
             ###########################################################
             dialog = QtWidgets.QDialog()
             dialog.setWindowTitle("Choose Interpolation Options")
@@ -1457,19 +1525,18 @@ class MainWindow(QtWidgets.QMainWindow):
             layout.addWidget(label)
 
             only_missed = QtWidgets.QRadioButton("interpolate only missed frames between detected frames")
-            only_edited = QtWidgets.QRadioButton("interpolate all frames between your edits (ie. frames with confedence = 1)")
+            only_edited = QtWidgets.QRadioButton("interpolate all frames between your KEY frames")
             
             if self.config['interpolationDefault'] == 'interpolate only missed frames between detected frames':
                 only_missed.toggle()
-            if self.config['interpolationDefault'] == 'interpolate all frames between your edits (ie. frames with confedence = 1)':
+            if self.config['interpolationDefault'] == 'interpolate all frames between your KEY frames':
                 only_edited.toggle()
             
             only_missed.toggled.connect(lambda: self.config.update({'interpolationDefault': 'interpolate only missed frames between detected frames'}))
-            only_edited.toggled.connect(lambda: self.config.update({'interpolationDefault': 'interpolate all frames between your edits (ie. frames with confedence = 1)'}))
-
+            only_edited.toggled.connect(lambda: self.config.update({'interpolationDefault': 'interpolate all frames between your KEY frames'}))
+            
             layout.addWidget(only_missed)
             layout.addWidget(only_edited)
-            
 
             buttonBox = QtWidgets.QDialogButtonBox(
                 QtWidgets.QDialogButtonBox.Ok)
@@ -1478,9 +1545,9 @@ class MainWindow(QtWidgets.QMainWindow):
             dialog.setLayout(layout)
             result = dialog.exec_()
             if result == QtWidgets.QDialog.Accepted:
-                print(self.config['interpolationDefault'])
-                only_edited = True if self.config['interpolationDefault'] == 'interpolate all frames between your edits (ie. frames with confedence = 1)' else False
+                only_edited = True if self.config['interpolationDefault'] == 'interpolate all frames between your KEY frames' else False
                 self.interpolate(id = shape.group_id, only_edited = only_edited)
+                print(self.config['interpolationDefault'])
             ###########################################################
         self.setDirty()
         if not self.uniqLabelList.findItemsByLabel(shape.label):
@@ -1488,8 +1555,139 @@ class MainWindow(QtWidgets.QMainWindow):
             item.setData(Qt.UserRole, shape.label)
             self.uniqLabelList.addItem(item)
           
+    def mark_as_key(self, item=None):
+        self.update_current_frame_annotation()
+        if item and not isinstance(item, LabelListWidgetItem):
+            raise TypeError("item must be LabelListWidgetItem type")
+        if not self.canvas.editing():
+            return
+        if not item:
+            item = self.currentItem()
+        if item is None:
+            return
+        shape = item.shape()
+        if shape is None:
+            return
+        text, flags, group_id, content = self.labelDialog.popUp(
+            text=shape.label,
+            flags=shape.flags,
+            group_id=shape.group_id,
+            content=shape.content,
+            skip_flag=True
+        )
+        if text is None:
+            return
+        if not self.validateLabel(text):
+            self.errorMessage(
+                self.tr("Invalid label"),
+                self.tr("Invalid label '{}' with validation type '{}'").format(
+                    text, self._config["validate_label"]
+                ),
+            )
+            return
+        shape.label = text
+        shape.flags = flags
+        shape.group_id = group_id
+        shape.content = content
+        if shape.group_id is None:
+            item.setText(shape.label)
+        else:
+            id = shape.group_id
+            try:
+                self.key_frames['id_' + str(id)].append(self.INDEX_OF_CURRENT_FRAME)
+            except:
+                self.key_frames['id_' + str(id)] = [self.INDEX_OF_CURRENT_FRAME]
+            print(self.key_frames)
+            self.main_video_frames_slider_changed()
+        self.setDirty()
+        if not self.uniqLabelList.findItemsByLabel(shape.label):
+            item = QtWidgets.QListWidgetItem()
+            item.setData(Qt.UserRole, shape.label)
+            self.uniqLabelList.addItem(item)  
+        
+    def interpolate_ONLYedited(self, id):
+        key_frames = self.key_frames['id_' + str(id)]
+        first_frame_idx = np.min(key_frames)
+        last_frame_idx = np.max(key_frames)
+        
+        listObj = self.load_objects_from_json()
+        records = [None for i in range(first_frame_idx, last_frame_idx + 1)]
+        RECORDS = []
+        for i in range(len(listObj)):
+            listobjframe = listObj[i]['frame_idx']
+            if(listobjframe < first_frame_idx or listobjframe > last_frame_idx):
+                continue
+            for object_ in listObj[i]['frame_data']:
+                if(object_['tracker_id'] == id):
+                    if not (listobjframe in key_frames):
+                        listObj[i]['frame_data'].remove(object_)
+                        break
+                    records[listobjframe - first_frame_idx] = object_
+                    print('recording frame: ', listobjframe)
+                    break
+        records_org = records.copy()
+        
+        first_iter_flag = True
+        for i in range(len(records)):
+            if(records[i] != None):
+                RECORDS.append(records[i])
+                continue
+            if first_iter_flag:
+                first_iter_flag = False
+                prev_idx = i - 1
+            prev = records[i - 1]
+            current = prev
+            
+            next = records[i + 1]
+            next_idx = i + 1
+            for j in range(i + 1, len(records)):
+                if(records[j] != None):
+                    next = records[j]
+                    next_idx = j
+                    break
+            cur_bbox = ((next_idx - i)/(next_idx - prev_idx ))*np.array(records[prev_idx]['bbox']) + ((i - prev_idx)/(next_idx -prev_idx ))*np.array(records[next_idx]['bbox'])
+            cur_bbox = [int(cur_bbox[i]) for i in range(len(cur_bbox))]
+            
+            prev_segment = prev['segment']
+            next_segment = next['segment']
+            if len(prev_segment) != len(next_segment) :
+                biglen = max(len(prev_segment), len(next_segment))
+                prev_segment = self.handlePoints(prev_segment, biglen)
+                next_segment = self.handlePoints(next_segment, biglen)
+            (prev_segment, next_segment) = self.allign(prev_segment, next_segment)
+            prev['segment'] = prev_segment
+            next['segment'] = next_segment
+            
+            cur_segment = ((next_idx - i)/(next_idx -prev_idx ))*np.array(records[prev_idx]['segment']) + ((i - prev_idx)/(next_idx -prev_idx ))*np.array(records[next_idx]['segment'])
+            cur_segment = [[int(sublist[0]) , int(sublist[1])] for sublist in cur_segment ]
+            current['bbox'] = cur_bbox
+            current['segment'] = cur_segment
+            
+            records[i] = current.copy()
+            RECORDS.append(records[i])
+        
+        appended_frames = []
+        for i in range(len(listObj)):
+            listobjframe = listObj[i]['frame_idx']
+            if(listobjframe < first_frame_idx or listobjframe > last_frame_idx):
+                continue
+            appended = records_org[listobjframe - first_frame_idx]
+            if appended == None:
+                appended = RECORDS[max(listobjframe - first_frame_idx - 1, 0)]
+                listObj[i]['frame_data'].append(appended)
+            appended_frames.append(listobjframe)
+            
+        for frame in range(first_frame_idx, last_frame_idx + 1):
+            if(frame not in appended_frames):
+                listObj.append({'frame_idx': frame, 'frame_data': [RECORDS[max(frame - first_frame_idx - 1, 0)]]})
+        self.load_objects_to_json(listObj)
+        self.calc_trajectory_when_open_video()
+        self.main_video_frames_slider_changed()
+      
     def interpolate(self, id, only_edited = False):
-        only_missed = not only_edited
+        if only_edited:
+            self.interpolate_ONLYedited(id)
+            return
         
         first_frame_idx = -1
         last_frame_idx = -1
@@ -1577,7 +1775,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.main_video_frames_slider_changed()
     
     def scaleMENU(self, item=None):
-        
+        self.update_current_frame_annotation()
         if item and not isinstance(item, LabelListWidgetItem):
             raise TypeError("item must be LabelListWidgetItem type")
         if not self.canvas.editing():
@@ -1613,7 +1811,6 @@ class MainWindow(QtWidgets.QMainWindow):
         if shape.group_id is None:
             item.setText(shape.label)
         else:
-            item.setText(f' ID {shape.group_id}: {shape.label}')
             
             shape = self.convert_qt_shapes_to_shapes([shape])[0]
             tracker_id = shape['group_id']
@@ -3794,27 +3991,33 @@ class MainWindow(QtWidgets.QMainWindow):
         loop.exec_()
 
     def traj_checkBox_changed(self):
+        self.update_current_frame_annotation()
         self.CURRENT_ANNOATAION_FLAGS["traj"] = self.traj_checkBox.isChecked()
         self.main_video_frames_slider_changed()
 
     def mask_checkBox_changed(self):
+        self.update_current_frame_annotation()
         self.CURRENT_ANNOATAION_FLAGS["mask"] = self.mask_checkBox.isChecked()
         self.main_video_frames_slider_changed()
 
     def class_checkBox_changed(self):
+        self.update_current_frame_annotation()
         self.CURRENT_ANNOATAION_FLAGS["class"] = self.class_checkBox.isChecked(
         )
         self.main_video_frames_slider_changed()
 
     def id_checkBox_changed(self):
+        self.update_current_frame_annotation()
         self.CURRENT_ANNOATAION_FLAGS["id"] = self.id_checkBox.isChecked()
         self.main_video_frames_slider_changed()
 
     def bbox_checkBox_changed(self):
+        self.update_current_frame_annotation()
         self.CURRENT_ANNOATAION_FLAGS["bbox"] = self.bbox_checkBox.isChecked()
         self.main_video_frames_slider_changed()
 
     def polygons_visable_checkBox_changed(self):
+        self.update_current_frame_annotation()
         self.CURRENT_ANNOATAION_FLAGS["polygons"] = self.polygons_visable_checkBox.isChecked(
         )
         for shape in self.canvas.shapes:
@@ -3822,6 +4025,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 shape, self.CURRENT_ANNOATAION_FLAGS["polygons"])
 
     def export_as_video_button_clicked(self):
+        self.update_current_frame_annotation()
         json_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}_tracking_results.json'
         input_video_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}.mp4'
         output_video_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}_tracking_results.mp4'
