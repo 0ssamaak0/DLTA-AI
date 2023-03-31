@@ -1249,6 +1249,7 @@ class MainWindow(QtWidgets.QMainWindow):
         
         shape_id = QtWidgets.QSpinBox()
         shape_id.setMinimum(1)
+        shape_id.setMaximum(1000000)
         shape_id.valueChanged.connect(lambda: existing.toggle())
         
         if self.config['creationDefault'] == 'Create new shape (ie. not detected before)':
@@ -1386,7 +1387,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if shape.group_id is None:
             item.setText(shape.label)
         else:
-            item.setText(f' ID {shape.group_id}: {shape.label}')
+            
             ###########################################################
             all_frames = False
             only_this_frame = False
@@ -1508,7 +1509,6 @@ class MainWindow(QtWidgets.QMainWindow):
         if shape.group_id is None:
             item.setText(shape.label)
         else:
-            item.setText(f' ID {shape.group_id}: {shape.label}')
             ###########################################################
             dialog = QtWidgets.QDialog()
             dialog.setWindowTitle("Choose Interpolation Options")
@@ -1588,14 +1588,13 @@ class MainWindow(QtWidgets.QMainWindow):
         if shape.group_id is None:
             item.setText(shape.label)
         else:
-            item.setText(f' ID {shape.group_id}: {shape.label}')
             id = shape.group_id
             try:
                 self.key_frames['id_' + str(id)].append(self.INDEX_OF_CURRENT_FRAME)
             except:
                 self.key_frames['id_' + str(id)] = [self.INDEX_OF_CURRENT_FRAME]
             print(self.key_frames)
-            
+            self.main_video_frames_slider_changed()
         self.setDirty()
         if not self.uniqLabelList.findItemsByLabel(shape.label):
             item = QtWidgets.QListWidgetItem()
@@ -1808,7 +1807,6 @@ class MainWindow(QtWidgets.QMainWindow):
         if shape.group_id is None:
             item.setText(shape.label)
         else:
-            item.setText(f' ID {shape.group_id}: {shape.label}')
             
             shape = self.convert_qt_shapes_to_shapes([shape])[0]
             tracker_id = shape['group_id']
