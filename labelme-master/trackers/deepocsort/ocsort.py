@@ -14,7 +14,7 @@ import numpy as np
 from .association import *
 from .embedding import EmbeddingComputer
 from .cmc import CMCComputer
-from reid_multibackend import ReIDDetectMultiBackend
+from .reid_multibackend import ReIDDetectMultiBackend
 
 
 def k_previous_obs(observations, cur_age, k):
