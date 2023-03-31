@@ -1427,7 +1427,8 @@ class MainWindow(QtWidgets.QMainWindow):
             
             listObj = self.load_objects_from_json()
             for i in range(len(listObj)):
-                if only_this_frame and listObj[i]['frame_idx'] != self.INDEX_OF_CURRENT_FRAME:
+                listObjframe = listObj[i]['frame_idx']
+                if only_this_frame and listObjframe != self.INDEX_OF_CURRENT_FRAME:
                     continue
                 for object_ in listObj[i]['frame_data']:
                     if object_['tracker_id'] == new_group_id:
@@ -1436,13 +1437,27 @@ class MainWindow(QtWidgets.QMainWindow):
                         object_['confidence'] = 1.0
                         object_['class_id'] = coco_classes.index(shape.label) if shape.label in coco_classes else -1
                         listObj[i]['frame_data'].append(object_)
-                    if object_['tracker_id'] == old_group_id:
+                        
+                    elif object_['tracker_id'] == old_group_id:
                         listObj[i]['frame_data'].remove(object_)
                         object_['class_name'] = shape.label
                         object_['confidence'] = 1.0
                         object_['class_id'] = coco_classes.index(shape.label) if shape.label in coco_classes else -1
                         object_['tracker_id'] = new_group_id
                         listObj[i]['frame_data'].append(object_)
+                
+                sum = 0
+                for object_ in listObj[i]['frame_data']:
+                    if object_['tracker_id'] == new_group_id:
+                        sum += 1
+                        if sum > 1:
+                            msg = QtWidgets.QMessageBox()
+                            msg.setIcon(QtWidgets.QMessageBox.Information)
+                            msg.setText(f"Two shapes with the same ID exists in at least one frame.\nApparantly, a shape with ID ({new_group_id}) already exists with another shape with ID ({old_group_id}) like in frame ({listObjframe}) and the edit will result in two shapes with the same ID ({new_group_id}).\n\n The edit is NOT performed.")
+                            msg.setWindowTitle("ID already exists")
+                            msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
+                            msg.exec_()
+                            return
                     
                         
             listObj = sorted(listObj, key=lambda k: k['frame_idx'])
