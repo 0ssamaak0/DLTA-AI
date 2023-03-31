@@ -4296,7 +4296,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.frames_to_track_slider.setTickPosition(
             QtWidgets.QSlider.TicksBelow)
         self.frames_to_track_slider.setTickInterval(1)
-        self.frames_to_track_slider.setMaximumWidth(200)
+        self.frames_to_track_slider.setMaximumWidth(400)
         self.frames_to_track_slider.valueChanged.connect(
             self.frames_to_track_slider_changed)
 
@@ -4336,12 +4336,24 @@ class MainWindow(QtWidgets.QMainWindow):
         self.videoControls_2.addWidget(self.tracking_progress_bar_label)
 
         self.tracking_progress_bar = QtWidgets.QProgressBar()
-        self.tracking_progress_bar.setMaximumWidth(200)
+        self.tracking_progress_bar.setMaximumWidth(300)
         self.tracking_progress_bar.setMinimum(0)
         self.tracking_progress_bar.setMaximum(100)
         self.tracking_progress_bar.setValue(0)
         self.videoControls_2.addWidget(self.tracking_progress_bar)
 
+
+        # add export as video button
+        self.export_as_video_button = QtWidgets.QPushButton()
+        self.export_as_video_button.setStyleSheet(
+            self.buttons_text_style_sheet)
+
+        self.export_as_video_button.setText("Export as video")
+        self.export_as_video_button.clicked.connect(
+            self.export_as_video_button_clicked)
+        self.videoControls_3.addWidget(self.export_as_video_button)
+        
+        
         # add 5 checkboxes to control the CURRENT ANNOATAION FLAGS including (bbox , id , class , mask , traj)
         self.bbox_checkBox = QtWidgets.QCheckBox()
         self.bbox_checkBox.setText("bbox")
@@ -4368,7 +4380,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.videoControls_3.addWidget(self.mask_checkBox)
 
         self.traj_checkBox = QtWidgets.QCheckBox()
-        self.traj_checkBox.setText("traj")
+        self.traj_checkBox.setText("trajectories")
         self.traj_checkBox.setChecked(False)
         self.traj_checkBox.stateChanged.connect(self.traj_checkBox_changed)
         self.videoControls_3.addWidget(self.traj_checkBox)
@@ -4399,18 +4411,10 @@ class MainWindow(QtWidgets.QMainWindow):
             "Update current frame")
         self.update_current_frame_annotation_button.clicked.connect(
             self.update_current_frame_annotation_button_clicked)
-        self.videoControls_3.addWidget(
+        self.videoControls_2.addWidget(
             self.update_current_frame_annotation_button)
 
-        # add export as video button
-        self.export_as_video_button = QtWidgets.QPushButton()
-        self.export_as_video_button.setStyleSheet(
-            self.buttons_text_style_sheet)
-
-        self.export_as_video_button.setText("Export as video")
-        self.export_as_video_button.clicked.connect(
-            self.export_as_video_button_clicked)
-        self.videoControls_3.addWidget(self.export_as_video_button)
+        
 
 
         # add a button to clear all video annotations
