@@ -269,7 +269,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.CURRENT_SHAPES_IN_IMG = []
         self.config = {'deleteDefault' : "this frame only", 
                        'interpolationDefault' : "interpolate only missed frames between detected frames",
-                       'creationDefault' : "Create new shape (ie. not detected before)"}
+                       'creationDefault' : "Create new shape (ie. not detected before)",
+                       'EditDefault' : "Edit only this frame"}
         self.key_frames = {}
         # make CLASS_NAMES_DICT a dictionary of coco class names
         # self.CLASS_NAMES_DICT =
@@ -1387,8 +1388,47 @@ class MainWindow(QtWidgets.QMainWindow):
         else:
             item.setText(f' ID {shape.group_id}: {shape.label}')
             ###########################################################
+            all_frames = False
+            only_this_frame = False
+            if old_group_id != new_group_id:
+                dialog = QtWidgets.QDialog()
+                dialog.setWindowTitle("Choose Edit Options")
+                dialog.setWindowModality(Qt.ApplicationModal)
+                dialog.resize(250, 100)
+
+                layout = QtWidgets.QVBoxLayout()
+
+                label = QtWidgets.QLabel("Choose Edit Options")
+                layout.addWidget(label)
+
+                only = QtWidgets.QRadioButton("Edit only this frame")
+                all  = QtWidgets.QRadioButton("Edit all frames with this ID")
+                
+                if self.config['EditDefault'] == 'Edit only this frame':
+                    only.toggle()
+                if self.config['EditDefault'] == 'Edit all frames with this ID':
+                    all.toggle()
+                
+                only.toggled.connect(lambda: self.config.update({'EditDefault': 'Edit only this frame'}))
+                all.toggled.connect(lambda: self.config.update({'EditDefault': 'Edit all frames with this ID'}))
+                
+                layout.addWidget(only)
+                layout.addWidget(all)
+
+                buttonBox = QtWidgets.QDialogButtonBox(
+                    QtWidgets.QDialogButtonBox.Ok)
+                buttonBox.accepted.connect(dialog.accept)
+                layout.addWidget(buttonBox)
+                dialog.setLayout(layout)
+                result = dialog.exec_()
+                if result == QtWidgets.QDialog.Accepted:
+                    all_frames = True if self.config['EditDefault'] == 'Edit all frames with this ID' else False
+                    only_this_frame = True if self.config['EditDefault'] == 'Edit only this frame' else False
+            
             listObj = self.load_objects_from_json()
             for i in range(len(listObj)):
+                if only_this_frame and listObj[i]['frame_idx'] != self.INDEX_OF_CURRENT_FRAME:
+                    continue
                 for object_ in listObj[i]['frame_data']:
                     if object_['tracker_id'] == new_group_id:
                         listObj[i]['frame_data'].remove(object_)
