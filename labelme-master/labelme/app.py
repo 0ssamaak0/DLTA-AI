@@ -75,11 +75,13 @@ conf_thres=0.25  # confidence threshold
 iou_thres=0.45  # NMS IOU threshold
 max_det=1000 # maximum detections per image
 device = select_device('0')
+
 # tracking_method = 'bytetrack'
 tracking_method = 'strongsort'
 # tracking_method = 'deepocsort'
 # tracking_method = 'ocsort'
 # tracking_method = 'botsort'
+
 tracking_config = f'trackers/{tracking_method}/configs/{tracking_method}.yaml'
 reid_weights = Path('osnet_x1_0_msmt17.pt')
 # reid_weights = Path('osnet_ms_d_c.pth.tar')
@@ -3685,20 +3687,26 @@ class MainWindow(QtWidgets.QMainWindow):
         # then save the tracked detection in a json file named (video_name_tracking_results.json)
         existing_annotation = False
         shapes = self.canvas.shapes
+        tracks_to_follow = None
         if len(shapes) > 0:
             existing_annotation = True
             print(f'FRAME{self.INDEX_OF_CURRENT_FRAME}' , len(shapes))
+            tracks_to_follow = []
             for shape in shapes:
                 print(shape.label)
-
+                if shape.group_id != None:
+                    tracks_to_follow.append(int(shape.group_id))
+                
+        print(f'track_to_follow = {tracks_to_follow}')
+        
         self.TrackingMode = True
-        tracks_to_follow = None
         bs = 1
         curr_frame, prev_frame = None, None
 
         for i in range(self.FRAMES_TO_TRACK):
             
-            if existing_annotation:
+            if existing_annotation: 
+                existing_annotation = False
                 print('\n\n\n\n\nloading existing annotation\n\n')
                 shapes = self.canvas.shapes
                 shapes = self.convert_qt_shapes_to_shapes(shapes)
@@ -3751,6 +3759,7 @@ class MainWindow(QtWidgets.QMainWindow):
             boxes = torch.from_numpy(detections.xyxy)
             confidences = torch.from_numpy(detections.confidence)
             class_ids = torch.from_numpy(detections.class_id)
+            
             dets = torch.cat((boxes , confidences.unsqueeze(1) , class_ids.unsqueeze(1)) , dim=1).cpu()
 
 
@@ -3864,19 +3873,19 @@ class MainWindow(QtWidgets.QMainWindow):
             #     shape_["group_id"] = tracker_id[a]
             self.CURRENT_SHAPES_IN_IMG = [
                 shape_ for shape_ in shapes if shape_["group_id"] is not None]
-            # mask = np.array(
-            #     [tracker_id is not None for tracker_id in detections.tracker_id], dtype=bool)
-            # detections.filter(mask=mask, inplace=True)
-            detections.tracker_id = np.array(
-                [shape_["group_id"] for shape_ in self.CURRENT_SHAPES_IN_IMG])
-            if i == 0 and existing_annotation:
-                tracks_to_follow = detections.tracker_id
-                existing_annotation = False
-
-            # if it is first iteration of the for loop and self.TRACK_ASSIGNED_OBJECTS_ONLY is True we mask both detections and shapes with tracks_to_follow
+            
             if self.TRACK_ASSIGNED_OBJECTS_ONLY and tracks_to_follow is not None:
                 self.CURRENT_SHAPES_IN_IMG = [
                     shape_ for shape_ in shapes if shape_["group_id"] in tracks_to_follow]
+            # mask = np.array(
+            #     [tracker_id is not None for tracker_id in detections.tracker_id], dtype=bool)
+            # detections.filter(mask=mask, inplace=True)
+            # detections.tracker_id = np.array(
+            #     [shape_["group_id"] for shape_ in self.CURRENT_SHAPES_IN_IMG])
+            # if i == 0 and existing_annotation:
+            #     tracks_to_follow = detections.tracker_id
+            #     existing_annotation = False
+            # if it is first iteration of the for loop and self.TRACK_ASSIGNED_OBJECTS_ONLY is True we mask both detections and shapes with tracks_to_follow
                 # mask = np.array(
                 #     [tracker_id in tracks_to_follow for tracker_id in detections.tracker_id], dtype=bool)
                 # detections.filter(mask=mask, inplace=True)
@@ -3889,14 +3898,14 @@ class MainWindow(QtWidgets.QMainWindow):
             json_frame = {}
             json_frame.update({'frame_idx' : self.INDEX_OF_CURRENT_FRAME})
             json_frame_object_list = []
-            for j in range(len(shapes)):
+            for shape in  self.CURRENT_SHAPES_IN_IMG:
                 json_tracked_object = {}
-                json_tracked_object['tracker_id'] = shapes[j]["group_id"]
-                json_tracked_object['bbox'] = shapes[j]["bbox"]
-                json_tracked_object['confidence'] = shapes[j]["content"]
-                json_tracked_object['class_name'] = shapes[j]["label"]
-                json_tracked_object['class_id'] = coco_classes.index(shapes[j]["label"])
-                points = shapes[j]["points"]
+                json_tracked_object['tracker_id'] = shape["group_id"]
+                json_tracked_object['bbox'] =shape["bbox"]
+                json_tracked_object['confidence'] = shape["content"]
+                json_tracked_object['class_name'] = shape["label"]
+                json_tracked_object['class_id'] = coco_classes.index(shape["label"])
+                points = shape["points"]
                 segment = [[int(points[z]), int(points[z + 1])]
                            for z in range(0, len(points), 2)]
                 json_tracked_object['segment'] = segment
@@ -3980,6 +3989,12 @@ class MainWindow(QtWidgets.QMainWindow):
                 pass
         self.videoControls_2.setVisible(visible)
         for widget in self.videoControls_2.children():
+            try:
+                widget.setVisible(visible)
+            except:
+                pass
+        self.videoControls_3.setVisible(visible)
+        for widget in self.videoControls_3.children():
             try:
                 widget.setVisible(visible)
             except:
@@ -4176,6 +4191,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.videoControls.setStyleSheet(
             "QToolBar#videoControls { border: 50px }")
         self.addToolBar(Qt.BottomToolBarArea, self.videoControls)
+        
         self.videoControls_2 = QtWidgets.QToolBar()
         self.videoControls_2.setMovable(True)
         self.videoControls_2.setFloatable(True)
@@ -4183,6 +4199,14 @@ class MainWindow(QtWidgets.QMainWindow):
         self.videoControls_2.setStyleSheet(
             "QToolBar#videoControls_2s { border: 50px }")
         self.addToolBar(Qt.TopToolBarArea, self.videoControls_2)
+        
+        self.videoControls_3 = QtWidgets.QToolBar()
+        self.videoControls_3.setMovable(True)
+        self.videoControls_3.setFloatable(True)
+        self.videoControls_3.setObjectName("videoControls_2")
+        self.videoControls_3.setStyleSheet(
+            "QToolBar#videoControls_2s { border: 50px }")
+        self.addToolBar(Qt.TopToolBarArea, self.videoControls_3)
 
         self.frames_to_skip_slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
         self.frames_to_skip_slider.setMinimum(1)
@@ -4323,31 +4347,31 @@ class MainWindow(QtWidgets.QMainWindow):
         self.bbox_checkBox.setText("bbox")
         self.bbox_checkBox.setChecked(True)
         self.bbox_checkBox.stateChanged.connect(self.bbox_checkBox_changed)
-        self.videoControls_2.addWidget(self.bbox_checkBox)
+        self.videoControls_3.addWidget(self.bbox_checkBox)
 
         self.id_checkBox = QtWidgets.QCheckBox()
         self.id_checkBox.setText("id")
         self.id_checkBox.setChecked(True)
         self.id_checkBox.stateChanged.connect(self.id_checkBox_changed)
-        self.videoControls_2.addWidget(self.id_checkBox)
+        self.videoControls_3.addWidget(self.id_checkBox)
 
         self.class_checkBox = QtWidgets.QCheckBox()
         self.class_checkBox.setText("class")
         self.class_checkBox.setChecked(True)
         self.class_checkBox.stateChanged.connect(self.class_checkBox_changed)
-        self.videoControls_2.addWidget(self.class_checkBox)
+        self.videoControls_3.addWidget(self.class_checkBox)
 
         self.mask_checkBox = QtWidgets.QCheckBox()
         self.mask_checkBox.setText("mask")
         self.mask_checkBox.setChecked(True)
         self.mask_checkBox.stateChanged.connect(self.mask_checkBox_changed)
-        self.videoControls_2.addWidget(self.mask_checkBox)
+        self.videoControls_3.addWidget(self.mask_checkBox)
 
         self.traj_checkBox = QtWidgets.QCheckBox()
         self.traj_checkBox.setText("traj")
         self.traj_checkBox.setChecked(False)
         self.traj_checkBox.stateChanged.connect(self.traj_checkBox_changed)
-        self.videoControls_2.addWidget(self.traj_checkBox)
+        self.videoControls_3.addWidget(self.traj_checkBox)
         
         # make qlineedit to alter the  self.CURRENT_ANNOATAION_TRAJECTORIES['length']  value
         self.trajectory_length_lineEdit = QtWidgets.QLineEdit()
@@ -4355,7 +4379,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.trajectory_length_lineEdit.setMaximumWidth(50)
         self.trajectory_length_lineEdit.editingFinished.connect(self.trajectory_length_lineEdit_changed)
         
-        self.videoControls_2.addWidget(self.trajectory_length_lineEdit)
+        self.videoControls_3.addWidget(self.trajectory_length_lineEdit)
         
         
         
@@ -4364,7 +4388,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.polygons_visable_checkBox.setChecked(True)
         self.polygons_visable_checkBox.stateChanged.connect(
             self.polygons_visable_checkBox_changed)
-        self.videoControls_2.addWidget(self.polygons_visable_checkBox)
+        self.videoControls_3.addWidget(self.polygons_visable_checkBox)
 
         # save current frame
         self.update_current_frame_annotation_button = QtWidgets.QPushButton()
@@ -4375,7 +4399,7 @@ class MainWindow(QtWidgets.QMainWindow):
             "Update current frame")
         self.update_current_frame_annotation_button.clicked.connect(
             self.update_current_frame_annotation_button_clicked)
-        self.videoControls_2.addWidget(
+        self.videoControls_3.addWidget(
             self.update_current_frame_annotation_button)
 
         # add export as video button
@@ -4386,7 +4410,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.export_as_video_button.setText("Export as video")
         self.export_as_video_button.clicked.connect(
             self.export_as_video_button_clicked)
-        self.videoControls_2.addWidget(self.export_as_video_button)
+        self.videoControls_3.addWidget(self.export_as_video_button)
+
 
         # add a button to clear all video annotations
 
