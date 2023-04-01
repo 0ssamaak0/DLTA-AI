@@ -3676,7 +3676,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def track_assigned_objects_button_clicked(self):
         # first check if there is objects in self.canvas.shapes list or not . if not then output a error message and return
-        if len(self.canvas.shapes) == 0:
+        if len(self.labelList.selectedItems()) == 0:
             self.errorMessage(
                 "found No objects to track",
                 "you need to assign at least one object to track",
@@ -3918,6 +3918,13 @@ class MainWindow(QtWidgets.QMainWindow):
                 shape_ for shape_ in shapes if shape_["group_id"] is not None]
             
             if self.TRACK_ASSIGNED_OBJECTS_ONLY and tracks_to_follow is not None:
+                if len(self.labelList.selectedItems()) != 0:
+                    tracks_to_follow = []
+                    for item in self.labelList.selectedItems():
+                        x = item.text()
+                        i1, i2 = x.find('D'), x.find(':')
+                        tracks_to_follow.append(int(x[i1 + 2:i2]))
+                print(f'tracks_to_follow = {tracks_to_follow}------------------------------------------------------')
                 self.CURRENT_SHAPES_IN_IMG = [
                     shape_ for shape_ in shapes if shape_["group_id"] in tracks_to_follow]
             # mask = np.array(
