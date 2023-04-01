@@ -816,7 +816,8 @@ class MainWindow(QtWidgets.QMainWindow):
             intelligence=self.menu(self.tr("&Auto Annotation")),
             # help=self.menu(self.tr("&Help")),
             recentFiles=QtWidgets.QMenu(self.tr("Open &Recent")),
-            saved_models=QtWidgets.QMenu(self.tr("Select model")),
+            saved_models   =QtWidgets.QMenu(self.tr("Select model")),
+            tracking_models=QtWidgets.QMenu(self.tr("Select tracking model")),
             labelList=labelMenu,
         )
 
@@ -845,6 +846,7 @@ class MainWindow(QtWidgets.QMainWindow):
                           annotate_batch_action,
                           set_threshold ,
                           self.menus.saved_models,
+                          self.menus.tracking_models,
                           )
                          )
         # add one for the select classes action
@@ -1222,6 +1224,46 @@ class MainWindow(QtWidgets.QMainWindow):
                     self.change_curr_model, model_name))
                 menu.addAction(action)
                 i += 1
+                
+        self.add_tracking_models_menu()
+        
+    def add_tracking_models_menu(self):
+        menu2 = self.menus.tracking_models
+        menu2.clear()
+        
+        icon = utils.newIcon("labels")
+        action = QtWidgets.QAction(
+            icon, "1 Byte track", self)
+        action.triggered.connect(lambda: self.update_tracking_method('bytetrack'))
+        menu2.addAction(action)
+        
+        icon = utils.newIcon("labels")
+        action = QtWidgets.QAction(
+            icon, "2 Strong SORT", self)
+        action.triggered.connect(lambda: self.update_tracking_method('strongsort'))
+        menu2.addAction(action)
+        
+        icon = utils.newIcon("labels")
+        action = QtWidgets.QAction(
+            icon, "3 Deep SORT", self)
+        action.triggered.connect(lambda: self.update_tracking_method('deepsort'))
+        menu2.addAction(action)
+        
+        icon = utils.newIcon("labels")
+        action = QtWidgets.QAction(
+            icon, "4 OC SORT", self)
+        action.triggered.connect(lambda: self.update_tracking_method('ocsort'))
+        menu2.addAction(action)
+        
+        icon = utils.newIcon("labels")
+        action = QtWidgets.QAction(
+            icon, "5 BoT SORT", self)
+        action.triggered.connect(lambda: self.update_tracking_method('botsort'))
+        menu2.addAction(action)
+        
+    def update_tracking_method(self, method):
+        global tracking_method 
+        tracking_method = method
 
     def popLabelListMenu(self, point):
         self.menus.labelList.exec_(self.labelList.mapToGlobal(point))
@@ -3646,6 +3688,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.TRACK_ASSIGNED_OBJECTS_ONLY = False
 
     def track_buttonClicked(self):
+        print(tracking_method)
         self.tracking_progress_bar.setVisible(True)
         self.actions.export.setEnabled(True)
         frame_shape = self.CURRENT_FRAME_IMAGE.shape
