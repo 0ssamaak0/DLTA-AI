@@ -1353,7 +1353,11 @@ class MainWindow(QtWidgets.QMainWindow):
         shape = None
         
         if prev_shape is None and next_shape is None:
-            print("No shape found with that ID")
+            msg = QtWidgets.QMessageBox()
+            msg.setIcon(QtWidgets.QMessageBox.Information)
+            msg.setText("No shape found with that ID")
+            msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
+            msg.exec_()
             return
         elif prev_shape is None:
             shape = next_shape
@@ -1600,7 +1604,6 @@ class MainWindow(QtWidgets.QMainWindow):
             if result == QtWidgets.QDialog.Accepted:
                 only_edited = True if self.config['interpolationDefault'] == 'interpolate all frames between your KEY frames' else False
                 self.interpolate(id = shape.group_id, only_edited = only_edited)
-                print(self.config['interpolationDefault'])
             ###########################################################
         self.setDirty()
         if not self.uniqLabelList.findItemsByLabel(shape.label):
@@ -1650,7 +1653,6 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.key_frames['id_' + str(id)].append(self.INDEX_OF_CURRENT_FRAME)
             except:
                 self.key_frames['id_' + str(id)] = [self.INDEX_OF_CURRENT_FRAME]
-            print(self.key_frames)
             self.main_video_frames_slider_changed()
         self.setDirty()
         if not self.uniqLabelList.findItemsByLabel(shape.label):
@@ -1676,7 +1678,6 @@ class MainWindow(QtWidgets.QMainWindow):
                         listObj[i]['frame_data'].remove(object_)
                         break
                     records[listobjframe - first_frame_idx] = object_
-                    print('recording frame: ', listobjframe)
                     break
         records_org = records.copy()
         
@@ -2077,10 +2078,13 @@ class MainWindow(QtWidgets.QMainWindow):
         return [int(sumX / len(points)), int(sumY / len(points))]
         
     def load_objects_from_json(self):
+        listObj = [{'frame_idx': i + 1, 'frame_data': []} for i in range(self.TOTAL_VIDEO_FRAMES)]
         json_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}_tracking_results.json'
         if not os.path.exists(json_file_name):
             with open(json_file_name, 'w') as jf:
-                json.dump([], jf)
+                json.dump(listObj, jf ,
+                    indent=4,
+                    separators=(',', ': '))
             jf.close()
         with open(json_file_name, 'r') as jf:
             listObj = json.load(jf)
@@ -3143,7 +3147,6 @@ class MainWindow(QtWidgets.QMainWindow):
             dialog.setLayout(layout)
             result = dialog.exec_()
             if result == QtWidgets.QDialog.Accepted:
-                print(self.config['deleteDefault'])
                 for deleted_id in deleted_ids:
                     self.delete_ids_from_all_frames([deleted_id], mode = self.config['deleteDefault'], from_frame = from_frame.value(), to_frame = to_frame.value())
                 self.main_video_frames_slider_changed()
@@ -3443,6 +3446,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.CURRENT_ANNOATAION_TRAJECTORIES.clear() 
         self.CURRENT_ANNOATAION_TRAJECTORIES['length'] = length_Value
         self.CURRENT_ANNOATAION_TRAJECTORIES['alpha'] = alpha_Value
+        
         self.config['toolMode'] = "video"
         self.right_click_menu()
         
@@ -3727,7 +3731,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.TRACK_ASSIGNED_OBJECTS_ONLY = False
 
     def track_buttonClicked(self):
-        print(tracking_method)
         self.tracking_progress_bar.setVisible(True)
         self.actions.export.setEnabled(True)
         frame_shape = self.CURRENT_FRAME_IMAGE.shape
@@ -3963,7 +3966,6 @@ class MainWindow(QtWidgets.QMainWindow):
                         x = item.text()
                         i1, i2 = x.find('D'), x.find(':')
                         tracks_to_follow.append(int(x[i1 + 2:i2]))
-                print(f'tracks_to_follow = {tracks_to_follow}------------------------------------------------------')
                 self.CURRENT_SHAPES_IN_IMG = [
                     shape_ for shape_ in shapes if shape_["group_id"] in tracks_to_follow]
             # mask = np.array(
