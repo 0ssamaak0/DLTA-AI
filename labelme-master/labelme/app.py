@@ -4304,7 +4304,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.frames_to_skip_slider.setTickPosition(
             QtWidgets.QSlider.TicksBelow)
         self.frames_to_skip_slider.setTickInterval(1)
-        self.frames_to_skip_slider.setMaximumWidth(150)
+        self.frames_to_skip_slider.setMaximumWidth(250)
         self.frames_to_skip_slider.valueChanged.connect(
             self.frames_to_skip_slider_changed)
         self.frames_to_skip_label = QtWidgets.QLabel()
@@ -4352,7 +4352,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.main_video_frames_slider.setTickPosition(
             QtWidgets.QSlider.TicksBelow)
         self.main_video_frames_slider.setTickInterval(1)
-        self.main_video_frames_slider.setMaximumWidth(750)
+        self.main_video_frames_slider.setMaximumWidth(1000)
         self.main_video_frames_slider.valueChanged.connect(
             self.main_video_frames_slider_changed)
         self.main_video_frames_label_1 = QtWidgets.QLabel()
@@ -4367,13 +4367,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.videoControls.addWidget(self.main_video_frames_slider)
         self.videoControls.addWidget(self.main_video_frames_label_2)
 
-        self.clear_video_annotations_button = QtWidgets.QPushButton()
-        self.clear_video_annotations_button.setStyleSheet(
-            self.buttons_text_style_sheet)
-        self.clear_video_annotations_button.setText("Clear Video Annotations")
-        self.clear_video_annotations_button.clicked.connect(
-            self.clear_video_annotations_button_clicked)
-        self.videoControls.addWidget(self.clear_video_annotations_button)
+        
 
         # now we start the videocontrols_2 toolbar widgets
 
@@ -4430,6 +4424,27 @@ class MainWindow(QtWidgets.QMainWindow):
         self.tracking_progress_bar.setMaximum(100)
         self.tracking_progress_bar.setValue(0)
         self.videoControls_2.addWidget(self.tracking_progress_bar)
+        
+        # save current frame
+        self.update_current_frame_annotation_button = QtWidgets.QPushButton()
+        self.update_current_frame_annotation_button.setStyleSheet(
+            self.buttons_text_style_sheet)
+
+        self.update_current_frame_annotation_button.setText(
+            "Update current frame")
+        self.update_current_frame_annotation_button.clicked.connect(
+            self.update_current_frame_annotation_button_clicked)
+        self.videoControls_2.addWidget(
+            self.update_current_frame_annotation_button)
+        
+        # add a button to clear all video annotations
+        self.clear_video_annotations_button = QtWidgets.QPushButton()
+        self.clear_video_annotations_button.setStyleSheet(
+            self.buttons_text_style_sheet)
+        self.clear_video_annotations_button.setText("Clear Video Annotations")
+        self.clear_video_annotations_button.clicked.connect(
+            self.clear_video_annotations_button_clicked)
+        self.videoControls_2.addWidget(self.clear_video_annotations_button)
 
 
         # add export as video button
@@ -4491,17 +4506,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.polygons_visable_checkBox_changed)
         self.videoControls_3.addWidget(self.polygons_visable_checkBox)
 
-        # save current frame
-        self.update_current_frame_annotation_button = QtWidgets.QPushButton()
-        self.update_current_frame_annotation_button.setStyleSheet(
-            self.buttons_text_style_sheet)
-
-        self.update_current_frame_annotation_button.setText(
-            "Update current frame")
-        self.update_current_frame_annotation_button.clicked.connect(
-            self.update_current_frame_annotation_button_clicked)
-        self.videoControls_2.addWidget(
-            self.update_current_frame_annotation_button)
+        
 
         
 
