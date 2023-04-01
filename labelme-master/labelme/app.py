@@ -276,7 +276,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.config = {'deleteDefault' : "this frame only", 
                        'interpolationDefault' : "interpolate only missed frames between detected frames",
                        'creationDefault' : "Create new shape (ie. not detected before)",
-                       'EditDefault' : "Edit only this frame"}
+                       'EditDefault' : "Edit only this frame",
+                       'toolMode' : 'video'}
         self.key_frames = {}
         # make CLASS_NAMES_DICT a dictionary of coco class names
         # self.CLASS_NAMES_DICT =
@@ -1281,7 +1282,13 @@ class MainWindow(QtWidgets.QMainWindow):
         return False
 
     def createMode_options(self):
+        
+        if self.config['toolMode'] == 'image':
+            self.toggleDrawMode(False, createMode="polygon")
+            return
+        
         self.update_current_frame_annotation()
+        
         dialog = QtWidgets.QDialog()
         dialog.setWindowTitle("Choose Creation Options")
         dialog.setWindowModality(Qt.ApplicationModal)
@@ -1435,7 +1442,14 @@ class MainWindow(QtWidgets.QMainWindow):
         if shape.group_id is None:
             item.setText(shape.label)
         else:
-            # item.setText(f' ID {shape.group_id}: {shape.label}')
+            if self.config['toolMode'] == 'image':
+                item.setText(f' ID {shape.group_id}: {shape.label}')
+                self.setDirty()
+                if not self.uniqLabelList.findItemsByLabel(shape.label):
+                    item = QtWidgets.QListWidgetItem()
+                    item.setData(Qt.UserRole, shape.label)
+                    self.uniqLabelList.addItem(item)
+                return
             ###########################################################
             all_frames = False
             only_this_frame = False
@@ -1514,11 +1528,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self.calc_trajectory_when_open_video()
             self.main_video_frames_slider_changed()
             ###########################################################
-        self.setDirty()
-        if not self.uniqLabelList.findItemsByLabel(shape.label):
-            item = QtWidgets.QListWidgetItem()
-            item.setData(Qt.UserRole, shape.label)
-            self.uniqLabelList.addItem(item)
             
     def interpolateMENU(self, item=None):
         self.update_current_frame_annotation()
@@ -2757,8 +2766,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self._config["keep_prev"] = keep_prev
 
     def openFile(self, _value=False):
-        
-        self.right_click_menu("image")
+        self.config['toolMode'] = 'image'
+        self.right_click_menu()
         
         self.current_annotation_mode = "img"
         self.actions.export.setEnabled(False)
@@ -3195,8 +3204,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setDirty()
 
     def openDirDialog(self, _value=False, dirpath=None):
-        
-        self.right_click_menu("image")
+        self.config['toolMode'] = 'image'
+        self.right_click_menu()
         
         
         self.current_annotation_mode = "dir"
@@ -3406,7 +3415,8 @@ class MainWindow(QtWidgets.QMainWindow):
                     self.CURRENT_ANNOATAION_TRAJECTORIES['id_' + str(id)] = centers_rec
                     self.CURRENT_ANNOATAION_TRAJECTORIES['id_color_' +str(id)] = color
         
-    def right_click_menu(self, mode):
+    def right_click_menu(self):
+        mode = self.config['toolMode']
         video_menu = True if mode == "video" else False
         image_menu = True if mode == "image" else False
         self.actions.menu[0].setVisible(True)
@@ -3433,8 +3443,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.CURRENT_ANNOATAION_TRAJECTORIES.clear() 
         self.CURRENT_ANNOATAION_TRAJECTORIES['length'] = length_Value
         self.CURRENT_ANNOATAION_TRAJECTORIES['alpha'] = alpha_Value
-        
-        self.right_click_menu("video")
+        self.config['toolMode'] = "video"
+        self.right_click_menu()
         
         for shape in self.canvas.shapes:
             self.canvas.deleteShape(shape)
