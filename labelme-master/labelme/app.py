@@ -4542,6 +4542,17 @@ class MainWindow(QtWidgets.QMainWindow):
         if self.CURRENT_ANNOATAION_FLAGS['bbox']:
             image = cv2.rectangle(
                 image, (x, y), (x + w, y + h), color, thickness + 1)
+            if (False):
+                thick = 5
+                colorx = (236, 199, 113)
+                image = cv2.line(image, (x, y),(x + 20, y), colorx, thickness + 1 + thick)
+                image = cv2.line(image, (x, y),(x, y + 20), colorx, thickness + 1 + thick)
+                image = cv2.line(image, (x + w, y),(x + w - 20, y), colorx, thickness + 1 + thick)
+                image = cv2.line(image, (x + w, y),(x + w, y + 20), colorx, thickness + 1 + thick)
+                image = cv2.line(image, (x, y + h),(x + 20, y + h), colorx, thickness + 1 + thick)
+                image = cv2.line(image, (x, y + h),(x, y + h - 20), colorx, thickness + 1 + thick)
+                image = cv2.line(image, (x + w, y + h),(x + w - 20, y + h), colorx, thickness + 1 + thick)
+                image = cv2.line(image, (x + w, y + h),(x + w, y + h - 20), colorx, thickness + 1 + thick)
 
         if self.CURRENT_ANNOATAION_FLAGS['id'] or self.CURRENT_ANNOATAION_FLAGS['class']:
             if self.CURRENT_ANNOATAION_FLAGS['id'] and self.CURRENT_ANNOATAION_FLAGS['class']:
