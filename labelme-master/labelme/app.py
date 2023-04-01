@@ -1435,7 +1435,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if shape.group_id is None:
             item.setText(shape.label)
         else:
-            
+            # item.setText(f' ID {shape.group_id}: {shape.label}')
             ###########################################################
             all_frames = False
             only_this_frame = False
@@ -2757,6 +2757,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self._config["keep_prev"] = keep_prev
 
     def openFile(self, _value=False):
+        
+        self.right_click_menu("image")
+        
         self.current_annotation_mode = "img"
         self.actions.export.setEnabled(False)
         try :
@@ -3192,6 +3195,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setDirty()
 
     def openDirDialog(self, _value=False, dirpath=None):
+        
+        self.right_click_menu("image")
+        
+        
         self.current_annotation_mode = "dir"
         if not self.mayContinue():
             return
@@ -3399,6 +3406,26 @@ class MainWindow(QtWidgets.QMainWindow):
                     self.CURRENT_ANNOATAION_TRAJECTORIES['id_' + str(id)] = centers_rec
                     self.CURRENT_ANNOATAION_TRAJECTORIES['id_color_' +str(id)] = color
         
+    def right_click_menu(self, mode):
+        video_menu = True if mode == "video" else False
+        image_menu = True if mode == "image" else False
+        self.actions.menu[0].setVisible(True)
+        self.actions.menu[1].setVisible(image_menu)
+        self.actions.menu[2].setVisible(image_menu)
+        self.actions.menu[3].setVisible(image_menu)
+        self.actions.menu[4].setVisible(image_menu)
+        self.actions.menu[5].setVisible(image_menu)
+        self.actions.menu[6].setVisible(True)
+        self.actions.menu[7].setVisible(True)
+        self.actions.menu[8].setVisible(video_menu)
+        self.actions.menu[9].setVisible(video_menu)
+        self.actions.menu[10].setVisible(video_menu)
+        self.actions.menu[11].setVisible(image_menu)
+        self.actions.menu[12].setVisible(True)
+        self.actions.menu[13].setVisible(image_menu)
+        self.actions.menu[14].setVisible(image_menu)
+        self.actions.menu[15].setVisible(True)
+        self.actions.menu[16].setVisible(True)
 
     def openVideo(self):
         length_Value = self.CURRENT_ANNOATAION_TRAJECTORIES['length']
@@ -3406,6 +3433,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.CURRENT_ANNOATAION_TRAJECTORIES.clear() 
         self.CURRENT_ANNOATAION_TRAJECTORIES['length'] = length_Value
         self.CURRENT_ANNOATAION_TRAJECTORIES['alpha'] = alpha_Value
+        
+        self.right_click_menu("video")
         
         for shape in self.canvas.shapes:
             self.canvas.deleteShape(shape)
