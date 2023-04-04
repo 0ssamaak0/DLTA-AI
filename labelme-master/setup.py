@@ -11,77 +11,77 @@ from setuptools import find_packages
 from setuptools import setup
 
 
-def get_version():
-    filename = "labelme/__init__.py"
-    with open(filename) as f:
-        match = re.search(
-            r"""^__version__ = ['"]([^'"]*)['"]""", f.read(), re.M
-        )
-    if not match:
-        raise RuntimeError("{} doesn't contain __version__".format(filename))
-    version = match.groups()[0]
-    return version
+# def get_version():
+#     filename = "labelme/__init__.py"
+#     with open(filename) as f:
+#         match = re.search(
+#             r"""^__version__ = ['"]([^'"]*)['"]""", f.read(), re.M
+#         )
+#     if not match:
+#         raise RuntimeError("{} doesn't contain __version__".format(filename))
+#     version = match.groups()[0]
+#     return version
 
 
-def get_install_requires():
-    PY3 = sys.version_info[0] == 3
-    PY2 = sys.version_info[0] == 2
-    assert PY3 or PY2
+# def get_install_requires():
+#     PY3 = sys.version_info[0] == 3
+#     PY2 = sys.version_info[0] == 2
+#     assert PY3 or PY2
 
-    install_requires = [
-        "imgviz>=0.11,<1.3",
-        "matplotlib<3.3",  # for PyInstaller
-        "numpy",
-        "Pillow>=2.8",
-        "PyYAML",
-        "qtpy",
-        "termcolor",
-    ]
+#     install_requires = [
+#         "imgviz>=0.11,<1.3",
+#         "matplotlib<3.3",  # for PyInstaller
+#         "numpy",
+#         "Pillow>=2.8",
+#         "PyYAML",
+#         "qtpy",
+#         "termcolor",
+#     ]
 
-    # Find python binding for qt with priority:
-    # PyQt5 -> PySide2 -> PyQt4,
-    # and PyQt5 is automatically installed on Python3.
-    QT_BINDING = None
+#     # Find python binding for qt with priority:
+#     # PyQt5 -> PySide2 -> PyQt4,
+#     # and PyQt5 is automatically installed on Python3.
+#     QT_BINDING = None
 
-    try:
-        import PyQt5  # NOQA
+#     try:
+#         import PyQt5  # NOQA
 
-        QT_BINDING = "pyqt5"
-    except ImportError:
-        pass
+#         QT_BINDING = "pyqt5"
+#     except ImportError:
+#         pass
 
-    if QT_BINDING is None:
-        try:
-            import PySide2  # NOQA
+#     if QT_BINDING is None:
+#         try:
+#             import PySide2  # NOQA
 
-            QT_BINDING = "pyside2"
-        except ImportError:
-            pass
+#             QT_BINDING = "pyside2"
+#         except ImportError:
+#             pass
 
-    if QT_BINDING is None:
-        try:
-            import PyQt4  # NOQA
+#     if QT_BINDING is None:
+#         try:
+#             import PyQt4  # NOQA
 
-            QT_BINDING = "pyqt4"
-        except ImportError:
-            if PY2:
-                print(
-                    "Please install PyQt5, PySide2 or PyQt4 for Python2.\n"
-                    "Note that PyQt5 can be installed via pip for Python3.",
-                    file=sys.stderr,
-                )
-                sys.exit(1)
-            assert PY3
-            # PyQt5 can be installed via pip for Python3
-            # 5.15.3, 5.15.4 won't work with PyInstaller
-            install_requires.append("PyQt5!=5.15.3,!=5.15.4")
-            QT_BINDING = "pyqt5"
-    del QT_BINDING
+#             QT_BINDING = "pyqt4"
+#         except ImportError:
+#             if PY2:
+#                 print(
+#                     "Please install PyQt5, PySide2 or PyQt4 for Python2.\n"
+#                     "Note that PyQt5 can be installed via pip for Python3.",
+#                     file=sys.stderr,
+#                 )
+#                 sys.exit(1)
+#             assert PY3
+#             # PyQt5 can be installed via pip for Python3
+#             # 5.15.3, 5.15.4 won't work with PyInstaller
+#             install_requires.append("PyQt5!=5.15.3,!=5.15.4")
+#             QT_BINDING = "pyqt5"
+#     del QT_BINDING
 
-    if os.name == "nt":  # Windows
-        install_requires.append("colorama")
+#     if os.name == "nt":  # Windows
+#         install_requires.append("colorama")
 
-    return install_requires
+#     return install_requires
 
 
 def get_long_description():
