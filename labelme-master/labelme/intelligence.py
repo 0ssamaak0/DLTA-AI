@@ -85,7 +85,7 @@ class Intelligence():
         self.selectedclasses = {0:"person", 2:"car", 3:"motorcycle", 5:"bus", 7:"truck"}
         self.current_model_name , self.current_mm_model = self.make_mm_model("")
         
-        
+    @torch.no_grad()
     def make_mm_model(self, selected_model_name):
         with open("saved_models.json") as json_file:
             data = json.load(json_file)
