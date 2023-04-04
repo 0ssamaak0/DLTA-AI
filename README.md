@@ -1,5 +1,16 @@
-# Labelmm
-Auto Annotation tool for instance segmentation based on [Labelme](https://github.com/wkentaro/labelme), using [mmdetection](https://github.com/open-mmlab/mmdetection) framework
+<h1 align = "center">
+<img src = "imgs/icon.png" width = 200 height = 200>
+<br>
+Labelmm
+</h1>
+
+<h3 align = "center">
+Auto Annotation Tool for Computer Vision Tasks
+</h3>
+
+<p align = "center">
+Labelmm is the integrates the power of SOTA models in Computer vision to <a href = "https://github.com/wkentaro/labelme">Labelme</a> providing a tool for auto annotating images for different computer vision tasks with minimal effort in a user friendly interface and the ability to export the annotations in the common formats
+
 
 ![pic5](https://user-images.githubusercontent.com/85165808/227048466-e354d66c-9072-41a9-bef5-dcd88988500c.png)
 
