@@ -73,7 +73,7 @@ warnings.filterwarnings("ignore")
 conf_thres = 0.25  # confidence threshold
 iou_thres = 0.45  # NMS IOU threshold
 max_det = 1000  # maximum detections per image
-device = select_device('0')
+device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
 # tracking_method = 'bytetrack'
 tracking_method = 'strongsort'
