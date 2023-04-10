@@ -83,6 +83,7 @@ class Intelligence():
         self.parent = parent
         self.threshold = 0.3
         self.selectedclasses = {0:"person", 2:"car", 3:"motorcycle", 5:"bus", 7:"truck"}
+        self.selectedmodels = []
         self.current_model_name , self.current_mm_model = self.make_mm_model("")
         
     @torch.no_grad()
@@ -132,17 +133,39 @@ class Intelligence():
         return bbox
         
         
-    def get_shapes_of_one(self,image,img_array_flag = False):
+    def get_shapes_of_one(self,image,img_array_flag = False,multi_model_flag = False):
         # print(f"Threshold is {self.threshold}")
         # results = self.reader.decode_file(img_path = filename, threshold = self.threshold , selected_model_name = self.current_model_name)["results"]
         start_time = time.time()
         # if img_array_flag is true then the image is a numpy array and not a path
-        if img_array_flag:
-            results = self.reader.decode_file(img = image, model = self.current_mm_model,classdict = self.selectedclasses ,threshold = self.threshold, img_array_flag=True )["results"]
+        if multi_model_flag:
+            # to handle the case of the user selecting no models 
+            if len(self.selectedmodels)==0:
+                return []
+            self.reader.annotating_models.clear()
+            for model_name in self.selectedmodels:
+                self.current_model_name , self.current_mm_model = self.make_mm_model(model_name)
+                if img_array_flag:
+                    results0,results1 = self.reader.decode_file(img = image, model = self.current_mm_model,classdict = self.selectedclasses ,threshold = self.threshold, img_array_flag=True )
+                else:
+                    results0,results1 = self.reader.decode_file(img = image, model = self.current_mm_model,classdict = self.selectedclasses ,threshold = self.threshold )
+                self.reader.annotating_models[model_name] = [results0 , results1]
+                end_time = time.time()
+                print(f"Time taken to annoatate img on {self.current_model_name}: {end_time - start_time}" + "\n")
+            print('merging masks')
+            results0,results1 = self.reader.merge_masks()
+            results = self.reader.polegonise(results0,results1,classdict = self.selectedclasses,threshold = self.threshold)['results']
+            
+
         else:
-            results = self.reader.decode_file(img = image, model = self.current_mm_model,classdict = self.selectedclasses ,threshold = self.threshold )["results"]
-        end_time = time.time()
-        print(f"Time taken to annoatate img on {self.current_model_name}: {end_time - start_time}")
+            if img_array_flag:
+                results0,results1 = self.reader.decode_file(img = image, model = self.current_mm_model,classdict = self.selectedclasses ,threshold = self.threshold, img_array_flag=True )
+                results = self.reader.polegonise(results0,results1,classdict = self.selectedclasses,threshold = self.threshold)['results']
+            else:
+                results0,results1 = self.reader.decode_file(img = image, model = self.current_mm_model,classdict = self.selectedclasses ,threshold = self.threshold )
+                results = self.reader.polegonise(results0,results1,classdict = self.selectedclasses,threshold = self.threshold)['results']
+            end_time = time.time()
+            print(f"Time taken to annoatate img on {self.current_model_name}: {end_time - start_time}")
 
         shapes = []
         for result in results:
@@ -244,6 +267,51 @@ class Intelligence():
         #self.updatlabellist()
         return self.selectedclasses
 
+    def mergeSegModels(self):
+        #add a resizable and scrollable dialog that contains all the models and allow the user to select among them using checkboxes 
+        models = []
+        with open("saved_models.json") as json_file:
+            data = json.load(json_file)
+            for model in data.keys():
+                models.append(model)
+        dialog = QtWidgets.QDialog(self.parent)
+        dialog.setWindowTitle('Select Models')
+        dialog.setWindowModality(QtCore.Qt.ApplicationModal)
+        dialog.resize(200,250)
+        dialog.setMinimumSize(QtCore.QSize(200, 200))
+        verticalLayout = QtWidgets.QVBoxLayout(dialog)
+        verticalLayout.setObjectName("verticalLayout")
+        scrollArea = QtWidgets.QScrollArea(dialog)
+        scrollArea.setWidgetResizable(True)
+        scrollArea.setObjectName("scrollArea")
+        scrollAreaWidgetContents = QtWidgets.QWidget()
+        scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 478, 478))
+        scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
+        verticalLayout_2 = QtWidgets.QVBoxLayout(scrollAreaWidgetContents)
+        verticalLayout_2.setObjectName("verticalLayout_2")
+        self.scrollAreaWidgetContents = scrollAreaWidgetContents
+        scrollArea.setWidget(scrollAreaWidgetContents)
+        verticalLayout.addWidget(scrollArea)
+        buttonBox = QtWidgets.QDialogButtonBox(dialog)
+        buttonBox.setOrientation(QtCore.Qt.Horizontal)
+        buttonBox.setStandardButtons(QtWidgets.QDialogButtonBox.Cancel|QtWidgets.QDialogButtonBox.Ok)
+        buttonBox.setObjectName("buttonBox")
+        verticalLayout.addWidget(buttonBox)
+        buttonBox.accepted.connect(dialog.accept)
+        buttonBox.rejected.connect(dialog.reject)
+        self.models = []
+        for i in range(len(models)):
+            self.models.append(QtWidgets.QCheckBox(models[i], dialog))
+            verticalLayout_2.addWidget(self.models[i])
+        dialog.show()
+        dialog.exec_()
+        self.selectedmodels.clear()
+        for i in range(len(self.models)):
+            if self.models[i].isChecked():
+                self.selectedmodels.append(self.models[i].text())
+        print(self.selectedmodels)
+        return self.selectedmodels
+    
 
     def updateDialog(self, completed, total):
         progress = int(completed/total*100)
