@@ -138,7 +138,7 @@ class models_inference():
         return np.array([[bbox[0], bbox[1]], [bbox[0], bbox[3]], [bbox[2], bbox[3]], [bbox[2], bbox[1]]])
 
     @torch.no_grad()
-    def decode_file(self, img , model, classdict, threshold=0.3, img_array_flag=False , show_bbox_flag=False):
+    def decode_file(self, img , model, classdict, threshold=0.3, img_array_flag=False):
 
         if model.__class__.__name__ == "YOLO":  
             # img is h,w,c and i want to devide it by 255 to get it in the range of 0 to 1
@@ -233,7 +233,7 @@ class models_inference():
             results0.append(results[0][i])
             results1.append(results[1][i])
         
-        self.annotating_models[model.__class__.__name__] = [results0 , results1]
+        #self.annotating_models[model.__class__.__name__] = [results0 , results1]
         # print(self.annotating_models.keys())
 
         # # if the length of the annotating_models is greater than 1 we need to merge the masks
@@ -244,12 +244,15 @@ class models_inference():
         #     assert len(results0) == len(results1)
         #     for i in range(len(results0)):
         #         assert len(results0[i]) == len(results1[i])
-
+        return results0,results1
+        
+    def polegonise(self,results0,results1,classdict,threshold=0.3,show_bbox_flag=False):
         result_dict = {}
         res_list = []
 
-        #classdict = {0:"person", 1:"car", 2:"motorcycle", 3:"bus", 4:"truck"}
+        
         self.classes_numbering = [keyno for keyno in classdict.keys()]
+        print(self.classes_numbering)
         for classno in range(len(results0)):
             for instance in range(len(results0[classno])):
                 if float(results0[classno][instance][-1]) < float(threshold):
@@ -313,19 +316,21 @@ class models_inference():
         # deep copy the annotating_models dict to pop all the masks we have merged (try delete it for future optimisation)
         annotating_models_copy = copy.deepcopy(self.annotating_models)
         # merge masks of the same class
-        for model in self.annotating_models.keys():
+        for idx1, model in enumerate(self.annotating_models.keys()):
             for classno in range(len(self.annotating_models[model][1])):
                 # check if an instance exists in the model in this class
                 if len(self.annotating_models[model][1][classno]) > 0:
                     for instance in range(len(self.annotating_models[model][1][classno])):
-                        for model2 in self.annotating_models.keys():
-                            if model != model2 and (model2 > model):
+                        for idx2, model2 in enumerate(self.annotating_models.keys()):
+                            if model != model2 and idx2 > idx1:
                                 #print(type(annotating_models_copy[model][0][classno]),type(annotating_models_copy[model2][0][classno]))
                                 # check if the class exists in the other model
                                 if classno in range(len(self.annotating_models[model2][1])):
                                     # check if an instance exists in the other model
                                     if len(self.annotating_models[model2][1][classno]) > 0:
                                         for instance2 in range(len(self.annotating_models[model2][1][classno])):
+                                            dirty = False
+                                            #print('checking class ' + str(classno)  ' of models ' + model + str(idx1) +  ' and ' + model2 + str(idx2))
                                             # get the intersection percentage of the two masks
                                             intersection = np.logical_and(self.annotating_models[model][1][classno][instance] , self.annotating_models[model2][1][classno][instance2])
                                             intersection = np.sum(intersection)
@@ -334,15 +339,18 @@ class models_inference():
                                             iou = intersection / union
                                             #print('iou of class ' + str(classno) + ' instance ' + str(instance) + ' and instance ' + str(instance2) + ' is ' + str(iou))
                                             if iou > 0.5:
-                                                #print('merging masks of class ' + str(classno) + ' instance ' + str(instance) + ' and instance ' + str(instance2) + ' of models ' + model + ' and ' + model2)
-                                                merged_counts += 1
-                                                # store the merged mask in result1
-                                                result1[classno].append(np.logical_or(self.annotating_models[model][1][classno][instance] , self.annotating_models[model2][1][classno][instance2]))
+                                                if (annotating_models_copy[model][1][classno][instance] is None) or (annotating_models_copy[model2][1][classno][instance2] is None):
+                                                    dirty = True
                                                 # merge their bboxes and store the result in result0
                                                 bbox1 = self.annotating_models[model][0][classno][instance]
                                                 bbox2 = self.annotating_models[model2][0][classno][instance2]
                                                 bbox = [min(bbox1[0], bbox2[0]), min(bbox1[1], bbox2[1]), max(bbox1[2], bbox2[2]), max(bbox1[3], bbox2[3]), ((bbox1[4] + bbox2[4]) / 2)]
-                                                result0[classno].append(bbox)
+                                                if dirty == False:
+                                                    result0[classno].append(bbox)
+                                                    # store the merged mask in result1
+                                                    result1[classno].append(np.logical_or(self.annotating_models[model][1][classno][instance] , self.annotating_models[model2][1][classno][instance2]))
+                                                    #print('merging masks of class ' + str(classno) + ' instance ' + str(instance) + ' and instance ' + str(instance2) + ' of models ' + model + ' and ' + model2)
+                                                    merged_counts += 1
                                                 # remove the mask from both models
                                                 annotating_models_copy[model][1][classno][instance] = None
                                                 annotating_models_copy[model2][1][classno][instance2] = None
@@ -365,7 +373,7 @@ class models_inference():
                         result0[classno].append(annotating_models_copy[model][0][classno][instance])
         # clear the annotating_models and add the result to it
         self.annotating_models = {}
-        self.annotating_models["merged"] = [result0 , result1]
+        #self.annotating_models["merged"] = [result0 , result1]
         for model in counts_here.keys():
             print("model {} has {} instances".format(model, counts_here[model]))
         print("merged {} instances".format(merged_counts))
