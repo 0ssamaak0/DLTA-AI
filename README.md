@@ -28,10 +28,8 @@ conda install pytorch==1.13.1 torchvision==0.14.1 torchaudio==0.13.1 pytorch-cud
 ## 2. install requirements
 
 ```
-pip install openmim mmdet
-mim install mmcv-full
-
 pip install -r requirements.txt
+mim install mmcv-full==1.7.0
 ```
 
 ## 3. download models checkpoints from [mmdetection](https://github.com/open-mmlab/mmdetection)
