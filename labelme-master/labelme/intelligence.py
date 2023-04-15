@@ -15,6 +15,7 @@ import os
 import os.path as osp
 import warnings
 import numpy as np
+import urllib.request
 
 import torch
 from mmdet.apis import inference_detector, init_detector
@@ -108,9 +109,19 @@ class Intelligence():
             model.fuse()
             return selected_model_name, model
         
-        model = init_detector(config, 
+        try:
+            model = init_detector(config, 
                             checkpoint,
                             device = torch.device("cuda" if torch.cuda.is_available() else "cpu"))
+        except:
+            if selected_model_name == "YOLACT":
+                # download YOLACT
+                checkpt_name = "https://download.openmmlab.com/mmdetection/v2.0/yolact/yolact_r50_1x8_coco/yolact_r50_1x8_coco_20200908-f38d58df.pth"
+                urllib.request.urlretrieve(checkpt_name, filename = f"mmdetection/checkpoints/{checkpt_name.split('/')[-1]}", reporthook = lambda x, y, z: print(f" Downloading YOLACT {x * y / z * 100:.2f}% ..", end = "\r"))
+                model = init_detector(config,checkpoint, device = torch.device("cuda" if torch.cuda.is_available() else "cpu"))
+            else:
+                print("Error in loading the model, please check if the config and checkpoint files do exist")
+
                         #    cfg_options= dict(iou_threshold=0.2))
 
         # "C:\Users\Shehab\Desktop\l001\ANNOTATION_TOOL\mmdetection\mmdetection\configs\yolact\yolact_r50_1x8_coco.py"
