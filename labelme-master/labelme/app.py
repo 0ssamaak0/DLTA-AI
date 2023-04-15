@@ -282,8 +282,8 @@ class MainWindow(QtWidgets.QMainWindow):
         # self.CLASS_NAMES_DICT =
         # self.frame_number = 0
         self.INDEX_OF_CURRENT_FRAME = 1
-        # for image annotation
-        self.last_file_opened = ""
+        # # for image annotation
+        # self.last_file_opened = ""
 
         features = QtWidgets.QDockWidget.DockWidgetFeatures()
         for dock in ["flag_dock", "label_dock", "shape_dock", "file_dock"]:
@@ -704,6 +704,13 @@ class MainWindow(QtWidgets.QMainWindow):
             None,
             self.tr("select the classes to be annotated")
         )
+        merge_segmentation_models = action(
+            self.tr("merge segmentation models"),
+            self.mergeSegModels,
+            None,
+            None,
+            self.tr("merge segmentation models")
+        )
         runtime_type = action(
             self.tr("show the runtime type"),
             self.showRuntimeType,
@@ -856,6 +863,7 @@ class MainWindow(QtWidgets.QMainWindow):
                           self.menus.saved_models,
                           self.menus.tracking_models,
                           select_classes,
+                          merge_segmentation_models,
                           runtime_type
                           )
                          )
@@ -3392,10 +3400,16 @@ class MainWindow(QtWidgets.QMainWindow):
         if self.current_annotation_mode == "video":
             shapes = self.intelligenceHelper.get_shapes_of_one(
                 self.CURRENT_FRAME_IMAGE, img_array_flag=True)
+        elif self.current_annotation_mode == "multimodel":
+            shapes = self.intelligenceHelper.get_shapes_of_one(
+                          self.filename, img_array_flag=False,multi_model_flag=True)
+            # to handle the bug of the user selecting no models 
+            if len(shapes) == 0:
+                return
         else:
-            if self.filename != self.last_file_opened:
-                self.last_file_opened = self.filename
-                self.intelligenceHelper.clear_annotating_models()
+            # if self.filename != self.last_file_opened:
+            #     self.last_file_opened = self.filename
+            #     self.intelligenceHelper.clear_annotating_models()
 
             if os.path.exists(self.filename):
                 self.labelList.clearSelection()
@@ -3432,6 +3446,13 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def selectClasses(self):
         self.intelligenceHelper.selectedclasses = self.intelligenceHelper.selectClasses()
+
+    def mergeSegModels(self):
+        self.intelligenceHelper.selectedmodels = self.intelligenceHelper.mergeSegModels()
+        self.prev_annotation_mode = self.current_annotation_mode
+        self.current_annotation_mode = "multimodel"
+        self.annotate_one()
+        self.current_annotation_mode = self.prev_annotation_mode
 
     def showRuntimeType(self):
         runtime = ""
