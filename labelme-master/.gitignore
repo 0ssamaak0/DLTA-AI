@@ -9,3 +9,13 @@
 
 .DS_Store
 .idea/
+
+# mp4
+*.mp4
+
+# yoloV8 weights
+yolov8x-seg.pt
+
+
+# any thing in the folder test_videos
+test_videos/*

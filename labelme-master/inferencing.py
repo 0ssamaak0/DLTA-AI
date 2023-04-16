@@ -281,7 +281,7 @@ class models_inference():
                     # result["y3"] = points[2][1]
                     # result["x4"] = points[3][0]
                     # result["y4"] = points[3][1]
-                    x = 25  # nothing
+                    pass
                     
                     
                 if result["class"] == None:
