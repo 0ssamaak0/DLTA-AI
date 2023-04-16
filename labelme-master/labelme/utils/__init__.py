@@ -29,3 +29,5 @@ from .qt import fmtShortcut
 from .export import exportCOCO
 from .export import exportCOCOvid
 from .export import exportMOT
+
+from .more_models import ModelExplorerDialog
