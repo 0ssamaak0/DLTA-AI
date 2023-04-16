@@ -34,9 +34,9 @@ from .label_file import LabelFile
 from .label_file import LabelFileError
 from .logger import logger
 from .shape import Shape
-from .widgets import BrightnessContrastDialog , Canvas , LabelDialog , LabelListWidget , LabelListWidgetItem , ToolBar , UniqueLabelQListWidget , ZoomWidget
+from .widgets import BrightnessContrastDialog, Canvas, LabelDialog, LabelListWidget, LabelListWidgetItem, ToolBar, UniqueLabelQListWidget, ZoomWidget
 from .intelligence import Intelligence
-from .intelligence import coco_classes , color_palette
+from .intelligence import coco_classes, color_palette
 
 from onemetric.cv.utils.iou import box_iou_batch
 from dataclasses import dataclass
@@ -260,23 +260,23 @@ class MainWindow(QtWidgets.QMainWindow):
         self.FRAMES_TO_SKIP = 30
         self.TRACK_ASSIGNED_OBJECTS_ONLY = False
         self.TrackingMode = False
-        self.CURRENT_ANNOATAION_FLAGS = {"traj" : False  ,
-                                         "bbox" : True  ,
-                                         "id" : True ,
-                                         "class" : True,
-                                         "mask" : True,
-                                         "polygons" : True}
+        self.CURRENT_ANNOATAION_FLAGS = {"traj": False,
+                                         "bbox": True,
+                                         "id": True,
+                                         "class": True,
+                                         "mask": True,
+                                         "polygons": True}
         self.CURRENT_ANNOATAION_TRAJECTORIES = {}
         # keep it like that, don't change it
         self.CURRENT_ANNOATAION_TRAJECTORIES['length'] = 30
         # keep it like that, don't change it
         self.CURRENT_ANNOATAION_TRAJECTORIES['alpha'] = 0.35
         self.CURRENT_SHAPES_IN_IMG = []
-        self.config = {'deleteDefault' : "this frame only",
-                       'interpolationDefault' : "interpolate only missed frames between detected frames",
-                       'creationDefault' : "Create new shape (ie. not detected before)",
-                       'EditDefault' : "Edit only this frame",
-                       'toolMode' : 'video'}
+        self.config = {'deleteDefault': "this frame only",
+                       'interpolationDefault': "interpolate only missed frames between detected frames",
+                       'creationDefault': "Create new shape (ie. not detected before)",
+                       'EditDefault': "Edit only this frame",
+                       'toolMode': 'video'}
         self.key_frames = {}
         # make CLASS_NAMES_DICT a dictionary of coco class names
         # self.CLASS_NAMES_DICT =
@@ -859,7 +859,7 @@ class MainWindow(QtWidgets.QMainWindow):
         utils.addActions(self.menus.intelligence,
                          (annotate_one_action,
                           annotate_batch_action,
-                          set_threshold ,
+                          set_threshold,
                           self.menus.saved_models,
                           self.menus.tracking_models,
                           select_classes,
@@ -1242,6 +1242,13 @@ class MainWindow(QtWidgets.QMainWindow):
                     self.change_curr_model, model_name))
                 menu.addAction(action)
                 i += 1
+
+            icon = utils.newIcon("labels")
+            action = QtWidgets.QAction(
+                icon, "Model Explorer [Expiremetnal]", self)
+            # when the action is triggered, preview an Qmessagebox with ERROR
+            action.triggered.connect(self.model_explorer)
+            menu.addAction(action)
 
         self.add_tracking_models_menu()
 
@@ -1740,7 +1747,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
             prev_segment = prev['segment']
             next_segment = next['segment']
-            if len(prev_segment) != len(next_segment) :
+            if len(prev_segment) != len(next_segment):
                 biglen = max(len(prev_segment), len(next_segment))
                 prev_segment = self.handlePoints(prev_segment, biglen)
                 next_segment = self.handlePoints(next_segment, biglen)
@@ -1751,7 +1758,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
             cur_segment = ((next_idx - i) / (next_idx - prev_idx)) * np.array(records[prev_idx]['segment']) + (
                 (i - prev_idx) / (next_idx - prev_idx)) * np.array(records[next_idx]['segment'])
-            cur_segment = [[int(sublist[0]) , int(sublist[1])]
+            cur_segment = [[int(sublist[0]), int(sublist[1])]
                            for sublist in cur_segment]
             current['bbox'] = cur_bbox
             current['segment'] = cur_segment
@@ -1794,7 +1801,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     first_frame_idx = min(
                         first_frame_idx, listobjframe) if first_frame_idx != -1 else listobjframe
                     last_frame_idx = max(
-                        last_frame_idx , listobjframe) if last_frame_idx != -1 else listobjframe
+                        last_frame_idx, listobjframe) if last_frame_idx != -1 else listobjframe
         if (first_frame_idx == -1 or last_frame_idx == -1):
             return
         if (first_frame_idx >= last_frame_idx):
@@ -1837,7 +1844,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
             prev_segment = prev['segment']
             next_segment = next['segment']
-            if len(prev_segment) != len(next_segment) :
+            if len(prev_segment) != len(next_segment):
                 biglen = max(len(prev_segment), len(next_segment))
                 prev_segment = self.handlePoints(prev_segment, biglen)
                 next_segment = self.handlePoints(next_segment, biglen)
@@ -1848,7 +1855,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
             cur_segment = ((next_idx - i) / (next_idx - prev_idx)) * np.array(records[prev_idx]['segment']) + (
                 (i - prev_idx) / (next_idx - prev_idx)) * np.array(records[next_idx]['segment'])
-            cur_segment = [[int(sublist[0]) , int(sublist[1])]
+            cur_segment = [[int(sublist[0]), int(sublist[1])]
                            for sublist in cur_segment]
             current['bbox'] = cur_bbox
             current['segment'] = cur_segment
@@ -2008,7 +2015,7 @@ class MainWindow(QtWidgets.QMainWindow):
         listobj = self.load_objects_from_json()
         for i in range(len(listobj)):
             listobjframe = listobj[i]['frame_idx']
-            if listobjframe != self.INDEX_OF_CURRENT_FRAME :
+            if listobjframe != self.INDEX_OF_CURRENT_FRAME:
                 continue
             for objectt in listobj[i]['frame_data']:
                 if objectt['tracker_id'] == shape['tracker_id']:
@@ -2026,7 +2033,7 @@ class MainWindow(QtWidgets.QMainWindow):
         y0 = np.min(segment[:, 1])
         x1 = np.max(segment[:, 0])
         y1 = np.max(segment[:, 1])
-        return [x0, y0, x1 , y1]
+        return [x0, y0, x1, y1]
 
     def addPoints(self, shape, n):
         res = shape.copy()
@@ -2152,7 +2159,7 @@ class MainWindow(QtWidgets.QMainWindow):
         json_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}_tracking_results.json'
         if not os.path.exists(json_file_name):
             with open(json_file_name, 'w') as jf:
-                json.dump(listObj, jf ,
+                json.dump(listObj, jf,
                           indent=4,
                           separators=(',', ': '))
             jf.close()
@@ -2164,7 +2171,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def load_objects_to_json(self, listObj):
         json_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}_tracking_results.json'
         with open(json_file_name, 'w') as json_file:
-            json.dump(listObj, json_file ,
+            json.dump(listObj, json_file,
                       indent=4,
                       separators=(',', ': '))
         json_file.close()
@@ -2788,8 +2795,20 @@ class MainWindow(QtWidgets.QMainWindow):
             self.loadFile(filename)
 
     def change_curr_model(self, model_name):
-        self.intelligenceHelper.current_model_name , self.intelligenceHelper.current_mm_model = self.intelligenceHelper.make_mm_model(
+        self.intelligenceHelper.current_model_name, self.intelligenceHelper.current_mm_model = self.intelligenceHelper.make_mm_model(
             model_name)
+
+    def model_explorer(self):
+        model_explorer_dialog = utils.ModelExplorerDialog()
+        # make it fit its contents
+        model_explorer_dialog.adjustSize()
+        model_explorer_dialog.resize(
+            int(model_explorer_dialog.width() * 2), int(model_explorer_dialog.height() * 1.5))
+        model_explorer_dialog.exec_()
+        selected_model_name, config, checkpoint = model_explorer_dialog.selected_model
+        if selected_model_name != -1:
+            self.intelligenceHelper.current_model_name, self.intelligenceHelper.current_mm_model = self.intelligenceHelper.make_mm_model_more(
+                selected_model_name, config, checkpoint)
 
     def openPrevImg(self, _value=False):
         keep_prev = self._config["keep_prev"]
@@ -2846,7 +2865,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.current_annotation_mode = "img"
         self.actions.export.setEnabled(False)
-        try :
+        try:
             cv2.destroyWindow('video processing')
         except:
             pass
@@ -3238,35 +3257,35 @@ class MainWindow(QtWidgets.QMainWindow):
         for i in range(len(listObj)):
             frame_idx = listObj[i]['frame_idx']
             for object_ in listObj[i]['frame_data']:
-                if mode == 'this frame and previous frames' and frame_idx > self.INDEX_OF_CURRENT_FRAME :
+                if mode == 'this frame and previous frames' and frame_idx > self.INDEX_OF_CURRENT_FRAME:
                     continue
-                if mode == 'this frame and next frames' and frame_idx < self.INDEX_OF_CURRENT_FRAME :
+                if mode == 'this frame and next frames' and frame_idx < self.INDEX_OF_CURRENT_FRAME:
                     continue
-                if mode == 'this frame only' and frame_idx != self.INDEX_OF_CURRENT_FRAME :
+                if mode == 'this frame only' and frame_idx != self.INDEX_OF_CURRENT_FRAME:
                     continue
                 if mode == 'in a specific range of frames' and (frame_idx < from_frame or frame_idx > to_frame):
                     continue
                 id = str(object_['tracker_id'])
                 if id in deleted_ids:
                     listObj[i]['frame_data'].remove(object_)
-                    if mode == 'this frame and previous frames' :
-                        self.CURRENT_ANNOATAION_TRAJECTORIES['id_' + id][0 : self.INDEX_OF_CURRENT_FRAME] = [
+                    if mode == 'this frame and previous frames':
+                        self.CURRENT_ANNOATAION_TRAJECTORIES['id_' + id][0: self.INDEX_OF_CURRENT_FRAME] = [
                             (-1, -1)] * self.INDEX_OF_CURRENT_FRAME
-                    if mode == 'this frame and next frames' :
+                    if mode == 'this frame and next frames':
                         self.CURRENT_ANNOATAION_TRAJECTORIES['id_' + id][self.INDEX_OF_CURRENT_FRAME - 1:] = [
                             (-1, -1)] * (self.TOTAL_VIDEO_FRAMES - self.INDEX_OF_CURRENT_FRAME + 1)
-                    if mode == 'this frame only' :
+                    if mode == 'this frame only':
                         self.CURRENT_ANNOATAION_TRAJECTORIES['id_' +
                                                              id][self.INDEX_OF_CURRENT_FRAME - 1] = (-1, -1)
-                    if mode == 'in a specific range of frames' :
-                        self.CURRENT_ANNOATAION_TRAJECTORIES['id_' + id][from_frame - 1 : to_frame] = [
+                    if mode == 'in a specific range of frames':
+                        self.CURRENT_ANNOATAION_TRAJECTORIES['id_' + id][from_frame - 1: to_frame] = [
                             (-1, -1)] * (to_frame - from_frame)
                     else:
                         self.CURRENT_ANNOATAION_TRAJECTORIES['id_' + str(
                             id)] = [(-1, -1)] * self.TOTAL_VIDEO_FRAMES
         listObj = sorted(listObj, key=lambda k: k['frame_idx'])
         with open(json_file_name, 'w') as json_file:
-            json.dump(listObj, json_file ,
+            json.dump(listObj, json_file,
                       indent=4,
                       separators=(',', ': '))
         json_file.close()
@@ -3402,8 +3421,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.CURRENT_FRAME_IMAGE, img_array_flag=True)
         elif self.current_annotation_mode == "multimodel":
             shapes = self.intelligenceHelper.get_shapes_of_one(
-                          self.filename, img_array_flag=False,multi_model_flag=True)
-            # to handle the bug of the user selecting no models 
+                self.filename, img_array_flag=False, multi_model_flag=True)
+            # to handle the bug of the user selecting no models
             if len(shapes) == 0:
                 return
         else:
@@ -3472,7 +3491,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     # VIDEO PROCESSING FUNCTIONS (ALL CONNECTED TO THE VIDEO PROCESSING TOOLBAR)
 
-    def mapFrameToTime(self , frameNumber):
+    def mapFrameToTime(self, frameNumber):
         # get the fps of the video
         fps = self.CAP.get(cv2.CAP_PROP_FPS)
         # get the time of the frame
@@ -3483,7 +3502,7 @@ class MainWindow(QtWidgets.QMainWindow):
         frameMilliseconds = int(
             (frameTime - frameHours * 3600 - frameMinutes * 60 - frameSeconds) * 1000)
         # print them in formal time format
-        return frameHours, frameMinutes, frameSeconds , frameMilliseconds
+        return frameHours, frameMinutes, frameSeconds, frameMilliseconds
 
     def calc_trajectory_when_open_video(self, ):
         listobj = self.load_objects_from_json()
@@ -3567,7 +3586,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # self.videoControls.show()
         self.current_annotation_mode = "video"
-        try :
+        try:
             cv2.destroyWindow('video processing')
         except:
             pass
@@ -3578,7 +3597,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.tr("Video files (*.mp4 *.avi)")
         )
 
-        if videoFile[0] :
+        if videoFile[0]:
             self.CURRENT_VIDEO_NAME = videoFile[0].split(
                 ".")[-2].split("/")[-1]
             self.CURRENT_VIDEO_PATH = "/".join(
@@ -3594,7 +3613,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.TOTAL_VIDEO_FRAMES = int(
                 self.CAP.get(cv2.CAP_PROP_FRAME_COUNT) - 1)
             self.CURRENT_VIDEO_FPS = self.CAP.get(cv2.CAP_PROP_FPS)
-            print("Total Frames : " , self.TOTAL_VIDEO_FRAMES)
+            print("Total Frames : ", self.TOTAL_VIDEO_FRAMES)
             self.main_video_frames_slider.setMaximum(self.TOTAL_VIDEO_FRAMES)
             self.main_video_frames_slider.setValue(2)
             self.INDEX_OF_CURRENT_FRAME = 1
@@ -3621,14 +3640,14 @@ class MainWindow(QtWidgets.QMainWindow):
         # group_id = shape["group_id"]
         # other_data = shape["other_data"]
 
-    def load_shapes_for_video_frame(self , json_file_name, index):
+    def load_shapes_for_video_frame(self, json_file_name, index):
         # this function loads the shapes for the video frame from the json file
         # first we read the json file in the form of a list
         # we need to parse from it data for the current frame
 
         target_frame_idx = index
         listObj = []
-        with open(json_file_name , "r") as json_file:
+        with open(json_file_name, "r") as json_file:
             listObj = json.load(json_file)
 
         listObj = np.array(listObj)
@@ -3659,7 +3678,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def loadFramefromVideo(self, frame_array, index=1):
         # filename = str(index) + ".jpg"
-        #self.filename = filename
+        # self.filename = filename
         self.resetState()
         self.canvas.setEnabled(False)
 
@@ -3678,7 +3697,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.canvas.loadPixmap(QtGui.QPixmap.fromImage(image))
 
         if self.TrackingMode:
-            print("Tracking Mode" , len(self.CURRENT_SHAPES_IN_IMG))
+            print("Tracking Mode", len(self.CURRENT_SHAPES_IN_IMG))
             image = self.draw_bb_on_image(image, self.CURRENT_SHAPES_IN_IMG)
             self.canvas.loadPixmap(QtGui.QPixmap.fromImage(image))
             if len(self.CURRENT_SHAPES_IN_IMG) > 0:
@@ -3693,11 +3712,11 @@ class MainWindow(QtWidgets.QMainWindow):
                 if self.labelFile.flags is not None:
                     flags.update(self.labelFile.flags)
 
-            else :
+            else:
                 json_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}_tracking_results.json'
                 if os.path.exists(json_file_name):
                     # print('json file exists , loading shapes')
-                    self.load_shapes_for_video_frame(json_file_name , index)
+                    self.load_shapes_for_video_frame(json_file_name, index)
                     image = self.draw_bb_on_image(
                         image, self.CURRENT_SHAPES_IN_IMG)
                     self.canvas.loadPixmap(QtGui.QPixmap.fromImage(image))
@@ -3796,10 +3815,10 @@ class MainWindow(QtWidgets.QMainWindow):
             f'frame {zeros}{frame_idx} / {int(self.TOTAL_VIDEO_FRAMES)}')
         self.frame_time = self.mapFrameToTime(frame_idx)
         frame_text = ("%02d:%02d:%02d:%03d" % (
-            self.frame_time[0], self.frame_time[1], self.frame_time[2] , self.frame_time[3]))
+            self.frame_time[0], self.frame_time[1], self.frame_time[2], self.frame_time[3]))
         video_duration = self.mapFrameToTime(self.TOTAL_VIDEO_FRAMES)
         video_duration_text = ("%02d:%02d:%02d:%03d" % (
-            video_duration[0], video_duration[1], video_duration[2] , video_duration[3]))
+            video_duration[0], video_duration[1], video_duration[2], video_duration[3]))
         final_text = frame_text + " / " + video_duration_text
         self.main_video_frames_label_2.setText(f'time {final_text}')
 
@@ -3821,7 +3840,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.main_video_frames_slider.setValue(self.INDEX_OF_CURRENT_FRAME + 1)
 
     def class_name_to_id(self, class_name):
-        try :
+        try:
             # map from coco_classes(a list of coco class names) to class_id
             return coco_classes.index(class_name)
         except:
@@ -3886,7 +3905,7 @@ class MainWindow(QtWidgets.QMainWindow):
         tracks_to_follow = None
         if len(shapes) > 0:
             existing_annotation = True
-            print(f'FRAME{self.INDEX_OF_CURRENT_FRAME}' , len(shapes))
+            print(f'FRAME{self.INDEX_OF_CURRENT_FRAME}', len(shapes))
             tracks_to_follow = []
             for shape in shapes:
                 print(shape.label)
@@ -3906,7 +3925,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 print('\n\n\n\n\nloading existing annotation\n\n')
                 shapes = self.canvas.shapes
                 shapes = self.convert_qt_shapes_to_shapes(shapes)
-            else :
+            else:
                 shapes = self.intelligenceHelper.get_shapes_of_one(
                     self.CURRENT_FRAME_IMAGE, img_array_flag=True)
 
@@ -3941,12 +3960,12 @@ class MainWindow(QtWidgets.QMainWindow):
                 boxes.append(self.intelligenceHelper.get_bbox(segment))
                 if s["content"] is None:
                     confidences.append(1.0)
-                else :
+                else:
                     confidences.append(float(s["content"]))
                 class_ids.append(coco_classes.index(
                     label)if label in coco_classes else -1)
 
-            boxes = np.array(boxes , dtype=int)
+            boxes = np.array(boxes, dtype=int)
             confidences = np.array(confidences)
             class_ids = np.array(class_ids)
             detections = Detections(
@@ -3958,8 +3977,8 @@ class MainWindow(QtWidgets.QMainWindow):
             confidences = torch.from_numpy(detections.confidence)
             class_ids = torch.from_numpy(detections.class_id)
 
-            dets = torch.cat((boxes , confidences.unsqueeze(
-                1) , class_ids.unsqueeze(1)) , dim=1).cpu()
+            dets = torch.cat((boxes, confidences.unsqueeze(
+                1), class_ids.unsqueeze(1)), dim=1).cpu()
 
             if hasattr(self.tracker, 'tracker') and hasattr(self.tracker, 'camera_update'):
                 if prev_frame is not None and curr_frame is not None:  # camera motion compensation
@@ -3967,7 +3986,7 @@ class MainWindow(QtWidgets.QMainWindow):
             prev_frame = curr_frame
 
             with torch.no_grad():
-                tracks = self.tracker.update(dets , self.CURRENT_FRAME_IMAGE)
+                tracks = self.tracker.update(dets, self.CURRENT_FRAME_IMAGE)
 
             # print('shapes :' , len(shapes))
             # print('tracks :' , len(tracks))
@@ -3985,12 +4004,12 @@ class MainWindow(QtWidgets.QMainWindow):
                 similarity = []
                 for s in shapes:
                     # we will calculate iou manually by calculating the area of the intersection and the area of the union
-                    intersection = [max(t[0] , s['bbox'][0]) , max(t[1] , s['bbox'][1]) , min(
-                        t[2] , s['bbox'][2]) , min(t[3] , s['bbox'][3])]
+                    intersection = [max(t[0], s['bbox'][0]), max(t[1], s['bbox'][1]), min(
+                        t[2], s['bbox'][2]), min(t[3], s['bbox'][3])]
                     intersection_area = (
                         intersection[2] - intersection[0]) * (intersection[3] - intersection[1])
-                    union = [min(t[0] , s['bbox'][0]) , min(t[1] , s['bbox'][1]) , max(
-                        t[2] , s['bbox'][2]) , max(t[3] , s['bbox'][3])]
+                    union = [min(t[0], s['bbox'][0]), min(t[1], s['bbox'][1]), max(
+                        t[2], s['bbox'][2]), max(t[3], s['bbox'][3])]
                     union_area = (union[2] - union[0]) * (union[3] - union[1])
                     iou = intersection_area / union_area
                     # print (iou)
@@ -4021,7 +4040,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 }
                 new_shapes.append(shape)
 
-            print('similar shapes :' , len(similar_shapes))
+            print('similar shapes :', len(similar_shapes))
             shapes = new_shapes
             # tracker_id = match_detections_with_tracks(
             #     detections=detections, tracks=tracks)
@@ -4098,7 +4117,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # to understand the json output file structure it is a dictionary of frames and each frame is a dictionary of tracker_ids and each tracker_id is a dictionary of bbox , confidence , class_id , segment
             json_frame = {}
-            json_frame.update({'frame_idx' : self.INDEX_OF_CURRENT_FRAME})
+            json_frame.update({'frame_idx': self.INDEX_OF_CURRENT_FRAME})
             json_frame_object_list = []
             for shape in self.CURRENT_SHAPES_IN_IMG:
                 json_tracked_object = {}
@@ -4115,7 +4134,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
                 json_frame_object_list.append(json_tracked_object)
 
-            json_frame.update({'frame_data' : json_frame_object_list})
+            json_frame.update({'frame_data': json_frame_object_list})
             # dictObj.update({self.INDEX_OF_CURRENT_FRAME : json_frame_data})
             # update the json file with the new frame data even if the frame already exists
             # first check if the frame already exists in the json file if exists then delete
@@ -4137,7 +4156,7 @@ class MainWindow(QtWidgets.QMainWindow):
             # self.setDirty()
             # qt sleep for 1 second
             # self.window_wait(1)
-            print('finished tracking for frame ' , self.INDEX_OF_CURRENT_FRAME)
+            print('finished tracking for frame ', self.INDEX_OF_CURRENT_FRAME)
             if i != self.FRAMES_TO_TRACK - 1:
                 self.main_video_frames_slider.setValue(
                     self.INDEX_OF_CURRENT_FRAME + 1)
@@ -4146,7 +4165,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         listObj = sorted(listObj, key=lambda k: k['frame_idx'])
         with open(json_file_name, 'w') as json_file:
-            json.dump(listObj, json_file ,
+            json.dump(listObj, json_file,
                       indent=4,
                       separators=(',', ': '))
         json_file.close()
@@ -4180,7 +4199,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.TOTAL_VIDEO_FRAMES - self.INDEX_OF_CURRENT_FRAME + 1)
         self.track_buttonClicked()
 
-    def set_video_controls_visibility(self , visible=False):
+    def set_video_controls_visibility(self, visible=False):
         # make it invisible by default
 
         self.videoControls.setVisible(visible)
@@ -4281,7 +4300,7 @@ class MainWindow(QtWidgets.QMainWindow):
             if len(shapes) == 0:
                 output_cap.write(image)
                 continue
-            image = self.draw_bb_on_image(image, shapes , imgage_qt_flag=False)
+            image = self.draw_bb_on_image(image, shapes, imgage_qt_flag=False)
             output_cap.write(image)
 
         input_cap.release()
@@ -4338,7 +4357,7 @@ class MainWindow(QtWidgets.QMainWindow):
         jf.close()
 
         json_frame = {}
-        json_frame.update({'frame_idx' : self.INDEX_OF_CURRENT_FRAME})
+        json_frame.update({'frame_idx': self.INDEX_OF_CURRENT_FRAME})
         json_frame_object_list = []
 
         shapes = self.convert_qt_shapes_to_shapes(self.canvas.shapes)
@@ -4360,7 +4379,7 @@ class MainWindow(QtWidgets.QMainWindow):
             json_tracked_object['segment'] = segment
 
             json_frame_object_list.append(json_tracked_object)
-        json_frame.update({'frame_data' : json_frame_object_list})
+        json_frame.update({'frame_data': json_frame_object_list})
 
         for h in range(len(listObj)):
             if listObj[h]['frame_idx'] == self.INDEX_OF_CURRENT_FRAME:
@@ -4371,7 +4390,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         listObj = sorted(listObj, key=lambda k: k['frame_idx'])
         with open(json_file_name, 'w') as json_file:
-            json.dump(listObj, json_file ,
+            json.dump(listObj, json_file,
                       indent=4,
                       separators=(',', ': '))
         json_file.close()
@@ -4617,7 +4636,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.set_video_controls_visibility(False)
 
-    def convert_QI_to_cv(self , incomingImage):
+    def convert_QI_to_cv(self, incomingImage):
         '''  Converts a QImage into an opencv MAT format  '''
 
         incomingImage = incomingImage.convertToFormat(4)
@@ -4630,7 +4649,7 @@ class MainWindow(QtWidgets.QMainWindow):
         arr = np.array(ptr).reshape(height, width, 4)  # Copies the data
         return arr
 
-    def convert_cv_to_qt(self , cv_img):
+    def convert_cv_to_qt(self, cv_img):
         rgb_image = cv2.cvtColor(cv_img, cv2.COLOR_BGR2RGB)
         h, w, ch = rgb_image.shape
         bytes_per_line = ch * w
@@ -4638,7 +4657,7 @@ class MainWindow(QtWidgets.QMainWindow):
             rgb_image.data, w, h, bytes_per_line, QtGui.QImage.Format_RGB888)
         return convert_to_Qt_format
 
-    def draw_bb_id(self , image, x, y , w, h, id, label, color=(0, 0, 255), thickness=1):
+    def draw_bb_id(self, image, x, y, w, h, id, label, color=(0, 0, 255), thickness=1):
         if self.CURRENT_ANNOATAION_FLAGS['bbox']:
             image = cv2.rectangle(
                 image, (x, y), (x + w, y + h), color, thickness + 1)
@@ -4705,12 +4724,12 @@ class MainWindow(QtWidgets.QMainWindow):
 
         return image
 
-    def draw_trajectories(self , img, shapes):
+    def draw_trajectories(self, img, shapes):
         x = self.CURRENT_ANNOATAION_TRAJECTORIES['length']
         for shape in shapes:
             id = shape["group_id"]
             pts_traj = self.CURRENT_ANNOATAION_TRAJECTORIES['id_' + str(id)][max(
-                self.INDEX_OF_CURRENT_FRAME - x, 0) : self.INDEX_OF_CURRENT_FRAME]
+                self.INDEX_OF_CURRENT_FRAME - x, 0): self.INDEX_OF_CURRENT_FRAME]
             pts_poly = np.array([[x, y] for x, y in zip(
                 shape["points"][0::2], shape["points"][1::2])])
             color_poly = self.CURRENT_ANNOATAION_TRAJECTORIES['id_color_' + str(
@@ -4727,9 +4746,9 @@ class MainWindow(QtWidgets.QMainWindow):
                 thickness = (len(pts_traj) - i <= 10) * 1 + (len(pts_traj) -
                                                              i <= 20) * 1 + (len(pts_traj) - i <= 30) * 1 + 3
                 # thickness = 4
-                if pts_traj[i - 1] is None or pts_traj[i] is None :
+                if pts_traj[i - 1] is None or pts_traj[i] is None:
                     continue
-                if pts_traj[i] == (-1, - 1) or pts_traj[i - 1] == (-1, - 1) :
+                if pts_traj[i] == (-1, - 1) or pts_traj[i - 1] == (-1, - 1):
                     break
 
                 # color_traj = tuple(int(0.95 * x) for x in color_poly)
@@ -4743,7 +4762,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         return img
 
-    def draw_bb_on_image(self , image, shapes , imgage_qt_flag=True):
+    def draw_bb_on_image(self, image, shapes, imgage_qt_flag=True):
         img = image
         if imgage_qt_flag:
             img = self.convert_QI_to_cv(image)
@@ -4757,9 +4776,9 @@ class MainWindow(QtWidgets.QMainWindow):
             idx = idx % len(color_palette)
             color = color_palette[idx] if idx != -1 else (0, 0, 255)
 
-            (x1, y1 , x2, y2) = shape["bbox"]
-            x, y , w, h = int(x1), int(y1), int(x2 - x1), int(y2 - y1)
-            img = self.draw_bb_id(img, x, y , w, h, id,
+            (x1, y1, x2, y2) = shape["bbox"]
+            x, y, w, h = int(x1), int(y1), int(x2 - x1), int(y2 - y1)
+            img = self.draw_bb_id(img, x, y, w, h, id,
                                   label, color, thickness=1)
             center = (int((x1 + x2) / 2), int((y1 + y2) / 2))
             try:
