@@ -24,8 +24,10 @@ Labelmm makes the next generation of annotation tools by harnessing the power of
 ![gif_main](assets/gif_main.gif)
 
 <!-- make p with larger font size -->
-[Installation](#installation-%EF%B8%8F)  🛠️ | [Input Modes](#input-modes-%EF%B8%8F) 🎞️ | [Model Selection](#model-selection-%EF%B8%8F) 🤖 | [Object Tracking](#object-tracking-%EF%B8%8F) 🚗 | [Export](#export-%EF%B8%8F) 📤 | [Other Features](#other-features-%EF%B8%8F) 🌟| [Contributing](#contributing-%EF%B8%8F) 🤝| [Resources](#export-%EF%B8%8F) 🌐 |  [License](#license-%EF%B8%8F) 📜
+[Installation](#installation-%EF%B8%8F)  🛠️ | [Input Modes](#input-modes-%EF%B8%8F) 🎞️ | [Model Selection](#model-selection-) 🤖 | [Object Tracking](#object-tracking-) 🚗 | [Export](#export-) 📤 | [Other Features](#other-features-) 🌟| [Contributing](#contributing-) 🤝| [Resources](#resources-) 🌐 |  [License](#license-) 📜
+
 </div>
+
 
 # Installation 🛠️
 ## 1. Install [Pytorch](https://pytorch.org/)
