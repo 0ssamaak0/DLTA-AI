@@ -14,6 +14,8 @@ from scipy.interpolate import splprep, splev
 import json
 import warnings
 import random
+from ultralytics.yolo.utils.ops import Profile, non_max_suppression, scale_boxes, process_mask, process_mask_native
+
 warnings.filterwarnings("ignore")
 
 
@@ -152,8 +154,10 @@ class models_inference():
             #     img = img[None]  # expand for batch dim
             # print(img.shape , img[0].shape)
             # print(img)
-            results = model(img , conf=float(threshold))
+            # results = model(img , conf=float(threshold) )
+            results = model(img , conf = 0.5 , iou=  0.5 )
             results = results[0]
+
             w , h = results.orig_img.shape[1] , results.orig_img.shape[0]
             # if len results is 0 then return empty dict
             if results.masks is None:

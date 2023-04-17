@@ -199,7 +199,7 @@ class Intelligence():
                     results0, results1]
                 end_time = time.time()
                 print(
-                    f"Time taken to annoatate img on {self.current_model_name}: {end_time - start_time}" + "\n")
+                    f"Time taken to annoatate img on {self.current_model_name}: {int((end_time - start_time)*1000)} ms" + "\n")
             print('merging masks')
             results0, results1 = self.reader.merge_masks()
             results = self.reader.polegonise(
@@ -208,7 +208,7 @@ class Intelligence():
         else:
             if img_array_flag:
                 results = self.reader.decode_file(img=image, model=self.current_mm_model, classdict=self.selectedclasses, threshold=self.threshold, img_array_flag=True)
-                print(type(results))
+                # print(type(results))
                 if isinstance(results, tuple):
                     results = self.reader.polegonise(results[0], results[1], classdict=self.selectedclasses, threshold=self.threshold)['results']
                 else :
@@ -221,7 +221,7 @@ class Intelligence():
                     results = results['results']
             end_time = time.time()
             print(
-                f"Time taken to annoatate img on {self.current_model_name}: {end_time - start_time}")
+                f"Time taken to annoatate img on {self.current_model_name}: {int((end_time - start_time)*1000)} ms")
 
         shapes = []
         for result in results:
