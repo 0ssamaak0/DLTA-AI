@@ -15,12 +15,12 @@ Labelmm is the next generation of annotation tools, harnessing the power of Comp
 
 
 [![python](https://img.shields.io/static/v1?label=python&message=3.8&color=blue&logo=python)](https://pytorch.org/)
-![pytorch](https://img.shields.io/static/v1?label=pytorch&message=1.13.1&color=violet&logo=pytorch)
+[![pytorch](https://img.shields.io/static/v1?label=pytorch&message=1.13.1&color=violet&logo=pytorch)](https://pytorch.org/)
 [![mmdetection](https://img.shields.io/static/v1?label=mmdetection&message=v2&color=blue)](https://github.com/open-mmlab/mmdetection/tree/2.x)
 [![GitHub License](https://img.shields.io/github/license/0ssamaak0/labelmm)](https://github.com/0ssamaak0/labelmm/blob/master/LICENSE)
-![GitHub release (latest by date including pre-releases)](https://img.shields.io/github/v/release/0ssamaak0/labelmm?include_prereleases)
-![GitHub issues](https://img.shields.io/github/issues/0ssamaak0/labelmm)
-![GitHub last commit](https://img.shields.io/github/last-commit/0ssamaak0/labelmm)
+[![GitHub release (latest by date including pre-releases)](https://img.shields.io/github/v/release/0ssamaak0/labelmm?include_prereleases)](https://github.com/0ssamaak0/labelmm/releases)
+[![GitHub issues](https://img.shields.io/github/issues/0ssamaak0/labelmm)](https://github.com/0ssamaak0/labelmm/issues)
+[![GitHub last commit](https://img.shields.io/github/last-commit/0ssamaak0/labelmm)](https://github.com/0ssamaak0/labelmm/commits)
 
 ![gif_main](assets/gif_main.gif)
 
