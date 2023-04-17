@@ -1246,7 +1246,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
             icon = utils.newIcon("labels")
             action = QtWidgets.QAction(
-                icon, "Model Explorer [Expiremetnal]", self)
+                icon, "Model Explorer", self)
             # when the action is triggered, preview an Qmessagebox with ERROR
             action.triggered.connect(self.model_explorer)
             menu.addAction(action)
