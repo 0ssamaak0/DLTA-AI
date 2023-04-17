@@ -712,12 +712,12 @@ class MainWindow(QtWidgets.QMainWindow):
             None,
             self.tr("merge segmentation models")
         )
-        runtime_type = action(
-            self.tr("show the runtime type"),
-            self.showRuntimeType,
+        runtime_data = action(
+            self.tr("show the runtime data"),
+            self.showRuntimeData,
             None,
             None,
-            self.tr("show the runtime type")
+            self.tr("show the runtime data")
         )
         openVideo = action(
             self.tr("Open &Video"),
@@ -865,7 +865,7 @@ class MainWindow(QtWidgets.QMainWindow):
                           self.menus.tracking_models,
                           select_classes,
                           merge_segmentation_models,
-                          runtime_type
+                          runtime_data
                           )
                          )
         # # add one for the select classes action
@@ -3470,19 +3470,23 @@ class MainWindow(QtWidgets.QMainWindow):
         self.annotate_one()
         self.current_annotation_mode = self.prev_annotation_mode
 
-    def showRuntimeType(self):
+    def showRuntimeData(self):
         runtime = ""
         # if cuda is available, print cuda name
         if torch.cuda.is_available():
-            runtime = ('Using GPU: ' + torch.cuda.get_device_name(0))
+            runtime = ("Labelmm is Using GPU\n")
+            runtime += ("GPU Name: " + torch.cuda.get_device_name(0))
+            runtime += "\n" + "Total GPU VRAM: " + str(round(torch.cuda.get_device_properties(0).total_memory/(1024 ** 3), 2)) + " GB"
+            runtime += "\n" + "Used: " + str(round(torch.cuda.memory_allocated(0)/(1024 ** 3), 2)) + " GB"
+
         else:
-            runtime = ('Using CPU')
+            runtime = ('Labelmm is Using CPU')
 
         # show runtime in QMessageBox
         msg = QtWidgets.QMessageBox()
         msg.setIcon(QtWidgets.QMessageBox.Information)
         msg.setText(runtime)
-        msg.setWindowTitle("Runtime type")
+        msg.setWindowTitle("Runtime Data")
         msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
         msg.exec_()
 
