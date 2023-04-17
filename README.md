@@ -10,13 +10,13 @@ Labelmm
 Auto Annotation Tool for Computer Vision Tasks
 </h3>
 
-Labelmm makes the next generation of annotation tools. integrates the power of SOTA models from mmdetection in Computer vision to <a href = "https://github.com/wkentaro/labelme">Labelme</a>
+Labelmm makes the next generation of annotation tools by harnessing the power of Computer Vision SOTA models from [mmdetection]((https://github.com/open-mmlab/mmdetection/tree/2.x)) to <a href = "https://github.com/wkentaro/labelme">Labelme</a> in a seamless expirence with modern user interface and intuitive workflow
 
 
-![python](https://img.shields.io/static/v1?label=python&message=3.8&color=blue&logo=python)
+[![python](https://img.shields.io/static/v1?label=python&message=3.8&color=blue&logo=python)](https://pytorch.org/)
 ![pytorch](https://img.shields.io/static/v1?label=pytorch&message=1.13.1&color=violet&logo=pytorch)
 [![mmdetection](https://img.shields.io/static/v1?label=mmdetection&message=v2&color=blue)](https://github.com/open-mmlab/mmdetection/tree/2.x)
-[![GitHub](https://img.shields.io/github/license/0ssamaak0/labelmm)](https://github.com/0ssamaak0/labelmm/blob/master/LICENSE)
+[![GitHub License](https://img.shields.io/github/license/0ssamaak0/labelmm)](https://github.com/0ssamaak0/labelmm/blob/master/LICENSE)
 ![GitHub release (latest by date including pre-releases)](https://img.shields.io/github/v/release/0ssamaak0/labelmm?include_prereleases)
 ![GitHub issues](https://img.shields.io/github/issues/0ssamaak0/labelmm)
 ![GitHub last commit](https://img.shields.io/github/last-commit/0ssamaak0/labelmm)
@@ -24,7 +24,7 @@ Labelmm makes the next generation of annotation tools. integrates the power of S
 ![gif_main](assets/gif_main.gif)
 
 <!-- make p with larger font size -->
-[Installation](#installation----)  🛠️ | [Input Modes](#Input-Modes----) 🎞️ | Model Selection 🤖 | Inferece Options ⚙️ | Object Tracking 🚗 | Export 📤
+[Installation](#installation-%EF%B8%8F)  🛠️ | [Input Modes](#input-modes-%EF%B8%8F) 🎞️ | [Model Selection](#model-selection-%EF%B8%8F) 🤖 | [Object Tracking](#object-tracking-%EF%B8%8F) 🚗 | [Export](#export-%EF%B8%8F) 📤 | [Other Features](#other-features-%EF%B8%8F) 🌟| [Contributing](#contributing-%EF%B8%8F) 🤝| [Resources](#export-%EF%B8%8F) 🌐 |  [License](#license-%EF%B8%8F) 📜
 </div>
 
 # Installation 🛠️
@@ -45,7 +45,12 @@ conda install pytorch==1.13.1 torchvision==0.14.1 torchaudio==0.13.1 pytorch-cud
 pip install -r requirements.txt
 mim install mmcv-full==1.7.0
 ```
-
+# 3. Running
+Run the tool from `labelmm-master` directory
+```
+cd labelme-master
+python __main__.py
+```
 ### Solutions to possible problems
 <details>
 
@@ -97,12 +102,6 @@ For model selection, Labelmm provides the **Model Explorer** to utilize the powe
 for Object Tracking, Labelmm offers 5 different tracking models with the ability to select between them
 
 
-# Inferece Options ⚙️
-Labelmm provides inference options such as Threshold selection and Class Selection (80 COCO classes)
-
-![Inference Options](assets/infer_options.png)
-
-
 # Object Tracking 🚗
 In Object Detection, Labelmm provides seamless expirence for video navigation, tracking settings and different visualization options with the ability to export the tracking results to a video file
 
@@ -117,20 +116,35 @@ while for Object Detection on videos, Labelmm provides the ability to export the
 
 ![Export](assets/Export.png)
 
+# Other Features 🌟
 
+- Threshold Selection
+- Select Classes (from 80 COCO classes)
+- Track assigned objects only
+- Merging models (Run both models and merge the results)
+- Show Runtime Type (CPU/GPU)
+- Show GPU Memory Usage
+- Video Navigation (Frame by Frame, Fast Forward, Fast Backward, Play/Pause)
+- Light / Dark Theme Support (syncs with OS theme)
+- Customizable UI Elements (Hide/Show and Change Position)
 
+# Contributing 🤝
+Labelmm is an open source project and contributions are very welcome, specially in this early stage of development.
 
+you can contribute by:
+- Create an [issue](https://github.com/0ssamaak0/labelmm/issues) Reporting bugs 🐞 or suggesting new features 🌟 or just give your feedback 📝
 
+- Create a [pull request](https://github.com/0ssamaak0/labelmm/pulls) to fix bugs or add new features, or just to improve the code quality, optimize performance, documentation, or even just to fix typos
 
-# Running
+- Review [pull requests](https://github.com/0ssamaak0/labelmm/pulls) and help with the code review process
 
-```
-cd labelme-master
-python __main__.py
-```
+- Spread the word about Labelmm and help us grow the community 🌎, by sharing the project on social media, or just by telling your friends about it
 
-# Resources
+# Resources 🌐
 - [Labelme](https://github.com/wkentaro/labelme)
 - [MMDetection](https://github.com/open-mmlab/mmdetection/tree/2.x)
 - [ultralytics YOLOv8](https://github.com/ultralytics/ultralytics)
 - [mikelbrostrom yolov8_tracking](https://github.com/mikel-brostrom/yolov8_tracking)
+
+# License 📜
+Labelmm is released under the [GPLv3 license](https://github.com/0ssamaak0/labelmm/blob/master/LICENSE). 
