@@ -211,17 +211,20 @@ class Intelligence():
                 print(type(results))
                 if isinstance(results, tuple):
                     results = self.reader.polegonise(results[0], results[1], classdict=self.selectedclasses, threshold=self.threshold)['results']
+                else :
+                    results = results['results']
             else:
                 results = self.reader.decode_file(img=image, model=self.current_mm_model, classdict=self.selectedclasses, threshold=self.threshold)
                 if isinstance(results, tuple):
                     results = self.reader.polegonise(results[0], results[1], classdict=self.selectedclasses, threshold=self.threshold)['results']
+                else:
+                    results = results['results']
             end_time = time.time()
             print(
                 f"Time taken to annoatate img on {self.current_model_name}: {end_time - start_time}")
 
         shapes = []
         for result in results:
-
             shape = {}
             shape["label"] = result["class"]
             shape["content"] = result["confidence"]

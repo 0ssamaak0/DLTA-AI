@@ -14,7 +14,7 @@
 *.mp4
 
 # yoloV8 weights
-yolov8x-seg.pt
+*.pt
 
 
 # any thing in the folder test_videos
