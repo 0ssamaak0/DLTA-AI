@@ -1,28 +1,42 @@
-<h1 align = "center">
-<img src = "imgs/icon.png" width = 200 height = 200>
+
+<div align = "center">
+<h1>
+    <img src = "assets/icon.png" width = 200 height = 200>
 <br>
-Labelmm
+Labelmm 
 </h1>
 
-<h3 align = "center">
+<h3>
 Auto Annotation Tool for Computer Vision Tasks
 </h3>
 
-<p align = "center">
-Labelmm is the integrates the power of SOTA models in Computer vision to <a href = "https://github.com/wkentaro/labelme">Labelme</a> providing a tool for auto annotating images for different computer vision tasks with minimal effort with the ability to export the annotations in the common formats to train your models
+Labelmm makes the next generation of annotation tools. integrates the power of SOTA models from mmdetection in Computer vision to <a href = "https://github.com/wkentaro/labelme">Labelme</a>
 
 
-![pic5](https://user-images.githubusercontent.com/85165808/227048466-e354d66c-9072-41a9-bef5-dcd88988500c.png)
+![python](https://img.shields.io/static/v1?label=python&message=3.8&color=blue&logo=python)
+![pytorch](https://img.shields.io/static/v1?label=pytorch&message=1.13.1&color=violet&logo=pytorch)
+[![mmdetection](https://img.shields.io/static/v1?label=mmdetection&message=v2&color=blue)](https://github.com/open-mmlab/mmdetection/tree/2.x)
+[![GitHub](https://img.shields.io/github/license/0ssamaak0/labelmm)](https://github.com/0ssamaak0/labelmm/blob/master/LICENSE)
+![GitHub release (latest by date including pre-releases)](https://img.shields.io/github/v/release/0ssamaak0/labelmm?include_prereleases)
+![GitHub issues](https://img.shields.io/github/issues/0ssamaak0/labelmm)
+![GitHub last commit](https://img.shields.io/github/last-commit/0ssamaak0/labelmm)
 
+![gif_main](assets/gif_main.gif)
 
-# Installation
-## 1. Install [Anaconda](https://www.anaconda.com) or [Miniconda](https://docs.conda.io/en/latest/miniconda.html) and Install [Pytorch](https://pytorch.org/)
+<!-- make p with larger font size -->
+[Installation](#installation)  🛠️ | Input Modes 🎞️ | Model Selection 🤖 | Inferece Options ⚙️ | Object Tracking 🚗 | Export 📤
+</div>
 
-create conda virtual environment and install pytorch
+# Installation 🛠️
+## 1. Install [Pytorch](https://pytorch.org/)
+preferably using anaconda
+
+create conda virtual environment and install pytorch 
+
 ```
-conda create --name <env_name> python=3.8 -y
+conda create --name labelmm python=3.8 -y
+conda activate labelmm
 
-conda activate <env_name>
 conda install pytorch==1.13.1 torchvision==0.14.1 torchaudio==0.13.1 pytorch-cuda=11.7 -c pytorch -c nvidia
 ```
 ## 2. install requirements
@@ -32,15 +46,12 @@ pip install -r requirements.txt
 mim install mmcv-full==1.7.0
 ```
 
-## 3. download models checkpoints from [mmdetection](https://github.com/open-mmlab/mmdetection)
-Example: Yolact installation
-```
-wget https://download.openmmlab.com/mmdetection/v2.0/yolact/yolact_r50_1x8_coco/yolact_r50_1x8_coco_20200908-f38d58df.pth  -P mmdetection\checkpoints
-```
-Run as adminsitrator if not working
+### Solve some possible problems
+<details>
 
-### Common issues
-#### 1.(linux only 🐧) 
+<summary>click to expand </summary>
+
+#### 1. (linux only 🐧) 
 some linux machines may have this problem 
 ```
 Could not load the Qt platform plugin "xcb" in "/home/<username>/miniconda3/envs/test/lib/python3.8/site-packages/cv2/qt/plugins" even though it was found.
@@ -64,6 +75,32 @@ You can try
 conda install -c conda-forge pycocotools
 ```
 or just use Visual Studio installer to Install `MSVC v143 - VS 2022 C++ x64/x86 build tools (Latest)**`
+
+</details>
+
+
+# Input Modes 🎞️
+
+<div id="container" style="display: flex;">
+  <div style = "margin: 15px">
+
+- **Image** : for image annotation
+- **Directory** : for annotating images in a directory
+- **Video** : for annotating videos
+
+  </div>
+  <div style = "margin: 15px">
+
+  ![Input Modes](assets/input_modes.png)
+
+  </div>
+</div>
+
+labelmm provides 3 Input modes:
+
+
+
+
 
 # Running
 

@@ -4,7 +4,7 @@ import json
 import requests
 from tqdm import tqdm
 
-url = 'https://raw.githubusercontent.com/open-mmlab/mmdetection/master/README.md'
+url = 'https://raw.githubusercontent.com/open-mmlab/mmdetection/2.x/README.md'
 page = requests.get(url)
 soup = BeautifulSoup(page.content, 'html.parser')
 
@@ -17,7 +17,7 @@ li_tags = instance_seg.find_all('li')
 li_tags_list = []
 for li in li_tags:
     li_tags_list.append(
-        {'name': li.find('a').text, 'link': "https://github.com/open-mmlab/mmdetection/tree/master/" + li.find('a')['href'], })
+        {'name': li.find('a').text, 'link': "https://github.com/open-mmlab/mmdetection/tree/2.x/" + li.find('a')['href'], })
 model_id = 0
 col_names = ["id", "Model", "Model Name", "Backbone", "Lr schd", "Memory (GB)",
              "Inference Time (fps)", "Box AP", "Mask AP", "Config", "Checkpoint_link"]
