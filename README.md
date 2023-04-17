@@ -24,7 +24,7 @@ Labelmm makes the next generation of annotation tools. integrates the power of S
 ![gif_main](assets/gif_main.gif)
 
 <!-- make p with larger font size -->
-[Installation](#installation)  🛠️ | Input Modes 🎞️ | Model Selection 🤖 | Inferece Options ⚙️ | Object Tracking 🚗 | Export 📤
+[Installation](#installation----)  🛠️ | [Input Modes](#Input-Modes----) 🎞️ | Model Selection 🤖 | Inferece Options ⚙️ | Object Tracking 🚗 | Export 📤
 </div>
 
 # Installation 🛠️
@@ -46,7 +46,7 @@ pip install -r requirements.txt
 mim install mmcv-full==1.7.0
 ```
 
-### Solve some possible problems
+### Solutions to possible problems
 <details>
 
 <summary>click to expand </summary>
@@ -81,22 +81,42 @@ or just use Visual Studio installer to Install `MSVC v143 - VS 2022 C++ x64/x86 
 
 # Input Modes 🎞️
 
-<div id="container" style="display: flex;">
-  <div style = "margin: 15px">
+labelmm provides 3 Input modes:
 
 - **Image** : for image annotation
 - **Directory** : for annotating images in a directory
 - **Video** : for annotating videos
 
-  </div>
-  <div style = "margin: 15px">
+![Input Modes](assets/input_modes.png)
 
-  ![Input Modes](assets/input_modes.png)
 
-  </div>
-</div>
+# Model Selection 🤖
+For model selection, Labelmm provides the **Model Explorer** to utilize the power numerous models of [mmdetection](https://github.com/open-mmlab/mmdetection/tree/2.x) and [ultralytics YOLOv8](https://github.com/ultralytics/ultralytics) the to give the user the ability to compare, download and select his library of models
 
-labelmm provides 3 Input modes:
+![Model Explorer](assets/model_explorer.gif)
+for Object Tracking, Labelmm offers 5 different tracking models with the ability to select between them
+
+
+# Inferece Options ⚙️
+Labelmm provides inference options such as Threshold selection and Class Selection (80 COCO classes)
+
+![Inference Options](assets/infer_options.png)
+
+
+# Object Tracking 🚗
+In Object Detection, Labelmm provides seamless expirence for video navigation, tracking settings and different visualization options with the ability to export the tracking results to a video file
+
+Beside this, Labelmm provides a completely new way to modify the tracking results, including edit and delete propagation across frames and different interpolation methods
+
+![Object Tracking](assets/tracking.gif)
+
+# Export 📤
+For Instance Segmentation, Labelmm provides to option to export all input modes to COCO format
+while for Object Detection on videos, Labelmm provides the ability to export the tracking results to MOT format
+
+
+![Export](assets/Export.png)
+
 
 
 
@@ -108,3 +128,9 @@ labelmm provides 3 Input modes:
 cd labelme-master
 python __main__.py
 ```
+
+# Resources
+- [Labelme](https://github.com/wkentaro/labelme)
+- [MMDetection](https://github.com/open-mmlab/mmdetection/tree/2.x)
+- [ultralytics YOLOv8](https://github.com/ultralytics/ultralytics)
+- [mikelbrostrom yolov8_tracking](https://github.com/mikel-brostrom/yolov8_tracking)
