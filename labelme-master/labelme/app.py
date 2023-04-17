@@ -260,6 +260,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.FRAMES_TO_SKIP = 30
         self.TRACK_ASSIGNED_OBJECTS_ONLY = False
         self.TrackingMode = False
+        self.current_annotation_mode = ""
         self.CURRENT_ANNOATAION_FLAGS = {"traj": False,
                                          "bbox": True,
                                          "id": True,
@@ -2626,12 +2627,6 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.imagePath = filename
             self.labelFile = None
         image = QtGui.QImage.fromData(self.imageData)
-        # #image = QtGui.QImage('test_img_1.jpg')
-        # img = np.random.randint(0, 255, (100, 100, 3), dtype=np.uint8)
-        # #im_np = np.transpose(im_np, (1,0,2))
-        # im_np = np.array(img)
-        # image = QtGui.QImage(im_np.data, im_np.shape[1], im_np.shape[0],
-        #          QtGui.QImage.Format_BGR888)
 
         if image.isNull():
             formats = [
@@ -2648,6 +2643,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.status(self.tr("Error reading %s") % filename)
             return False
         self.image = image
+        self.CURRENT_FRAME_IMAGE = cv2.imread(filename)
         self.filename = filename
         if self._config["keep_prev"]:
             prev_shapes = self.canvas.shapes
@@ -3419,9 +3415,10 @@ class MainWindow(QtWidgets.QMainWindow):
         if self.current_annotation_mode == "video":
             shapes = self.intelligenceHelper.get_shapes_of_one(
                 self.CURRENT_FRAME_IMAGE, img_array_flag=True)
+            
         elif self.current_annotation_mode == "multimodel":
             shapes = self.intelligenceHelper.get_shapes_of_one(
-                self.filename, img_array_flag=False, multi_model_flag=True)
+                self.CURRENT_FRAME_IMAGE, img_array_flag=True, multi_model_flag=True)
             # to handle the bug of the user selecting no models
             if len(shapes) == 0:
                 return
@@ -3433,7 +3430,7 @@ class MainWindow(QtWidgets.QMainWindow):
             if os.path.exists(self.filename):
                 self.labelList.clearSelection()
             shapes = self.intelligenceHelper.get_shapes_of_one(
-                self.filename)
+                self.CURRENT_FRAME_IMAGE, img_array_flag=True)
 
         # for shape in shapes:
         #     print(shape["group_id"])
@@ -4636,7 +4633,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.set_video_controls_visibility(False)
 
-    def convert_QI_to_cv(self, incomingImage):
+    def convert_QT_to_cv(self, incomingImage):
         '''  Converts a QImage into an opencv MAT format  '''
 
         incomingImage = incomingImage.convertToFormat(4)
@@ -4765,7 +4762,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def draw_bb_on_image(self, image, shapes, imgage_qt_flag=True):
         img = image
         if imgage_qt_flag:
-            img = self.convert_QI_to_cv(image)
+            img = self.convert_QT_to_cv(image)
 
         for shape in shapes:
             id = shape["group_id"]
