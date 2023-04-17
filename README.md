@@ -11,7 +11,7 @@ Labelmm
 Auto Annotation Tool for Computer Vision Tasks
 </h3>
 
-Labelmm is the next generation of annotation tools, harnessing the power of Computer Vision SOTA models from [mmdetection]((https://github.com/open-mmlab/mmdetection/tree/2.x)) to <a href = "https://github.com/wkentaro/labelme">Labelme</a> in a seamless expirence with modern user interface and intuitive workflow
+Labelmm is the next generation of annotation tools, harnessing the power of Computer Vision SOTA models from <a href = "https://github.com/open-mmlab/mmdetection/tree/2.x">mmdetection</a> to <a href = "https://github.com/wkentaro/labelme">Labelme</a> in a seamless expirence with modern user interface and intuitive workflow
 
 
 [![python](https://img.shields.io/static/v1?label=python&message=3.8&color=blue&logo=python)](https://pytorch.org/)
