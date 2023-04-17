@@ -207,15 +207,14 @@ class Intelligence():
 
         else:
             if img_array_flag:
-                results0, results1 = self.reader.decode_file(
-                    img=image, model=self.current_mm_model, classdict=self.selectedclasses, threshold=self.threshold, img_array_flag=True)
-                results = self.reader.polegonise(
-                    results0, results1, classdict=self.selectedclasses, threshold=self.threshold)['results']
+                results = self.reader.decode_file(img=image, model=self.current_mm_model, classdict=self.selectedclasses, threshold=self.threshold, img_array_flag=True)
+                print(type(results))
+                if isinstance(results, tuple):
+                    results = self.reader.polegonise(results[0], results[1], classdict=self.selectedclasses, threshold=self.threshold)['results']
             else:
-                results0, results1 = self.reader.decode_file(
-                    img=image, model=self.current_mm_model, classdict=self.selectedclasses, threshold=self.threshold)
-                results = self.reader.polegonise(
-                    results0, results1, classdict=self.selectedclasses, threshold=self.threshold)['results']
+                results = self.reader.decode_file(img=image, model=self.current_mm_model, classdict=self.selectedclasses, threshold=self.threshold)
+                if isinstance(results, tuple):
+                    results = self.reader.polegonise(results[0], results[1], classdict=self.selectedclasses, threshold=self.threshold)['results']
             end_time = time.time()
             print(
                 f"Time taken to annoatate img on {self.current_model_name}: {end_time - start_time}")
