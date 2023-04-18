@@ -4033,14 +4033,23 @@ class MainWindow(QtWidgets.QMainWindow):
                 shape_ for shape_ in shapes if shape_["group_id"] is not None]
 
             if self.TRACK_ASSIGNED_OBJECTS_ONLY and tracks_to_follow is not None:
-                if len(self.labelList.selectedItems()) != 0:
-                    tracks_to_follow = []
-                    for item in self.labelList.selectedItems():
-                        x = item.text()
-                        i1, i2 = x.find('D'), x.find(':')
-                        tracks_to_follow.append(int(x[i1 + 2:i2]))
-                self.CURRENT_SHAPES_IN_IMG = [
-                    shape_ for shape_ in shapes if shape_["group_id"] in tracks_to_follow]
+                try :
+                    if len(self.labelList.selectedItems()) != 0:
+                        tracks_to_follow = []
+                        for item in self.labelList.selectedItems():
+                            x = item.text()
+                            i1, i2 = x.find('D'), x.find(':')
+                            print(x  , x[i1 + 2:i2])
+                            tracks_to_follow.append(int(x[i1 + 2:i2]))
+                    self.CURRENT_SHAPES_IN_IMG = [
+                        shape_ for shape_ in shapes if shape_["group_id"] in tracks_to_follow]
+                except:
+                    # this happens when the user selects a label that is not a tracked object so there is error in extracting the tracker id
+                    # show a message box to the user (hinting to use the tracker on the image first so that the label has a tracker id to be selected)
+                    self.errorMessage('Error', 'Please use the tracker on the image first so that you can select labels with IDs to track')
+
+                    return
+                        
 
             #     [shape_["group_id"] for shape_ in self.CURRENT_SHAPES_IN_IMG])
             # if i == 0 and existing_annotation:
@@ -4641,8 +4650,12 @@ class MainWindow(QtWidgets.QMainWindow):
             if not self.CURRENT_ANNOATAION_FLAGS['id'] and self.CURRENT_ANNOATAION_FLAGS['class']:
                 text = f'{label}'
 
+            if image.shape[0] < 1000:
+                fontscale = 0.5
+            else :
+                fontscale = 0.7
             text_width, text_height = cv2.getTextSize(
-                text, cv2.FONT_HERSHEY_SIMPLEX, 0.7, thickness)[0]
+                text, cv2.FONT_HERSHEY_SIMPLEX, fontscale, thickness)[0]
             text_x = x + 10
             text_y = y - 10
 
@@ -4651,6 +4664,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
             text_background_x2 = x + 2 * 10 + text_width
             text_background_y2 = y
+            
+            # fontscale is proportional to the image size 
             cv2.rectangle(
                 img=image,
                 pt1=(text_background_x1, text_background_y1),
@@ -4663,7 +4678,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 text=text,
                 org=(text_x, text_y),
                 fontFace=cv2.FONT_HERSHEY_SIMPLEX,
-                fontScale=0.7,
+                fontScale=fontscale,
                 color=(0, 0, 0),
                 thickness=thickness,
                 lineType=cv2.LINE_AA,
