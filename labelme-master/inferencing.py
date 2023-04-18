@@ -183,9 +183,9 @@ class models_inference():
                 # segment_points = self.interpolate_polygon(segment , 25)
                 # if class is person we need to interpolate the polygon to get less points to make the polygon smaller
                 if results.boxes.cls.cpu().numpy().astype(int)[seg_idx] == 0:
-                    segment_points = self.interpolate_polygon(segment , 10)
+                    segment_points = self.interpolate_polygon(segment , 30)
                 else :
-                    segment_points = self.interpolate_polygon(segment , 25)
+                    segment_points = self.interpolate_polygon(segment , 100)
                 
                 
                 # convert the segment_points to integer values
