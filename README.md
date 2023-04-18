@@ -34,8 +34,6 @@ Labelmm is the next generation of annotation tools, harnessing the power of Comp
 ## 1. Install [Pytorch](https://pytorch.org/)
 preferably using anaconda
 
-create conda virtual environment and install pytorch 
-
 ```
 conda create --name labelmm python=3.8 -y
 conda activate labelmm
@@ -99,14 +97,14 @@ labelmm provides 3 Input modes:
 
 
 # Model Selection 🤖
-For model selection, Labelmm provides the **Model Explorer** to utilize the power numerous models of [mmdetection](https://github.com/open-mmlab/mmdetection/tree/2.x) and [ultralytics YOLOv8](https://github.com/ultralytics/ultralytics) the to give the user the ability to compare, download and select his library of models
+For model selection, Labelmm provides the **Model Explorer** to utilize the power of the numerous models in [mmdetection](https://github.com/open-mmlab/mmdetection/tree/2.x) and [ultralytics YOLOv8](https://github.com/ultralytics/ultralytics) the to give the user the ability to compare, download and select his library of models
 
 ![Model Explorer](assets/model_explorer.gif)
 for Object Tracking, Labelmm offers 5 different tracking models with the ability to select between them
 
 
 # Object Tracking 🚗
-In Object Detection, Labelmm provides seamless expirence for video navigation, tracking settings and different visualization options with the ability to export the tracking results to a video file
+In Object Detection, Labelmm provides a seamless expirence for video navigation, tracking settings and different visualization options with the ability to export the tracking results to a video file
 
 Beside this, Labelmm provides a completely new way to modify the tracking results, including edit and delete propagation across frames and different interpolation methods
 
