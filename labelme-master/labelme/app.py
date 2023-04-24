@@ -277,7 +277,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # keep it like that, don't change it
         self.CURRENT_ANNOATAION_TRAJECTORIES['length'] = 30
         # keep it like that, don't change it
-        self.CURRENT_ANNOATAION_TRAJECTORIES['alpha'] = 0.35
+        self.CURRENT_ANNOATAION_TRAJECTORIES['alpha'] = 0.70
         self.CURRENT_SHAPES_IN_IMG = []
         self.config = {'deleteDefault': "this frame only",
                        'interpolationDefault': "interpolate only missed frames between detected frames",
@@ -1452,7 +1452,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.main_video_frames_slider_changed()
 
     def editLabel(self, item=None):
-        self.update_current_frame_annotation()
+        if self.current_annotation_mode == 'video':
+            self.update_current_frame_annotation()
         if item and not isinstance(item, LabelListWidgetItem):
             raise TypeError("item must be LabelListWidgetItem type")
         if not self.canvas.editing():
@@ -4705,7 +4706,7 @@ class MainWindow(QtWidgets.QMainWindow):
             if self.CURRENT_ANNOATAION_FLAGS['mask']:
                 original_img = img.copy()
                 if pts_poly is not None:
-                    cv2.fillPoly(img, pts=[pts_poly], color=color_poly)
+                    cv2.fillPoly(img, pts=[pts_poly], color=color_poly )
                 alpha = self.CURRENT_ANNOATAION_TRAJECTORIES['alpha']
                 img = cv2.addWeighted(original_img, alpha, img, 1 - alpha, 0)
 
