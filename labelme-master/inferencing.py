@@ -15,6 +15,9 @@ import json
 import warnings
 import random
 from ultralytics.yolo.utils.ops import Profile, non_max_suppression, scale_boxes, process_mask, process_mask_native
+import PIL.Image
+import skimage.measure
+import imgviz
 
 warnings.filterwarnings("ignore")
 
@@ -102,104 +105,114 @@ class models_inference():
         else:
             return self.reducePoints(polygon, n)
 
-    def interpolate_polygon(self , polygon, n_points):
-        # interpolate polygon to get less points
-        polygon = np.array(polygon)
-        if len(polygon) < 25:
-            return polygon
-        return np.array(self.reducePoints(polygon.tolist() , n_points))
-        x = polygon[:, 0]
-        y = polygon[:, 1]
-        tck, u = splprep([x, y], s=0, per=1)
-        u_new = np.linspace(u.min(), u.max(), n_points)
-        x_new, y_new = splev(u_new, tck, der=0)
-        return np.array([x_new, y_new]).T
 
-    # function to masks into polygons
-    def mask_to_polygons(self , mask, n_points=25):
-        # Find contours
-        contours = cv2.findContours(
-            mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)[0]
-        # Convert contours to polygons
-        polygon = []
-        for contour in contours:
-            contour = contour.flatten().tolist()
-            # Remove last point if it is the same as the first
-            if contour[-2:] == contour[:2]:
-                contour = contour[:-2]
-            polygon.append(contour)
-        polygon = [(polygon[0][i], polygon[0][i + 1])
-                   for i in np.arange(0, len(polygon[0]), 2)]
-        polygon = self.interpolate_polygon(polygon, n_points)
-        polygon = [[int(sublist[0]) , int(sublist[1])] for sublist in polygon ]
+
+
+
+    # def interpolate_polygon(self , polygon, n_points):
+    #     # interpolate polygon to get less points
+    #     polygon = np.array(polygon)
+    #     if len(polygon) < 25:
+    #         return polygon
+    #     return np.array(self.reducePoints(polygon.tolist() , n_points))
+    #     x = polygon[:, 0]
+    #     y = polygon[:, 1]
+    #     tck, u = splprep([x, y], s=0, per=1)
+    #     u_new = np.linspace(u.min(), u.max(), n_points)
+    #     x_new, y_new = splev(u_new, tck, der=0)
+    #     return np.array([x_new, y_new]).T
+
+    # # function to masks into polygons
+    # def mask_to_polygons(self , mask, n_points=25):
+    #     # Find contours
+    #     contours = cv2.findContours(
+    #         mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)[0]
+    #     # Convert contours to polygons
+    #     polygon = []
+    #     for contour in contours:
+    #         contour = contour.flatten().tolist()
+    #         # Remove last point if it is the same as the first
+    #         if contour[-2:] == contour[:2]:
+    #             contour = contour[:-2]
+    #         polygon.append(contour)
+    #     polygon = [(polygon[0][i], polygon[0][i + 1])
+    #                for i in np.arange(0, len(polygon[0]), 2)]
+    #     polygon = self.interpolate_polygon(polygon, n_points)
+    #     polygon = [[int(sublist[0]) , int(sublist[1])] for sublist in polygon ]
+
+    #     return polygon
+    
+    
+    def get_contour_length(self , contour):
+        contour_start = contour
+        contour_end = np.r_[contour[1:], contour[0:1]]
+        return np.linalg.norm(contour_end - contour_start, axis=1).sum()
+    
+    def mask_to_polygons(self , mask, n_points=25 , resize_factors = [1.0 , 1.0]):
+        mask = mask > 0.0
+        contours = skimage.measure.find_contours(mask)
+        contour = max(contours, key=self.get_contour_length)
+        coords = skimage.measure.approximate_polygon(
+            coords=contour,
+            tolerance=np.ptp(contour, axis=0).max() / 100,
+        )
+        
+        coords = coords * resize_factors
+        # convert coords from x y to y x
+        coords = np.fliplr(coords)
+
+        # segment_points are a list of coords
+        segment_points = coords.astype(int)
+        polygon = segment_points
         return polygon
-
-    # experimental
-
+    
     def full_points(bbox):
         return np.array([[bbox[0], bbox[1]], [bbox[0], bbox[3]], [bbox[2], bbox[3]], [bbox[2], bbox[1]]])
 
     @torch.no_grad()
     def decode_file(self, img , model, classdict, threshold=0.3, img_array_flag=False):
-
+        
         if model.__class__.__name__ == "YOLO":  
-            # img is h,w,c and i want to devide it by 255 to get it in the range of 0 to 1
-            # img = cv2.resize(img , (640, 384))
-            # img = np.array(img , dtype=np.float32)
-            # img /= 255.0
-            # img = torch.from_numpy(img).to(device) 
-            # img = torch.from_numpy(img)
-            # img = img.permute(2, 0, 1)
-            # if len(img.shape) == 3:
-            #     img = img[None]  # expand for batch dim
-            # print(img.shape , img[0].shape)
-            # print(img)
-            # results = model(img , conf=float(threshold) )
-            results = model(img , conf = 0.5 , iou=  0.5 )
-            results = results[0]
 
-            w , h = results.orig_img.shape[1] , results.orig_img.shape[0]
+            img_resized = cv2.resize (img , (640, 640))
+            
+            results = model(img_resized , conf = 0.5 , iou=  0.5 )
+            results = results[0]
             # if len results is 0 then return empty dict
             if results.masks is None:
                 return {"results":{}}
-
-            segments = results.masks.segments
+            
+            masks = results.masks.cpu().numpy().masks 
+            masks = masks > 0.0
+            org_size = img.shape[:2]
+            out_size = masks.shape[1:]
+            
+            # print(f'org_size : {org_size} , out_size : {out_size}')
+            
+            # convert boxes to original image size same as the masks (coords = coords * org_size / out_size)
+            boxes = results.boxes.xyxy.cpu().numpy()
+            boxes = boxes * np.array([org_size[1] / out_size[1] , org_size[0] / out_size[0] , org_size[1] / out_size[1] , org_size[0] / out_size[0]])
+            
             detections = Detections(
-                xyxy=results.boxes.xyxy.cpu().numpy(),
+                xyxy=boxes,
                 confidence=results.boxes.conf.cpu().numpy(),
                 class_id=results.boxes.cls.cpu().numpy().astype(int)
             )
+    
+
             polygons = []
             result_dict = {}
 
-            for seg_idx , segment in enumerate(segments):
-                # segment is a array of points that make up the polygon of the mask and are set relative to the image size so we need to scale them to the image size
-                for i in range(len(segment)):
-                    segment[i][0] = segment[i][0] * w
-                    segment[i][1] = segment[i][1] * h
-                    
-                    
-                    
-                # segment_points = self.interpolate_polygon(segment , 25)
-                # if class is person we need to interpolate the polygon to get less points to make the polygon smaller
-                if results.boxes.cls.cpu().numpy().astype(int)[seg_idx] == 0:
-                    segment_points = self.interpolate_polygon(segment , 30)
-                else :
-                    segment_points = self.interpolate_polygon(segment , 100)
-                
-                
-                # convert the segment_points to integer values
-                segment_points = segment_points.astype(int)
-                
-                polygons.append(segment_points)
+            resize_factors = [org_size[0] / out_size[0] , org_size[1] / out_size[1]]
+            for mask in masks:
+                polygon  = self.mask_to_polygons(mask , resize_factors = resize_factors)
+                polygons.append(polygon)
+
 
             # detection is a tuple of  (box, confidence, class_id, tracker_id)
-
             ind = 0
             res_list = []
-
             for detection in detections:
-
                 result = {}
                 result["class"] = classdict.get(int(detection[2]))
                 result["confidence"] = str(round(detection[1] , 2))
@@ -215,21 +228,12 @@ class models_inference():
             result_dict["results"] = res_list
             return result_dict
 
-
-
-
         if img_array_flag:
             results = inference_detector(model, img)
         else:
             results = inference_detector(model, plt.imread(img))
         # results = async_inference_detector(model, plt.imread(img_path))
         torch.cuda.empty_cache()
-
-
-
-
-
-
 
         results0 = []
         results1 = []
@@ -256,7 +260,7 @@ class models_inference():
 
         
         self.classes_numbering = [keyno for keyno in classdict.keys()]
-        print(self.classes_numbering)
+        # print(self.classes_numbering)
         for classno in range(len(results0)):
             for instance in range(len(results0[classno])):
                 if float(results0[classno][instance][-1]) < float(threshold):
