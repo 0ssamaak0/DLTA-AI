@@ -3,15 +3,12 @@ import json
 import time
 from inferencing import models_inference
 from labelme.label_file import LabelFile
-from labelme.shape import Shape
 from labelme import PY2
 from qtpy import QtCore
-from qtpy.QtCore import Qt
 from qtpy.QtCore import QThread
 from qtpy.QtCore import Signal as pyqtSignal
 from qtpy import QtGui
 from qtpy import QtWidgets
-import threading
 import os
 import os.path as osp
 import warnings

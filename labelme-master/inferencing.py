@@ -1,23 +1,17 @@
 
 import copy
 from supervision.detection.core import Detections
-import supervision as sv
-from typing import List
 from time import time
-import sys
 import torch
 from mmdet.apis import inference_detector, init_detector , async_inference_detector
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.interpolate import splprep, splev
-import json
 import warnings
 import random
 from ultralytics.yolo.utils.ops import Profile, non_max_suppression, scale_boxes, process_mask, process_mask_native
-import PIL.Image
 import skimage.measure
-import imgviz
 
 warnings.filterwarnings("ignore")
 

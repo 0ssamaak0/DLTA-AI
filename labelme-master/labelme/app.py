@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-import sys
-import collections
 import functools
 import json
 import math
@@ -9,8 +7,6 @@ import os.path as osp
 import re
 import traceback
 import webbrowser
-import datetime
-import glob
 # import asyncio
 # import PyQt5
 # from qtpy.QtCore import Signal, Slot
@@ -45,22 +41,17 @@ from .intelligence import coco_classes, color_palette
 from onemetric.cv.utils.iou import box_iou_batch
 from dataclasses import dataclass
 from supervision.detection.core import Detections
-from supervision.draw.color import Color, ColorPalette
 from trackers.multi_tracker_zoo import create_tracker
-from ultralytics.yolo.utils.torch_utils import select_device
-from ultralytics.yolo.utils.ops import Profile, non_max_suppression, scale_boxes, process_mask, process_mask_native
+# from ultralytics.yolo.utils.torch_utils import select_device
+from ultralytics.yolo.utils.ops import Profile # non_max_suppression, scale_boxes, process_mask, process_mask_native
 
 import torch
-
-
-from typing import Iterator, List, Optional, Tuple, Union
-
 import numpy as np
 import cv2
 from pathlib import Path
 
-import time
-import threading
+# import time
+# import threading
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -76,28 +67,10 @@ warnings.filterwarnings("ignore")
 # ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 
-
-# @dataclass(frozen=True)
-# class BYTETrackerArgs:
-#     track_thresh: float = 0.25
-#     track_buffer: int = 30
-#     match_thresh: float = 0.8
-#     aspect_ratio_thresh: float = 3.0
-#     min_box_area: float = 1.0
-#     mot20: bool = False
-
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 # reid_weights = Path('osnet_x0_25_msmt17.pt')
 reid_weights = Path('osnet_x1_0_msmt17.pt')
 # reid_weights = Path('osnet_ms_d_c.pth.tar')
-
-
-# converts Detections into format that can be consumed by match_detections_with_tracks function
-def detections2boxes(detections: Detections) -> np.ndarray:
-    return np.hstack((
-        detections.xyxy,
-        detections.confidence[:, np.newaxis]
-    ))
 
 
 # FIXME
@@ -107,9 +80,9 @@ def detections2boxes(detections: Detections) -> np.ndarray:
 # - [high] Deselect shape when clicking and already selected(?)
 # - [low,maybe] Preview images on file dialogs.
 # - Zoom is too "steppy".
+
+
 LABEL_COLORMAP = imgviz.label_colormap(value=200)
-
-
 class MainWindow(QtWidgets.QMainWindow):
 
     FIT_WINDOW, FIT_WIDTH, MANUAL_ZOOM = 0, 1, 2
