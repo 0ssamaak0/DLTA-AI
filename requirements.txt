@@ -10,3 +10,4 @@ easydict==1.10
 openmim==0.3.2
 mmdet==2.25.2
 scikit-image
+filterpy
