@@ -297,21 +297,30 @@ class models_inference():
 
 
     def merge_masks(self):
+        tic = time()
         result0 = []
         result1 = []
 
-        # count the number of instances in each model
-        counts = count_instances(self.annotating_models)
-        # print the counts of each model
-        for model in counts.keys():
-            print("model {} has {} instances".format(model, counts[model]))
+        # Counting for debugging purposes
+        # # count the number of instances in each model
+        # counts = count_instances(self.annotating_models)
+        # # print the counts of each model
+        # for model in counts.keys():
+        #     print("model {} has {} instances".format(model, counts[model]))
 
-        classnos = []
-        for model in self.annotating_models.keys():
-            classnos.append(len(self.annotating_models[model][1]))
+        # the following lines can be used if we use models with different number of classes
+        # classnos = []
+        # for model in self.annotating_models.keys():
+        #     classnos.append(len(self.annotating_models[model][1]))
+        # print(classnos)
+
+        # instead the following line of code will be used if we use models with the same number of classes
+        classnos = len(self.annotating_models[list(self.annotating_models.keys())[0]][1])
+        
+        
         merged_counts = 0
         # initialize the result list with the same number of classes as the model with the most classes
-        for i in range(max(classnos)):
+        for i in range(classnos):
             result1.append([])
             result0.append([])
 
@@ -343,11 +352,11 @@ class models_inference():
                                             if iou > 0.5:
                                                 if (annotating_models_copy[model][1][classno][instance] is None) or (annotating_models_copy[model2][1][classno][instance2] is None):
                                                     dirty = True
-                                                # merge their bboxes and store the result in result0
-                                                bbox1 = self.annotating_models[model][0][classno][instance]
-                                                bbox2 = self.annotating_models[model2][0][classno][instance2]
-                                                bbox = [min(bbox1[0], bbox2[0]), min(bbox1[1], bbox2[1]), max(bbox1[2], bbox2[2]), max(bbox1[3], bbox2[3]), ((bbox1[4] + bbox2[4]) / 2)]
                                                 if dirty == False:
+                                                    # merge their bboxes and store the result in result0
+                                                    bbox1 = self.annotating_models[model][0][classno][instance]
+                                                    bbox2 = self.annotating_models[model2][0][classno][instance2]
+                                                    bbox = [min(bbox1[0], bbox2[0]), min(bbox1[1], bbox2[1]), max(bbox1[2], bbox2[2]), max(bbox1[3], bbox2[3]), max(bbox1[4], bbox2[4])]
                                                     result0[classno].append(bbox)
                                                     # store the merged mask in result1
                                                     result1[classno].append(np.logical_or(self.annotating_models[model][1][classno][instance] , self.annotating_models[model2][1][classno][instance2]))
@@ -379,6 +388,8 @@ class models_inference():
         for model in counts_here.keys():
             print("model {} has {} instances".format(model, counts_here[model]))
         print("merged {} instances".format(merged_counts))
+        tac = time()
+        print("merging took {} ms".format((tac - tic) * 1000))
         return result0 , result1
     
 
