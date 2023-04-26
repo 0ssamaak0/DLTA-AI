@@ -1252,7 +1252,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         icon = utils.newIcon("labels")
         action = QtWidgets.QAction(
-            icon, "3 Deep SORT", self)
+            icon, "3 Deep SORT (lowest id switch) DEFAULT", self)
         action.triggered.connect(
             lambda: self.update_tracking_method('deepocsort'))
         menu2.addAction(action)
@@ -1270,7 +1270,7 @@ class MainWindow(QtWidgets.QMainWindow):
             lambda: self.update_tracking_method('botsort'))
         menu2.addAction(action)
 
-    def update_tracking_method(self, method = 'bytetrack'):
+    def update_tracking_method(self, method = 'deepocsort'):
         self.tracking_method = method
         self.tracking_config  = f'trackers/{method}/configs/{method}.yaml'
         self.tracker = create_tracker(
