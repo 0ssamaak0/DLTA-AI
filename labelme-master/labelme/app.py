@@ -3226,55 +3226,33 @@ class MainWindow(QtWidgets.QMainWindow):
                 for deleted_id in deleted_ids:
                     self.delete_ids_from_all_frames(
                         [deleted_id], mode=self.config['deleteDefault'], from_frame=from_frame.value(), to_frame=to_frame.value())
+
                 self.main_video_frames_slider_changed()
             ###########################
 
     def delete_ids_from_all_frames(self, deleted_ids, mode, from_frame, to_frame):
-        from_frame = np.min([from_frame, to_frame])
-        to_frame = np.max([from_frame, to_frame])
-        json_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}_tracking_results.json'
-        if not os.path.exists(json_file_name):
-            with open(json_file_name, 'w') as jf:
-                json.dump([], jf)
-            jf.close()
-        with open(json_file_name, 'r') as jf:
-            listObj = json.load(jf)
-        jf.close()
+        from_frame, to_frame = np.min([from_frame, to_frame]), np.max([from_frame, to_frame])
+        listObj = self.load_objects_from_json()
+        
+        if mode == 'this frame and previous frames' :
+            to_frame   = self.INDEX_OF_CURRENT_FRAME
+            from_frame = 1
+        elif mode == 'this frame and next frames' :
+            to_frame   = self.TOTAL_VIDEO_FRAMES
+            from_frame = self.INDEX_OF_CURRENT_FRAME
+        elif mode == 'this frame only' :
+            to_frame   = self.INDEX_OF_CURRENT_FRAME
+            from_frame = self.INDEX_OF_CURRENT_FRAME
+            
         for i in range(len(listObj)):
             frame_idx = listObj[i]['frame_idx']
             for object_ in listObj[i]['frame_data']:
-                if mode == 'this frame and previous frames' and frame_idx > self.INDEX_OF_CURRENT_FRAME:
-                    continue
-                if mode == 'this frame and next frames' and frame_idx < self.INDEX_OF_CURRENT_FRAME:
-                    continue
-                if mode == 'this frame only' and frame_idx != self.INDEX_OF_CURRENT_FRAME:
-                    continue
-                if mode == 'in a specific range of frames' and (frame_idx < from_frame or frame_idx > to_frame):
-                    continue
-                id = str(object_['tracker_id'])
-                if id in deleted_ids:
+                id = object_['tracker_id']
+                if id in deleted_ids and from_frame <= frame_idx <= to_frame:
                     listObj[i]['frame_data'].remove(object_)
-                    if mode == 'this frame and previous frames':
-                        self.CURRENT_ANNOATAION_TRAJECTORIES['id_' + id][0: self.INDEX_OF_CURRENT_FRAME] = [
-                            (-1, -1)] * self.INDEX_OF_CURRENT_FRAME
-                    if mode == 'this frame and next frames':
-                        self.CURRENT_ANNOATAION_TRAJECTORIES['id_' + id][self.INDEX_OF_CURRENT_FRAME - 1:] = [
-                            (-1, -1)] * (self.TOTAL_VIDEO_FRAMES - self.INDEX_OF_CURRENT_FRAME + 1)
-                    if mode == 'this frame only':
-                        self.CURRENT_ANNOATAION_TRAJECTORIES['id_' +
-                                                             id][self.INDEX_OF_CURRENT_FRAME - 1] = (-1, -1)
-                    if mode == 'in a specific range of frames':
-                        self.CURRENT_ANNOATAION_TRAJECTORIES['id_' + id][from_frame - 1: to_frame] = [
-                            (-1, -1)] * (to_frame - from_frame)
-                    else:
-                        self.CURRENT_ANNOATAION_TRAJECTORIES['id_' + str(
-                            id)] = [(-1, -1)] * self.TOTAL_VIDEO_FRAMES
-        listObj = sorted(listObj, key=lambda k: k['frame_idx'])
-        with open(json_file_name, 'w') as json_file:
-            json.dump(listObj, json_file,
-                      indent=4,
-                      separators=(',', ': '))
-        json_file.close()
+                    self.CURRENT_ANNOATAION_TRAJECTORIES['id_' + str(id)][frame_idx - 1] = (-1, -1)
+                    
+        self.load_objects_to_json(listObj)
 
     def copyShape(self):
         self.canvas.endMove(copy=True)
@@ -3634,9 +3612,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # we need to parse from it data for the current frame
 
         target_frame_idx = index
-        listObj = []
-        with open(json_file_name, "r") as json_file:
-            listObj = json.load(json_file)
+        listObj = self.load_objects_from_json()
 
         listObj = np.array(listObj)
 
