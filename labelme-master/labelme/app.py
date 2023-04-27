@@ -125,6 +125,9 @@ class MainWindow(QtWidgets.QMainWindow):
             *self._config["shape"]["hvertex_fill_color"]
         )
 
+        # update models json
+        self.update_saved_models_json()
+
         super(MainWindow, self).__init__()
         self.intelligenceHelper = Intelligence(self)
         self.setWindowTitle(__appname__)
@@ -265,8 +268,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # # for image annotation
         # self.last_file_opened = ""
 
-        # update models json
-        self.update_saved_models_json()
+
 
         features = QtWidgets.QDockWidget.DockWidgetFeatures()
         for dock in ["flag_dock", "label_dock", "shape_dock", "file_dock"]:
