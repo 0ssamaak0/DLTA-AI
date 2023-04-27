@@ -1653,6 +1653,21 @@ class MainWindow(QtWidgets.QMainWindow):
             result = dialog.exec_()
             if result == QtWidgets.QDialog.Accepted:
                 only_edited = True if self.config['interpolationDefault'] == 'interpolate all frames between your KEY frames' else False
+                if only_edited:
+                    print(self.key_frames['id_' + str(shape.group_id)])
+                    try:
+                        if len(self.key_frames['id_' + str(shape.group_id)]) == 1:
+                            shape.group_id = 1/0
+                        else: pass
+                    except:
+                        msg = QtWidgets.QMessageBox()
+                        msg.setIcon(QtWidgets.QMessageBox.Information)
+                        msg.setText(
+                            f"No KEY frames found for this shape ID ({shape.group_id}).\n    ie. less than 2 key frames\n The interpolation is NOT performed.")
+                        msg.setWindowTitle("No KEY frames found")
+                        msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
+                        msg.exec_()
+                        return
                 self.interpolate(id=shape.group_id, only_edited=only_edited)
             ###########################################################
         self.setDirty()
@@ -3262,6 +3277,9 @@ class MainWindow(QtWidgets.QMainWindow):
         elif mode == 'this frame only' :
             to_frame   = self.INDEX_OF_CURRENT_FRAME
             from_frame = self.INDEX_OF_CURRENT_FRAME
+        elif mode == 'across all frames (previous and next)' :
+            to_frame   = self.TOTAL_VIDEO_FRAMES
+            from_frame = 1
             
         for i in range(len(listObj)):
             frame_idx = listObj[i]['frame_idx']
@@ -4237,6 +4255,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.CURRENT_ANNOATAION_TRAJECTORIES.clear()
         self.CURRENT_ANNOATAION_TRAJECTORIES['length'] = length_Value
         self.CURRENT_ANNOATAION_TRAJECTORIES['alpha'] = alpha_Value
+        self.key_frames.clear()
 
         for shape in self.canvas.shapes:
             self.canvas.deleteShape(shape)
