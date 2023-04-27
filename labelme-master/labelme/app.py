@@ -984,6 +984,26 @@ class MainWindow(QtWidgets.QMainWindow):
         # self.firstStart = True
         # if self.firstStart:
         #    QWhatsThis.enterWhatsThisMode()
+        self.update_saved_models_json()
+
+
+    def update_saved_models_json(self):
+        cwd = os.getcwd()
+        checkpoints_dir = cwd + "/mmdetection/checkpoints/"
+        # list all the files in the checkpoints directory
+        files = os.listdir(checkpoints_dir)
+        with open(cwd + '/models_menu/models_json.json') as f:
+            models_json = json.load(f)
+        saved_models = {}
+        saved_models["YOLOv8x"] = {"checkpoint": "yolov8x-seg.pt", "config": "none"}
+        for model in models_json:
+            if model["Checkpoint"].split("/")[-1] in os.listdir(checkpoints_dir):
+                saved_models[model["Model Name"]] = {"checkpoint": model["Checkpoint"], "config": model["Config"]}
+        saved_models = json.dumps(saved_models)
+        #print(saved_models)
+
+
+
 
     def menu(self, title, actions=None):
         menu = self.menuBar().addMenu(title)
