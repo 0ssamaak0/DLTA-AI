@@ -93,7 +93,7 @@ def exportCOCO(target_directory, save_path):
                 except:
                     pass
                 try:
-                    annotations[-1]["confidence"] = float(
+                    annotations[-1]["score"] = float(
                         data["shapes"][j]["content"])
                 except:
                     pass
@@ -161,7 +161,7 @@ def exportCOCOvid(results_file, save_path, vid_width, vid_height, output_name="c
                 except:
                     pass
                 try:
-                    annotations[-1]["confidence"] = float(object["confidence"])
+                    annotations[-1]["score"] = float(object["score"])
                 except:
                     pass
                 used_classes.add(object["class_id"])
@@ -191,7 +191,7 @@ def exportMOT(results_file, save_path, output_name="mot_vid"):
             for object in frame["frame_data"]:
                 # bbox = get_bbox(object["segment"])
                 rows.append(
-                    f'{frame["frame_idx"]}, {object["tracker_id"]},  {object["bbox"][0]},  {object["bbox"][1]},  {object["bbox"][2]},  {object["bbox"][3]},  {object["confidence"]}, {object["class_id"] + 1}, 1')
+                    f'{frame["frame_idx"]}, {object["tracker_id"]},  {object["bbox"][0]},  {object["bbox"][1]},  {object["bbox"][2]},  {object["bbox"][3]},  {object["score"]}, {object["class_id"] + 1}, 1')
 
     # save rows in a file in save_path, file name is output_name, with .txt extension
     if not os.path.exists(f"{save_path}/Annotations"):
