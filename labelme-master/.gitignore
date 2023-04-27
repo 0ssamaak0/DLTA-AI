@@ -16,6 +16,7 @@
 # yoloV8 weights
 *.pt
 
-
 # any thing in the folder test_videos
 test_videos/*
+
+saved_models.json
