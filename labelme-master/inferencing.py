@@ -232,9 +232,14 @@ class models_inference():
         results0 = []
         results1 = []
         for i in classdict.keys():
-            results0.append(results[0][i])
-            results1.append(results[1][i])
+            mask = results[0][i][:,4] >= threshold
+            results0.append(results[0][i][mask])
+            results1.append(list(np.array(results[1][i])[mask]))
         
+        # for i in classdict.keys():
+        #     results0.append(results[0][i])
+        #     results1.append(results[1][i])
+
         #self.annotating_models[model.__class__.__name__] = [results0 , results1]
         # print(self.annotating_models.keys())
 
@@ -302,11 +307,11 @@ class models_inference():
         result1 = []
 
         # Counting for debugging purposes
-        # # count the number of instances in each model
-        # counts = count_instances(self.annotating_models)
-        # # print the counts of each model
-        # for model in counts.keys():
-        #     print("model {} has {} instances".format(model, counts[model]))
+        # count the number of instances in each model
+        counts = count_instances(self.annotating_models)
+        # print the counts of each model
+        for model in counts.keys():
+            print("model {} has {} instances".format(model, counts[model]))
 
         # the following lines can be used if we use models with different number of classes
         # classnos = []
