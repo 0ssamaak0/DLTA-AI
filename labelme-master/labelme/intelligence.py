@@ -106,7 +106,7 @@ class Intelligence():
         torch.cuda.empty_cache()
         # model = init_detector("C:/Users/Shehab/Desktop/l001/ANNOTATION_TOOL/mmdetection/mmdetection/configs/detectors/htc_r50_sac_1x_coco.py",
         #                     "C:/Users/Shehab/Desktop/l001/ANNOTATION_TOOL/mmdetection/mmdetection/checkpoints/htc_r50_sac_1x_coco-bfa60c54.pth", device = torch.device("cuda"))
-        if selected_model_name == "YOLOv8x":
+        if "YOLOv8" in selected_model_name:
             model = YOLO(checkpoint)
             model.fuse()
             return selected_model_name, model
@@ -140,8 +140,9 @@ class Intelligence():
         torch.cuda.empty_cache()
         print(
             f"Selected model is {selected_model_name}\n and config is {config}\n and checkpoint is {checkpoint}")
-        # It's a YOLO model
-        if config == "-":
+        
+        # if YOLOv8
+        if "YOLOv8" in selected_model_name:
             try:
                 model = YOLO(checkpoint)
                 model.fuse()
