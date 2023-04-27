@@ -9,5 +9,5 @@ onemetric==0.1.2
 easydict==1.10
 openmim==0.3.2
 mmdet==2.25.2
-scikit-image
-filterpy
+scikit-image==0.20.0
+filterpy==1.4.5
