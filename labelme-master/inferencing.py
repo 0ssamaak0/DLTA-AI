@@ -176,13 +176,13 @@ class models_inference():
                 img = cv2.imread(img)
 
             # get image size
-            # img_resized = cv2.resize (img , (640, 640))
+            img_resized = cv2.resize (img , (640, 640))
             # default yolo arguments from yolov8 tracking repo
                 # imgsz=(640, 640),  # inference size (height, width)
                 # conf_thres=0.25,  # confidence threshold
                 # iou_thres=0.45,  # NMS IOU threshold
                 # max_det=1000,  # maximum detections per image
-            results = model(img , conf = 0.25 , iou=  0.45 , verbose = False)
+            results = model(img_resized , conf = 0.25 , iou=  0.45 , verbose = False)
             results = results[0]
             # if len results is 0 then return empty dict
             if results.masks is None:
