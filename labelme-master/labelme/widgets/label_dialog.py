@@ -213,6 +213,8 @@ class LabelDialog(QtWidgets.QDialog):
         return None
         
     def setContent(self, content):
+        if type(content) != str:
+            content = str(content)
         self.textEdit.setPlainText(content)
 
     def popUp(self, text=None, move=True, flags=None, group_id=None, content=None, skip_flag=False):

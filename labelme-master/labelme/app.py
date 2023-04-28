@@ -1526,7 +1526,7 @@ class MainWindow(QtWidgets.QMainWindow):
         shape.label = text
         shape.flags = flags
         shape.group_id = new_group_id
-        shape.content = content
+        shape.content = str(content)
         if shape.group_id is None:
             item.setText(shape.label)
         else:
@@ -1588,7 +1588,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     if object_['tracker_id'] == new_group_id:
                         listObj[i]['frame_data'].remove(object_)
                         object_['class_name'] = shape.label
-                        object_['confidence'] = 1.0
+                        object_['confidence'] = str(1.0)
                         object_['class_id'] = coco_classes.index(
                             shape.label) if shape.label in coco_classes else -1
                         listObj[i]['frame_data'].append(object_)
@@ -1596,7 +1596,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     elif object_['tracker_id'] == old_group_id:
                         listObj[i]['frame_data'].remove(object_)
                         object_['class_name'] = shape.label
-                        object_['confidence'] = 1.0
+                        object_['confidence'] = str(1.0)
                         object_['class_id'] = coco_classes.index(
                             shape.label) if shape.label in coco_classes else -1
                         object_['tracker_id'] = new_group_id
