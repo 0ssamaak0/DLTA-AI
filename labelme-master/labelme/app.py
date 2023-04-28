@@ -4893,9 +4893,12 @@ class MainWindow(QtWidgets.QMainWindow):
     def sam_add_point_button_clicked(self):
         print("sam add point button clicked")
         self.canvas.setCursor(QtGui.QCursor(QtCore.Qt.CrossCursor))
+        self.canvas.SAM_mode = "add point"
     
     def sam_remove_point_button_clicked(self):
         print("sam remove point button clicked")
+        self.canvas.setCursor(QtGui.QCursor(QtCore.Qt.CrossCursor))
+        self.canvas.SAM_mode = "remove point"
     
     def sam_select_rect_button_clicked(self):
         print("sam select rect button clicked")
