@@ -1579,6 +1579,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     only_this_frame = True if self.config['EditDefault'] == 'Edit only this frame' else False
 
             listObj = self.load_objects_from_json()
+            
             for i in range(len(listObj)):
                 listObjframe = listObj[i]['frame_idx']
                 if only_this_frame and listObjframe != self.INDEX_OF_CURRENT_FRAME:
@@ -3237,6 +3238,8 @@ class MainWindow(QtWidgets.QMainWindow):
             if self.noShapes():
                 for action in self.actions.onShapesPresent:
                     action.setEnabled(False)
+            if self.config['toolMode'] == 'image':
+                return
             ###########################
             dialog = QtWidgets.QDialog()
             dialog.setWindowTitle("Choose Deletion Options")
