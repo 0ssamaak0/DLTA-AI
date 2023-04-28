@@ -2,6 +2,7 @@ import datetime
 import glob
 import json
 import os
+import numpy as np
 
 
 def get_bbox(segmentation):
@@ -25,6 +26,28 @@ def get_bbox(segmentation):
             else:
                 y.append(segmentation[i])
         return [min(x), min(y), max(x) - min(x), max(y) - min(y)]
+
+
+def get_area_from_polygon(polygon, mode="segmentation"):
+    if mode == "segmentation":
+        # Convert the list to a numpy array of shape (n, 2) where n is the number of vertices
+        polygon = np.array(polygon).reshape(-1, 2)
+        # Use the shoelace formula to calculate the area of the polygon
+        area = 0.5 * np.abs(np.dot(polygon[:, 0], np.roll(polygon[:, 1], 1)) -
+                            np.dot(polygon[:, 1], np.roll(polygon[:, 0], 1)))
+        # Return the area
+        return area
+
+    elif mode == "bbox":
+        # Unpack the list into variables
+        x_min, y_min, width, height = polygon
+        # Calculate the area by multiplying the width and height
+        area = width * height
+        # Return the area
+        return area
+
+    else:
+        raise ValueError("mode must be either 'segmentation' or 'bbox'")
 
 
 def exportCOCO(target_directory, save_path):
@@ -86,12 +109,17 @@ def exportCOCO(target_directory, save_path):
                     "image_id": i,
                     "category_id": coco_classes.index(data["shapes"][j]["label"].lower()) + 1,
                     "bbox": get_bbox(data["shapes"][j]["points"]),
+                    "iscrowd": 0
 
                 })
                 try:
-                    annotations[-1]["segmentation"] = data["shapes"][j]["points"]
+                    annotations[-1]["segmentation"] = [data["shapes"]
+                                                       [j]["points"]]
+                    annotations[-1]["area"] = get_area_from_polygon(
+                        annotations[-1]["segmentation"][0], mode="segmentation")
                 except:
-                    pass
+                    annotations[-1]["area"] = get_area_from_polygon(
+                        annotations[-1]["bbox"], mode="bbox")
                 try:
                     annotations[-1]["score"] = float(
                         data["shapes"][j]["content"])
@@ -140,6 +168,8 @@ def exportCOCOvid(results_file, save_path, vid_width, vid_height, output_name="c
     with open(results_file) as f:
         data = json.load(f)
         for frame in data:
+            if len(frame["frame_data"]) == 0:
+                continue
             images.append({
                 "id": frame["frame_idx"],
                 "width": vid_width,
@@ -148,20 +178,26 @@ def exportCOCOvid(results_file, save_path, vid_width, vid_height, output_name="c
             })
             for object in frame["frame_data"]:
                 annotations.append({
-                    "id": frame["frame_idx"],
+                    "id": len(annotations),
                     "image_id": frame["frame_idx"],
                     "category_id": object["class_id"] + 1,
+                    "iscrowd": 0
                 })
                 try:
                     annotations[-1]["bbox"] = get_bbox(object["segment"])
                 except:
                     annotations[-1]["bbox"] = object["bbox"]
                 try:
-                    annotations[-1]["segmentation"] = object["segment"]
+                    annotations[-1]["segmentation"] = [
+                        [val for sublist in object["segment"] for val in sublist]]
+
+                    annotations[-1]["area"] = get_area_from_polygon(
+                        annotations[-1]["segmentation"][0], mode="segmentation")
                 except:
-                    pass
+                    annotations[-1]["area"] = get_area_from_polygon(
+                        annotations[-1]["bbox"], mode="bbox")
                 try:
-                    annotations[-1]["score"] = float(object["score"])
+                    annotations[-1]["score"] = float(object["confidence"])
                 except:
                     pass
                 used_classes.add(object["class_id"])
@@ -191,7 +227,7 @@ def exportMOT(results_file, save_path, output_name="mot_vid"):
             for object in frame["frame_data"]:
                 # bbox = get_bbox(object["segment"])
                 rows.append(
-                    f'{frame["frame_idx"]}, {object["tracker_id"]},  {object["bbox"][0]},  {object["bbox"][1]},  {object["bbox"][2]},  {object["bbox"][3]},  {object["score"]}, {object["class_id"] + 1}, 1')
+                    f'{frame["frame_idx"]}, {object["tracker_id"]},  {object["bbox"][0]},  {object["bbox"][1]},  {object["bbox"][2]},  {object["bbox"][3]},  {object["confidence"]}, {object["class_id"] + 1}, 1')
 
     # save rows in a file in save_path, file name is output_name, with .txt extension
     if not os.path.exists(f"{save_path}/Annotations"):

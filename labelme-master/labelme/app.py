@@ -233,6 +233,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setAcceptDrops(True)
 
         self.addVideoControls()
+        self.addSamControls()
 
         self.canvas = self.labelList.canvas = Canvas(
             epsilon=self._config["epsilon"],
@@ -727,13 +728,20 @@ class MainWindow(QtWidgets.QMainWindow):
             None,
             self.tr("show the runtime data")
         )
+        sam = action(
+            self.tr("show/hide toolbar"),
+            self.Segment_anything,
+            None,
+            None,
+            self.tr("show/hide toolbar")
+        )
         openVideo = action(
             self.tr("Open &Video"),
             self.openVideo,
             None,
             "video",
             self.tr("Open a video file"),
-        )
+        )    
 
         # Lavel list context menu.
         labelMenu = QtWidgets.QMenu()
@@ -837,12 +845,19 @@ class MainWindow(QtWidgets.QMainWindow):
             edit=self.menu(self.tr("&Edit")),
             view=self.menu(self.tr("&View")),
             intelligence=self.menu(self.tr("&Auto Annotation")),
+            sam = self.menu(self.tr("&Segment Anything")),
             # help=self.menu(self.tr("&Help")),
             recentFiles=QtWidgets.QMenu(self.tr("Open &Recent")),
             saved_models=QtWidgets.QMenu(self.tr("Select Segmentation model")),
             tracking_models=QtWidgets.QMenu(self.tr("Select Tracking model")),
             labelList=labelMenu,
 
+        )
+        utils.addActions(
+            self.menus.sam,
+            (
+                sam,
+            ),
         )
 
         utils.addActions(
@@ -1680,6 +1695,21 @@ class MainWindow(QtWidgets.QMainWindow):
             result = dialog.exec_()
             if result == QtWidgets.QDialog.Accepted:
                 only_edited = True if self.config['interpolationDefault'] == 'interpolate all frames between your KEY frames' else False
+                if only_edited:
+                    print(self.key_frames['id_' + str(shape.group_id)])
+                    try:
+                        if len(self.key_frames['id_' + str(shape.group_id)]) == 1:
+                            shape.group_id = 1/0
+                        else: pass
+                    except:
+                        msg = QtWidgets.QMessageBox()
+                        msg.setIcon(QtWidgets.QMessageBox.Information)
+                        msg.setText(
+                            f"No KEY frames found for this shape ID ({shape.group_id}).\n    ie. less than 2 key frames\n The interpolation is NOT performed.")
+                        msg.setWindowTitle("No KEY frames found")
+                        msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
+                        msg.exec_()
+                        return
                 self.interpolate(id=shape.group_id, only_edited=only_edited)
             ###########################################################
         self.setDirty()
@@ -3289,6 +3319,9 @@ class MainWindow(QtWidgets.QMainWindow):
         elif mode == 'this frame only' :
             to_frame   = self.INDEX_OF_CURRENT_FRAME
             from_frame = self.INDEX_OF_CURRENT_FRAME
+        elif mode == 'across all frames (previous and next)' :
+            to_frame   = self.TOTAL_VIDEO_FRAMES
+            from_frame = 1
             
         for i in range(len(listObj)):
             frame_idx = listObj[i]['frame_idx']
@@ -3483,6 +3516,17 @@ class MainWindow(QtWidgets.QMainWindow):
         self.current_annotation_mode = "multimodel"
         self.annotate_one()
         self.current_annotation_mode = self.prev_annotation_mode
+
+    def Segment_anything(self):
+        print('Segment anything')
+        #check the visibility of the sam toolbar
+        if self.sam_toolbar.isVisible():
+            self.set_sam_toolbar_visibility(False)
+        else:
+            self.set_sam_toolbar_visibility(True)
+
+        
+
 
     def showRuntimeData(self):
         runtime = ""
@@ -4317,6 +4361,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.CURRENT_ANNOATAION_TRAJECTORIES.clear()
         self.CURRENT_ANNOATAION_TRAJECTORIES['length'] = length_Value
         self.CURRENT_ANNOATAION_TRAJECTORIES['alpha'] = alpha_Value
+        self.key_frames.clear()
 
         for shape in self.canvas.shapes:
             self.canvas.deleteShape(shape)
@@ -4655,7 +4700,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # add a button to clear all video annotations
 
         self.set_video_controls_visibility(False)
-
+                    
     def convert_QT_to_cv(self, incomingImage):
         '''  Converts a QImage into an opencv MAT format  '''
 
@@ -4843,6 +4888,120 @@ class MainWindow(QtWidgets.QMainWindow):
             img = self.convert_cv_to_qt(img, )
 
         return img
+    
+    def set_sam_toolbar_visibility(self, visible=False):
+        self.sam_toolbar.setVisible(visible)
+        for widget in self.sam_toolbar.children():
+            try:
+                widget.setVisible(visible)
+            except:
+                pass
+    
+    def addSamControls(self):
+        # add a toolbar 
+        self.sam_toolbar = QtWidgets.QToolBar()
+        self.sam_toolbar.setMovable(True)
+        self.sam_toolbar.setFloatable(True)
+        self.sam_toolbar.setObjectName("sam_toolbar")
+        self.sam_toolbar.setStyleSheet(
+            "QToolBar#videoControls { border: 50px }")
+        self.addToolBar(QtCore.Qt.TopToolBarArea, self.sam_toolbar)
+
+        # add a label that says "sam model"
+        self.sam_model_label = QtWidgets.QLabel()
+        self.sam_model_label.setText("SAM Model")
+        self.sam_model_label.setStyleSheet("QLabel { font-size: 10pt; font-weight: bold; }")
+        self.sam_toolbar.addWidget(self.sam_model_label)
+
+        # add a dropdown menu to select the sam model
+        self.sam_model_comboBox = QtWidgets.QComboBox()
+        # add a label inside the combobox that says "select model" and make it unselectable 
+        self.sam_model_comboBox.addItem("Select Model")
+        self.sam_model_comboBox.addItems(self.sam_models())
+        self.sam_model_comboBox.setStyleSheet("QComboBox { font-size: 10pt; font-weight: bold; }")
+        self.sam_model_comboBox.currentIndexChanged.connect(
+            self.sam_model_comboBox_changed)
+        self.sam_toolbar.addWidget(self.sam_model_comboBox)
+
+        # add a button for adding a point in sam
+        self.sam_add_point_button = QtWidgets.QPushButton()
+        self.sam_add_point_button.setStyleSheet("QPushButton { font-size: 10pt; font-weight: bold; }")
+        self.sam_add_point_button.setText("Add Point")
+        self.sam_add_point_button.clicked.connect(self.sam_add_point_button_clicked)
+        self.sam_toolbar.addWidget(self.sam_add_point_button)
+
+        # add a button for removing a point in sam
+        self.sam_remove_point_button = QtWidgets.QPushButton()
+        self.sam_remove_point_button.setStyleSheet("QPushButton { font-size: 10pt; font-weight: bold; }")
+        self.sam_remove_point_button.setText("Remove Point")
+        self.sam_remove_point_button.clicked.connect(self.sam_remove_point_button_clicked)
+        self.sam_toolbar.addWidget(self.sam_remove_point_button)
+
+        # add a button for selecting a rectangle in sam
+        self.sam_select_rect_button = QtWidgets.QPushButton()
+        self.sam_select_rect_button.setStyleSheet("QPushButton { font-size: 10pt; font-weight: bold; }")
+        self.sam_select_rect_button.setText("Select Rect")
+        self.sam_select_rect_button.clicked.connect(self.sam_select_rect_button_clicked)
+        self.sam_toolbar.addWidget(self.sam_select_rect_button)
+
+        # add a point for clearing the annotation
+        self.sam_clear_annotation_button = QtWidgets.QPushButton()
+        self.sam_clear_annotation_button.setStyleSheet("QPushButton { font-size: 10pt; font-weight: bold; }")
+        self.sam_clear_annotation_button.setText("Clear Annotation")
+        self.sam_clear_annotation_button.clicked.connect(self.sam_clear_annotation_button_clicked)
+        self.sam_toolbar.addWidget(self.sam_clear_annotation_button)
+
+        # add a point of finish object annotation
+        self.sam_finish_annotation_button = QtWidgets.QPushButton()
+        self.sam_finish_annotation_button.setStyleSheet("QPushButton { font-size: 10pt; font-weight: bold; }")
+        self.sam_finish_annotation_button.setText("Finish Annotation")
+        self.sam_finish_annotation_button.clicked.connect(self.sam_finish_annotation_button_clicked)
+        self.sam_toolbar.addWidget(self.sam_finish_annotation_button)
+
+
+
+        self.set_sam_toolbar_visibility(False)
+
+    
+
+    def sam_models(self):
+        cwd = os.getcwd()
+        with open(cwd + '/models_menu/sam_models.json') as f:
+            data = json.load(f)
+        # get all files in a directory
+        files = os.listdir(cwd + '/mmdetection/checkpoints/')
+        models = []
+        for model in data:
+            if model['checkpoint'] in files:
+                models.append(model['name'])
+        return models
+
+    def sam_model_comboBox_changed(self):
+        if self.sam_model_comboBox.currentText() == "Select Model":
+            return
+        print(self.sam_model_comboBox.currentText())
+
+    def sam_add_point_button_clicked(self):
+        print("sam add point button clicked")
+        self.canvas.setCursor(QtGui.QCursor(QtCore.Qt.CrossCursor))
+        self.canvas.SAM_mode = "add point"
+    
+    def sam_remove_point_button_clicked(self):
+        print("sam remove point button clicked")
+        self.canvas.setCursor(QtGui.QCursor(QtCore.Qt.CrossCursor))
+        self.canvas.SAM_mode = "remove point"
+    
+    def sam_select_rect_button_clicked(self):
+        print("sam select rect button clicked")
+    
+    def sam_clear_annotation_button_clicked(self):
+        print("sam clear annotation button clicked")
+    
+    def sam_finish_annotation_button_clicked(self):
+        print("sam finish annotation button clicked")
+
+
+    
 
 
 # important parameters across the gui

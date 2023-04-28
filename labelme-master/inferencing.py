@@ -3,7 +3,7 @@ import copy
 from supervision.detection.core import Detections
 from time import time
 import torch
-from mmdet.apis import inference_detector, init_detector , async_inference_detector
+from mmdet.apis import inference_detector, init_detector, async_inference_detector
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
@@ -20,17 +20,16 @@ class models_inference():
     def __init__(self):
         self.annotating_models = {}
 
-
-    def get_bbox(self,segmentation):
+    def get_bbox(self, segmentation):
         x = []
         y = []
         for i in range(len(segmentation)):
             x.append(segmentation[i][0])
             y.append(segmentation[i][1])
         # get the bbox in xyxy format
-        bbox = [min(x),min(y),max(x) ,max(y)]
+        bbox = [min(x), min(y), max(x), max(y)]
         return bbox
-    
+
     def addPoints(self, shape, n):
         res = shape.copy()
         sub = 1.0 * n / (len(shape) - 1)
@@ -41,8 +40,10 @@ class models_inference():
             res.append(shape[0])
             flag = True
             for i in range(len(shape) - 1):
-                dif = [shape[i + 1][0] - shape[i][0], shape[i + 1][1] - shape[i][1]]
-                newPoint = [shape[i][0] + dif[0] * 0.5, shape[i][1] + dif[1] * 0.5]
+                dif = [shape[i + 1][0] - shape[i][0],
+                       shape[i + 1][1] - shape[i][1]]
+                newPoint = [shape[i][0] + dif[0] *
+                            0.5, shape[i][1] + dif[1] * 0.5]
                 if flag:
                     res.append(newPoint)
                 res.append(shape[i + 1])
@@ -55,33 +56,40 @@ class models_inference():
             res = []
             res.append(shape[0])
             for i in range(len(shape) - 1):
-                dif = [shape[i + 1][0] - shape[i][0], shape[i + 1][1] - shape[i][1]]
+                dif = [shape[i + 1][0] - shape[i][0],
+                       shape[i + 1][1] - shape[i][1]]
                 for j in range(1, now):
-                    newPoint = [shape[i][0] + dif[0] * j / now, shape[i][1] + dif[1] * j / now]
+                    newPoint = [shape[i][0] + dif[0] * j /
+                                now, shape[i][1] + dif[1] * j / now]
                     res.append(newPoint)
                 res.append(shape[i + 1])
             return self.addPoints(res, n + len(shape) - len(res))
-        
+
     def reducePoints(self, polygon, n):
         if n >= len(polygon):
             return polygon
         distances = polygon.copy()
         for i in range(len(polygon)):
-            mid = (np.array(polygon[i - 1]) + np.array(polygon[(i + 1) % len(polygon)])) / 2
-            dif =  np.array(polygon[i]) - mid
+            mid = (np.array(polygon[i - 1]) +
+                   np.array(polygon[(i + 1) % len(polygon)])) / 2
+            dif = np.array(polygon[i]) - mid
             dist_mid = np.sqrt(dif[0] * dif[0] + dif[1] * dif[1])
-            
-            dif_right = np.array(polygon[(i + 1) % len(polygon)]) - np.array(polygon[i])
-            dist_right = np.sqrt(dif_right[0] * dif_right[0] + dif_right[1] * dif_right[1])
-            
+
+            dif_right = np.array(
+                polygon[(i + 1) % len(polygon)]) - np.array(polygon[i])
+            dist_right = np.sqrt(
+                dif_right[0] * dif_right[0] + dif_right[1] * dif_right[1])
+
             dif_left = np.array(polygon[i - 1]) - np.array(polygon[i])
-            dist_left = np.sqrt(dif_left[0] * dif_left[0] + dif_left[1] * dif_left[1])
-            
+            dist_left = np.sqrt(
+                dif_left[0] * dif_left[0] + dif_left[1] * dif_left[1])
+
             distances[i] = min(dist_mid, dist_right, dist_left)
-        distances = [distances[i] + random.random() for i in range(len(distances))]
+        distances = [distances[i] + random.random()
+                     for i in range(len(distances))]
         ratio = 1.0 * n / len(polygon)
         threshold = np.percentile(distances, 100 - ratio * 100)
-        
+
         i = 0
         while i < len(polygon):
             if distances[i] < threshold:
@@ -90,7 +98,7 @@ class models_inference():
             i += 1
         res = [x for x in polygon if x is not None]
         return self.reducePoints(res, n)
-    
+
     def handlePoints(self, polygon, n):
         if n == len(polygon):
             return polygon
@@ -98,10 +106,6 @@ class models_inference():
             return self.addPoints(polygon, n - len(polygon))
         else:
             return self.reducePoints(polygon, n)
-
-
-
-
 
     # def interpolate_polygon(self , polygon, n_points):
     #     # interpolate polygon to get less points
@@ -135,14 +139,13 @@ class models_inference():
     #     polygon = [[int(sublist[0]) , int(sublist[1])] for sublist in polygon ]
 
     #     return polygon
-    
-    
-    def get_contour_length(self , contour):
+
+    def get_contour_length(self, contour):
         contour_start = contour
         contour_end = np.r_[contour[1:], contour[0:1]]
         return np.linalg.norm(contour_end - contour_start, axis=1).sum()
-    
-    def mask_to_polygons(self , mask, n_points=25 , resize_factors = [1.0 , 1.0]):
+
+    def mask_to_polygons(self, mask, n_points=25, resize_factors=[1.0, 1.0]):
         mask = mask > 0.0
         contours = skimage.measure.find_contours(mask)
         if len(contours) == 0:
@@ -152,7 +155,7 @@ class models_inference():
             coords=contour,
             tolerance=np.ptp(contour, axis=0).max() / 100,
         )
-        
+
         coords = coords * resize_factors
         # convert coords from x y to y x
         coords = np.fliplr(coords)
@@ -161,13 +164,13 @@ class models_inference():
         segment_points = coords.astype(int)
         polygon = segment_points
         return polygon
-    
+
     def full_points(bbox):
         return np.array([[bbox[0], bbox[1]], [bbox[0], bbox[3]], [bbox[2], bbox[3]], [bbox[2], bbox[1]]])
 
     @torch.no_grad()
-    def decode_file(self, img , model, classdict, threshold=0.3, img_array_flag=False):
-        
+    def decode_file(self, img, model, classdict, threshold=0.3, img_array_flag=False):
+
         if model.__class__.__name__ == "YOLO":  
 
             # img_resized = cv2.resize (img , (640, 640))
@@ -180,25 +183,25 @@ class models_inference():
             results = results[0]
             # if len results is 0 then return empty dict
             if results.masks is None:
-                return {"results":{}}
-            
-            masks = results.masks.cpu().numpy().masks 
+                return {"results": {}}
+
+            masks = results.masks.cpu().numpy().masks
             masks = masks > 0.0
             org_size = img.shape[:2]
             out_size = masks.shape[1:]
-            
+
             # print(f'org_size : {org_size} , out_size : {out_size}')
-            
+
             # convert boxes to original image size same as the masks (coords = coords * org_size / out_size)
             boxes = results.boxes.xyxy.cpu().numpy()
-            boxes = boxes * np.array([org_size[1] / out_size[1] , org_size[0] / out_size[0] , org_size[1] / out_size[1] , org_size[0] / out_size[0]])
-            
+            boxes = boxes * np.array([org_size[1] / out_size[1], org_size[0] /
+                                     out_size[0], org_size[1] / out_size[1], org_size[0] / out_size[0]])
+
             detections = Detections(
                 xyxy=boxes,
                 confidence=results.boxes.conf.cpu().numpy(),
                 class_id=results.boxes.cls.cpu().numpy().astype(int)
             )
-    
 
             polygons = []
             result_dict = {}
@@ -207,17 +210,19 @@ class models_inference():
             if len(masks) == 0:
                 return {"results":{}}
             for mask in masks:
-                polygon  = self.mask_to_polygons(mask , resize_factors = resize_factors)
+                polygon = self.mask_to_polygons(
+                    mask, resize_factors=resize_factors)
                 polygons.append(polygon)
-
 
             # detection is a tuple of  (box, confidence, class_id, tracker_id)
             ind = 0
             res_list = []
             for detection in detections:
+                if round(detection[1], 2) < float(threshold):
+                    continue
                 result = {}
                 result["class"] = classdict.get(int(detection[2]))
-                result["confidence"] = str(round(detection[1] , 2))
+                result["confidence"] = str(round(detection[1], 2))
                 result["bbox"] = detection[0].astype(int)
                 result["seg"] = polygons[ind]
                 ind += 1
@@ -225,7 +230,7 @@ class models_inference():
                     continue
                 if len(result["seg"]) < 3:
                     continue
-                
+
                 res_list.append(result)
             result_dict["results"] = res_list
             return result_dict
@@ -240,15 +245,15 @@ class models_inference():
         results0 = []
         results1 = []
         for i in classdict.keys():
-            mask = results[0][i][:,4] >= threshold
+            mask = results[0][i][:, 4] >= float(threshold)
             results0.append(results[0][i][mask])
             results1.append(list(np.array(results[1][i])[mask]))
-        
+
         # for i in classdict.keys():
         #     results0.append(results[0][i])
         #     results1.append(results[1][i])
 
-        #self.annotating_models[model.__class__.__name__] = [results0 , results1]
+        # self.annotating_models[model.__class__.__name__] = [results0 , results1]
         # print(self.annotating_models.keys())
 
         # # if the length of the annotating_models is greater than 1 we need to merge the masks
@@ -259,13 +264,12 @@ class models_inference():
         #     assert len(results0) == len(results1)
         #     for i in range(len(results0)):
         #         assert len(results0[i]) == len(results1[i])
-        return results0,results1
-        
-    def polegonise(self,results0,results1,classdict,threshold=0.3,show_bbox_flag=False):
+        return results0, results1
+
+    def polegonise(self, results0, results1, classdict, threshold=0.3, show_bbox_flag=False):
         result_dict = {}
         res_list = []
 
-        
         self.classes_numbering = [keyno for keyno in classdict.keys()]
         # print(self.classes_numbering)
         for classno in range(len(results0)):
@@ -273,17 +277,18 @@ class models_inference():
                 if float(results0[classno][instance][-1]) < float(threshold):
                     continue
                 result = {}
-                result["class"] = classdict.get(self.classes_numbering[classno])
+                result["class"] = classdict.get(
+                    self.classes_numbering[classno])
                 # Confidence
-                result["confidence"] = str(round(results0[classno][instance][-1] , 2))
+                result["confidence"] = str(
+                    round(results0[classno][instance][-1], 2))
                 if classno == 0:
                     result["seg"] = self.mask_to_polygons(
-                        results1[classno][instance].astype(np.uint8) , 10)
-                else :
+                        results1[classno][instance].astype(np.uint8), 10)
+                else:
                     result["seg"] = self.mask_to_polygons(
-                        results1[classno][instance].astype(np.uint8) , 25)
-                    
-                    
+                        results1[classno][instance].astype(np.uint8), 25)
+
                 # result["bbox"] = self.get_bbox(result["seg"])
                 if show_bbox_flag:
                     # result["bbox"] = full_points(result["bbox"]).tolist()
@@ -297,8 +302,7 @@ class models_inference():
                     # result["x4"] = points[3][0]
                     # result["y4"] = points[3][1]
                     pass
-                    
-                    
+
                 if result["class"] == None:
                     continue
                 if len(result["seg"]) < 3:
@@ -307,7 +311,6 @@ class models_inference():
 
         result_dict["results"] = res_list
         return result_dict
-
 
     def merge_masks(self):
         tic = time()
@@ -328,9 +331,9 @@ class models_inference():
         # print(classnos)
 
         # instead the following line of code will be used if we use models with the same number of classes
-        classnos = len(self.annotating_models[list(self.annotating_models.keys())[0]][1])
-        
-        
+        classnos = len(self.annotating_models[list(
+            self.annotating_models.keys())[0]][1])
+
         merged_counts = 0
         # initialize the result list with the same number of classes as the model with the most classes
         for i in range(classnos):
@@ -347,21 +350,23 @@ class models_inference():
                     for instance in range(len(self.annotating_models[model][1][classno])):
                         for idx2, model2 in enumerate(self.annotating_models.keys()):
                             if model != model2 and idx2 > idx1:
-                                #print(type(annotating_models_copy[model][0][classno]),type(annotating_models_copy[model2][0][classno]))
+                                # print(type(annotating_models_copy[model][0][classno]),type(annotating_models_copy[model2][0][classno]))
                                 # check if the class exists in the other model
                                 if classno in range(len(self.annotating_models[model2][1])):
                                     # check if an instance exists in the other model
                                     if len(self.annotating_models[model2][1][classno]) > 0:
                                         for instance2 in range(len(self.annotating_models[model2][1][classno])):
                                             dirty = False
-                                            #print('checking class ' + str(classno)  ' of models ' + model + str(idx1) +  ' and ' + model2 + str(idx2))
+                                            # print('checking class ' + str(classno)  ' of models ' + model + str(idx1) +  ' and ' + model2 + str(idx2))
                                             # get the intersection percentage of the two masks
-                                            intersection = np.logical_and(self.annotating_models[model][1][classno][instance] , self.annotating_models[model2][1][classno][instance2])
+                                            intersection = np.logical_and(
+                                                self.annotating_models[model][1][classno][instance], self.annotating_models[model2][1][classno][instance2])
                                             intersection = np.sum(intersection)
-                                            union = np.logical_or(self.annotating_models[model][1][classno][instance] , self.annotating_models[model2][1][classno][instance2])
+                                            union = np.logical_or(
+                                                self.annotating_models[model][1][classno][instance], self.annotating_models[model2][1][classno][instance2])
                                             union = np.sum(union)
                                             iou = intersection / union
-                                            #print('iou of class ' + str(classno) + ' instance ' + str(instance) + ' and instance ' + str(instance2) + ' is ' + str(iou))
+                                            # print('iou of class ' + str(classno) + ' instance ' + str(instance) + ' and instance ' + str(instance2) + ' is ' + str(iou))
                                             if iou > 0.5:
                                                 if (annotating_models_copy[model][1][classno][instance] is None) or (annotating_models_copy[model2][1][classno][instance2] is None):
                                                     dirty = True
@@ -369,11 +374,14 @@ class models_inference():
                                                     # merge their bboxes and store the result in result0
                                                     bbox1 = self.annotating_models[model][0][classno][instance]
                                                     bbox2 = self.annotating_models[model2][0][classno][instance2]
-                                                    bbox = [min(bbox1[0], bbox2[0]), min(bbox1[1], bbox2[1]), max(bbox1[2], bbox2[2]), max(bbox1[3], bbox2[3]), max(bbox1[4], bbox2[4])]
-                                                    result0[classno].append(bbox)
+                                                    bbox = [min(bbox1[0], bbox2[0]), min(bbox1[1], bbox2[1]), max(
+                                                        bbox1[2], bbox2[2]), max(bbox1[3], bbox2[3]), max(bbox1[4], bbox2[4])]
+                                                    result0[classno].append(
+                                                        bbox)
                                                     # store the merged mask in result1
-                                                    result1[classno].append(np.logical_or(self.annotating_models[model][1][classno][instance] , self.annotating_models[model2][1][classno][instance2]))
-                                                    #print('merging masks of class ' + str(classno) + ' instance ' + str(instance) + ' and instance ' + str(instance2) + ' of models ' + model + ' and ' + model2)
+                                                    result1[classno].append(np.logical_or(
+                                                        self.annotating_models[model][1][classno][instance], self.annotating_models[model2][1][classno][instance2]))
+                                                    # print('merging masks of class ' + str(classno) + ' instance ' + str(instance) + ' and instance ' + str(instance2) + ' of models ' + model + ' and ' + model2)
                                                     merged_counts += 1
                                                 # remove the mask from both models
                                                 annotating_models_copy[model][1][classno][instance] = None
@@ -382,9 +390,8 @@ class models_inference():
                                                 annotating_models_copy[model2][0][classno][instance2] = None
                                                 # continue to the next instance of the first model
                                                 break
-                                                
 
-        counts_here = {}                        
+        counts_here = {}
         # add the remaining masks to the result
         for model in annotating_models_copy.keys():
             counts_here[model] = 0
@@ -392,21 +399,23 @@ class models_inference():
                 for instance in range(len(annotating_models_copy[model][1][classno])):
                     if annotating_models_copy[model][1][classno][instance] is not None:
                         counts_here[model] += 1
-                        #print('adding mask of class ' + str(classno) + ' instance ' + str(instance) + ' of model ' + model)
-                        result1[classno].append(annotating_models_copy[model][1][classno][instance])
-                        result0[classno].append(annotating_models_copy[model][0][classno][instance])
+                        # print('adding mask of class ' + str(classno) + ' instance ' + str(instance) + ' of model ' + model)
+                        result1[classno].append(
+                            annotating_models_copy[model][1][classno][instance])
+                        result0[classno].append(
+                            annotating_models_copy[model][0][classno][instance])
         # clear the annotating_models and add the result to it
         self.annotating_models = {}
-        #self.annotating_models["merged"] = [result0 , result1]
+        # self.annotating_models["merged"] = [result0 , result1]
         for model in counts_here.keys():
-            print("model {} has {} instances".format(model, counts_here[model]))
+            print("model {} has {} instances".format(
+                model, counts_here[model]))
         print("merged {} instances".format(merged_counts))
         tac = time()
         print("merging took {} ms".format((tac - tic) * 1000))
-        return result0 , result1
-    
+        return result0, result1
 
-                                
+
 # result will have ---> bbox , confidence , class_id , tracker_id , segment
 # result of the detection phase only should be (bbox , confidence , class_id , segment)
 def count_instances(annotating_models):
