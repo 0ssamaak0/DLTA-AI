@@ -4216,7 +4216,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.TrackingMode = False
         self.labelFile = None
         self.main_video_frames_slider.setValue(self.INDEX_OF_CURRENT_FRAME - 1)
-        self.main_video_frames_slider.setValue(self.INDEX_OF_CURRENT_FRAME + 1)
+        self.main_video_frames_slider.setValue(self.INDEX_OF_CURRENT_FRAME)
 
         self.tracking_progress_bar.hide()
         self.tracking_progress_bar.setValue(0)
@@ -4817,9 +4817,9 @@ class MainWindow(QtWidgets.QMainWindow):
                 img = cv2.addWeighted(original_img, alpha, img, 1 - alpha, 0)
             for i in range(len(pts_traj) - 1, 0, - 1):
                 
-                # thickness = (len(pts_traj) - i <= 10) * 1 + (len(pts_traj) - i <= 20) * 1 + (len(pts_traj) - i <= 30) * 1 + 3
-                max_thickness = 6
-                thickness = max(1, round(i / len(pts_traj) * max_thickness))          
+                thickness = (len(pts_traj) - i <= 10) * 1 + (len(pts_traj) - i <= 20) * 1 + (len(pts_traj) - i <= 30) * 1 + 3
+                # max_thickness = 6
+                # thickness = max(1, round(i / len(pts_traj) * max_thickness))          
                 
                 if pts_traj[i - 1] is None or pts_traj[i] is None:
                     continue
