@@ -11,6 +11,7 @@ import webbrowser
 # import PyQt5
 # from qtpy.QtCore import Signal, Slot
 import imgviz
+from matplotlib import pyplot as plt
 from qtpy import QtCore
 from qtpy.QtCore import Qt
 from qtpy.QtCore import QThread
@@ -44,6 +45,7 @@ from supervision.detection.core import Detections
 from trackers.multi_tracker_zoo import create_tracker
 # from ultralytics.yolo.utils.torch_utils import select_device
 from ultralytics.yolo.utils.ops import Profile # non_max_suppression, scale_boxes, process_mask, process_mask_native
+from ultralytics.yolo.utils.torch_utils import select_device
 
 import torch
 import numpy as np
@@ -53,20 +55,40 @@ from pathlib import Path
 # import time
 # import threading
 import warnings
+from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
+
+
 warnings.filterwarnings("ignore")
 
 
-# FILE = Path(__file__).resolve()
-# ROOT = FILE.parents[0]  # yolov5 strongsort root directory
+class TrackingThread(QThread):
+    def __init__(self, parent=None):
+        super(TrackingThread, self).__init__(parent)
+        self.parent = parent
+
+    def run(self):
+        self.parent.track_buttonClicked()
+# os.environ["OMP_NUM_THREADS"] = "1"
+# os.environ["OPENBLAS_NUM_THREADS"] = "1"
+# os.environ["MKL_NUM_THREADS"] = "1"
+# os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
+# os.environ["NUMEXPR_NUM_THREADS"] = "1"
+
+FILE = Path(__file__).resolve()
+ROOT = FILE.parents[0]  # inside labelme package
+print(f'\n\n ROOT: {ROOT}\n\n')
+# now get go up one more level to the root of the repo
+ROOT = ROOT.parents[0]
+print(f'\n\n ROOT: {ROOT}\n\n')
+
 # WEIGHTS = ROOT / 'weights'
 
 # if str(ROOT) not in sys.path:
 #     sys.path.append(str(ROOT))  # add ROOT to PATH
 # if str(ROOT / 'trackers' / 'strongsort') not in sys.path:
 #     sys.path.append(str(ROOT / 'trackers' / 'strongsort'))  # add strong_sort ROOT to PATH
-# ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
-
-
+ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
+print(f'\n\n ROOT: {ROOT}\n\n')
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 # reid_weights = Path('osnet_x0_25_msmt17.pt')
 reid_weights = Path('osnet_x1_0_msmt17.pt')
@@ -86,7 +108,9 @@ LABEL_COLORMAP = imgviz.label_colormap(value=200)
 class MainWindow(QtWidgets.QMainWindow):
 
     FIT_WINDOW, FIT_WIDTH, MANUAL_ZOOM = 0, 1, 2
-
+    
+    tracking_progress_bar_signal = pyqtSignal(int)
+    
     def __init__(
         self,
         config=None,
@@ -1289,15 +1313,18 @@ class MainWindow(QtWidgets.QMainWindow):
             lambda: self.update_tracking_method('botsort'))
         menu2.addAction(action)
 
-    def update_tracking_method(self, method = 'deepocsort'):
+    def update_tracking_method(self, method = 'bytetrack'):
         self.tracking_method = method
-        self.tracking_config  = f'trackers/{method}/configs/{method}.yaml'
-        self.tracker = create_tracker(
-                self.tracking_method, self.tracking_config, reid_weights, device, False)
-        if hasattr(self.tracker, 'model'):
-            if hasattr(self.tracker.model, 'warmup'):
-                self.tracker.model.warmup()
-                print('Warmup done')
+        self.tracking_config  = ROOT / 'trackers' / method / 'configs' / (method + '.yaml')
+        with torch.no_grad():
+            device = select_device('')
+            print(f'tracking method {self.tracking_method} , config {self.tracking_config} , reid {reid_weights} , device {device} , half {False}')
+            self.tracker = create_tracker(
+                    self.tracking_method, self.tracking_config, reid_weights, device, False)
+            if hasattr(self.tracker, 'model'):
+                if hasattr(self.tracker.model, 'warmup'):
+                    self.tracker.model.warmup()
+                    # print('Warmup done')
                 
         print(f'Changed tracking method to {method}')
                 
@@ -3821,7 +3848,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def move_frame_by_frame(self):
         self.main_video_frames_slider.setValue(self.INDEX_OF_CURRENT_FRAME + 1)
-
+        
     def class_name_to_id(self, class_name):
         try:
             # map from coco_classes(a list of coco class names) to class_id
@@ -3843,10 +3870,109 @@ class MainWindow(QtWidgets.QMainWindow):
         self.track_buttonClicked()
         self.TRACK_ASSIGNED_OBJECTS_ONLY = False
 
+    def compute_iou(self , box1, box2):
+        """
+        Computes IOU between two bounding boxes.
+
+        Args:
+            box1 (list): List of 4 coordinates (xmin, ymin, xmax, ymax) of the first box.
+            box2 (list): List of 4 coordinates (xmin, ymin, xmax, ymax) of the second box.
+
+        Returns:
+            iou (float): IOU between the two boxes.
+        """
+        # Compute intersection coordinates
+        xmin = max(box1[0], box2[0])
+        ymin = max(box1[1], box2[1])
+        xmax = min(box1[2], box2[2])
+        ymax = min(box1[3], box2[3])
+
+        # Compute intersection area
+        if xmin < xmax and ymin < ymax:
+            intersection_area = (xmax - xmin) * (ymax - ymin)
+        else:
+            intersection_area = 0
+
+        # Compute union area
+        box1_area = (box1[2] - box1[0]) * (box1[3] - box1[1])
+        box2_area = (box2[2] - box2[0]) * (box2[3] - box2[1])
+        union_area = box1_area + box2_area - intersection_area
+
+        # Compute IOU
+        iou = intersection_area / union_area if union_area > 0 else 0
+
+        return iou
+        
+    def match_detections_with_tracks(self , detections, tracks, iou_threshold=0.5):
+        """
+        Match detections with tracks based on their bounding boxes using IOU threshold.
+
+        Args:
+            detections (list): List of detections, each detection is a dictionary with keys (bbox, confidence, class_id)
+            tracks (list): List of tracks, each track is a tuple of (bboxes, track_id, class, conf)
+            iou_threshold (float): IOU threshold for matching detections with tracks.
+
+        Returns:
+            matched_detections (list): List of detections that are matched with tracks, each detection is a dictionary with keys (bbox, confidence, class_id)
+            unmatched_detections (list): List of detections that are not matched with any tracks, each detection is a dictionary with keys (bbox, confidence, class_id)
+        """
+        matched_detections = []
+        unmatched_detections = []
+
+        # Loop through each detection
+        for detection in detections:
+            detection_bbox = detection['bbox']
+            # Loop through each track
+            max_iou = 0
+            matched_track = None
+            for track in tracks:
+                track_bbox = track[0:4]
+
+                # Compute IOU between detection and track
+                iou = self.compute_iou(detection_bbox, track_bbox)
+
+                # Check if IOU is greater than threshold and better than previous matches
+                if iou > iou_threshold and iou > max_iou:
+                    matched_track = track
+                    max_iou = iou
+
+            # If a track was matched, add detection to matched_detections list and remove the matched track from tracks list
+            if matched_track is not None:
+                detection['group_id'] = int(matched_track[4])
+                matched_detections.append(detection)
+                tracks.remove(matched_track)
+            else:
+                unmatched_detections.append(detection)
+
+        return matched_detections, unmatched_detections
+    
+    
+    def update_gui_after_tracking(self , index):
+        # self.loadFramefromVideo(self.CURRENT_FRAME_IMAGE, self.INDEX_OF_CURRENT_FRAME)
+        # QtWidgets.QApplication.processEvents()
+        # progress_value = int((index + 1) / self.FRAMES_TO_TRACK * 100)
+        # self.tracking_progress_bar_signal.emit(progress_value)
+
+        # QtWidgets.QApplication.processEvents()
+        if index != self.FRAMES_TO_TRACK - 1:
+            self.main_video_frames_slider.setValue(self.INDEX_OF_CURRENT_FRAME + 1)
+        QtWidgets.QApplication.processEvents()
+
+
+        
+    def track_buttonClicked_wrapper(self):
+        # ...
+
+        # Disable the track button
+        # self.actions.track.setEnabled(False)
+
+        # Create a thread to run the tracking process
+        self.thread = TrackingThread(parent=self)
+        self.thread.start()
+        
     def track_buttonClicked(self):
 
-        dt = (Profile(), Profile(), Profile(), Profile())
-        
+        # dt = (Profile(), Profile(), Profile(), Profile())
         
         self.tracking_progress_bar.setVisible(True)
         self.actions.export.setEnabled(True)
@@ -3886,8 +4012,12 @@ class MainWindow(QtWidgets.QMainWindow):
         self.TrackingMode = True
         bs = 1
         curr_frame, prev_frame = None, None
+        # debugging_vid = cv2.VideoWriter(
+        #     'tracking_debugging.mp4', cv2.VideoWriter_fourcc(*'mp4v'), 10, (frame_shape[1], frame_shape[0]))
 
         for i in range(self.FRAMES_TO_TRACK):
+            QtWidgets.QApplication.processEvents()
+            self.tracking_progress_bar.setValue(int((i + 1) / self.FRAMES_TO_TRACK * 100))
 
             # if self.stop_tracking:
             #     print('\n\n\nstopped tracking\n\n\n')
@@ -3895,14 +4025,13 @@ class MainWindow(QtWidgets.QMainWindow):
 
             if existing_annotation:
                 existing_annotation = False
-                print('\n\n\n\n\nloading existing annotation\n\n')
+                print('\nloading existing annotation\n')
                 shapes = self.canvas.shapes
                 shapes = self.convert_qt_shapes_to_shapes(shapes)
             else:
                 with torch.no_grad():
-                    with dt[0]:
-                        shapes = self.intelligenceHelper.get_shapes_of_one(
-                            self.CURRENT_FRAME_IMAGE, img_array_flag=True)
+                    shapes = self.intelligenceHelper.get_shapes_of_one(
+                        self.CURRENT_FRAME_IMAGE, img_array_flag=True)
 
             curr_frame = self.CURRENT_FRAME_IMAGE
             boxes = []
@@ -3912,11 +4041,7 @@ class MainWindow(QtWidgets.QMainWindow):
             # current_objects_ids = []
             if len(shapes) == 0:
                 print("no detection in this frame")
-                if i != self.FRAMES_TO_TRACK - 1:
-                    self.main_video_frames_slider.setValue(
-                        self.INDEX_OF_CURRENT_FRAME + 1)
-                self.tracking_progress_bar.setValue(
-                    int((i + 1) / self.FRAMES_TO_TRACK * 100))
+                self.update_gui_after_tracking(i)
                 continue
             for s in shapes:
                 label = s["label"]
@@ -3947,57 +4072,34 @@ class MainWindow(QtWidgets.QMainWindow):
                 confidence=confidences,
                 class_id=class_ids,
             )
-            boxes = torch.from_numpy(detections.xyxy)
+            boxes = torch.from_numpy(detections.xyxy )
             confidences = torch.from_numpy(detections.confidence)
             class_ids = torch.from_numpy(detections.class_id)
 
             dets = torch.cat((boxes, confidences.unsqueeze(
-                1), class_ids.unsqueeze(1)), dim=1).cpu()
-
+                1), class_ids.unsqueeze(1)), dim=1)
+            # convert dets to torch.float32 to avoid error in the tracker update function
+            dets = dets.to(torch.float32)
             if hasattr(self.tracker, 'tracker') and hasattr(self.tracker.tracker, 'camera_update'):
                 if prev_frame is not None and curr_frame is not None:  # camera motion compensation
                     self.tracker.tracker.camera_update(prev_frame, curr_frame)
                     # print('camera update')
             prev_frame = curr_frame
- 
             with torch.no_grad():
-                with dt[1]:
-                    tracks = self.tracker.update(dets, self.CURRENT_FRAME_IMAGE)
+                org_tracks = self.tracker.update( dets.cpu(),self.CURRENT_FRAME_IMAGE )
 
-            for track in tracks:
-                # convert track[0:4] which is a list of floats to a list of integers
-                track[0:4] = [int(i) for i in track[0:4]]
-                # convert track[4] which is a float to an integer
-                track[4] = int(track[4])
-            for shape in shapes:
-                shape['bbox'] = [int(i) for i in shape['bbox']]
-                
-            # print('shapes :' , len(shapes))
-            # print('tracks :' , len(tracks))
-            
-            tracks_boxes = np.array([track[0:4] for track in tracks])
-            detections_boxes = np.array([shape['bbox'] for shape in shapes])
-            if len(tracks_boxes) == 0 or len(detections_boxes) == 0:
-                print('no tracks or detections')
-                continue
-            iou_res = box_iou_batch(tracks_boxes , detections_boxes)
-            track2detection = np.argmax(iou_res, axis=1)
+            tracks = []
+            for org_track in org_tracks:
+                track = [] 
+                for i in range(6):
+                    track.append(int(org_track[i]))
+                track.append(org_track[6])
 
-            result_tracker_ids = [None] * len(detections)
+                tracks.append(track)
 
-            for tracker_index, detection_index in enumerate(track2detection):
-                if iou_res[tracker_index, detection_index] != 0:
-                    result_tracker_ids[detection_index] = int(tracks[tracker_index][4])
-            # print('result_tracker_ids :' , result_tracker_ids)
+            matched_shapes , unmatched_shapes = self.match_detections_with_tracks(shapes, tracks)
+            shapes = matched_shapes
 
-            # now change the shapes group id to the tracker id (result_tracker_ids)
-            for shape_index, shape in enumerate(shapes):
-                # if the tracker id is None we remove the shape from the shapes list
-                if result_tracker_ids[shape_index] is None:
-                    shapes.pop(shape_index)
-                    continue
-                shape['group_id'] = result_tracker_ids[shape_index]
-                
             self.CURRENT_SHAPES_IN_IMG = [
                 shape_ for shape_ in shapes if shape_["group_id"] is not None]
 
@@ -4020,18 +4122,6 @@ class MainWindow(QtWidgets.QMainWindow):
                     return
                         
 
-            #     [shape_["group_id"] for shape_ in self.CURRENT_SHAPES_IN_IMG])
-            # if i == 0 and existing_annotation:
-            #     tracks_to_follow = detections.tracker_id
-            #     existing_annotation = False
-            # if it is first iteration of the for loop and self.TRACK_ASSIGNED_OBJECTS_ONLY is True we mask both detections and shapes with tracks_to_follow
-                # mask = np.array(
-                #     [tracker_id in tracks_to_follow for tracker_id in detections.tracker_id], dtype=bool)
-                # detections.filter(mask=mask, inplace=True)
-            # self.CURRENT_SHAPES_IN_IMG = [shape_ for shape_ in shapes if shape_["group_id"] is not None]
-            # mask = np.array(
-            #     [tracker_id is not None for tracker_id in detections.tracker_id], dtype=bool)
-            # detections.filter(mask=mask, inplace=True)
 
             # to understand the json output file structure it is a dictionary of frames and each frame is a dictionary of tracker_ids and each tracker_id is a dictionary of bbox , confidence , class_id , segment
             json_frame = {}
@@ -4040,7 +4130,7 @@ class MainWindow(QtWidgets.QMainWindow):
             for shape in self.CURRENT_SHAPES_IN_IMG:
                 json_tracked_object = {}
                 json_tracked_object['tracker_id'] = int(shape["group_id"])
-                json_tracked_object['bbox'] = shape["bbox"]
+                json_tracked_object['bbox'] = [int(i) for i in shape['bbox']]
                 json_tracked_object['confidence'] = shape["content"]
                 json_tracked_object['class_name'] = shape["label"]
                 json_tracked_object['class_id'] = coco_classes.index(
@@ -4053,32 +4143,22 @@ class MainWindow(QtWidgets.QMainWindow):
                 json_frame_object_list.append(json_tracked_object)
 
             json_frame.update({'frame_data': json_frame_object_list})
-            # dictObj.update({self.INDEX_OF_CURRENT_FRAME : json_frame_data})
-            # update the json file with the new frame data even if the frame already exists
-            # first check if the frame already exists in the json file if exists then delete
 
-            # dictObj.pop(self.INDEX_OF_CURRENT_FRAME , None)
-            # first check if the frame already exists in the json file if exists then delete
             for h in range(len(listObj)):
                 if listObj[h]['frame_idx'] == self.INDEX_OF_CURRENT_FRAME:
                     listObj.pop(h)
                     break
             # sort the list of frames by the frame index
-
             listObj.append(json_frame)
 
-            # self.loadShapes(shapes)
-            # self.actions.editMode.setEnabled(True)
-            # self.actions.undoLastPoint.setEnabled(False)
-            # self.actions.undo.setEnabled(True)
-            # self.setDirty()
-            # qt sleep for 1 second
-            # self.window_wait(1)
+            QtWidgets.QApplication.processEvents()
+            self.update_gui_after_tracking(i)
             print('finished tracking for frame ', self.INDEX_OF_CURRENT_FRAME)
-            if i != self.FRAMES_TO_TRACK - 1:
-                self.main_video_frames_slider.setValue(self.INDEX_OF_CURRENT_FRAME + 1)
-            self.tracking_progress_bar.setValue(int((i + 1) / self.FRAMES_TO_TRACK * 100))
 
+
+
+
+        
         listObj = sorted(listObj, key=lambda k: k['frame_idx'])
         with open(json_file_name, 'w') as json_file:
             json.dump(listObj, json_file,
@@ -4329,6 +4409,12 @@ class MainWindow(QtWidgets.QMainWindow):
     #     self.loop.run_until_complete(asyncio.gather(self.track_buttonClicked(),
     #                                  self.stop_tracking_button_clicked()))
 
+    # @pyqtSlot(int)
+    # def update_tracking_progress_bar(self, value):
+    #     self.tracking_progress_bar.setValue(value)
+
+
+
     def addVideoControls(self):
         # add video controls toolbar with custom style (background color , spacing , hover color)
         self.videoControls = QtWidgets.QToolBar()
@@ -4480,6 +4566,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.tracking_progress_bar.setMaximum(100)
         self.tracking_progress_bar.setValue(0)
         self.videoControls_2.addWidget(self.tracking_progress_bar)
+        
+        # self.tracking_progress_bar_signal = pyqtSignal(int)
+        # self.tracking_progress_bar_signal.connect(self.tracking_progress_bar.setValue)
+        
         
         # self.stop_tracking_button = QtWidgets.QPushButton()
         # self.stop_tracking_button.setStyleSheet(
@@ -4677,11 +4767,12 @@ class MainWindow(QtWidgets.QMainWindow):
                     cv2.fillPoly(img, pts=[pts_poly], color=color_poly )
                 alpha = self.CURRENT_ANNOATAION_TRAJECTORIES['alpha']
                 img = cv2.addWeighted(original_img, alpha, img, 1 - alpha, 0)
-
             for i in range(len(pts_traj) - 1, 0, - 1):
-                thickness = (len(pts_traj) - i <= 10) * 1 + (len(pts_traj) -
-                                                             i <= 20) * 1 + (len(pts_traj) - i <= 30) * 1 + 3
-                # thickness = 4
+                
+                # thickness = (len(pts_traj) - i <= 10) * 1 + (len(pts_traj) - i <= 20) * 1 + (len(pts_traj) - i <= 30) * 1 + 3
+                max_thickness = 6
+                thickness = max(1, round(i / len(pts_traj) * max_thickness))          
+                
                 if pts_traj[i - 1] is None or pts_traj[i] is None:
                     continue
                 if pts_traj[i] == (-1, - 1) or pts_traj[i - 1] == (-1, - 1):
