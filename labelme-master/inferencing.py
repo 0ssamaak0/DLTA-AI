@@ -211,6 +211,8 @@ class models_inference():
             ind = 0
             res_list = []
             for detection in detections:
+                if round(detection[1], 2) < float(threshold):
+                    continue
                 result = {}
                 result["class"] = classdict.get(int(detection[2]))
                 result["confidence"] = str(round(detection[1], 2))
