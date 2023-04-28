@@ -51,6 +51,9 @@ class Canvas(QtWidgets.QWidget):
         # Initialise local state.
         self.mode = self.EDIT
         self.shapes = []
+        # Segment anything (SAM) attributes
+        self.SAM_mode = ""
+        self.SAM_coordinates = []
         self.shapesBackups = []
         self.current = None
         self.selectedShapes = []  # save the selected shapes here
@@ -339,6 +342,7 @@ class Canvas(QtWidgets.QWidget):
             pos = self.transformPos(ev.localPos())
         else:
             pos = self.transformPos(ev.posF())
+        #print("mousePressEvent", pos, ev.button(), self.SAM_mode)
         if ev.button() == QtCore.Qt.LeftButton:
             if self.drawing():
                 if self.current:
@@ -370,6 +374,17 @@ class Canvas(QtWidgets.QWidget):
                         self.setHiding()
                         self.drawingPolygon.emit(True)
                         self.update()
+            elif self.SAM_mode == "add point":
+                if not self.outOfPixmap(pos):
+                    # add the coordinates and the label (1 forground 0 background)
+                    self.SAM_coordinates.append([pos.x(), pos.y(),1])
+                    print(self.SAM_coordinates)
+
+            elif self.SAM_mode == 'remove point':
+                if not self.outOfPixmap(pos):
+                    # add the coordinates and the label (1 forground 0 background)
+                    self.SAM_coordinates.append([pos.x(), pos.y(),0])
+                    print(self.SAM_coordinates)
             else:
                 group_mode = int(ev.modifiers()) == QtCore.Qt.ControlModifier
                 self.selectShapePoint(pos, multiple_selection_mode=group_mode)
@@ -811,3 +826,6 @@ class Canvas(QtWidgets.QWidget):
         self.pixmap = None
         self.shapesBackups = []
         self.update()
+    
+    def get_coordinates(self):
+        return self.SAM_coordinates
