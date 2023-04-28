@@ -673,6 +673,14 @@ class MainWindow(QtWidgets.QMainWindow):
             self.tr("Scale the selected polygon"),
             enabled=True,
         )
+        update_curr_frame = action(
+            self.tr("&Update current frame"),
+            self.update_current_frame_annotation_button_clicked,
+            shortcuts["save"],
+            "edit",
+            self.tr("Update frame"),
+            enabled=True,
+        )
 
         fill_drawing = action(
             self.tr("Fill Drawing Polygon"),
@@ -822,6 +830,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 undoLastPoint,
                 addPointToEdge,
                 removePoint,
+                update_curr_frame
             ),
             onLoadActive=(
                 close,
@@ -1607,6 +1616,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     if object_['tracker_id'] == new_group_id:
                         sum += 1
                         if sum > 1:
+                            shape.group_id = old_group_id
                             msg = QtWidgets.QMessageBox()
                             msg.setIcon(QtWidgets.QMessageBox.Information)
                             msg.setText(
@@ -3631,6 +3641,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.actions.menu[14].setVisible(image_menu)
         self.actions.menu[15].setVisible(True)
         self.actions.menu[16].setVisible(True)
+        self.actions.menu[17].setVisible(True)
 
     def openVideo(self):
         length_Value = self.CURRENT_ANNOATAION_TRAJECTORIES['length']
