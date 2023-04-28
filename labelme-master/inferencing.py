@@ -145,6 +145,8 @@ class models_inference():
     def mask_to_polygons(self , mask, n_points=25 , resize_factors = [1.0 , 1.0]):
         mask = mask > 0.0
         contours = skimage.measure.find_contours(mask)
+        if len(contours) == 0:
+            return []
         contour = max(contours, key=self.get_contour_length)
         coords = skimage.measure.approximate_polygon(
             coords=contour,
@@ -168,9 +170,13 @@ class models_inference():
         
         if model.__class__.__name__ == "YOLO":  
 
-            img_resized = cv2.resize (img , (640, 640))
-            
-            results = model(img_resized , conf = 0.5 , iou=  0.5 )
+            # img_resized = cv2.resize (img , (640, 640))
+            # default yolo arguments from yolov8 tracking repo
+                # imgsz=(640, 640),  # inference size (height, width)
+                # conf_thres=0.25,  # confidence threshold
+                # iou_thres=0.45,  # NMS IOU threshold
+                # max_det=1000,  # maximum detections per image
+            results = model(img , conf = 0.25 , iou=  0.45 , verbose = False)
             results = results[0]
             # if len results is 0 then return empty dict
             if results.masks is None:
@@ -198,6 +204,8 @@ class models_inference():
             result_dict = {}
 
             resize_factors = [org_size[0] / out_size[0] , org_size[1] / out_size[1]]
+            if len(masks) == 0:
+                return {"results":{}}
             for mask in masks:
                 polygon  = self.mask_to_polygons(mask , resize_factors = resize_factors)
                 polygons.append(polygon)
