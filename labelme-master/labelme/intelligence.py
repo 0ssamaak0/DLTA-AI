@@ -14,6 +14,7 @@ import os.path as osp
 import warnings
 import numpy as np
 import urllib.request
+from .shape import Shape
 
 import torch
 from mmdet.apis import inference_detector, init_detector
@@ -71,11 +72,40 @@ class IntelligenceWorker(QThread):
             try:
                 print("Decoding "+filename)
                 s = self.source.get_shapes_of_one(filename)
+                s  = convert_shapes_to_qt_shapes(s)
                 self.source.saveLabelFile(filename, s)
             except Exception as e:
                 print(e)
             self.sinOut.emit(index, total)
+            
+            
+def convert_shapes_to_qt_shapes(shapes):
+    qt_shapes = []
+    for shape in shapes:
+        label = shape["label"]
+        points = shape["points"]
+        bbox = shape["bbox"]
+        shape_type = shape["shape_type"]
+        # flags = shape["flags"]
+        content = shape["content"]
+        group_id = shape["group_id"]
+        other_data = shape["other_data"]
 
+        if not points:
+            # skip point-empty shape
+            continue
+
+        shape = Shape(
+            label=label,
+            shape_type=shape_type,
+            group_id=group_id,
+            content=content,
+        )
+        for i in range(0, len(points), 2):
+            shape.addPoint(QtCore.QPointF(points[i], points[i + 1]))
+        shape.close()
+        qt_shapes.append(shape)
+    return qt_shapes
 
 class Intelligence():
     def __init__(self, parent):
