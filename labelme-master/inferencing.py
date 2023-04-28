@@ -172,7 +172,10 @@ class models_inference():
     def decode_file(self, img, model, classdict, threshold=0.3, img_array_flag=False):
 
         if model.__class__.__name__ == "YOLO":  
+            if isinstance(img, str):
+                img = cv2.imread(img)
 
+            # get image size
             # img_resized = cv2.resize (img , (640, 640))
             # default yolo arguments from yolov8 tracking repo
                 # imgsz=(640, 640),  # inference size (height, width)
