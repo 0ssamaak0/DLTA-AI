@@ -3482,9 +3482,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def moveShape(self):
         self.canvas.endMove(copy=False)
+        self.setDirty()
         if self.config['toolMode'] == 'video':
             self.update_current_frame_annotation_button_clicked()
-        self.setDirty()
 
     def openDirDialog(self, _value=False, dirpath=None):
         self.config['toolMode'] = 'image'
@@ -3772,6 +3772,30 @@ class MainWindow(QtWidgets.QMainWindow):
         self.actions.menu[16].setVisible(True)
         self.actions.menu[17].setVisible(video_menu)
         self.actions.menu[18].setVisible(video_menu)
+        
+        # NOT WORKING YET
+        
+        # self.actions.tool[0].setVisible(True)
+        # self.actions.tool[1].setVisible(True)
+        # self.actions.tool[2].setVisible(True)
+        # self.actions.tool[3].setVisible(image_menu)
+        # self.actions.tool[4].setVisible(True)
+        # self.actions.tool[5].setVisible(image_menu)
+        # # self.actions.tool[6].setVisible(True)
+        # self.actions.tool[7].setVisible(True)
+        # self.actions.tool[8].setVisible(True)
+        # self.actions.tool[9].setVisible(image_menu)
+        # self.actions.tool[10].setVisible(True)
+        # self.actions.tool[11].setVisible(image_menu)
+        # self.actions.tool[12].setVisible(image_menu)
+        # # self.actions.tool[13].setVisible(True)
+        # self.actions.tool[14].setVisible(True)
+        # self.actions.tool[15].setVisible(True)
+        # self.actions.tool[16].setVisible(image_menu)
+        # self.actions.tool[17].setVisible(image_menu)
+        
+        
+        
 
     def openVideo(self):
         length_Value = self.CURRENT_ANNOATAION_TRAJECTORIES['length']
