@@ -28,6 +28,8 @@ class Canvas(QtWidgets.QWidget):
     drawingPolygon = QtCore.Signal(bool)
     edgeSelected = QtCore.Signal(bool, object)
     vertexSelected = QtCore.Signal(bool)
+    # SAM signals
+    pointAdded = QtCore.Signal()
 
     CREATE, EDIT = 0, 1
     CREATE, EDIT = 0, 1
@@ -54,6 +56,8 @@ class Canvas(QtWidgets.QWidget):
         # Segment anything (SAM) attributes
         self.SAM_mode = ""
         self.SAM_coordinates = []
+        self.SAM_rect = None
+        self.SAM_painter = QtGui.QPainter()
         self.shapesBackups = []
         self.current = None
         self.selectedShapes = []  # save the selected shapes here
@@ -195,8 +199,28 @@ class Canvas(QtWidgets.QWidget):
 
         self.prevMovePoint = pos
         self.restoreCursor()
+        #print("mouseMoveEvent", pos, "self.mode", self.mode, "self.createMode", self.createMode, "self.drawing()", self.drawing(), "self.editing()", self.editing())    
+        
+        # if self.SAM_mode != "":
+        #     # draw vertical and horizontal dashed lines from the cursor
+        #     if not self.outOfPixmap(pos):
+        #         self.SAM_painter.begin(self.pixmap)
 
-        # Polygon drawing.
+        #         # draw a vertical dashed line
+        #         self.SAM_painter.setPen(QtGui.QPen(QtCore.Qt.green, 2, QtCore.Qt.DashLine))
+        #         self.SAM_painter.drawLine(pos.x(), 0, pos.x(), self.pixmap.height())
+
+        #         # draw a horizontal dashed line
+        #         self.SAM_painter.setPen(QtGui.QPen(QtCore.Qt.green, 2, QtCore.Qt.DashLine))
+        #         self.SAM_painter.drawLine(0, pos.y(), self.pixmap.width(), pos.y())
+
+        #         # Make the lines disappear after 100ms
+        #         self.SAM_painter.setOpacity(0.5)
+        #         QTimer.singleShot(100, self.SAM_painter.end)
+
+        #         self.SAM_painter.end()
+        #         self.update()
+        # Polygon drawing.        
         if self.drawing():
             self.line.shape_type = self.createMode
 
@@ -342,7 +366,7 @@ class Canvas(QtWidgets.QWidget):
             pos = self.transformPos(ev.localPos())
         else:
             pos = self.transformPos(ev.posF())
-        #print("mousePressEvent", pos, ev.button(), self.SAM_mode)
+        #print("mousePressEvent", pos, "self.mode", self.mode, "self.createMode", self.createMode, "self.drawing()", self.drawing(), "self.editing()", self.editing())
         if ev.button() == QtCore.Qt.LeftButton:
             if self.drawing():
                 if self.current:
@@ -378,13 +402,19 @@ class Canvas(QtWidgets.QWidget):
                 if not self.outOfPixmap(pos):
                     # add the coordinates and the label (1 forground 0 background)
                     self.SAM_coordinates.append([pos.x(), pos.y(),1])
-                    print(self.SAM_coordinates)
+                    #print(self.SAM_coordinates)
+                    self.pointAdded.emit()
 
             elif self.SAM_mode == 'remove point':
                 if not self.outOfPixmap(pos):
                     # add the coordinates and the label (1 forground 0 background)
                     self.SAM_coordinates.append([pos.x(), pos.y(),0])
-                    print(self.SAM_coordinates)
+                    #print(self.SAM_coordinates)
+                    self.pointAdded.emit()
+            # elif self.SAM_mode == 'select rect':
+            #     self.SAM_rect = Shape(shape_type='rectangle')
+            #     self.SAM_rect.addPoint(pos)
+                
             else:
                 group_mode = int(ev.modifiers()) == QtCore.Qt.ControlModifier
                 self.selectShapePoint(pos, multiple_selection_mode=group_mode)
@@ -397,6 +427,7 @@ class Canvas(QtWidgets.QWidget):
             self.repaint()
 
     def mouseReleaseEvent(self, ev):
+        #print("mouseReleaseEvent", "self.mode", self.mode, "self.createMode", self.createMode, "self.drawing()", self.drawing(), "self.editing()", self.editing())
         if ev.button() == QtCore.Qt.RightButton:
             menu = self.menus[len(self.selectedShapesCopy) > 0]
             self.restoreCursor()
@@ -827,5 +858,3 @@ class Canvas(QtWidgets.QWidget):
         self.shapesBackups = []
         self.update()
     
-    def get_coordinates(self):
-        return self.SAM_coordinates
