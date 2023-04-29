@@ -626,6 +626,15 @@ class MainWindow(QtWidgets.QMainWindow):
             "Adjust brightness and contrast",
             enabled=False,
         )
+        show_cross_line = action(
+            self.tr("&Show Cross Line"),
+            self.enable_show_cross_line,
+            tip=self.tr("Show cross line for mouse position"),
+            icon="cartesian",
+            checkable=True,
+            checked=self._config["show_cross_line"],
+            enabled=True,
+        )
         # Group zoom controls into a list for easier toggling.
         zoomActions = (
             self.zoomWidget,
@@ -802,6 +811,7 @@ class MainWindow(QtWidgets.QMainWindow):
             fitWindow=fitWindow,
             fitWidth=fitWidth,
             brightnessContrast=brightnessContrast,
+            show_cross_line=show_cross_line,
             zoomActions=zoomActions,
             openNextImg=openNextImg,
             openPrevImg=openPrevImg,
@@ -934,6 +944,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 fitWidth,
                 None,
                 brightnessContrast,
+                show_cross_line,
             ),
         )
 
@@ -2687,6 +2698,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.canvas.loadPixmap(
             QtGui.QPixmap.fromImage(qimage), clear_shapes=False
         )
+
+    def enable_show_cross_line(self, enabled):
+        self._config["show_cross_line"] = enabled
+        self.actions.show_cross_line.setChecked(enabled)
+        self.canvas.set_show_cross_line(enabled)
 
     def brightnessContrast(self, value):
         dialog = BrightnessContrastDialog(
