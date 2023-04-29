@@ -677,17 +677,17 @@ class MainWindow(QtWidgets.QMainWindow):
             self.tr("&Update current frame"),
             self.update_current_frame_annotation_button_clicked,
             shortcuts["save"],
-            "edit",
+            "done",
             self.tr("Update frame"),
-            enabled=True,
+            enabled=False,
         )
         ignore_changes = action(
             self.tr("&Ignore changes"),
             self.main_video_frames_slider_changed,
             shortcuts["undo"],
-            "edit",
+            "delete",
             self.tr("Ignore unsaved changes"),
-            enabled=True,
+            enabled=False,
         )
 
         fill_drawing = action(
@@ -3750,28 +3750,43 @@ class MainWindow(QtWidgets.QMainWindow):
                         id)] = color
 
     def right_click_menu(self):
+        
+        # # right click menu
+        #         0  createMode,
+        #         1  createRectangleMode,
+        #         2  createCircleMode,
+        #         3  createLineMode,
+        #         4  createPointMode,
+        #         5  createLineStripMode,
+        #         6  editMode,
+        #         7  edit,
+        #         8  interpolate,
+        #         9  mark_as_key,
+        #         10 scale,
+        #         11 copy,
+        #         12 delete,
+        #         13 undo,
+        #         14 undoLastPoint,
+        #         15 addPointToEdge,
+        #         16 removePoint,
+        #         17 update_curr_frame,
+        #         18 ignore_changes
+        
+        
         mode = self.config['toolMode']
         video_menu = True if mode == "video" else False
         image_menu = True if mode == "image" else False
-        self.actions.menu[0].setVisible(True)
-        self.actions.menu[1].setVisible(image_menu)
-        self.actions.menu[2].setVisible(image_menu)
-        self.actions.menu[3].setVisible(image_menu)
-        self.actions.menu[4].setVisible(image_menu)
-        self.actions.menu[5].setVisible(image_menu)
-        self.actions.menu[6].setVisible(True)
-        self.actions.menu[7].setVisible(True)
-        self.actions.menu[8].setVisible(video_menu)
-        self.actions.menu[9].setVisible(video_menu)
-        self.actions.menu[10].setVisible(video_menu)
-        self.actions.menu[11].setVisible(image_menu)
-        self.actions.menu[12].setVisible(True)
-        self.actions.menu[13].setVisible(image_menu)
-        self.actions.menu[14].setVisible(image_menu)
-        self.actions.menu[15].setVisible(True)
-        self.actions.menu[16].setVisible(True)
-        self.actions.menu[17].setVisible(video_menu)
-        self.actions.menu[18].setVisible(video_menu)
+        video_menu_list = [8,9,10,17,18]
+        image_menu_list = [1,2,3,4,5,11,13,14]
+        for i in range(len(self.actions.menu)):
+            if i in video_menu_list:
+                self.actions.menu[i].setVisible(video_menu)
+                self.actions.menu[i].setEnabled(video_menu)
+            elif i in image_menu_list:
+                self.actions.menu[i].setVisible(image_menu)
+            else:
+                self.actions.menu[i].setVisible(True)
+        
         
         # NOT WORKING YET
         
@@ -4029,6 +4044,12 @@ class MainWindow(QtWidgets.QMainWindow):
         # print(1)
 
     def main_video_frames_slider_changed(self):
+        
+        try:
+            x = self.CURRENT_VIDEO_PATH
+        except:
+            return
+        
         frame_idx = self.main_video_frames_slider.value()
 
         self.INDEX_OF_CURRENT_FRAME = frame_idx
@@ -4556,6 +4577,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.main_video_frames_slider.setValue(1)
 
     def update_current_frame_annotation_button_clicked(self):
+        try:
+            x = self.CURRENT_VIDEO_PATH
+        except:
+            return
         self.update_current_frame_annotation()
         self.main_video_frames_slider_changed()
 
