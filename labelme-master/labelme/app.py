@@ -256,6 +256,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.canvas.selectionChanged.connect(self.shapeSelectionChanged)
         self.canvas.drawingPolygon.connect(self.toggleDrawingSensitive)
 
+        # Canvas SAM slots
+        self.canvas.pointAdded.connect(self.run_sam_model)
+
         self.setCentralWidget(scrollArea)
 
         # for Export
@@ -5190,12 +5193,25 @@ class MainWindow(QtWidgets.QMainWindow):
     
     def sam_select_rect_button_clicked(self):
         print("sam select rect button clicked")
+        self.canvas.setCursor(QtGui.QCursor(QtCore.Qt.CrossCursor))
+        self.canvas.SAM_mode = "select rect"
     
     def sam_clear_annotation_button_clicked(self):
         print("sam clear annotation button clicked")
+        self.canvas.SAM_coordinates = []
+        self.canvas.SAM_mode = ""
     
     def sam_finish_annotation_button_clicked(self):
+        # return the cursor to normal
+        self.canvas.setCursor(QtGui.QCursor(QtCore.Qt.ArrowCursor))
         print("sam finish annotation button clicked")
+        self.canvas.SAM_coordinates = []
+        self.canvas.SAM_mode = ""
+
+
+    def run_sam_model(self):
+        print("run sam model")
+        print(self.canvas.SAM_coordinates)
 
 
     
