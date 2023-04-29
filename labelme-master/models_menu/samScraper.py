@@ -16,10 +16,13 @@ li = ul[0].find_all('li')
 for i in li:
     model = {}
     #print(i.find('a').text.split(" ")[0]) # get text inside a tag (model name)
-    model['name'] = i.find('a').text.split(" ")[0]
+    name =  i.find('a').text.split(" ")[0]
+    name = name.replace("-", "_").lower()
+    model['name'] = name
     #print(i.find('a')['href']) # get href inside a tag)
     model['url'] = i.find('a')['href']
-    model['checkpoint'] = i.find('a')['href'].split("/")[-1]
+    checkpoint = "mmdetection/checkpoints/" + i.find('a')['href'].split("/")[-1]
+    model['checkpoint'] = checkpoint
     models_json.append(model)
 
 with open ("sam_models.json", "w") as f:
