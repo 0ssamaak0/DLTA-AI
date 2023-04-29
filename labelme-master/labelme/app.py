@@ -684,6 +684,14 @@ class MainWindow(QtWidgets.QMainWindow):
             self.tr("Update frame"),
             enabled=True,
         )
+        ignore_changes = action(
+            self.tr("&Ignore changes"),
+            self.main_video_frames_slider_changed,
+            shortcuts["undo"],
+            "edit",
+            self.tr("Ignore unsaved changes"),
+            enabled=True,
+        )
 
         fill_drawing = action(
             self.tr("Fill Drawing Polygon"),
@@ -833,7 +841,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 undoLastPoint,
                 addPointToEdge,
                 removePoint,
-                update_curr_frame
+                update_curr_frame,
+                ignore_changes
             ),
             onLoadActive=(
                 close,
@@ -2257,6 +2266,20 @@ class MainWindow(QtWidgets.QMainWindow):
                       separators=(',', ': '))
         json_file.close()
 
+    def is_id_repeated(self, group_id, frameIdex = -1):
+        if frameIdex == -1:
+            frameIdex = self.INDEX_OF_CURRENT_FRAME
+        listobj = self.load_objects_from_json()
+        for i in range(len(listobj)):
+            listobjframe = listobj[i]['frame_idx']
+            if listobjframe != frameIdex:
+                continue
+            for object_ in listobj[i]['frame_data']:
+                if object_['tracker_id'] == group_id:
+                    return True
+        return False
+
+
     def fileSearchChanged(self):
         self.importDirImages(
             self.lastOpenDir,
@@ -2531,22 +2554,52 @@ class MainWindow(QtWidgets.QMainWindow):
                 ),
             )
             text = ""
-        listobj = self.load_objects_from_json()
-        for i in range(len(listobj)):
-            listobjframe = listobj[i]['frame_idx']
-            if listobjframe != self.INDEX_OF_CURRENT_FRAME:
-                continue
-            for object_ in listobj[i]['frame_data']:
-                if object_['tracker_id'] == group_id:
-                    msg = QtWidgets.QMessageBox()
-                    msg.setIcon(QtWidgets.QMessageBox.Information)
-                    msg.setText(
-                        "A Shape with that ID already exists in this frame.")
-                    msg.setWindowTitle("ID already exists")
-                    msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
-                    msg.exec_()
-                    text = False
-                    break
+        
+        mainTEXT = "A Shape with that ID already exists in this frame.\n\n"
+        repeated = 0
+        
+        while self.is_id_repeated(group_id):
+            dialog = QtWidgets.QDialog()
+            dialog.setWindowTitle("ID already exists")
+            dialog.setWindowModality(Qt.ApplicationModal)
+            dialog.resize(450, 100)
+            
+            if repeated == 0:
+                label = QtWidgets.QLabel(mainTEXT + f'Please try a new ID: ')
+            if repeated == 1:
+                label = QtWidgets.QLabel(mainTEXT + f'OH GOD.. AGAIN? I hpoe you are not doing this on purpose..')
+            if repeated == 2:
+                label = QtWidgets.QLabel(mainTEXT + f'AGAIN? REALLY? LAST time for you..')
+            if repeated == 3:
+                text = False
+                break
+            
+            properID = QtWidgets.QSpinBox()
+            properID.setRange(1, 1000)
+            
+            buttonBox = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Ok)
+            buttonBox.accepted.connect(dialog.accept)
+            
+            layout = QtWidgets.QVBoxLayout()
+            layout.addWidget(label)
+            layout.addWidget(properID)
+            layout.addWidget(buttonBox)
+            dialog.setLayout(layout)
+            result = dialog.exec_()
+            if result != QtWidgets.QDialog.Accepted:
+                text = False
+                break
+            group_id = properID.value()
+            repeated += 1
+            
+        if repeated > 1:
+            msg = QtWidgets.QMessageBox()
+            msg.setIcon(QtWidgets.QMessageBox.Information)
+            msg.setText(f"OH, Finally..!")
+            msg.setWindowTitle(" ")
+            msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
+            msg.exec_()
+        
 
         if text:
             self.labelList.clearSelection()
@@ -3350,6 +3403,80 @@ class MainWindow(QtWidgets.QMainWindow):
         self.load_objects_to_json(listObj)
 
     def copyShape(self):
+        if self.config['toolMode'] == 'video':
+            self.canvas.endMove(copy=True)
+            shape = self.canvas.selectedShapes[0]
+            text = shape.label
+            text, flags, group_id, content = self.labelDialog.popUp(text)
+            shape.group_id = group_id
+            shape.content = content
+            shape.label = text
+            shape.flags = flags
+            
+            mainTEXT = "A Shape with that ID already exists in this frame.\n\n"
+            repeated = 0
+            
+            while self.is_id_repeated(group_id):
+                dialog = QtWidgets.QDialog()
+                dialog.setWindowTitle("ID already exists")
+                dialog.setWindowModality(Qt.ApplicationModal)
+                dialog.resize(450, 100)
+                
+                if repeated == 0:
+                    label = QtWidgets.QLabel(mainTEXT + f'Please try a new ID: ')
+                if repeated == 1:
+                    label = QtWidgets.QLabel(mainTEXT + f'OH GOD.. AGAIN? I hpoe you are not doing this on purpose..')
+                if repeated == 2:
+                    label = QtWidgets.QLabel(mainTEXT + f'AGAIN? REALLY? LAST time for you..')
+                if repeated == 3:
+                    text = False
+                    break
+                
+                properID = QtWidgets.QSpinBox()
+                properID.setRange(1, 1000)
+                
+                buttonBox = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Ok)
+                buttonBox.accepted.connect(dialog.accept)
+                
+                layout = QtWidgets.QVBoxLayout()
+                layout.addWidget(label)
+                layout.addWidget(properID)
+                layout.addWidget(buttonBox)
+                dialog.setLayout(layout)
+                result = dialog.exec_()
+                if result != QtWidgets.QDialog.Accepted:
+                    text = False
+                    break
+                group_id = properID.value()
+                repeated += 1
+                
+            if repeated > 1:
+                msg = QtWidgets.QMessageBox()
+                msg.setIcon(QtWidgets.QMessageBox.Information)
+                msg.setText(f"OH, Finally..!")
+                msg.setWindowTitle(" ")
+                msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
+                msg.exec_()
+            
+
+            if text:
+                self.labelList.clearSelection()
+                shape = self.canvas.setLastLabel(text, flags)
+                shape.group_id = group_id
+                shape.content = content
+                self.addLabel(shape)
+                self.actions.editMode.setEnabled(True)
+                self.actions.undoLastPoint.setEnabled(False)
+                self.actions.undo.setEnabled(True)
+                self.setDirty()
+            else:
+                self.canvas.undoLastLine()
+                self.canvas.shapesBackups.pop()
+
+            self.update_current_frame_annotation_button_clicked()
+
+            return
+            
         self.canvas.endMove(copy=True)
         self.labelList.clearSelection()
         for shape in self.canvas.selectedShapes:
@@ -3359,6 +3486,8 @@ class MainWindow(QtWidgets.QMainWindow):
     def moveShape(self):
         self.canvas.endMove(copy=False)
         self.setDirty()
+        if self.config['toolMode'] == 'video':
+            self.update_current_frame_annotation_button_clicked()
 
     def openDirDialog(self, _value=False, dirpath=None):
         self.config['toolMode'] = 'image'
@@ -3644,7 +3773,32 @@ class MainWindow(QtWidgets.QMainWindow):
         self.actions.menu[14].setVisible(image_menu)
         self.actions.menu[15].setVisible(True)
         self.actions.menu[16].setVisible(True)
-        self.actions.menu[17].setVisible(True)
+        self.actions.menu[17].setVisible(video_menu)
+        self.actions.menu[18].setVisible(video_menu)
+        
+        # NOT WORKING YET
+        
+        # self.actions.tool[0].setVisible(True)
+        # self.actions.tool[1].setVisible(True)
+        # self.actions.tool[2].setVisible(True)
+        # self.actions.tool[3].setVisible(image_menu)
+        # self.actions.tool[4].setVisible(True)
+        # self.actions.tool[5].setVisible(image_menu)
+        # # self.actions.tool[6].setVisible(True)
+        # self.actions.tool[7].setVisible(True)
+        # self.actions.tool[8].setVisible(True)
+        # self.actions.tool[9].setVisible(image_menu)
+        # self.actions.tool[10].setVisible(True)
+        # self.actions.tool[11].setVisible(image_menu)
+        # self.actions.tool[12].setVisible(image_menu)
+        # # self.actions.tool[13].setVisible(True)
+        # self.actions.tool[14].setVisible(True)
+        # self.actions.tool[15].setVisible(True)
+        # self.actions.tool[16].setVisible(image_menu)
+        # self.actions.tool[17].setVisible(image_menu)
+        
+        
+        
 
     def openVideo(self):
         length_Value = self.CURRENT_ANNOATAION_TRAJECTORIES['length']
@@ -3817,6 +3971,7 @@ class MainWindow(QtWidgets.QMainWindow):
             f'Loaded {self.CURRENT_VIDEO_NAME} frame {self.INDEX_OF_CURRENT_FRAME}'))
 
     def nextFrame_buttonClicked(self):
+        self.update_current_frame_annotation_button_clicked()
         # first assert that the new value of the slider is not greater than the total number of frames
         new_value = self.INDEX_OF_CURRENT_FRAME + self.FRAMES_TO_SKIP
         if new_value >= self.TOTAL_VIDEO_FRAMES:
@@ -3824,6 +3979,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.main_video_frames_slider.setValue(new_value)
 
     def next_1_Frame_buttonClicked(self):
+        self.update_current_frame_annotation_button_clicked()
         # first assert that the new value of the slider is not greater than the total number of frames
         new_value = self.INDEX_OF_CURRENT_FRAME + 1
         if new_value >= self.TOTAL_VIDEO_FRAMES:
@@ -3831,12 +3987,14 @@ class MainWindow(QtWidgets.QMainWindow):
         self.main_video_frames_slider.setValue(new_value)
 
     def previousFrame_buttonClicked(self):
+        self.update_current_frame_annotation_button_clicked()
         new_value = self.INDEX_OF_CURRENT_FRAME - self.FRAMES_TO_SKIP
         if new_value <= 0:
             new_value = 0
         self.main_video_frames_slider.setValue(new_value)
 
     def previous_1_Frame_buttonclicked(self):
+        self.update_current_frame_annotation_button_clicked()
         new_value = self.INDEX_OF_CURRENT_FRAME - 1
         if new_value <= 0:
             new_value = 0
