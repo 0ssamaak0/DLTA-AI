@@ -2279,6 +2279,54 @@ class MainWindow(QtWidgets.QMainWindow):
                     return True
         return False
 
+    def get_id_from_user(self, group_id, text):
+        
+        mainTEXT = "A Shape with that ID already exists in this frame.\n\n"
+        repeated = 0
+        
+        while self.is_id_repeated(group_id):
+            dialog = QtWidgets.QDialog()
+            dialog.setWindowTitle("ID already exists")
+            dialog.setWindowModality(Qt.ApplicationModal)
+            dialog.resize(450, 100)
+            
+            if repeated == 0:
+                label = QtWidgets.QLabel(mainTEXT + f'Please try a new ID: ')
+            if repeated == 1:
+                label = QtWidgets.QLabel(mainTEXT + f'OH GOD.. AGAIN? I hpoe you are not doing this on purpose..')
+            if repeated == 2:
+                label = QtWidgets.QLabel(mainTEXT + f'AGAIN? REALLY? LAST time for you..')
+            if repeated == 3:
+                text = False
+                break
+            
+            properID = QtWidgets.QSpinBox()
+            properID.setRange(1, 1000)
+            
+            buttonBox = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Ok)
+            buttonBox.accepted.connect(dialog.accept)
+            
+            layout = QtWidgets.QVBoxLayout()
+            layout.addWidget(label)
+            layout.addWidget(properID)
+            layout.addWidget(buttonBox)
+            dialog.setLayout(layout)
+            result = dialog.exec_()
+            if result != QtWidgets.QDialog.Accepted:
+                text = False
+                break
+            group_id = properID.value()
+            repeated += 1
+            
+        if repeated > 1:
+            msg = QtWidgets.QMessageBox()
+            msg.setIcon(QtWidgets.QMessageBox.Information)
+            msg.setText(f"OH, Finally..!")
+            msg.setWindowTitle(" ")
+            msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
+            msg.exec_()
+
+        return group_id, text
 
     def fileSearchChanged(self):
         self.importDirImages(
@@ -2555,51 +2603,8 @@ class MainWindow(QtWidgets.QMainWindow):
             )
             text = ""
         
-        mainTEXT = "A Shape with that ID already exists in this frame.\n\n"
-        repeated = 0
-        
-        while self.is_id_repeated(group_id):
-            dialog = QtWidgets.QDialog()
-            dialog.setWindowTitle("ID already exists")
-            dialog.setWindowModality(Qt.ApplicationModal)
-            dialog.resize(450, 100)
-            
-            if repeated == 0:
-                label = QtWidgets.QLabel(mainTEXT + f'Please try a new ID: ')
-            if repeated == 1:
-                label = QtWidgets.QLabel(mainTEXT + f'OH GOD.. AGAIN? I hpoe you are not doing this on purpose..')
-            if repeated == 2:
-                label = QtWidgets.QLabel(mainTEXT + f'AGAIN? REALLY? LAST time for you..')
-            if repeated == 3:
-                text = False
-                break
-            
-            properID = QtWidgets.QSpinBox()
-            properID.setRange(1, 1000)
-            
-            buttonBox = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Ok)
-            buttonBox.accepted.connect(dialog.accept)
-            
-            layout = QtWidgets.QVBoxLayout()
-            layout.addWidget(label)
-            layout.addWidget(properID)
-            layout.addWidget(buttonBox)
-            dialog.setLayout(layout)
-            result = dialog.exec_()
-            if result != QtWidgets.QDialog.Accepted:
-                text = False
-                break
-            group_id = properID.value()
-            repeated += 1
-            
-        if repeated > 1:
-            msg = QtWidgets.QMessageBox()
-            msg.setIcon(QtWidgets.QMessageBox.Information)
-            msg.setText(f"OH, Finally..!")
-            msg.setWindowTitle(" ")
-            msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
-            msg.exec_()
-        
+        if self.config["toolMode"] == "video":
+            group_id, text = self.get_id_from_user(group_id, text)
 
         if text:
             self.labelList.clearSelection()
@@ -2615,7 +2620,8 @@ class MainWindow(QtWidgets.QMainWindow):
             self.canvas.undoLastLine()
             self.canvas.shapesBackups.pop()
 
-        self.update_current_frame_annotation_button_clicked()
+        if self.config["toolMode"] == "video":
+            self.update_current_frame_annotation_button_clicked()
 
     def scrollRequest(self, delta, orientation):
         units = -delta * 0.1  # natural scroll
