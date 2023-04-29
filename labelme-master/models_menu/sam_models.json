@@ -1,17 +1,17 @@
 [
     {
-        "name": "ViT-H",
+        "name": "vit_h",
         "url": "https://dl.fbaipublicfiles.com/segment_anything/sam_vit_h_4b8939.pth",
-        "checkpoint": "sam_vit_h_4b8939.pth"
+        "checkpoint": "mmdetection/checkpoints/sam_vit_h_4b8939.pth"
     },
     {
-        "name": "ViT-L",
+        "name": "vit_l",
         "url": "https://dl.fbaipublicfiles.com/segment_anything/sam_vit_l_0b3195.pth",
-        "checkpoint": "sam_vit_l_0b3195.pth"
+        "checkpoint": "mmdetection/checkpoints/sam_vit_l_0b3195.pth"
     },
     {
-        "name": "ViT-B",
+        "name": "vit_b",
         "url": "https://dl.fbaipublicfiles.com/segment_anything/sam_vit_b_01ec64.pth",
-        "checkpoint": "sam_vit_b_01ec64.pth"
+        "checkpoint": "mmdetection/checkpoints/sam_vit_b_01ec64.pth"
     }
 ]
