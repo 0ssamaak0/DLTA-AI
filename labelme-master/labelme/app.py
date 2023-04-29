@@ -5177,14 +5177,14 @@ class MainWindow(QtWidgets.QMainWindow):
         self.canvas.SAM_mode = ""
     
     def sam_finish_annotation_button_clicked(self):
+        # return the cursor to normal
+        self.canvas.setCursor(QtGui.QCursor(QtCore.Qt.ArrowCursor))
         print("sam finish annotation button clicked")
         self.canvas.SAM_coordinates = []
         self.canvas.SAM_mode = ""
 
 
     def run_sam_model(self):
-        # return the cursor to normal
-        self.canvas.setCursor(QtGui.QCursor(QtCore.Qt.ArrowCursor))
         print("run sam model")
         print(self.canvas.SAM_coordinates)
 
