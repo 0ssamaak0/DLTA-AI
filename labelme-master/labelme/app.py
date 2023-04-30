@@ -728,12 +728,19 @@ class MainWindow(QtWidgets.QMainWindow):
             None,
             self.tr("Run the model for All Files")
         )
-        set_threshold = action(
-            self.tr("Set the threshold for the model"),
-            self.setThreshold,
+        set_conf_threshold = action(
+            self.tr("Set Confidence threshold for the model"),
+            self.setConfThreshold,
             None,
             None,
-            self.tr("Set the threshold for the model")
+            self.tr("Set Confidence threshold for the model")
+        )
+        set_iou_threshold = action(
+            self.tr("Set IOU threshold for the model NMS"),
+            self.setIOUThreshold,
+            None,
+            None,
+            self.tr("Set IOU threshold for the model NMS")
         )
         select_classes = action(
             self.tr("select the classes to be annotated"),
@@ -914,7 +921,8 @@ class MainWindow(QtWidgets.QMainWindow):
         utils.addActions(self.menus.intelligence,
                          (annotate_one_action,
                           annotate_batch_action,
-                          set_threshold,
+                          set_conf_threshold,
+                          set_iou_threshold,
                           self.menus.saved_models,
                           self.menus.tracking_models,
                           select_classes,
@@ -3671,8 +3679,11 @@ class MainWindow(QtWidgets.QMainWindow):
             images.append(filename)
         self.intelligenceHelper.get_shapes_of_batch(images)
 
-    def setThreshold(self):
-        self.intelligenceHelper.threshold = self.intelligenceHelper.setThreshold()
+    def setConfThreshold(self):
+        self.intelligenceHelper.conf_threshold = self.intelligenceHelper.setConfThreshold()
+        
+    def setIOUThreshold(self):
+        self.intelligenceHelper.iou_threshold = self.intelligenceHelper.setIOUThreshold()
 
     def selectClasses(self):
         self.intelligenceHelper.selectedclasses = self.intelligenceHelper.selectClasses()
