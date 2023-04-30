@@ -111,7 +111,8 @@ class Intelligence():
     def __init__(self, parent):
         self.reader = models_inference()
         self.parent = parent
-        self.threshold = 0.3
+        self.conf_threshold = 0.3
+        self.iou_threshold = 0.5
         self.selectedclasses = {0: "person", 2: "car",
                                 3: "motorcycle", 5: "bus", 7: "truck"}
         self.selectedmodels = []
@@ -205,8 +206,8 @@ class Intelligence():
         return bbox
 
     def get_shapes_of_one(self, image, img_array_flag=False, multi_model_flag=False):
-        # print(f"Threshold is {self.threshold}")
-        # results = self.reader.decode_file(img_path = filename, threshold = self.threshold , selected_model_name = self.current_model_name)["results"]
+        # print(f"Threshold is {self.conf_threshold}")
+        # results = self.reader.decode_file(img_path = filename, threshold = self.conf_threshold , selected_model_name = self.current_model_name)["results"]
         start_time = time.time()
         # if img_array_flag is true then the image is a numpy array and not a path
         if multi_model_flag:
@@ -219,10 +220,10 @@ class Intelligence():
                     model_name)
                 if img_array_flag:
                     results0, results1 = self.reader.decode_file(
-                        img=image, model=self.current_mm_model, classdict=self.selectedclasses, threshold=self.threshold, img_array_flag=True)
+                        img=image, model=self.current_mm_model, classdict=self.selectedclasses, threshold=self.conf_threshold, img_array_flag=True)
                 else:
                     results0, results1 = self.reader.decode_file(
-                        img=image, model=self.current_mm_model, classdict=self.selectedclasses, threshold=self.threshold)
+                        img=image, model=self.current_mm_model, classdict=self.selectedclasses, threshold=self.conf_threshold)
                 self.reader.annotating_models[model_name] = [
                     results0, results1]
                 end_time = time.time()
@@ -231,20 +232,20 @@ class Intelligence():
             print('merging masks')
             results0, results1 = self.reader.merge_masks()
             results = self.reader.polegonise(
-                results0, results1, classdict=self.selectedclasses, threshold=self.threshold)['results']
+                results0, results1, classdict=self.selectedclasses, threshold=self.conf_threshold)['results']
 
         else:
             if img_array_flag:
-                results = self.reader.decode_file(img=image, model=self.current_mm_model, classdict=self.selectedclasses, threshold=self.threshold, img_array_flag=True)
+                results = self.reader.decode_file(img=image, model=self.current_mm_model, classdict=self.selectedclasses, threshold=self.conf_threshold, img_array_flag=True)
                 # print(type(results))
                 if isinstance(results, tuple):
-                    results = self.reader.polegonise(results[0], results[1], classdict=self.selectedclasses, threshold=self.threshold)['results']
+                    results = self.reader.polegonise(results[0], results[1], classdict=self.selectedclasses, threshold=self.conf_threshold)['results']
                 else :
                     results = results['results']
             else:
-                results = self.reader.decode_file(img=image, model=self.current_mm_model, classdict=self.selectedclasses, threshold=self.threshold)
+                results = self.reader.decode_file(img=image, model=self.current_mm_model, classdict=self.selectedclasses, threshold=self.conf_threshold)
                 if isinstance(results, tuple):
-                    results = self.reader.polegonise(results[0], results[1], classdict=self.selectedclasses, threshold=self.threshold)['results']
+                    results = self.reader.polegonise(results[0], results[1], classdict=self.selectedclasses, threshold=self.conf_threshold)['results']
                 else:
                     results = results['results']
             end_time = time.time()
@@ -268,7 +269,7 @@ class Intelligence():
                                for item in sublist]
 
             shapes.append(shape)
-            shapes, boxes, confidences, class_ids, segments = self.OURnms(shapes, 0.5)
+            shapes, boxes, confidences, class_ids, segments = self.OURnms(shapes, self.iou_threshold)
             # self.addLabel(shape)
         return shapes
     
@@ -342,7 +343,7 @@ class Intelligence():
         Returns:
             list: List of shapes after performing non-maximum suppression, each shape is a dictionary with keys (bbox, confidence, class_id)
         """
-        
+        iou_threshold = float(iou_threshold)
         for shape in shapes:
             if shape['content'] is None:
                 shape['content'] = 1.0
@@ -402,13 +403,23 @@ class Intelligence():
 
     # get the thresold as input from the user
 
-    def setThreshold(self):
+    def setConfThreshold(self):
         text, ok = QtWidgets.QInputDialog.getText(
-            self.parent, 'Threshold Selector', 'Enter the threshold:')
+            self.parent, 'Threshold Selector', 'Enter Confidence threshold:')
         if ok:
             return text
         else:
             return 0.3
+        
+    def setIOUThreshold(self):
+        text, ok = QtWidgets.QInputDialog.getText(
+            self.parent, 'Threshold Selector', 'Enter IOU threshold:')
+        if ok:
+            return text
+        else:
+            return 0.5
+        
+    
     # add a resizable and scrollable dialog that contains all coco classes and allow the user to select among them using checkboxes
 
     def selectClasses(self):
