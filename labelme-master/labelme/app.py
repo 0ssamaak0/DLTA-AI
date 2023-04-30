@@ -37,6 +37,7 @@ from .logger import logger
 from .shape import Shape
 from .widgets import BrightnessContrastDialog, Canvas, LabelDialog, LabelListWidget, LabelListWidgetItem, ToolBar, UniqueLabelQListWidget, ZoomWidget
 from .intelligence import Intelligence
+from .intelligence import convert_shapes_to_qt_shapes
 from .intelligence import coco_classes, color_palette
 from .utils.sam import Sam_Predictor
 
@@ -1284,6 +1285,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.actions.editMode.setEnabled(not edit)
 
     def setEditMode(self):
+        try: 
+            x = self.CURRENT_VIDEO_PATH 
+        except:
+            self.toggleDrawMode(True)
+            return
         self.update_current_frame_annotation()
         self.toggleDrawMode(True)
 
@@ -5229,21 +5235,30 @@ class MainWindow(QtWidgets.QMainWindow):
                 checkpoint_path = model['checkpoint']
         #print(model_type, checkpoint_path, device)
         self.sam_predictor = Sam_Predictor(model_type, checkpoint_path, device)
-        self.sam_predictor.set_image(self.CURRENT_FRAME_IMAGE)
+        self.sam_predictor.set_new_image(self.CURRENT_FRAME_IMAGE)
         print("done loading model")
-             
+
 
     def sam_add_point_button_clicked(self):
+        same_image = self.sam_predictor.check_image(self.CURRENT_FRAME_IMAGE)
+        if not same_image: 
+            self.sam_clear_annotation_button_clicked()
         print("sam add point button clicked")
         self.canvas.setCursor(QtGui.QCursor(QtCore.Qt.CrossCursor))
         self.canvas.SAM_mode = "add point"
     
     def sam_remove_point_button_clicked(self):
+        same_image = self.sam_predictor.check_image(self.CURRENT_FRAME_IMAGE)
+        if not same_image: 
+            self.sam_clear_annotation_button_clicked()
         print("sam remove point button clicked")
         self.canvas.setCursor(QtGui.QCursor(QtCore.Qt.CrossCursor))
         self.canvas.SAM_mode = "remove point"
     
     def sam_select_rect_button_clicked(self):
+        same_image = self.sam_predictor.check_image(self.CURRENT_FRAME_IMAGE)
+        if not same_image: 
+            self.sam_clear_annotation_button_clicked()
         print("sam select rect button clicked")
         self.canvas.setCursor(QtGui.QCursor(QtCore.Qt.CrossCursor))
         self.canvas.SAM_mode = "select rect"
@@ -5278,8 +5293,11 @@ class MainWindow(QtWidgets.QMainWindow):
             mask, score = self.sam_predictor.predict(point_coords=input_points, point_labels=input_labels)
             points = self.sam_predictor.mask_to_polygons(mask)
             shape = self.sam_predictor.polygon_to_shape(points, score)
-            self.CURRENT_SHAPES_IN_IMG += shape
-            #self.loadLabels(self.CURRENT_SHAPES_IN_IMG)
+            # self.CURRENT_SHAPES_IN_IMG += shape
+            # shapes  = convert_shapes_to_qt_shapes(self.CURRENT_SHAPES_IN_IMG)[0]
+            # self.loadLabels(self.CURRENT_SHAPES_IN_IMG)
+            # self.loadLabels(self.CURRENT_SHAPES_IN_IMG)
+            self.loadLabels([shape])
             print("done running sam model")
 
         #self.CURRENT_SHAPES_IN_IMG += shape
