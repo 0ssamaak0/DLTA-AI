@@ -4232,6 +4232,31 @@ class MainWindow(QtWidgets.QMainWindow):
         self.thread = TrackingThread(parent=self)
         self.thread.start()
         
+    def get_boxes_conf_classids_segments(self, shapes):
+        boxes = []
+        confidences = []
+        class_ids = []
+        segments = []
+        for s in shapes:
+            label = s["label"]
+            points = s["points"]
+            # points are one dimensional array of x1,y1,x2,y2,x3,y3,x4,y4
+            # we will convert it to a 2 dimensional array of points (segment)
+            segment = []
+            for j in range(0, len(points), 2):
+                segment.append([int(points[j]), int(points[j + 1])])
+            # if points is empty pass
+            # if len(points) == 0:
+            #     continue
+            segments.append(segment)
+
+            boxes.append(self.intelligenceHelper.get_bbox(segment))
+            confidences.append(float(s["content"]))
+            class_ids.append(coco_classes.index(
+                label)if label in coco_classes else -1)
+        
+        return boxes, confidences, class_ids, segments
+
     def track_buttonClicked(self):
 
         # dt = (Profile(), Profile(), Profile(), Profile())
@@ -4296,35 +4321,16 @@ class MainWindow(QtWidgets.QMainWindow):
                         self.CURRENT_FRAME_IMAGE, img_array_flag=True)
 
             curr_frame = self.CURRENT_FRAME_IMAGE
-            boxes = []
-            confidences = []
-            class_ids = []
-            segments = []
             # current_objects_ids = []
             if len(shapes) == 0:
                 print("no detection in this frame")
                 self.update_gui_after_tracking(i)
                 continue
-            for s in shapes:
-                label = s["label"]
-                points = s["points"]
-                # points are one dimensional array of x1,y1,x2,y2,x3,y3,x4,y4
-                # we will convert it to a 2 dimensional array of points (segment)
-                segment = []
-                for j in range(0, len(points), 2):
-                    segment.append([int(points[j]), int(points[j + 1])])
-                # if points is empty pass
-                # if len(points) == 0:
-                #     continue
-                segments.append(segment)
-
-                boxes.append(self.intelligenceHelper.get_bbox(segment))
-                if s["content"] is None:
-                    confidences.append(1.0)
-                else:
-                    confidences.append(float(s["content"]))
-                class_ids.append(coco_classes.index(
-                    label)if label in coco_classes else -1)
+            
+            for shape in shapes:
+                if shape['content'] is None:
+                    shape['content'] = 1.0
+            boxes, confidences, class_ids, segments = self.get_boxes_conf_classids_segments(shapes, 0.5)
 
             boxes = np.array(boxes, dtype=int)
             confidences = np.array(confidences)
