@@ -73,7 +73,6 @@ class Sam_Predictor():
         polygon = segment_points
         return polygon
 
-
     def polygon_to_shape(self, polygon,score):
         shape = {}
         shape["label"] = "SAM instance"
@@ -91,7 +90,6 @@ class Sam_Predictor():
         # print(shape)
         return shape
     
-
     def get_bbox(self, segmentation):
         x = []
         y = []
@@ -113,3 +111,6 @@ class Sam_Predictor():
             print("image changed_2")
             return False
         return True
+
+    def clear_logit(self):
+        self.mask_logit = None
