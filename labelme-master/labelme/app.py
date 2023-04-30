@@ -4330,7 +4330,7 @@ class MainWindow(QtWidgets.QMainWindow):
             for shape in shapes:
                 if shape['content'] is None:
                     shape['content'] = 1.0
-            boxes, confidences, class_ids, segments = self.get_boxes_conf_classids_segments(shapes, 0.5)
+            boxes, confidences, class_ids, segments = self.get_boxes_conf_classids_segments(shapes)
 
             boxes = np.array(boxes, dtype=int)
             confidences = np.array(confidences)
