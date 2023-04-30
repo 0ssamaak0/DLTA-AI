@@ -38,6 +38,7 @@ from .shape import Shape
 from .widgets import BrightnessContrastDialog, Canvas, LabelDialog, LabelListWidget, LabelListWidgetItem, ToolBar, UniqueLabelQListWidget, ZoomWidget
 from .intelligence import Intelligence
 from .intelligence import coco_classes, color_palette
+from .utils.sam import Sam_Predictor
 
 from onemetric.cv.utils.iou import box_iou_batch
 from dataclasses import dataclass
@@ -258,6 +259,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Canvas SAM slots
         self.canvas.pointAdded.connect(self.run_sam_model)
+        # SAM predictor
+        self.sam_predictor = None
 
         self.setCentralWidget(scrollArea)
 
@@ -5178,14 +5181,24 @@ class MainWindow(QtWidgets.QMainWindow):
         files = os.listdir(cwd + '/mmdetection/checkpoints/')
         models = []
         for model in data:
-            if model['checkpoint'] in files:
+            if model['checkpoint'].split('/')[-1] in files:
                 models.append(model['name'])
         return models
 
     def sam_model_comboBox_changed(self):
         if self.sam_model_comboBox.currentText() == "Select Model":
             return
-        print(self.sam_model_comboBox.currentText())
+        model_type = self.sam_model_comboBox.currentText()
+        with open('models_menu/sam_models.json') as f:
+            data = json.load(f)
+        for model in data:
+            if model['name'] == model_type:
+                checkpoint_path = model['checkpoint']
+        #print(model_type, checkpoint_path, device)
+        self.sam_predictor = Sam_Predictor(model_type, checkpoint_path, device)
+        self.sam_predictor.set_image(self.CURRENT_FRAME_IMAGE)
+        print("done loading model")
+             
 
     def sam_add_point_button_clicked(self):
         print("sam add point button clicked")
@@ -5217,10 +5230,27 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def run_sam_model(self):
         print("run sam model")
-        print(self.canvas.SAM_coordinates)
+        # prepre the input format for SAM
+        input_points = []
+        input_labels = []
+        for coordinate in self.canvas.SAM_coordinates:
+            input_points.append([int(round(coordinate[0])), int(round(coordinate[1]))])
+            input_labels.append(coordinate[2])
+        input_points = np.array(input_points)
+        input_labels = np.array(input_labels)
+        if self.sam_predictor is None:
+            print("please select a model")
+            return
+        else:
+            mask, score = self.sam_predictor.predict(point_coords=input_points, point_labels=input_labels)
+            points = self.sam_predictor.mask_to_polygons(mask)
+            shape = self.sam_predictor.polygon_to_shape(points, score)
+            self.CURRENT_SHAPES_IN_IMG += shape
+            #self.loadLabels(self.CURRENT_SHAPES_IN_IMG)
+            print("done running sam model")
 
-
-    
+        #self.CURRENT_SHAPES_IN_IMG += shape
+        
 
 
 # important parameters across the gui
