@@ -59,6 +59,7 @@ fit_to_content:
   row: false
 
 # canvas
+show_cross_line: true
 epsilon: 10.0
 canvas:
   # None: do nothing

@@ -629,6 +629,15 @@ class MainWindow(QtWidgets.QMainWindow):
             "Adjust brightness and contrast",
             enabled=False,
         )
+        show_cross_line = action(
+            self.tr("&Show Cross Line"),
+            self.enable_show_cross_line,
+            tip=self.tr("Show cross line for mouse position"),
+            icon="cartesian",
+            checkable=True,
+            checked=self._config["show_cross_line"],
+            enabled=True,
+        )
         # Group zoom controls into a list for easier toggling.
         zoomActions = (
             self.zoomWidget,
@@ -722,12 +731,19 @@ class MainWindow(QtWidgets.QMainWindow):
             None,
             self.tr("Run the model for All Files")
         )
-        set_threshold = action(
-            self.tr("Set the threshold for the model"),
-            self.setThreshold,
+        set_conf_threshold = action(
+            self.tr("Set Confidence threshold for the model"),
+            self.setConfThreshold,
             None,
             None,
-            self.tr("Set the threshold for the model")
+            self.tr("Set Confidence threshold for the model")
+        )
+        set_iou_threshold = action(
+            self.tr("Set IOU threshold for the model NMS"),
+            self.setIOUThreshold,
+            None,
+            None,
+            self.tr("Set IOU threshold for the model NMS")
         )
         select_classes = action(
             self.tr("select the classes to be annotated"),
@@ -805,6 +821,7 @@ class MainWindow(QtWidgets.QMainWindow):
             fitWindow=fitWindow,
             fitWidth=fitWidth,
             brightnessContrast=brightnessContrast,
+            show_cross_line=show_cross_line,
             zoomActions=zoomActions,
             openNextImg=openNextImg,
             openPrevImg=openPrevImg,
@@ -907,7 +924,8 @@ class MainWindow(QtWidgets.QMainWindow):
         utils.addActions(self.menus.intelligence,
                          (annotate_one_action,
                           annotate_batch_action,
-                          set_threshold,
+                          set_conf_threshold,
+                          set_iou_threshold,
                           self.menus.saved_models,
                           self.menus.tracking_models,
                           select_classes,
@@ -937,6 +955,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 fitWidth,
                 None,
                 brightnessContrast,
+                show_cross_line,
             ),
         )
 
@@ -2691,6 +2710,11 @@ class MainWindow(QtWidgets.QMainWindow):
             QtGui.QPixmap.fromImage(qimage), clear_shapes=False
         )
 
+    def enable_show_cross_line(self, enabled):
+        self._config["show_cross_line"] = enabled
+        self.actions.show_cross_line.setChecked(enabled)
+        self.canvas.set_show_cross_line(enabled)
+
     def brightnessContrast(self, value):
         dialog = BrightnessContrastDialog(
             utils.img_data_to_pil(self.imageData),
@@ -3658,8 +3682,11 @@ class MainWindow(QtWidgets.QMainWindow):
             images.append(filename)
         self.intelligenceHelper.get_shapes_of_batch(images)
 
-    def setThreshold(self):
-        self.intelligenceHelper.threshold = self.intelligenceHelper.setThreshold()
+    def setConfThreshold(self):
+        self.intelligenceHelper.conf_threshold = self.intelligenceHelper.setConfThreshold()
+        
+    def setIOUThreshold(self):
+        self.intelligenceHelper.iou_threshold = self.intelligenceHelper.setIOUThreshold()
 
     def selectClasses(self):
         self.intelligenceHelper.selectedclasses = self.intelligenceHelper.selectClasses()
@@ -4219,6 +4246,31 @@ class MainWindow(QtWidgets.QMainWindow):
         self.thread = TrackingThread(parent=self)
         self.thread.start()
         
+    def get_boxes_conf_classids_segments(self, shapes):
+        boxes = []
+        confidences = []
+        class_ids = []
+        segments = []
+        for s in shapes:
+            label = s["label"]
+            points = s["points"]
+            # points are one dimensional array of x1,y1,x2,y2,x3,y3,x4,y4
+            # we will convert it to a 2 dimensional array of points (segment)
+            segment = []
+            for j in range(0, len(points), 2):
+                segment.append([int(points[j]), int(points[j + 1])])
+            # if points is empty pass
+            # if len(points) == 0:
+            #     continue
+            segments.append(segment)
+
+            boxes.append(self.intelligenceHelper.get_bbox(segment))
+            confidences.append(float(s["content"]))
+            class_ids.append(coco_classes.index(
+                label)if label in coco_classes else -1)
+        
+        return boxes, confidences, class_ids, segments
+
     def track_buttonClicked(self):
 
         # dt = (Profile(), Profile(), Profile(), Profile())
@@ -4283,35 +4335,16 @@ class MainWindow(QtWidgets.QMainWindow):
                         self.CURRENT_FRAME_IMAGE, img_array_flag=True)
 
             curr_frame = self.CURRENT_FRAME_IMAGE
-            boxes = []
-            confidences = []
-            class_ids = []
-            segments = []
             # current_objects_ids = []
             if len(shapes) == 0:
                 print("no detection in this frame")
                 self.update_gui_after_tracking(i)
                 continue
-            for s in shapes:
-                label = s["label"]
-                points = s["points"]
-                # points are one dimensional array of x1,y1,x2,y2,x3,y3,x4,y4
-                # we will convert it to a 2 dimensional array of points (segment)
-                segment = []
-                for j in range(0, len(points), 2):
-                    segment.append([int(points[j]), int(points[j + 1])])
-                # if points is empty pass
-                # if len(points) == 0:
-                #     continue
-                segments.append(segment)
-
-                boxes.append(self.intelligenceHelper.get_bbox(segment))
-                if s["content"] is None:
-                    confidences.append(1.0)
-                else:
-                    confidences.append(float(s["content"]))
-                class_ids.append(coco_classes.index(
-                    label)if label in coco_classes else -1)
+            
+            for shape in shapes:
+                if shape['content'] is None:
+                    shape['content'] = 1.0
+            boxes, confidences, class_ids, segments = self.get_boxes_conf_classids_segments(shapes)
 
             boxes = np.array(boxes, dtype=int)
             confidences = np.array(confidences)

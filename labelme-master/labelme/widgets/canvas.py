@@ -85,6 +85,9 @@ class Canvas(QtWidgets.QWidget):
         self.movingShape = False
         self._painter = QtGui.QPainter()
         self._cursor = CURSOR_DEFAULT
+        ################################ mouse tracking
+        self.show_cross_line = True
+        ################################
         # Menus:
         # 0: right-click without selection and dragging of shapes
         # 1: right-click with selection and dragging of shapes
@@ -187,6 +190,11 @@ class Canvas(QtWidgets.QWidget):
     def selectedVertex(self):
         return self.hVertex is not None
 
+    def set_show_cross_line(self, enabled):
+        """Set cross line visibility"""
+        self.show_cross_line = enabled
+        self.update()
+
     def mouseMoveEvent(self, ev):
         """Update line with last point and current coordinates."""
         try:
@@ -198,6 +206,7 @@ class Canvas(QtWidgets.QWidget):
             return
 
         self.prevMovePoint = pos
+        self.repaint()
         self.restoreCursor()
         #print("mouseMoveEvent", pos, "self.mode", self.mode, "self.createMode", self.createMode, "self.drawing()", self.drawing(), "self.editing()", self.editing())    
         
@@ -665,6 +674,25 @@ class Canvas(QtWidgets.QWidget):
             drawing_shape.addPoint(self.line[1])
             drawing_shape.fill = True
             drawing_shape.paint(p)
+
+        
+        # Draw mouse coordinates
+        if self.show_cross_line:
+            pen = QtGui.QPen(
+                QtGui.QColor("#00FF00"),
+                max(1, int(round(2.0 / Shape.scale))),
+                QtCore.Qt.DashLine,
+            )
+            p.setPen(pen)
+            p.setOpacity(0.5)
+            p.drawLine(
+                QtCore.QPointF(self.prevMovePoint.x(), 0),
+                QtCore.QPointF(self.prevMovePoint.x(), self.pixmap.height()),
+            )
+            p.drawLine(
+                QtCore.QPointF(0, self.prevMovePoint.y()),
+                QtCore.QPointF(self.pixmap.width(), self.prevMovePoint.y()),
+            )
 
         p.end()
 
