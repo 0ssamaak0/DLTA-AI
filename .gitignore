@@ -1,0 +1,6 @@
+
+*.pt
+*.pth
+# anything in the folders : datasets , runs
+datasets/
+runs/
