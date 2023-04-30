@@ -5293,9 +5293,14 @@ class MainWindow(QtWidgets.QMainWindow):
             mask, score = self.sam_predictor.predict(point_coords=input_points, point_labels=input_labels)
             points = self.sam_predictor.mask_to_polygons(mask)
             shape = self.sam_predictor.polygon_to_shape(points, score)
-            # self.CURRENT_SHAPES_IN_IMG += shape
+            # if self.CURRENT_SHAPES_IN_IMG != []:
+                # if self.CURRENT_SHAPES_IN_IMG[-1]["label"] == "SAM instance"  :
+                    # self.CURRENT_SHAPES_IN_IMG.pop()
+            # self.CURRENT_SHAPES_IN_IMG.append(shape)
             # shapes  = convert_shapes_to_qt_shapes(self.CURRENT_SHAPES_IN_IMG)[0]
             # self.loadLabels(self.CURRENT_SHAPES_IN_IMG)
+            # self.loadLabels(self.CURRENT_SHAPES_IN_IMG)
+            # self.labelList.clear()
             # self.loadLabels(self.CURRENT_SHAPES_IN_IMG)
             self.loadLabels([shape])
             print("done running sam model")
