@@ -3832,6 +3832,11 @@ class MainWindow(QtWidgets.QMainWindow):
             else:
                 self.actions.menu[i].setVisible(True)
         
+        # SAM tool bar
+
+        self.Segment_anything()
+        self.Segment_anything()
+
         
         # NOT WORKING YET
         
@@ -5240,7 +5245,10 @@ class MainWindow(QtWidgets.QMainWindow):
 
 
     def sam_add_point_button_clicked(self):
-        same_image = self.sam_predictor.check_image(self.CURRENT_FRAME_IMAGE)
+        try:
+            same_image = self.sam_predictor.check_image(self.CURRENT_FRAME_IMAGE)
+        except:
+            return
         if not same_image: 
             self.sam_clear_annotation_button_clicked()
         print("sam add point button clicked")
@@ -5248,7 +5256,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.canvas.SAM_mode = "add point"
     
     def sam_remove_point_button_clicked(self):
-        same_image = self.sam_predictor.check_image(self.CURRENT_FRAME_IMAGE)
+        try:
+            same_image = self.sam_predictor.check_image(self.CURRENT_FRAME_IMAGE)
+        except:
+            return
         if not same_image: 
             self.sam_clear_annotation_button_clicked()
         print("sam remove point button clicked")
@@ -5256,7 +5267,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.canvas.SAM_mode = "remove point"
     
     def sam_select_rect_button_clicked(self):
-        same_image = self.sam_predictor.check_image(self.CURRENT_FRAME_IMAGE)
+        try:
+            same_image = self.sam_predictor.check_image(self.CURRENT_FRAME_IMAGE)
+        except:
+            return
         if not same_image: 
             self.sam_clear_annotation_button_clicked()
         print("sam select rect button clicked")
@@ -5267,6 +5281,10 @@ class MainWindow(QtWidgets.QMainWindow):
         print("sam clear annotation button clicked")
         self.canvas.SAM_coordinates = []
         self.canvas.SAM_mode = ""
+        try:
+            self.canavs.sam_predictor.clear_logit()
+        except:
+            pass
     
     def sam_finish_annotation_button_clicked(self):
         # return the cursor to normal
@@ -5274,6 +5292,10 @@ class MainWindow(QtWidgets.QMainWindow):
         print("sam finish annotation button clicked")
         self.canvas.SAM_coordinates = []
         self.canvas.SAM_mode = ""
+        try:
+            self.canavs.sam_predictor.clear_logit()
+        except:
+            pass
 
 
     def run_sam_model(self):
