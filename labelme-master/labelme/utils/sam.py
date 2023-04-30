@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import cv2
 import skimage.measure
+
 # import mask_to_polygons from inference.py inside the inference class
 # from inference import mask_to_polygons
 
@@ -22,7 +23,7 @@ class Sam_Predictor():
         self.mask_logit = None
         
 
-    def set_image(self, image):
+    def set_new_image(self, image):
         self.image = image
         self.predictor.set_image(image)
     
@@ -32,10 +33,13 @@ class Sam_Predictor():
 
 
     def predict(self, point_coords=None, point_labels=None, multimask_output=True):
+        # print(point_coords , point_labels)
         if self.mask_logit is None:
             masks, scores, logits = self.predictor.predict(point_coords=point_coords, point_labels=point_labels, multimask_output=multimask_output)
         else:
-            masks, scores, logits = self.predictor.predict(point_coords=point_coords, point_labels=point_labels, mask_input=self.mask_logit[None, :, :], multimask_output=multimask_output)
+            masks, scores, logits = self.predictor.predict(point_coords=point_coords, point_labels=point_labels,
+                                                        mask_input=self.mask_logit[None, :, :],
+                                                        multimask_output=multimask_output)
         
         if multimask_output:
             self.mask_logit = logits[np.argmax(scores), :, :]  # Choose the model's best mask logit
@@ -49,9 +53,11 @@ class Sam_Predictor():
         contour_end = np.r_[contour[1:], contour[0:1]]
         return np.linalg.norm(contour_end - contour_start, axis=1).sum()
 
-    def mask_to_polygons(self, mask, n_points=25 , resize_factors = [1.0 , 1.0]):
+    def mask_to_polygons(self, mask, n_points=25, resize_factors=[1.0, 1.0]):
         mask = mask > 0.0
         contours = skimage.measure.find_contours(mask)
+        if len(contours) == 0:
+            return []
         contour = max(contours, key=self.get_contour_length)
         coords = skimage.measure.approximate_polygon(
             coords=contour,
@@ -67,6 +73,7 @@ class Sam_Predictor():
         polygon = segment_points
         return polygon
 
+
     def polygon_to_shape(self, polygon,score):
         shape = {}
         shape["label"] = "SAM instance"
@@ -81,6 +88,7 @@ class Sam_Predictor():
         # shape_points is result["seg"] flattened
         shape["points"] = [item for sublist in polygon
                                for item in sublist]
+        # print(shape)
         return shape
     
 
@@ -96,3 +104,12 @@ class Sam_Predictor():
         bbox = [min(x), min(y), max(x), max(y)]
         return bbox
         
+    def check_image(self , new_image):
+        if not np.array_equal(self.image, new_image):
+            print("image changed_1")
+            self.mask_logit = None
+            self.image = new_image
+            self.predictor.set_image(new_image)
+            print("image changed_2")
+            return False
+        return True
