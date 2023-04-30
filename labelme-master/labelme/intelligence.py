@@ -268,9 +268,119 @@ class Intelligence():
                                for item in sublist]
 
             shapes.append(shape)
-
+            shapes, boxes, confidences, class_ids, segments = self.OURnms(shapes, 0.5)
             # self.addLabel(shape)
         return shapes
+    
+    def get_boxes_conf_classids_segments(self, shapes):
+        boxes = []
+        confidences = []
+        class_ids = []
+        segments = []
+        for s in shapes:
+            label = s["label"]
+            points = s["points"]
+            # points are one dimensional array of x1,y1,x2,y2,x3,y3,x4,y4
+            # we will convert it to a 2 dimensional array of points (segment)
+            segment = []
+            for j in range(0, len(points), 2):
+                segment.append([int(points[j]), int(points[j + 1])])
+            # if points is empty pass
+            # if len(points) == 0:
+            #     continue
+            segments.append(segment)
+
+            boxes.append(self.get_bbox(segment))
+            confidences.append(float(s["content"]))
+            class_ids.append(coco_classes.index(
+                label)if label in coco_classes else -1)
+        
+        return boxes, confidences, class_ids, segments
+ 
+    def compute_iou(self , box1, box2):
+        """
+        Computes IOU between two bounding boxes.
+
+        Args:
+            box1 (list): List of 4 coordinates (xmin, ymin, xmax, ymax) of the first box.
+            box2 (list): List of 4 coordinates (xmin, ymin, xmax, ymax) of the second box.
+
+        Returns:
+            iou (float): IOU between the two boxes.
+        """
+        # Compute intersection coordinates
+        xmin = max(box1[0], box2[0])
+        ymin = max(box1[1], box2[1])
+        xmax = min(box1[2], box2[2])
+        ymax = min(box1[3], box2[3])
+
+        # Compute intersection area
+        if xmin < xmax and ymin < ymax:
+            intersection_area = (xmax - xmin) * (ymax - ymin)
+        else:
+            intersection_area = 0
+
+        # Compute union area
+        box1_area = (box1[2] - box1[0]) * (box1[3] - box1[1])
+        box2_area = (box2[2] - box2[0]) * (box2[3] - box2[1])
+        union_area = box1_area + box2_area - intersection_area
+
+        # Compute IOU
+        iou = intersection_area / union_area if union_area > 0 else 0
+
+        return iou
+    
+ 
+    def OURnms(self, shapes, iou_threshold=0.5):
+        """
+        Perform non-maximum suppression on a list of shapes based on their bounding boxes using IOU threshold.
+
+        Args:
+            shapes (list): List of shapes, each shape is a dictionary with keys (bbox, confidence, class_id)
+            iou_threshold (float): IOU threshold for non-maximum suppression.
+
+        Returns:
+            list: List of shapes after performing non-maximum suppression, each shape is a dictionary with keys (bbox, confidence, class_id)
+        """
+        
+        for shape in shapes:
+            if shape['content'] is None:
+                shape['content'] = 1.0
+        
+        # Sort shapes by their confidence
+        shapes.sort(key=lambda x: x['content'], reverse=True)
+        
+        boxes, confidences, class_ids, segments = self.get_boxes_conf_classids_segments(shapes)
+        
+        toBeRemoved = []
+
+        # Loop through each shape
+        for i in range(len(shapes)):
+            shape_bbox = boxes[i]
+            # Loop through each remaining shape
+            for j in range(i + 1, len(shapes)):
+                remaining_shape_bbox = boxes[j]
+
+                # Compute IOU between shape and remaining_shape
+                iou = self.compute_iou(shape_bbox, remaining_shape_bbox)
+
+                # If IOU is greater than threshold, remove remaining_shape from shapes list
+                if iou > iou_threshold:
+                    toBeRemoved.append(j)
+                    
+        shapesFinal = []
+        boxesFinal = []
+        confidencesFinal = []
+        class_idsFinal = []
+        segmentsFinal = []
+        for i in range(len(shapes)):
+            if i in toBeRemoved:
+                continue
+            shapesFinal.append(shapes[i])
+        boxesFinal, confidencesFinal, class_idsFinal, segmentsFinal = self.get_boxes_conf_classids_segments(shapesFinal)
+
+        return shapesFinal, boxesFinal, confidencesFinal, class_idsFinal, segmentsFinal
+       
 
     # print the labels of the selected classes in the dialog
     # def updatlabellist(self):
