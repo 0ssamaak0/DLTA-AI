@@ -11,3 +11,5 @@ openmim==0.3.2
 mmdet==2.25.2
 scikit-image==0.20.0
 filterpy==1.4.5
+segment-anything==1.0
+lap==0.4.0
