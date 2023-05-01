@@ -262,6 +262,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.canvas.pointAdded.connect(self.run_sam_model)
         # SAM predictor
         self.sam_predictor = None
+        self.current_sam_shape = None
 
         self.setCentralWidget(scrollArea)
 
@@ -5240,7 +5241,11 @@ class MainWindow(QtWidgets.QMainWindow):
                 checkpoint_path = model['checkpoint']
         #print(model_type, checkpoint_path, device)
         self.sam_predictor = Sam_Predictor(model_type, checkpoint_path, device)
-        self.sam_predictor.set_new_image(self.CURRENT_FRAME_IMAGE)
+        try:
+            self.sam_predictor.set_new_image(self.CURRENT_FRAME_IMAGE)
+        except:
+            print("please open an image first")
+            return
         print("done loading model")
 
 
@@ -5282,7 +5287,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.canvas.SAM_coordinates = []
         self.canvas.SAM_mode = ""
         try:
-            self.canavs.sam_predictor.clear_logit()
+            self.sam_predictor.clear_logit()
         except:
             pass
     
@@ -5293,7 +5298,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.canvas.SAM_coordinates = []
         self.canvas.SAM_mode = ""
         try:
-            self.canavs.sam_predictor.clear_logit()
+            self.sam_predictor.clear_logit()
         except:
             pass
 
@@ -5315,6 +5320,7 @@ class MainWindow(QtWidgets.QMainWindow):
             mask, score = self.sam_predictor.predict(point_coords=input_points, point_labels=input_labels)
             points = self.sam_predictor.mask_to_polygons(mask)
             shape = self.sam_predictor.polygon_to_shape(points, score)
+            self.current_sam_shape = shape
             # if self.CURRENT_SHAPES_IN_IMG != []:
                 # if self.CURRENT_SHAPES_IN_IMG[-1]["label"] == "SAM instance"  :
                     # self.CURRENT_SHAPES_IN_IMG.pop()
@@ -5324,7 +5330,10 @@ class MainWindow(QtWidgets.QMainWindow):
             # self.loadLabels(self.CURRENT_SHAPES_IN_IMG)
             # self.labelList.clear()
             # self.loadLabels(self.CURRENT_SHAPES_IN_IMG)
-            self.loadLabels([shape])
+            self.labelList.clear()
+            #self.canvas.loadPixmap(QtGui.QPixmap.fromImage(self.image))
+            self.loadLabels(self.CURRENT_SHAPES_IN_IMG)
+            #self.loadLabels([self.current_sam_shape])
             print("done running sam model")
 
         #self.CURRENT_SHAPES_IN_IMG += shape
