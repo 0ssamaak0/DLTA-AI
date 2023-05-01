@@ -58,6 +58,9 @@ class Canvas(QtWidgets.QWidget):
         self.SAM_coordinates = []
         self.SAM_rect = None
         self.SAM_painter = QtGui.QPainter()
+        self.SAM_current = None
+        
+        
         self.shapesBackups = []
         self.current = None
         self.selectedShapes = []  # save the selected shapes here
@@ -423,7 +426,7 @@ class Canvas(QtWidgets.QWidget):
             # elif self.SAM_mode == 'select rect':
             #     self.SAM_rect = Shape(shape_type='rectangle')
             #     self.SAM_rect.addPoint(pos)
-                
+            # the other is editing mode   
             else:
                 group_mode = int(ev.modifiers()) == QtCore.Qt.ControlModifier
                 self.selectShapePoint(pos, multiple_selection_mode=group_mode)
@@ -713,15 +716,25 @@ class Canvas(QtWidgets.QWidget):
         w, h = self.pixmap.width(), self.pixmap.height()
         return not (0 <= p.x() <= w - 1 and 0 <= p.y() <= h - 1)
 
-    def finalise(self):
-        assert self.current
-        self.current.close()
-        self.shapes.append(self.current)
-        self.storeShapes()
-        self.current = None
-        self.setHiding(False)
-        self.newShape.emit()
-        self.update()
+    def finalise(self, SAM_SHAPE=False):
+        if SAM_SHAPE:
+            assert self.SAM_current
+            self.SAM_current.close()
+            self.shapes.append(self.SAM_current)
+            self.storeShapes()
+            self.SAM_current = None
+            self.setHiding(False)
+            self.newShape.emit()
+            self.update()
+        else:
+            assert self.current
+            self.current.close()
+            self.shapes.append(self.current)
+            self.storeShapes()
+            self.current = None
+            self.setHiding(False)
+            self.newShape.emit()
+            self.update()
 
     def closeEnough(self, p1, p2):
         # d = distance(p1 - p2)
