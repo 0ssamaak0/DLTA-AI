@@ -5298,9 +5298,10 @@ class MainWindow(QtWidgets.QMainWindow):
             self.sam_predictor.clear_logit()
         except:
             pass
+        self.labelList.clear()
         self.loadLabels(self.CURRENT_SHAPES_IN_IMG)
         # later for confirmed sam instances 
-        # self.laodLabels(self.CURRENT_SAM_SHAPES_IN_IMG) 
+        # self.laodLabels(self.CURRENT_SAM_SHAPES_IN_IMG,replace=false) 
     
     def sam_finish_annotation_button_clicked(self):
         # return the cursor to normal
@@ -5312,6 +5313,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.sam_predictor.clear_logit()
         except:
             return
+        
         
     def run_sam_model(self):
         print("run sam model")
