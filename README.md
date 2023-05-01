@@ -143,7 +143,7 @@ you can contribute by:
 
 # Resources 🌐
 - [Labelme](https://github.com/wkentaro/labelme)
-- [META Segment Anything](https://github.com/facebookresearch/segment-anything)
+- [Segment Anything (SAM)](https://github.com/facebookresearch/segment-anything)
 - [MMDetection](https://github.com/open-mmlab/mmdetection/tree/2.x)
 - [ultralytics YOLOv8](https://github.com/ultralytics/ultralytics)
 - [mikelbrostrom yolov8_tracking](https://github.com/mikel-brostrom/yolov8_tracking)
