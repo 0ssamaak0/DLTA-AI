@@ -263,6 +263,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # SAM predictor
         self.sam_predictor = None
         self.current_sam_shape = None
+        self.SAM_SHAPES_IN_IMAGE = []
 
         self.setCentralWidget(scrollArea)
 
@@ -1191,6 +1192,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.imageData = None
         self.CURRENT_FRAME_IMAGE = None
         self.CURRENT_SHAPES_IN_IMG = []
+        self.SAM_SHAPES_IN_IMAGE = []
         self.labelFile = None
         self.otherData = None
         self.canvas.resetState()
@@ -2640,11 +2642,16 @@ class MainWindow(QtWidgets.QMainWindow):
             group_id, text = self.get_id_from_user(group_id, text)
 
         if text:
-            self.labelList.clearSelection()
-            shape = self.canvas.setLastLabel(text, flags)
-            shape.group_id = group_id
-            shape.content = content
-            self.addLabel(shape)
+            if self.canvas.SAM_mode == "finished":
+                self.current_sam_shape["label"] = text
+                self.canvas.SAM_mode = ""
+            else:
+                self.labelList.clearSelection()
+                # shape below is of type qt shape
+                shape = self.canvas.setLastLabel(text, flags)
+                shape.group_id = group_id
+                shape.content = content
+                self.addLabel(shape)
             self.actions.editMode.setEnabled(True)
             self.actions.undoLastPoint.setEnabled(False)
             self.actions.undo.setEnabled(True)
@@ -3686,6 +3693,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.CURRENT_SHAPES_IN_IMG = shapes
         self.canvas.loadPixmap(QtGui.QPixmap.fromImage(self.image))
         self.loadLabels(self.CURRENT_SHAPES_IN_IMG)
+        self.loadLabels(self.SAM_SHAPES_IN_IMAGE,replace=False)
         self.actions.editMode.setEnabled(True)
         self.actions.undoLastPoint.setEnabled(False)
         self.actions.undo.setEnabled(True)
@@ -5300,6 +5308,8 @@ class MainWindow(QtWidgets.QMainWindow):
             pass
         self.labelList.clear()
         self.loadLabels(self.CURRENT_SHAPES_IN_IMG)
+        self.loadLabels(self.SAM_SHAPES_IN_IMAGE,replace=False)
+
         # later for confirmed sam instances 
         # self.laodLabels(self.CURRENT_SAM_SHAPES_IN_IMG,replace=false) 
     
@@ -5308,11 +5318,28 @@ class MainWindow(QtWidgets.QMainWindow):
         self.canvas.setCursor(QtGui.QCursor(QtCore.Qt.ArrowCursor))
         print("sam finish annotation button clicked")
         self.canvas.SAM_coordinates = []
-        self.canvas.SAM_mode = ""
+        self.canvas.SAM_mode = "finished"
         try:
             self.sam_predictor.clear_logit()
         except:
             return
+        self.labelList.clear()
+        sam_qt_shape = convert_shapes_to_qt_shapes([self.current_sam_shape])[0]
+        self.canvas.SAM_current = sam_qt_shape
+        #print("sam qt shape", type(sam_qt_shape), "sam shape", type(self.current_sam_shape))
+        self.canvas.finalise(SAM_SHAPE=True)
+        self.SAM_SHAPES_IN_IMAGE.append(self.current_sam_shape)
+        self.loadLabels(self.CURRENT_SHAPES_IN_IMG)
+        self.loadLabels(self.SAM_SHAPES_IN_IMAGE, replace=False)
+        # clear the predictor of the finished shape
+        self.sam_predictor.clear_logit()
+        self.canvas.SAM_coordinates = []
+        # explicitly clear instead of being overriden by the next shape
+        self.current_sam_shape = None
+        self.canvas.SAM_current = None
+        
+        
+
         
         
     def run_sam_model(self):
@@ -5347,6 +5374,7 @@ class MainWindow(QtWidgets.QMainWindow):
             #self.canvas.loadPixmap(QtGui.QPixmap.fromImage(self.image))
             # we need it since it does replace=True on whatever was on the canvas
             self.loadLabels(self.CURRENT_SHAPES_IN_IMG)
+            self.loadLabels(self.SAM_SHAPES_IN_IMAGE,replace=False)
             self.loadLabels([self.current_sam_shape],replace=False)
             
             print("done running sam model")
