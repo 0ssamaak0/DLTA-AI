@@ -3,6 +3,7 @@ import glob
 import json
 import os
 import numpy as np
+from PyQt5.QtWidgets import QFileDialog
 
 
 def get_bbox(segmentation):
@@ -50,7 +51,7 @@ def get_area_from_polygon(polygon, mode="segmentation"):
         raise ValueError("mode must be either 'segmentation' or 'bbox'")
 
 
-def exportCOCO(target_directory, save_path):
+def exportCOCO(target_directory, save_path, annotation_path):
     '''
     Exports the annotations in the Labelmm format to COCO format
     input:
@@ -137,18 +138,14 @@ def exportCOCO(target_directory, save_path):
     file["images"] = images
     file["annotations"] = annotations
 
-    # make a directory under file_path called Annotations (if it doesn't exist)
-    if not os.path.exists(f"{file_path}/Annotations"):
-        os.makedirs(f"{file_path}/Annotations")
-
     # write in the output file in json, format the output to be pretty
-    with open(f"{file_path}/Annotations/{output_name}.json", 'w') as outfile:
+    with open(annotation_path, 'w') as outfile:
         json.dump(file, outfile, indent=4)
 
-    return (f"{file_path}/Annotations")
+    return (annotation_path)
 
 
-def exportCOCOvid(results_file, save_path, vid_width, vid_height, output_name="coco_vid"):
+def exportCOCOvid(results_file, vid_width, vid_height, annotation_path):
     file = {}
     file["info"] = {
         "description": "Exported from Labelmm",
@@ -208,18 +205,14 @@ def exportCOCOvid(results_file, save_path, vid_width, vid_height, output_name="c
     file["images"] = images
     file["annotations"] = annotations
 
-    # make a directory under save_path called Annotations (if it doesn't exist)
-    if not os.path.exists(f"{save_path}/Annotations"):
-        os.makedirs(f"{save_path}/Annotations")
-
     # write in the output file in json, format the output to be pretty
-    with open(f"{save_path}/Annotations/{output_name}.json", 'w') as outfile:
+    with open(annotation_path, 'w') as outfile:
         json.dump(file, outfile, indent=4)
 
-    return (f"{save_path}/Annotations/")
+    return (annotation_path)
 
 
-def exportMOT(results_file, save_path, output_name="mot_vid"):
+def exportMOT(results_file, annotation_path):
     rows = []
     with open(results_file) as f:
         data = json.load(f)
@@ -229,12 +222,27 @@ def exportMOT(results_file, save_path, output_name="mot_vid"):
                 rows.append(
                     f'{frame["frame_idx"]}, {object["tracker_id"]},  {object["bbox"][0]},  {object["bbox"][1]},  {object["bbox"][2]},  {object["bbox"][3]},  {object["confidence"]}, {object["class_id"] + 1}, 1')
 
-    # save rows in a file in save_path, file name is output_name, with .txt extension
-    if not os.path.exists(f"{save_path}/Annotations"):
-        os.makedirs(f"{save_path}/Annotations")
-
-    with open(f"{save_path}/Annotations/{output_name}.txt", 'w') as outfile:
+    with open(annotation_path, 'w') as outfile:
         # write each row in the file as a new line
         outfile.write("\n".join(rows))
 
-    return (f"{save_path}/Annotations/")
+    return (annotation_path)
+
+
+# Define a class that inherits from QFileDialog
+class FolderDialog(QFileDialog):
+    # Override the __init__ method to accept parameters
+    def __init__(self, default_file_name, default_format):
+        # Call the parent constructor
+        super().__init__()
+        # Set the mode to save a file
+        self.setAcceptMode(QFileDialog.AcceptSave)
+        # Set the default file name
+        self.selectFile(default_file_name)
+        # Set the default format
+        self.setNameFilters(
+            [f"{default_format.upper()} (*.{default_format.lower()})", "All Files (*)"])
+        self.selectNameFilter(
+            f"{default_format.upper()} (*.{default_format.lower()})")
+        # Set dialog title
+        self.setWindowTitle("Save Annotations")
