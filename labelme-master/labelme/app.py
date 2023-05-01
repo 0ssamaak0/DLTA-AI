@@ -2631,6 +2631,9 @@ class MainWindow(QtWidgets.QMainWindow):
             )
             text = ""
         
+        if text == "SAM instance":
+            text = "SAM instance - confirmed"
+        
         if self.config["toolMode"] == "video":
             group_id, text = self.get_id_from_user(group_id, text)
 
@@ -5282,7 +5285,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.canvas.SAM_coordinates = []
         self.canvas.SAM_mode = ""
         try:
-            self.canavs.sam_predictor.clear_logit()
+            self.sam_predictor.clear_logit()
         except:
             pass
     
@@ -5293,10 +5296,30 @@ class MainWindow(QtWidgets.QMainWindow):
         self.canvas.SAM_coordinates = []
         self.canvas.SAM_mode = ""
         try:
-            self.canavs.sam_predictor.clear_logit()
+            self.sam_predictor.clear_logit()
         except:
-            pass
-
+            return
+        ##########################################################################
+        has_object = False
+        for shape in self.canvas.shapes:
+            if shape.label == "SAM instance":
+                has_object = True
+                break
+            
+        # If there is no object, do nothing
+        if not has_object:
+            return
+        
+        self.CURRENT_SHAPES_IN_IMG[-1]['label'] = "SAM instance - Confirmed"
+        self.loadLabels(self.CURRENT_SHAPES_IN_IMG)
+        self.loadLabels(self.CURRENT_SHAPES_IN_IMG)
+        self.labelList.clear()
+        self.loadLabels(self.CURRENT_SHAPES_IN_IMG)
+        return
+    
+        real_shape = sam_objects[-1] if has_object else None
+        self.canvas.current = real_shape
+        self.canvas.finalise()
 
     def run_sam_model(self):
         print("run sam model")
@@ -5315,16 +5338,17 @@ class MainWindow(QtWidgets.QMainWindow):
             mask, score = self.sam_predictor.predict(point_coords=input_points, point_labels=input_labels)
             points = self.sam_predictor.mask_to_polygons(mask)
             shape = self.sam_predictor.polygon_to_shape(points, score)
-            # if self.CURRENT_SHAPES_IN_IMG != []:
-                # if self.CURRENT_SHAPES_IN_IMG[-1]["label"] == "SAM instance"  :
-                    # self.CURRENT_SHAPES_IN_IMG.pop()
-            # self.CURRENT_SHAPES_IN_IMG.append(shape)
-            # shapes  = convert_shapes_to_qt_shapes(self.CURRENT_SHAPES_IN_IMG)[0]
-            # self.loadLabels(self.CURRENT_SHAPES_IN_IMG)
-            # self.loadLabels(self.CURRENT_SHAPES_IN_IMG)
-            # self.labelList.clear()
-            # self.loadLabels(self.CURRENT_SHAPES_IN_IMG)
-            self.loadLabels([shape])
+            
+            if self.CURRENT_SHAPES_IN_IMG != []:
+                if self.CURRENT_SHAPES_IN_IMG[-1]["label"] == "SAM instance"  :
+                    self.CURRENT_SHAPES_IN_IMG.pop()
+            self.CURRENT_SHAPES_IN_IMG.append(shape)
+            shapes  = convert_shapes_to_qt_shapes(self.CURRENT_SHAPES_IN_IMG)[0]
+            self.loadLabels(self.CURRENT_SHAPES_IN_IMG)
+            self.loadLabels(self.CURRENT_SHAPES_IN_IMG)
+            self.labelList.clear()
+            self.loadLabels(self.CURRENT_SHAPES_IN_IMG)
+            # self.loadLabels([shape])
             print("done running sam model")
 
         #self.CURRENT_SHAPES_IN_IMG += shape
