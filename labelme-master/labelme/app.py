@@ -1190,6 +1190,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.imagePath = None
         self.imageData = None
         self.CURRENT_FRAME_IMAGE = None
+        self.CURRENT_SHAPES_IN_IMG = []
         self.labelFile = None
         self.otherData = None
         self.canvas.resetState()
@@ -2468,7 +2469,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.canvas.setShapeVisible(
                 shape, self.CURRENT_ANNOATAION_FLAGS["polygons"])
 
-    def loadLabels(self, shapes):
+    def loadLabels(self, shapes ,replace=True):
         s = []
         for shape in shapes:
             label = shape["label"]
@@ -2505,7 +2506,7 @@ class MainWindow(QtWidgets.QMainWindow):
             # shape.other_data = other_data
 
             s.append(shape)
-        self.loadShapes(s)
+        self.loadShapes(s, replace=replace)
 
     def loadFlags(self, flags):
         self.flag_widget.clear()
@@ -2855,6 +2856,10 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.setScroll(
                     orientation, self.scroll_values[orientation][self.filename]
                 )
+        # after loading the image, clear SAM instance if exists
+        if self.sam_predictor is not None:
+            self.sam_predictor.clear_logit()
+            self.canvas.SAM_coordinates = []
         # set brightness constrast values
         dialog = BrightnessContrastDialog(
             utils.img_data_to_pil(self.imageData),
@@ -5293,6 +5298,9 @@ class MainWindow(QtWidgets.QMainWindow):
             self.sam_predictor.clear_logit()
         except:
             pass
+        self.loadLabels(self.CURRENT_SHAPES_IN_IMG)
+        # later for confirmed sam instances 
+        # self.laodLabels(self.CURRENT_SAM_SHAPES_IN_IMG) 
     
     def sam_finish_annotation_button_clicked(self):
         # return the cursor to normal
@@ -5319,10 +5327,11 @@ class MainWindow(QtWidgets.QMainWindow):
             print("please select a model")
             return
         else:
+            print(self.canvas.SAM_coordinates,self.sam_predictor.mask_logit is None,len(self.CURRENT_SHAPES_IN_IMG))
             mask, score = self.sam_predictor.predict(point_coords=input_points, point_labels=input_labels)
             points = self.sam_predictor.mask_to_polygons(mask)
             shape = self.sam_predictor.polygon_to_shape(points, score)
-            #self.current_sam_shape = shape
+            self.current_sam_shape = shape
             # if self.CURRENT_SHAPES_IN_IMG != []:
                 # if self.CURRENT_SHAPES_IN_IMG[-1]["label"] == "SAM instance"  :
                     # self.CURRENT_SHAPES_IN_IMG.pop()
@@ -5334,12 +5343,13 @@ class MainWindow(QtWidgets.QMainWindow):
             # self.loadLabels(self.CURRENT_SHAPES_IN_IMG)
             self.labelList.clear()
             #self.canvas.loadPixmap(QtGui.QPixmap.fromImage(self.image))
+            # we need it since it does replace=True on whatever was on the canvas
             self.loadLabels(self.CURRENT_SHAPES_IN_IMG)
-            self.loadLabels([self.current_sam_shape])
+            self.loadLabels([self.current_sam_shape],replace=False)
             
             print("done running sam model")
 
-        #self.CURRENT_SHAPES_IN_IMG += shape
+        
         
 
 
