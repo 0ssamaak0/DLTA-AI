@@ -27,8 +27,7 @@ class Sam_Predictor():
         self.image = image
         self.predictor.set_image(image)
     
-    def clear_image(self):
-        self.image = None
+    def clear_logit(self):
         self.mask_logit = None
 
 
