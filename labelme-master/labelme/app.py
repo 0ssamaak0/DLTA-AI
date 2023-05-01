@@ -3132,16 +3132,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self._saveFile(self.save_path)
 
     def exportData(self):
-        # # Create a QFileDialog object
-        # FolderDialog = QFileDialog()
-        # # Set the mode to save a file
-        # FolderDialog.setAcceptMode(QFileDialog.AcceptSave)
-        # # Set the default file name
-        # FolderDialog.selectFile("coco.json")
-        # # set the default format
-        # FolderDialog.selectNameFilter("JSON (*.json)")
-        # # set dialog title
-        # FolderDialog.setWindowTitle("Save Annotations")
         try:
             if self.current_annotation_mode == "video":
                 dialog = QtWidgets.QDialog()
@@ -3187,14 +3177,21 @@ class MainWindow(QtWidgets.QMainWindow):
                 pth = self.CURRENT_VIDEO_PATH
                 # Check which radio button is checked and export accordingly
                 if coco_radio.isChecked():
-                    pth = utils.exportCOCOvid(
-                        json_file_name, target_path, self.CURRENT_VIDEO_WIDTH, self.CURRENT_VIDEO_HEIGHT, output_name="coco_vid")
+                    folderDialog = utils.FolderDialog("coco.json", "json")
+                    if folderDialog.exec_():
+                        pth = utils.exportCOCOvid(
+                            json_file_name, self.CURRENT_VIDEO_WIDTH, self.CURRENT_VIDEO_HEIGHT, folderDialog.selectedFiles()[0])
                 if mot_radio.isChecked():
-                    pth = utils.exportMOT(json_file_name, target_path,
-                                          output_name="mot_vid")
+                    folderDialog = utils.FolderDialog("mot.txt", "txt")
+                    if folderDialog.exec_():
+                        pth = utils.exportMOT(
+                            json_file_name, folderDialog.selectedFiles()[0])
 
             elif self.current_annotation_mode == "img" or self.current_annotation_mode == "dir":
-                pth = utils.exportCOCO(self.target_directory, self.save_path)
+                folderDialog = utils.FolderDialog("coco.json", "json")
+                if folderDialog.exec_():
+                    pth = utils.exportCOCO(
+                        self.target_directory, self.save_path, folderDialog.selectedFiles()[0])
         except Exception as e:
             # Error QMessageBox
             msg = QtWidgets.QMessageBox()
