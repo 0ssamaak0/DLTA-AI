@@ -1,0 +1,1 @@
+yolo task=segment mode=train model=yolov8n-seg.pt epochs= 1 imgsz = 320 workers =2 batch = 4 data=datasets\thermalseg.v6i.yolov8\data.yaml
