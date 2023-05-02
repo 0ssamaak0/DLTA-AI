@@ -472,9 +472,8 @@ class Intelligence():
         with open("saved_models.json") as json_file:
             data = json.load(json_file)
             for model in data.keys():
-                models.append(model)
-        if "YOLOv8x" in models:
-            models.remove("YOLOv8x")
+                if "YOLOv8" not in model:
+                    models.append(model)
         dialog = QtWidgets.QDialog(self.parent)
         dialog.setWindowTitle('Select Models')
         dialog.setWindowModality(QtCore.Qt.ApplicationModal)
