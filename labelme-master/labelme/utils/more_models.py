@@ -159,8 +159,6 @@ class ModelExplorerDialog(QDialog):
                 select_row_button.setText("Select from SAM Toolbar")
 
             row_count += 1
-        # hide the first row
-        self.table.hideRow(0)
 
     def search(self):
         # Filter the table based on the selected model type and availability
