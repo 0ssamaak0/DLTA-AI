@@ -727,6 +727,39 @@ class Canvas(QtWidgets.QWidget):
             w = abs(point1[0] - point2[0])
             h = abs(point1[1] - point2[1])
             p.drawRect(x1, y1, w, h)
+            
+        # draw SAM points
+        if len(self.SAM_coordinates) != 0:
+            for point in self.SAM_coordinates:
+                color = "#FF0000" if point[2] == 0 else "#00FF00"
+                pen = QtGui.QPen(
+                    QtGui.QColor(color),
+                    5 * max(1, int(round(2.0 / Shape.scale))),
+                    QtCore.Qt.SolidLine,
+                    QtCore.Qt.RoundCap,
+                )
+                p.setPen(pen)
+                p.setOpacity(0.8)
+                p.drawPoint(point[0], point[1])
+        
+        if len(self.SAM_rects) != 0:
+            box = self.SAM_rects[-1]
+            pen = QtGui.QPen(
+                QtGui.QColor("#00FF00"),
+                2 * max(1, int(round(2.0 / Shape.scale))),
+                QtCore.Qt.SolidLine,
+            )
+            p.setPen(pen)
+            p.setOpacity(0.8)
+            
+            point1 = [box[0].x(), box[0].y()]
+            point2 = [box[1].x(), box[1].y()]
+            x1 = min(point1[0], point2[0])
+            y1 = min(point1[1], point2[1])
+            w = abs(point1[0] - point2[0])
+            h = abs(point1[1] - point2[1])
+            p.drawRect(x1, y1, w, h)
+            
 
         p.end()
 

@@ -5160,7 +5160,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if not visible or not setEnabled:
             try:
                 self.sam_clear_annotation_button_clicked()
-                self.sam_model_comboBox.setCurrentIndex(0)
+                # self.sam_model_comboBox.setCurrentIndex(0)
                 self.sam_buttons_colors("X")
             except:
                 pass
