@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import cv2
 import skimage.measure
+import torch
 
 # import mask_to_polygons from inference.py inside the inference class
 # from inference import mask_to_polygons
@@ -31,16 +32,46 @@ class Sam_Predictor():
         self.mask_logit = None
 
 
-    def predict(self, point_coords=None, point_labels=None, multimask_output=True):
+    def predict(self, point_coords=None, point_labels=None, box=None, multimask_output=True, image=None):
         # print(point_coords , point_labels)
-        if self.mask_logit is None:
-            masks, scores, logits = self.predictor.predict(point_coords=point_coords, point_labels=point_labels, multimask_output=multimask_output)
+        print(f'----------------------- into SAM predict')
+        print(f'point_coords: {point_coords}, point_labels: {point_labels}, box: {box}')
+        if box is None:
+            print(f'----------------------- no boxes')
+            if self.mask_logit is None:
+                masks, scores, logits = self.predictor.predict(point_coords=point_coords, 
+                                                               point_labels=point_labels, 
+                                                               multimask_output=multimask_output)
+            else:
+                masks, scores, logits = self.predictor.predict(point_coords=point_coords, 
+                                                               point_labels=point_labels,
+                                                               mask_input=self.mask_logit[None, :, :],
+                                                               multimask_output=multimask_output)
         else:
-            masks, scores, logits = self.predictor.predict(point_coords=point_coords, point_labels=point_labels,
-                                                        mask_input=self.mask_logit[None, :, :],
-                                                        multimask_output=multimask_output)
+            print(f'----------------------- boxes')
+            if len(box) == 1:
+                print(f'----------------------- only one box')
+                input_box = np.array(box[0])
+                masks, scores, logits = self.predictor.predict(point_coords=point_coords, 
+                                                            point_labels=point_labels,
+                                                            box=input_box[None, :],
+                                                            multimask_output=multimask_output)
+                
+            else:
+                print(f'----------------------- multiple boxes')
+                input_box = np.array(box[0])
+                box_tensor = torch.tensor(box, device=self.predictor.device)
+                box_transformed = self.predictor.transform.apply_boxes_torch(box_tensor, image.shape[:2])
+                masks, scores, logits = self.predictor.predict_torch(point_coords=None, 
+                                                            point_labels=None,
+                                                            boxes=box_transformed,
+                                                            multimask_output=False)
         
         if multimask_output:
+            if box is not None and len(box) != 1:
+                logits = torch.Tensor.cpu(logits).numpy().reshape(-1, logits.shape[-2], logits.shape[-1])
+                masks = torch.Tensor.cpu(masks).numpy().reshape(-1, masks.shape[-2], masks.shape[-1])
+                scores = torch.Tensor.cpu(scores).numpy().reshape(-1)
             self.mask_logit = logits[np.argmax(scores), :, :]  # Choose the model's best mask logit
             mask = masks[np.argmax(scores), :, :]  # Choose the model's best mask
             score = np.max(scores)  # Choose the model's best score
@@ -111,5 +142,4 @@ class Sam_Predictor():
             return False
         return True
 
-    def clear_logit(self):
-        self.mask_logit = None
+    
