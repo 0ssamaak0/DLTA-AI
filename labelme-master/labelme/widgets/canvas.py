@@ -422,7 +422,8 @@ class Canvas(QtWidgets.QWidget):
                 self.SAM_rect.append(self.correct_pos_for_SAM(pos))
                 if len(self.SAM_rect) == 2:
                     print("do smth")
-                    self.SAM_rects.append(self.SAM_rect)
+                    # self.SAM_rects.append(self.SAM_rect)
+                    self.SAM_rects = [self.SAM_rect]
                     self.pointAdded.emit()
                     self.SAM_rect = []
             # the other is editing mode   
@@ -486,7 +487,8 @@ class Canvas(QtWidgets.QWidget):
             if abs(pos.x() - self.SAM_rect[0].x()) + abs(pos.y() - self.SAM_rect[0].y()) > 10:
                 self.SAM_rect.append(self.correct_pos_for_SAM(pos))
                 print("do smth")
-                self.SAM_rects.append(self.SAM_rect)
+                # self.SAM_rects.append(self.SAM_rect)
+                self.SAM_rects = [self.SAM_rect]
                 self.pointAdded.emit()
                 self.SAM_rect = []
 
