@@ -3733,7 +3733,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.intelligenceHelper.selectedmodels = self.intelligenceHelper.mergeSegModels()
         self.prev_annotation_mode = self.current_annotation_mode
         self.current_annotation_mode = "multimodel"
-        self.annotate_one()
+        try:
+            self.annotate_one()
+        except:
+            print("No models selected or no image is loaded, please try again")
         self.current_annotation_mode = self.prev_annotation_mode
 
     def showRuntimeData(self):
@@ -5275,15 +5278,15 @@ class MainWindow(QtWidgets.QMainWindow):
             print("please open an image first")
             return
         print("done loading model")
-        
+
     def sam_buttons_colors(self, mode):
-        #style_sheet = """
+        # style_sheet = """
         #    text-align: center;
         #    margin-right: 3px;
         #    border-radius: 5px;
         #    padding: 4px 8px;
         #    border: 1px solid #999999;
-        #"""
+        # """
         red, green, black, trans, hoverColor = "#ff0000;", "#00ff00;", "#000000;", "transparent;", "#383E48;"
         hover_const = "QPushButton::hover { background-color : "
         disabled_const = "QPushButton:disabled { color : #7A7A7A} "
@@ -5346,7 +5349,8 @@ class MainWindow(QtWidgets.QMainWindow):
         print("sam select rect button clicked")
         self.canvas.setCursor(QtGui.QCursor(QtCore.Qt.CrossCursor))
         self.canvas.SAM_mode = "select rect"
-        self.canvas.h_w_of_image = [self.CURRENT_FRAME_IMAGE.shape[0], self.CURRENT_FRAME_IMAGE.shape[1]]
+        self.canvas.h_w_of_image = [
+            self.CURRENT_FRAME_IMAGE.shape[0], self.CURRENT_FRAME_IMAGE.shape[1]]
 
     def sam_clear_annotation_button_clicked(self):
         self.sam_buttons_colors("clear")
@@ -5382,7 +5386,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 return
         except:
             return
-        
+
         self.labelList.clear()
         sam_qt_shape = convert_shapes_to_qt_shapes([self.current_sam_shape])[0]
         self.canvas.SAM_current = sam_qt_shape
@@ -5424,26 +5428,27 @@ class MainWindow(QtWidgets.QMainWindow):
         else:
             input_points = np.array(input_points)
             input_labels = np.array(input_labels)
-        
+
         return input_points, input_labels
-            
+
     def run_sam_model(self):
-        
+
         print("run sam model")
         if self.sam_predictor is None or self.sam_model_comboBox.currentText() == "Select Model (SAM disable)":
             print("please select a model")
             return
-        
+
         # prepre the input format for SAM
-        
-        input_points, input_labels = self.SAM_points_and_labels_from_coordinates(self.canvas.SAM_coordinates)
+
+        input_points, input_labels = self.SAM_points_and_labels_from_coordinates(
+            self.canvas.SAM_coordinates)
         input_boxes = self.SAM_rects_to_boxes(self.canvas.SAM_rects)
-        
-        mask, score = self.sam_predictor.predict(point_coords=input_points, 
+
+        mask, score = self.sam_predictor.predict(point_coords=input_points,
                                                  point_labels=input_labels,
                                                  box=input_boxes,
                                                  image=self.CURRENT_FRAME_IMAGE)
-        
+
         points = self.sam_predictor.mask_to_polygons(mask)
         shape = self.sam_predictor.polygon_to_shape(points, score)
         self.current_sam_shape = shape

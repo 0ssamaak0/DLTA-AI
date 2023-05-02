@@ -15,6 +15,7 @@ import warnings
 import numpy as np
 import urllib.request
 from .shape import Shape
+from labelme.utils.more_models import ModelExplorerDialog
 
 import torch
 from mmdet.apis import inference_detector, init_detector
@@ -472,9 +473,14 @@ class Intelligence():
         with open("saved_models.json") as json_file:
             data = json.load(json_file)
             for model in data.keys():
-                models.append(model)
-        if "YOLOv8x" in models:
-            models.remove("YOLOv8x")
+                if "YOLOv8" not in model:
+                    models.append(model)
+        # ExplorerMerge = ModelExplorerDialog(merge=True)
+        # ExplorerMerge.adjustSize()
+        # ExplorerMerge.resize(
+        #     int(ExplorerMerge.width() * 2), int(ExplorerMerge.height() * 1.5))
+        # ExplorerMerge.exec_()
+
         dialog = QtWidgets.QDialog(self.parent)
         dialog.setWindowTitle('Select Models')
         dialog.setWindowModality(QtCore.Qt.ApplicationModal)
