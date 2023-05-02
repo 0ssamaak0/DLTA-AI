@@ -3748,7 +3748,7 @@ class MainWindow(QtWidgets.QMainWindow):
         try:
             self.annotate_one()
         except:
-            print("No models selected")
+            print("No models selected or no image is loaded, please try again")
         self.current_annotation_mode = self.prev_annotation_mode
 
     def Segment_anything(self):
