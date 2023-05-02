@@ -898,6 +898,7 @@ class MainWindow(QtWidgets.QMainWindow):
             tracking_models=QtWidgets.QMenu(self.tr("Select Tracking model")),
             labelList=labelMenu,
 
+
         )
         utils.addActions(
             self.menus.sam,
@@ -1079,9 +1080,10 @@ class MainWindow(QtWidgets.QMainWindow):
         saved_models = {}
         # saved_models["YOLOv8x"] = {"checkpoint": "yolov8x-seg.pt", "config": "none"}
         for model in models_json:
-            if model["Checkpoint"].split("/")[-1] in os.listdir(checkpoints_dir):
-                saved_models[model["Model Name"]] = {
-                    "id": model["id"], "checkpoint": model["Checkpoint"], "config": model["Config"]}
+            if model["Model"] != "SAM":
+                if model["Checkpoint"].split("/")[-1] in os.listdir(checkpoints_dir):
+                    saved_models[model["Model Name"]] = {
+                        "id": model["id"], "checkpoint": model["Checkpoint"], "config": model["Config"]}
 
         with open(cwd + "/saved_models.json", "w") as f:
             json.dump(saved_models, f, indent=4)
