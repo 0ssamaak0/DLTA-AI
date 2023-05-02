@@ -771,13 +771,6 @@ class MainWindow(QtWidgets.QMainWindow):
             None,
             self.tr("show the runtime data")
         )
-        sam = action(
-            self.tr("show/hide toolbar"),
-            self.Segment_anything,
-            None,
-            None,
-            self.tr("show/hide toolbar")
-        )
         openVideo = action(
             self.tr("Open &Video"),
             self.openVideo,
@@ -891,7 +884,6 @@ class MainWindow(QtWidgets.QMainWindow):
             edit=self.menu(self.tr("&Edit")),
             view=self.menu(self.tr("&View")),
             intelligence=self.menu(self.tr("&Auto Annotation")),
-            sam=self.menu(self.tr("&Segment Anything")),
             # help=self.menu(self.tr("&Help")),
             recentFiles=QtWidgets.QMenu(self.tr("Open &Recent")),
             saved_models=QtWidgets.QMenu(self.tr("Select Segmentation model")),
@@ -899,12 +891,6 @@ class MainWindow(QtWidgets.QMainWindow):
             labelList=labelMenu,
 
 
-        )
-        utils.addActions(
-            self.menus.sam,
-            (
-                sam,
-            ),
         )
 
         utils.addActions(
@@ -1291,7 +1277,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def setEditMode(self):
         self.sam_finish_annotation_button_clicked()
-        self.set_sam_toolbar_visibility(False)
+        self.set_sam_toolbar_visibility(visible=True, setEnabled=False)
         try:
             x = self.CURRENT_VIDEO_PATH
         except:
@@ -1417,7 +1403,8 @@ class MainWindow(QtWidgets.QMainWindow):
         return False
 
     def createMode_options(self):
-        self.set_sam_toolbar_visibility(True)
+        self.set_sam_toolbar_visibility(visible=True, setEnabled=True)
+        self.sam_buttons_colors("X")
         if self.config['toolMode'] == 'image':
             self.toggleDrawMode(False, createMode="polygon")
             return
@@ -3053,6 +3040,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def openFile(self, _value=False):
         self.config['toolMode'] = 'image'
         self.right_click_menu()
+        self.set_sam_toolbar_visibility(True, False)
 
         self.current_annotation_mode = "img"
         self.actions.export.setEnabled(False)
@@ -3748,14 +3736,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.annotate_one()
         self.current_annotation_mode = self.prev_annotation_mode
 
-    def Segment_anything(self):
-        print('Segment anything')
-        # check the visibility of the sam toolbar
-        if self.sam_toolbar.isVisible():
-            self.set_sam_toolbar_visibility(False)
-        else:
-            self.set_sam_toolbar_visibility(True)
-
     def showRuntimeData(self):
         runtime = ""
         # if cuda is available, print cuda name
@@ -3875,9 +3855,6 @@ class MainWindow(QtWidgets.QMainWindow):
             else:
                 self.actions.menu[i].setVisible(True)
 
-        # SAM tool bar
-
-        self.Segment_anything()
 
         # NOT WORKING YET
 
@@ -5176,8 +5153,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
         return img
 
-    def set_sam_toolbar_visibility(self, visible=False):
-        if not visible:
+    def set_sam_toolbar_visibility(self, visible=False, setEnabled=True):
+        if not visible or not setEnabled:
             try:
                 self.sam_clear_annotation_button_clicked()
                 self.sam_model_comboBox.setCurrentIndex(0)
@@ -5188,6 +5165,7 @@ class MainWindow(QtWidgets.QMainWindow):
         for widget in self.sam_toolbar.children():
             try:
                 widget.setVisible(visible)
+                widget.setEnabled(setEnabled)
             except:
                 pass
 
@@ -5210,8 +5188,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # add a dropdown menu to select the sam model
         self.sam_model_comboBox = QtWidgets.QComboBox()
-        # add a label inside the combobox that says "select model" and make it unselectable
-        self.sam_model_comboBox.addItem("Select Model")
+        # add a label inside the combobox that says "Select Model (SAM disable)" and make it unselectable
+        self.sam_model_comboBox.addItem("Select Model (SAM disable)")
         self.sam_model_comboBox.addItems(self.sam_models())
         self.sam_model_comboBox.setStyleSheet(
             "QComboBox { font-size: 10pt; font-weight: bold; }")
@@ -5264,7 +5242,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.sam_finish_annotation_button_clicked)
         self.sam_toolbar.addWidget(self.sam_finish_annotation_button)
 
-        self.set_sam_toolbar_visibility(False)
+        self.set_sam_toolbar_visibility(False, False)
 
     def sam_models(self):
         cwd = os.getcwd()
@@ -5281,7 +5259,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def sam_model_comboBox_changed(self):
         self.sam_clear_annotation_button_clicked()
         self.sam_buttons_colors("X")
-        if self.sam_model_comboBox.currentText() == "Select Model":
+        if self.sam_model_comboBox.currentText() == "Select Model (SAM disable)":
             return
         model_type = self.sam_model_comboBox.currentText()
         with open('models_menu/sam_models.json') as f:
@@ -5308,6 +5286,7 @@ class MainWindow(QtWidgets.QMainWindow):
         #"""
         red, green, black, trans, hoverColor = "#ff0000;", "#00ff00;", "#000000;", "transparent;", "#383E48;"
         hover_const = "QPushButton::hover { background-color : "
+        disabled_const = "QPushButton:disabled { color : #7A7A7A} "
         style_sheet_const = "QPushButton { font-size: 10pt; font-weight: bold; color: #ffffff; background-color: "
         
         [add_style, add_hover] = [green, green] if mode == "add" else [trans, hoverColor]
@@ -5316,11 +5295,18 @@ class MainWindow(QtWidgets.QMainWindow):
         [clear_style, clear_hover] = [red, red] if mode == "clear" else [trans, hoverColor]
         [finish_style, finish_hover] = [black, black] if mode == "finish" else [trans, hoverColor]
         
-        self.sam_add_point_button.setStyleSheet(style_sheet_const + add_style + ";}" + hover_const + add_hover + ";}")
-        self.sam_remove_point_button.setStyleSheet(style_sheet_const + remove_style + ";}" + hover_const + remove_hover + ";}")
-        self.sam_select_rect_button.setStyleSheet(style_sheet_const + rect_style + ";}" + hover_const + rect_hover + ";}")
-        self.sam_clear_annotation_button.setStyleSheet(style_sheet_const + clear_style + ";}" + hover_const + clear_hover + ";}")
-        self.sam_finish_annotation_button.setStyleSheet(style_sheet_const + finish_style + ";}" + hover_const + finish_hover + ";}")
+        self.sam_add_point_button.setStyleSheet(style_sheet_const + add_style + ";}" + hover_const + add_hover + ";}" + disabled_const)
+        self.sam_remove_point_button.setStyleSheet(style_sheet_const + remove_style + ";}" + hover_const + remove_hover + ";}" + disabled_const)
+        self.sam_select_rect_button.setStyleSheet(style_sheet_const + rect_style + ";}" + hover_const + rect_hover + ";}" + disabled_const)
+        self.sam_clear_annotation_button.setStyleSheet(style_sheet_const + clear_style + ";}" + hover_const + clear_hover + ";}" + disabled_const)
+        self.sam_finish_annotation_button.setStyleSheet(style_sheet_const + finish_style + ";}" + hover_const + finish_hover + ";}" + disabled_const)
+        
+        setEnabled = False if self.sam_model_comboBox.currentText() == "Select Model (SAM disable)" else True
+        self.sam_add_point_button.setEnabled(setEnabled)
+        self.sam_remove_point_button.setEnabled(setEnabled)
+        self.sam_select_rect_button.setEnabled(setEnabled)
+        self.sam_clear_annotation_button.setEnabled(setEnabled)
+        self.sam_finish_annotation_button.setEnabled(setEnabled)
         
     def sam_add_point_button_clicked(self):
         self.sam_buttons_colors("add")
@@ -5387,6 +5373,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.canvas.setCursor(QtGui.QCursor(QtCore.Qt.ArrowCursor))
         print("sam finish annotation button clicked")
         self.canvas.SAM_coordinates = []
+        self.canvas.SAM_rect = []
+        self.canvas.SAM_rects = []
         self.canvas.SAM_mode = "finished"
         try:
             self.sam_predictor.clear_logit()
@@ -5442,7 +5430,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def run_sam_model(self):
         
         print("run sam model")
-        if self.sam_predictor is None:
+        if self.sam_predictor is None or self.sam_model_comboBox.currentText() == "Select Model (SAM disable)":
             print("please select a model")
             return
         
