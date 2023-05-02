@@ -1290,6 +1290,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.actions.editMode.setEnabled(not edit)
 
     def setEditMode(self):
+        self.sam_finish_annotation_button_clicked()
+        self.set_sam_toolbar_visibility(False)
         try:
             x = self.CURRENT_VIDEO_PATH
         except:
@@ -1415,7 +1417,7 @@ class MainWindow(QtWidgets.QMainWindow):
         return False
 
     def createMode_options(self):
-
+        self.set_sam_toolbar_visibility(True)
         if self.config['toolMode'] == 'image':
             self.toggleDrawMode(False, createMode="polygon")
             return
@@ -2640,8 +2642,8 @@ class MainWindow(QtWidgets.QMainWindow):
             )
             text = ""
 
-        # if text == "SAM instance":
-        #     text = "SAM instance - confirmed"
+        if text == "SAM instance":
+            text = "SAM instance - confirmed"
 
         if self.config["toolMode"] == "video":
             group_id, text = self.get_id_from_user(group_id, text)
@@ -3875,7 +3877,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # SAM tool bar
 
-        self.Segment_anything()
         self.Segment_anything()
 
         # NOT WORKING YET
@@ -5176,6 +5177,13 @@ class MainWindow(QtWidgets.QMainWindow):
         return img
 
     def set_sam_toolbar_visibility(self, visible=False):
+        if not visible:
+            try:
+                self.sam_clear_annotation_button_clicked()
+                self.sam_model_comboBox.setCurrentIndex(0)
+                self.sam_buttons_colors("X")
+            except:
+                pass
         self.sam_toolbar.setVisible(visible)
         for widget in self.sam_toolbar.children():
             try:
@@ -5271,6 +5279,8 @@ class MainWindow(QtWidgets.QMainWindow):
         return models
 
     def sam_model_comboBox_changed(self):
+        self.sam_clear_annotation_button_clicked()
+        self.sam_buttons_colors("X")
         if self.sam_model_comboBox.currentText() == "Select Model":
             return
         model_type = self.sam_model_comboBox.currentText()
@@ -5287,8 +5297,33 @@ class MainWindow(QtWidgets.QMainWindow):
             print("please open an image first")
             return
         print("done loading model")
-
+        
+    def sam_buttons_colors(self, mode):
+        #style_sheet = """
+        #    text-align: center;
+        #    margin-right: 3px;
+        #    border-radius: 5px;
+        #    padding: 4px 8px;
+        #    border: 1px solid #999999;
+        #"""
+        red, green, black, trans, hoverColor = "#ff0000;", "#00ff00;", "#000000;", "transparent;", "#383E48;"
+        hover_const = "QPushButton::hover { background-color : "
+        style_sheet_const = "QPushButton { font-size: 10pt; font-weight: bold; color: #ffffff; background-color: "
+        
+        [add_style, add_hover] = [green, green] if mode == "add" else [trans, hoverColor]
+        [remove_style, remove_hover] = [red, red] if mode == "remove" else [trans, hoverColor]
+        [rect_style, rect_hover] = [green, green] if mode == "rect" else [trans, hoverColor]
+        [clear_style, clear_hover] = [red, red] if mode == "clear" else [trans, hoverColor]
+        [finish_style, finish_hover] = [black, black] if mode == "finish" else [trans, hoverColor]
+        
+        self.sam_add_point_button.setStyleSheet(style_sheet_const + add_style + ";}" + hover_const + add_hover + ";}")
+        self.sam_remove_point_button.setStyleSheet(style_sheet_const + remove_style + ";}" + hover_const + remove_hover + ";}")
+        self.sam_select_rect_button.setStyleSheet(style_sheet_const + rect_style + ";}" + hover_const + rect_hover + ";}")
+        self.sam_clear_annotation_button.setStyleSheet(style_sheet_const + clear_style + ";}" + hover_const + clear_hover + ";}")
+        self.sam_finish_annotation_button.setStyleSheet(style_sheet_const + finish_style + ";}" + hover_const + finish_hover + ";}")
+        
     def sam_add_point_button_clicked(self):
+        self.sam_buttons_colors("add")
         try:
             same_image = self.sam_predictor.check_image(
                 self.CURRENT_FRAME_IMAGE)
@@ -5301,6 +5336,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.canvas.SAM_mode = "add point"
 
     def sam_remove_point_button_clicked(self):
+        self.sam_buttons_colors("remove")
         try:
             same_image = self.sam_predictor.check_image(
                 self.CURRENT_FRAME_IMAGE)
@@ -5313,6 +5349,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.canvas.SAM_mode = "remove point"
 
     def sam_select_rect_button_clicked(self):
+        self.sam_buttons_colors("rect")
         try:
             same_image = self.sam_predictor.check_image(
                 self.CURRENT_FRAME_IMAGE)
@@ -5323,11 +5360,16 @@ class MainWindow(QtWidgets.QMainWindow):
         print("sam select rect button clicked")
         self.canvas.setCursor(QtGui.QCursor(QtCore.Qt.CrossCursor))
         self.canvas.SAM_mode = "select rect"
+        self.canvas.h_w_of_image = [self.CURRENT_FRAME_IMAGE.shape[0], self.CURRENT_FRAME_IMAGE.shape[1]]
 
     def sam_clear_annotation_button_clicked(self):
+        self.sam_buttons_colors("clear")
         print("sam clear annotation button clicked")
         self.canvas.SAM_coordinates = []
         self.canvas.SAM_mode = ""
+        self.canvas.SAM_rect = []
+        self.canvas.SAM_rects = []
+        self.current_sam_shape = None
         try:
             self.sam_predictor.clear_logit()
         except:
@@ -5340,6 +5382,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # self.laodLabels(self.CURRENT_SAM_SHAPES_IN_IMG,replace=false)
 
     def sam_finish_annotation_button_clicked(self):
+        self.sam_buttons_colors("finish")
         # return the cursor to normal
         self.canvas.setCursor(QtGui.QCursor(QtCore.Qt.ArrowCursor))
         print("sam finish annotation button clicked")
@@ -5347,8 +5390,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.canvas.SAM_mode = "finished"
         try:
             self.sam_predictor.clear_logit()
+            if len(self.current_sam_shape) == 0:
+                return
         except:
             return
+        
         self.labelList.clear()
         sam_qt_shape = convert_shapes_to_qt_shapes([self.current_sam_shape])[0]
         self.canvas.SAM_current = sam_qt_shape
@@ -5364,45 +5410,72 @@ class MainWindow(QtWidgets.QMainWindow):
         self.current_sam_shape = None
         self.canvas.SAM_current = None
 
-    def run_sam_model(self):
-        print("run sam model")
-        # prepre the input format for SAM
+    def SAM_rects_to_boxes(self, rects):
+        res = []
+        for rect in rects:
+            listPOINTS = [min(rect[0].x(), rect[1].x()),
+                          min(rect[0].y(), rect[1].y()),
+                          max(rect[0].x(), rect[1].x()),
+                          max(rect[0].y(), rect[1].y())]
+            listPOINTS = [int(round(x)) for x in listPOINTS]
+            res.append(listPOINTS)
+        if len(res) == 0:
+            res = None
+        return res
+
+    def SAM_points_and_labels_from_coordinates(self, coordinates):
         input_points = []
         input_labels = []
-        for coordinate in self.canvas.SAM_coordinates:
+        for coordinate in coordinates:
             input_points.append(
                 [int(round(coordinate[0])), int(round(coordinate[1]))])
             input_labels.append(coordinate[2])
-        input_points = np.array(input_points)
-        input_labels = np.array(input_labels)
+        if len(input_points) == 0:
+            input_points = None
+            input_labels = None
+        else:
+            input_points = np.array(input_points)
+            input_labels = np.array(input_labels)
+        
+        return input_points, input_labels
+            
+    def run_sam_model(self):
+        
+        print("run sam model")
         if self.sam_predictor is None:
             print("please select a model")
             return
-        else:
-            print(self.canvas.SAM_coordinates, self.sam_predictor.mask_logit is None, len(
-                self.CURRENT_SHAPES_IN_IMG))
-            mask, score = self.sam_predictor.predict(
-                point_coords=input_points, point_labels=input_labels)
-            points = self.sam_predictor.mask_to_polygons(mask)
-            shape = self.sam_predictor.polygon_to_shape(points, score)
-            self.current_sam_shape = shape
-            # if self.CURRENT_SHAPES_IN_IMG != []:
-            # if self.CURRENT_SHAPES_IN_IMG[-1]["label"] == "SAM instance"  :
-            # self.CURRENT_SHAPES_IN_IMG.pop()
-            # self.CURRENT_SHAPES_IN_IMG.append(shape)
-            # shapes  = convert_shapes_to_qt_shapes(self.CURRENT_SHAPES_IN_IMG)[0]
-            # self.loadLabels(self.CURRENT_SHAPES_IN_IMG)
-            # self.loadLabels(self.CURRENT_SHAPES_IN_IMG)
-            # self.labelList.clear()
-            # self.loadLabels(self.CURRENT_SHAPES_IN_IMG)
-            self.labelList.clear()
-            # self.canvas.loadPixmap(QtGui.QPixmap.fromImage(self.image))
-            # we need it since it does replace=True on whatever was on the canvas
-            self.loadLabels(self.CURRENT_SHAPES_IN_IMG)
-            self.loadLabels(self.SAM_SHAPES_IN_IMAGE, replace=False)
-            self.loadLabels([self.current_sam_shape], replace=False)
+        
+        # prepre the input format for SAM
+        
+        input_points, input_labels = self.SAM_points_and_labels_from_coordinates(self.canvas.SAM_coordinates)
+        input_boxes = self.SAM_rects_to_boxes(self.canvas.SAM_rects)
+        
+        mask, score = self.sam_predictor.predict(point_coords=input_points, 
+                                                 point_labels=input_labels,
+                                                 box=input_boxes,
+                                                 image=self.CURRENT_FRAME_IMAGE)
+        
+        points = self.sam_predictor.mask_to_polygons(mask)
+        shape = self.sam_predictor.polygon_to_shape(points, score)
+        self.current_sam_shape = shape
+        # if self.CURRENT_SHAPES_IN_IMG != []:
+        # if self.CURRENT_SHAPES_IN_IMG[-1]["label"] == "SAM instance"  :
+        # self.CURRENT_SHAPES_IN_IMG.pop()
+        # self.CURRENT_SHAPES_IN_IMG.append(shape)
+        # shapes  = convert_shapes_to_qt_shapes(self.CURRENT_SHAPES_IN_IMG)[0]
+        # self.loadLabels(self.CURRENT_SHAPES_IN_IMG)
+        # self.loadLabels(self.CURRENT_SHAPES_IN_IMG)
+        # self.labelList.clear()
+        # self.loadLabels(self.CURRENT_SHAPES_IN_IMG)
+        self.labelList.clear()
+        # self.canvas.loadPixmap(QtGui.QPixmap.fromImage(self.image))
+        # we need it since it does replace=True on whatever was on the canvas
+        self.loadLabels(self.CURRENT_SHAPES_IN_IMG)
+        self.loadLabels(self.SAM_SHAPES_IN_IMAGE, replace=False)
+        self.loadLabels([self.current_sam_shape], replace=False)
 
-            print("done running sam model")
+        print("done running sam model")
 
 
 # important parameters across the gui
