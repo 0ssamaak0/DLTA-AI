@@ -68,7 +68,7 @@ class ModelExplorerDialog(QDialog):
         layout.addWidget(self.table)
 
         # Set up the number of rows and columns
-        self.num_rows = 54
+        self.num_rows = len(models_json)
         self.num_cols = 9
 
         # make availability list
@@ -151,6 +151,12 @@ class ModelExplorerDialog(QDialog):
                 self.table.setCellWidget(row_count, 9, available_item)
                 # make select_row_button disabled
                 select_row_button.setEnabled(False)
+
+            # Disable SAM Selection
+            if model["Model"] == "SAM":
+                select_row_button.setEnabled(False)
+                # change text
+                select_row_button.setText("Select from SAM Toolbar")
 
             row_count += 1
         # hide the first row
@@ -236,10 +242,12 @@ class ModelExplorerDialog(QDialog):
                     f.write(data)
                     block_num += 1
                     handle_progress(block_num, block_size, total_size)
-
             if self.download_canceled:
+                # delete the file
+                os.remove(file_path)
                 print("Download canceled by user")
         except Exception as e:
+            os.remove(file_path)
             print(f"Download error: {e}")
 
         # close the progress dialog
