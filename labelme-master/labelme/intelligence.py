@@ -72,13 +72,13 @@ class IntelligenceWorker(QThread):
             try:
                 print("Decoding "+filename)
                 s = self.source.get_shapes_of_one(filename)
-                s  = convert_shapes_to_qt_shapes(s)
+                s = convert_shapes_to_qt_shapes(s)
                 self.source.saveLabelFile(filename, s)
             except Exception as e:
                 print(e)
             self.sinOut.emit(index, total)
-            
-            
+
+
 def convert_shapes_to_qt_shapes(shapes):
     qt_shapes = []
     for shape in shapes:
@@ -106,6 +106,7 @@ def convert_shapes_to_qt_shapes(shapes):
         shape.close()
         qt_shapes.append(shape)
     return qt_shapes
+
 
 class Intelligence():
     def __init__(self, parent):
@@ -135,8 +136,6 @@ class Intelligence():
                 f'selected model : {selected_model_name} \nconfig : {config}\ncheckpoint : {checkpoint} \n')
 
         torch.cuda.empty_cache()
-        # model = init_detector("C:/Users/Shehab/Desktop/l001/ANNOTATION_TOOL/mmdetection/mmdetection/configs/detectors/htc_r50_sac_1x_coco.py",
-        #                     "C:/Users/Shehab/Desktop/l001/ANNOTATION_TOOL/mmdetection/mmdetection/checkpoints/htc_r50_sac_1x_coco-bfa60c54.pth", device = torch.device("cuda"))
         if "YOLOv8" in selected_model_name:
             model = YOLO(checkpoint)
             model.fuse()
@@ -148,22 +147,14 @@ class Intelligence():
                                   checkpoint,
                                   device=torch.device("cuda" if torch.cuda.is_available() else "cpu"))
         except:
-            if selected_model_name == "YOLACT":
-                # download YOLACT
-                checkpt_name = "https://download.openmmlab.com/mmdetection/v2.0/yolact/yolact_r50_1x8_coco/yolact_r50_1x8_coco_20200908-f38d58df.pth"
-                urllib.request.urlretrieve(checkpt_name, filename=f"mmdetection/checkpoints/{checkpt_name.split('/')[-1]}", reporthook=lambda x, y, z: print(
-                    f" Downloading YOLACT {x * y / z * 100:.2f}% ..", end="\r"))
-                model = init_detector(config, checkpoint, device=torch.device(
-                    "cuda" if torch.cuda.is_available() else "cpu"))
-            else:
-                print(
-                    "Error in loading the model, please check if the config and checkpoint files do exist")
+            print(
+                "Error in loading the model, please check if the config and checkpoint files do exist")
 
-                #    cfg_options= dict(iou_threshold=0.2))
+            #    cfg_options= dict(iou_threshold=0.2))
 
         # "C:\Users\Shehab\Desktop\l001\ANNOTATION_TOOL\mmdetection\mmdetection\configs\yolact\yolact_r50_1x8_coco.py"
         # model = init_detector("C:/Users/Shehab/Desktop/mmdetection/mmdetection/configs/detectors/htc_r50_sac_1x_coco.py",
-                # "C:/Users/Shehab/Desktop/mmdetection/mmdetection/checkpoints/htc_r50_sac_1x_coco-bfa60c54.pth", device = torch.device("cuda"))
+            # "C:/Users/Shehab/Desktop/mmdetection/mmdetection/checkpoints/htc_r50_sac_1x_coco-bfa60c54.pth", device = torch.device("cuda"))
         return selected_model_name, model
 
     @ torch.no_grad()
@@ -171,7 +162,7 @@ class Intelligence():
         torch.cuda.empty_cache()
         print(
             f"Selected model is {selected_model_name}\n and config is {config}\n and checkpoint is {checkpoint}")
-        
+
         # if YOLOv8
         if "YOLOv8" in selected_model_name:
             try:
@@ -236,16 +227,20 @@ class Intelligence():
 
         else:
             if img_array_flag:
-                results = self.reader.decode_file(img=image, model=self.current_mm_model, classdict=self.selectedclasses, threshold=self.conf_threshold, img_array_flag=True)
+                results = self.reader.decode_file(
+                    img=image, model=self.current_mm_model, classdict=self.selectedclasses, threshold=self.conf_threshold, img_array_flag=True)
                 # print(type(results))
                 if isinstance(results, tuple):
-                    results = self.reader.polegonise(results[0], results[1], classdict=self.selectedclasses, threshold=self.conf_threshold)['results']
-                else :
+                    results = self.reader.polegonise(
+                        results[0], results[1], classdict=self.selectedclasses, threshold=self.conf_threshold)['results']
+                else:
                     results = results['results']
             else:
-                results = self.reader.decode_file(img=image, model=self.current_mm_model, classdict=self.selectedclasses, threshold=self.conf_threshold)
+                results = self.reader.decode_file(
+                    img=image, model=self.current_mm_model, classdict=self.selectedclasses, threshold=self.conf_threshold)
                 if isinstance(results, tuple):
-                    results = self.reader.polegonise(results[0], results[1], classdict=self.selectedclasses, threshold=self.conf_threshold)['results']
+                    results = self.reader.polegonise(
+                        results[0], results[1], classdict=self.selectedclasses, threshold=self.conf_threshold)['results']
                 else:
                     results = results['results']
             end_time = time.time()
@@ -269,10 +264,11 @@ class Intelligence():
                                for item in sublist]
 
             shapes.append(shape)
-            shapes, boxes, confidences, class_ids, segments = self.OURnms(shapes, self.iou_threshold)
+            shapes, boxes, confidences, class_ids, segments = self.OURnms(
+                shapes, self.iou_threshold)
             # self.addLabel(shape)
         return shapes
-    
+
     def get_boxes_conf_classids_segments(self, shapes):
         boxes = []
         confidences = []
@@ -295,10 +291,10 @@ class Intelligence():
             confidences.append(float(s["content"]))
             class_ids.append(coco_classes.index(
                 label)if label in coco_classes else -1)
-        
+
         return boxes, confidences, class_ids, segments
- 
-    def compute_iou(self , box1, box2):
+
+    def compute_iou(self, box1, box2):
         """
         Computes IOU between two bounding boxes.
 
@@ -330,8 +326,7 @@ class Intelligence():
         iou = intersection_area / union_area if union_area > 0 else 0
 
         return iou
-    
- 
+
     def OURnms(self, shapes, iou_threshold=0.5):
         """
         Perform non-maximum suppression on a list of shapes based on their bounding boxes using IOU threshold.
@@ -347,12 +342,13 @@ class Intelligence():
         for shape in shapes:
             if shape['content'] is None:
                 shape['content'] = 1.0
-        
+
         # Sort shapes by their confidence
         shapes.sort(key=lambda x: x['content'], reverse=True)
-        
-        boxes, confidences, class_ids, segments = self.get_boxes_conf_classids_segments(shapes)
-        
+
+        boxes, confidences, class_ids, segments = self.get_boxes_conf_classids_segments(
+            shapes)
+
         toBeRemoved = []
 
         # Loop through each shape
@@ -368,7 +364,7 @@ class Intelligence():
                 # If IOU is greater than threshold, remove remaining_shape from shapes list
                 if iou > iou_threshold:
                     toBeRemoved.append(j)
-                    
+
         shapesFinal = []
         boxesFinal = []
         confidencesFinal = []
@@ -378,10 +374,10 @@ class Intelligence():
             if i in toBeRemoved:
                 continue
             shapesFinal.append(shapes[i])
-        boxesFinal, confidencesFinal, class_idsFinal, segmentsFinal = self.get_boxes_conf_classids_segments(shapesFinal)
+        boxesFinal, confidencesFinal, class_idsFinal, segmentsFinal = self.get_boxes_conf_classids_segments(
+            shapesFinal)
 
         return shapesFinal, boxesFinal, confidencesFinal, class_idsFinal, segmentsFinal
-       
 
     # print the labels of the selected classes in the dialog
     # def updatlabellist(self):
@@ -410,7 +406,7 @@ class Intelligence():
             return text
         else:
             return 0.3
-        
+
     def setIOUThreshold(self):
         text, ok = QtWidgets.QInputDialog.getText(
             self.parent, 'Threshold Selector', 'Enter IOU threshold:')
@@ -418,8 +414,7 @@ class Intelligence():
             return text
         else:
             return 0.5
-        
-    
+
     # add a resizable and scrollable dialog that contains all coco classes and allow the user to select among them using checkboxes
 
     def selectClasses(self):
