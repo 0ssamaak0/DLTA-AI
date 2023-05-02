@@ -56,9 +56,14 @@ class Canvas(QtWidgets.QWidget):
         # Segment anything (SAM) attributes
         self.SAM_mode = ""
         self.SAM_coordinates = []
-        self.SAM_rect = None
+        self.SAM_rect = []
+        self.SAM_rects = []
         self.SAM_painter = QtGui.QPainter()
         self.SAM_current = None
+        ################################ mouse tracking
+        self.show_cross_line = True
+        self.h_w_of_image = [-1, -1]
+        ################################
         
         
         self.shapesBackups = []
@@ -88,9 +93,7 @@ class Canvas(QtWidgets.QWidget):
         self.movingShape = False
         self._painter = QtGui.QPainter()
         self._cursor = CURSOR_DEFAULT
-        ################################ mouse tracking
-        self.show_cross_line = True
-        ################################
+        
         # Menus:
         # 0: right-click without selection and dragging of shapes
         # 1: right-click with selection and dragging of shapes
@@ -211,27 +214,7 @@ class Canvas(QtWidgets.QWidget):
         self.prevMovePoint = pos
         self.repaint()
         self.restoreCursor()
-        #print("mouseMoveEvent", pos, "self.mode", self.mode, "self.createMode", self.createMode, "self.drawing()", self.drawing(), "self.editing()", self.editing())    
         
-        # if self.SAM_mode != "":
-        #     # draw vertical and horizontal dashed lines from the cursor
-        #     if not self.outOfPixmap(pos):
-        #         self.SAM_painter.begin(self.pixmap)
-
-        #         # draw a vertical dashed line
-        #         self.SAM_painter.setPen(QtGui.QPen(QtCore.Qt.green, 2, QtCore.Qt.DashLine))
-        #         self.SAM_painter.drawLine(pos.x(), 0, pos.x(), self.pixmap.height())
-
-        #         # draw a horizontal dashed line
-        #         self.SAM_painter.setPen(QtGui.QPen(QtCore.Qt.green, 2, QtCore.Qt.DashLine))
-        #         self.SAM_painter.drawLine(0, pos.y(), self.pixmap.width(), pos.y())
-
-        #         # Make the lines disappear after 100ms
-        #         self.SAM_painter.setOpacity(0.5)
-        #         QTimer.singleShot(100, self.SAM_painter.end)
-
-        #         self.SAM_painter.end()
-        #         self.update()
         # Polygon drawing.        
         if self.drawing():
             self.line.shape_type = self.createMode
@@ -373,6 +356,18 @@ class Canvas(QtWidgets.QWidget):
         self.hEdge = None
         self.movingShape = True  # Save changes
 
+    def correct_pos_for_SAM(self, pos):
+        x = pos.x()
+        y = pos.y()
+        h = self.h_w_of_image[0]
+        w = self.h_w_of_image[1]
+        x = max(0, x)
+        y = max(0, y)
+        x = min(w, x)
+        y = min(h, y)
+        res = QtCore.QPointF(x, y)
+        return res
+
     def mousePressEvent(self, ev):
         if QT5:
             pos = self.transformPos(ev.localPos())
@@ -380,7 +375,7 @@ class Canvas(QtWidgets.QWidget):
             pos = self.transformPos(ev.posF())
         #print("mousePressEvent", pos, "self.mode", self.mode, "self.createMode", self.createMode, "self.drawing()", self.drawing(), "self.editing()", self.editing())
         if ev.button() == QtCore.Qt.LeftButton:
-            if self.drawing():
+            if self.drawing() and self.SAM_mode == "":
                 if self.current:
                     # Add point to existing shape.
                     if self.createMode == "polygon":
@@ -423,9 +418,13 @@ class Canvas(QtWidgets.QWidget):
                     self.SAM_coordinates.append([pos.x(), pos.y(),0])
                     #print(self.SAM_coordinates)
                     self.pointAdded.emit()
-            # elif self.SAM_mode == 'select rect':
-            #     self.SAM_rect = Shape(shape_type='rectangle')
-            #     self.SAM_rect.addPoint(pos)
+            elif self.SAM_mode == 'select rect':
+                self.SAM_rect.append(self.correct_pos_for_SAM(pos))
+                if len(self.SAM_rect) == 2:
+                    print("do smth")
+                    self.SAM_rects.append(self.SAM_rect)
+                    self.pointAdded.emit()
+                    self.SAM_rect = []
             # the other is editing mode   
             else:
                 group_mode = int(ev.modifiers()) == QtCore.Qt.ControlModifier
@@ -452,6 +451,10 @@ class Canvas(QtWidgets.QWidget):
         return menu
 
     def mouseReleaseEvent(self, ev):
+        if QT5:
+            pos = self.transformPos(ev.localPos())
+        else:
+            pos = self.transformPos(ev.posF())
         #print("mouseReleaseEvent", "self.mode", self.mode, "self.createMode", self.createMode, "self.drawing()", self.drawing(), "self.editing()", self.editing())
         if ev.button() == QtCore.Qt.RightButton:
             menu = self.menus[len(self.selectedShapesCopy) > 0]
@@ -479,6 +482,13 @@ class Canvas(QtWidgets.QWidget):
             ):
                 # Delete point if: left-click + SHIFT on a point
                 self.removeSelectedPoint()
+        elif ev.button() == QtCore.Qt.LeftButton and len(self.SAM_rect) == 1:
+            if abs(pos.x() - self.SAM_rect[0].x()) + abs(pos.y() - self.SAM_rect[0].y()) > 10:
+                self.SAM_rect.append(self.correct_pos_for_SAM(pos))
+                print("do smth")
+                self.SAM_rects.append(self.SAM_rect)
+                self.pointAdded.emit()
+                self.SAM_rect = []
 
         if self.movingShape and self.hShape:
             index = self.shapes.index(self.hShape)
@@ -696,6 +706,25 @@ class Canvas(QtWidgets.QWidget):
                 QtCore.QPointF(0, self.prevMovePoint.y()),
                 QtCore.QPointF(self.pixmap.width(), self.prevMovePoint.y()),
             )
+            
+        # draw SAM rectangle
+        if len(self.SAM_rect) == 1:
+            pen = QtGui.QPen(
+                QtGui.QColor("#FF0000"),
+                2 * max(1, int(round(2.0 / Shape.scale))),
+                QtCore.Qt.SolidLine,
+            )
+            p.setPen(pen)
+            p.setOpacity(0.8)
+            
+            point1 = [self.SAM_rect[0].x(), self.SAM_rect[0].y()]
+            corrected = self.correct_pos_for_SAM(self.prevMovePoint)
+            point2 = [corrected.x(), corrected.y()]
+            x1 = min(point1[0], point2[0])
+            y1 = min(point1[1], point2[1])
+            w = abs(point1[0] - point2[0])
+            h = abs(point1[1] - point2[1])
+            p.drawRect(x1, y1, w, h)
 
         p.end()
 
