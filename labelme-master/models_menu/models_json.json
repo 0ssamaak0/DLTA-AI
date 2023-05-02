@@ -883,5 +883,50 @@
         "Checkpoint_link": "https://download.openmmlab.com/mmdetection/v2.0/mask2former/mask2former_swin-s-p4-w7-224_lsj_8x2_50e_coco/mask2former_swin-s-p4-w7-224_lsj_8x2_50e_coco_20220504_001756-743b7d99.pth",
         "Checkpoint": "mmdetection/checkpoints/mask2former_swin-s-p4-w7-224_lsj_8x2_50e_coco_20220504_001756-743b7d99.pth",
         "Checkpoint Size (MB)": 262.86
+    },
+    {
+        "id": 59,
+        "Model": "SAM",
+        "Model Name": "ViT-H SAM model",
+        "Backbone": "ViT-H",
+        "Lr schd": "-",
+        "Memory (GB)": "-",
+        "Inference Time (fps)": "-",
+        "box AP": "-",
+        "mask AP": "-",
+        "Config": "-",
+        "Checkpoint_link": "https://dl.fbaipublicfiles.com/segment_anything/sam_vit_h_4b8939.pth",
+        "Checkpoint": "mmdetection/checkpoints/sam_vit_h_4b8939.pth",
+        "Checkpoint Size (MB)": 2445.75
+    },
+    {
+        "id": 60,
+        "Model": "SAM",
+        "Model Name": "ViT-L SAM model",
+        "Backbone": "ViT-L",
+        "Lr schd": "-",
+        "Memory (GB)": "-",
+        "Inference Time (fps)": "-",
+        "box AP": "-",
+        "mask AP": "-",
+        "Config": "-",
+        "Checkpoint_link": "https://dl.fbaipublicfiles.com/segment_anything/sam_vit_l_0b3195.pth",
+        "Checkpoint": "mmdetection/checkpoints/sam_vit_l_0b3195.pth",
+        "Checkpoint Size (MB)": 1191.64
+    },
+    {
+        "id": 61,
+        "Model": "SAM",
+        "Model Name": "ViT-B SAM model",
+        "Backbone": "ViT-B",
+        "Lr schd": "-",
+        "Memory (GB)": "-",
+        "Inference Time (fps)": "-",
+        "box AP": "-",
+        "mask AP": "-",
+        "Config": "-",
+        "Checkpoint_link": "https://dl.fbaipublicfiles.com/segment_anything/sam_vit_b_01ec64.pth",
+        "Checkpoint": "mmdetection/checkpoints/sam_vit_b_01ec64.pth",
+        "Checkpoint Size (MB)": 357.67
     }
 ]
