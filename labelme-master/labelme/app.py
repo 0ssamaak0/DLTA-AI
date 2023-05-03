@@ -2973,8 +2973,10 @@ class MainWindow(QtWidgets.QMainWindow):
             self.loadFile(filename)
 
     def change_curr_model(self, model_name):
+        self.waitWindow(visible=True, text="Wait a second.\nThe Model is being Loaded...")
         self.intelligenceHelper.current_model_name, self.intelligenceHelper.current_mm_model = self.intelligenceHelper.make_mm_model(
             model_name)
+        self.waitWindow()
 
     def model_explorer(self):
         model_explorer_dialog = utils.ModelExplorerDialog()
@@ -3673,6 +3675,7 @@ class MainWindow(QtWidgets.QMainWindow):
         return images
 
     def annotate_one(self):
+        self.waitWindow(visible=True, text="Wait a second.\nModel is Working...")
         # self.CURRENT_ANNOATAION_FLAGS['id'] = False
         if self.current_annotation_mode == "video":
             shapes = self.intelligenceHelper.get_shapes_of_one(
@@ -3683,6 +3686,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.CURRENT_FRAME_IMAGE, img_array_flag=True, multi_model_flag=True)
             # to handle the bug of the user selecting no models
             if len(shapes) == 0:
+                self.waitWindow()
                 return
         else:
             # if self.filename != self.last_file_opened:
@@ -3713,6 +3717,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.actions.undoLastPoint.setEnabled(False)
         self.actions.undo.setEnabled(True)
         self.setDirty()
+        self.waitWindow()
 
     def annotate_batch(self):
         images = []
@@ -5156,6 +5161,15 @@ class MainWindow(QtWidgets.QMainWindow):
 
         return img
 
+    def waitWindow(self, visible=False, text="Loading..."):
+        if visible:
+            self.canvas.is_loading = True
+            self.canvas.loading_text = text
+        else:
+            self.canvas.is_loading = False
+            self.canvas.loading_text = "Loading..."
+        self.canvas.repaint()
+
     def set_sam_toolbar_visibility(self, visible=False, setEnabled=True):
         if not visible or not setEnabled:
             try:
@@ -5264,6 +5278,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.sam_buttons_colors("X")
         if self.sam_model_comboBox.currentText() == "Select Model (SAM disable)":
             return
+        self.waitWindow(visible=True, text="Wait a second.\nSAM is Processing the image...")
         model_type = self.sam_model_comboBox.currentText()
         with open('models_menu/sam_models.json') as f:
             data = json.load(f)
@@ -5277,6 +5292,7 @@ class MainWindow(QtWidgets.QMainWindow):
         except:
             print("please open an image first")
             return
+        self.waitWindow()
         print("done loading model")
 
     def sam_buttons_colors(self, mode):

@@ -63,7 +63,10 @@ class Canvas(QtWidgets.QWidget):
         ################################ mouse tracking
         self.show_cross_line = True
         self.h_w_of_image = [-1, -1]
-        ################################
+        ################################ Waiting window
+        self.is_loading = False
+        self.loading_angle = 0
+        self.loading_text = "Loading..."
         
         
         self.shapesBackups = []
@@ -652,7 +655,7 @@ class Canvas(QtWidgets.QWidget):
             self.boundedMoveShapes(shapes, point + offset)
 
     def paintEvent(self, event):
-        if not self.pixmap:
+        if not self.pixmap and not self.is_loading:
             return super(Canvas, self).paintEvent(event)
 
         p = self._painter
@@ -666,6 +669,40 @@ class Canvas(QtWidgets.QWidget):
 
         p.drawPixmap(0, 0, self.pixmap)
         Shape.scale = self.scale
+        
+        # Draw loading/waiting screen
+        if self.is_loading:
+            # Draw a semi-transparent rectangle
+            p.setPen(QtCore.Qt.NoPen)
+            p.setBrush(QtGui.QColor(0, 0, 0, 100))
+            p.drawRect(self.pixmap.rect())
+
+            # Draw a spinning wheel
+            p.setPen(QtGui.QColor(255, 255, 255))
+            p.setBrush(QtCore.Qt.NoBrush)
+            p.save()
+            p.translate(self.pixmap.width() / 2, self.pixmap.height() / 2 - 50)
+            p.rotate(self.loading_angle)
+            p.drawEllipse(-20, -20, 40, 40)
+            p.drawLine(0, 0, 0, -20)
+            p.restore()
+            self.loading_angle += 30
+            if self.loading_angle >= 360:
+                self.loading_angle = 0
+
+            # Draw the loading text
+            p.setPen(QtGui.QColor(255, 255, 255))
+            p.setFont(QtGui.QFont("Arial", 20))
+            p.drawText(
+                self.pixmap.rect(),
+                QtCore.Qt.AlignCenter,
+                self.loading_text,
+            )
+            p.end()
+            self.update()
+            return
+        
+        
         for shape in self.shapes:
             if (shape.selected or not self._hideBackround) and self.isVisible(
                 shape
