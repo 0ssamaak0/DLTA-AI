@@ -768,7 +768,7 @@ class Canvas(QtWidgets.QWidget):
         # draw SAM points
         if len(self.SAM_coordinates) != 0:
             for point in self.SAM_coordinates:
-                color = "#FF0000" if point[2] == 0 else "#00FF00"
+                color = "#FF0000" if point[2] == 0 else "#2D7CFA"
                 pen = QtGui.QPen(
                     QtGui.QColor(color),
                     5 * max(1, int(round(2.0 / Shape.scale))),
@@ -782,7 +782,7 @@ class Canvas(QtWidgets.QWidget):
         if len(self.SAM_rects) != 0:
             box = self.SAM_rects[-1]
             pen = QtGui.QPen(
-                QtGui.QColor("#00FF00"),
+                QtGui.QColor("#2D7CFA"),
                 2 * max(1, int(round(2.0 / Shape.scale))),
                 QtCore.Qt.SolidLine,
             )

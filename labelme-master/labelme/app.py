@@ -1292,7 +1292,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def setEditMode(self):
         self.sam_finish_annotation_button_clicked()
         self.sam_buttons_colors('x')
-        self.set_sam_toolbar_visibility(visible=True, setEnabled=False)
+        self.set_sam_toolbar_enable(False)
         try:
             x = self.CURRENT_VIDEO_PATH
         except:
@@ -1418,7 +1418,7 @@ class MainWindow(QtWidgets.QMainWindow):
         return False
 
     def createMode_options(self):
-        self.set_sam_toolbar_visibility(visible=True, setEnabled=True)
+        self.set_sam_toolbar_enable(True)
         self.sam_buttons_colors("X")
         if self.config['toolMode'] == 'image':
             self.toggleDrawMode(False, createMode="polygon")
@@ -3064,7 +3064,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def openFile(self, _value=False):
         self.config['toolMode'] = 'image'
         self.right_click_menu()
-        self.set_sam_toolbar_visibility(True, False)
+        
 
         self.current_annotation_mode = "img"
         self.actions.export.setEnabled(False)
@@ -3893,7 +3893,7 @@ class MainWindow(QtWidgets.QMainWindow):
             else:
                 self.actions.menu[i].setVisible(True)
 
-        self.Segment_anything()
+        
 
         # NOT WORKING YET
 
@@ -5200,9 +5200,16 @@ class MainWindow(QtWidgets.QMainWindow):
             self.canvas.is_loading = False
             self.canvas.loading_text = "Loading..."
         self.canvas.repaint()
+        
+    def set_sam_toolbar_enable(self, enable=False):
+        for widget in self.sam_toolbar.children():
+            try:
+                widget.setEnabled(enable)
+            except:
+                pass
 
-    def set_sam_toolbar_visibility(self, visible=False, setEnabled=True):
-        if not visible or not setEnabled:
+    def set_sam_toolbar_visibility(self, visible=False):
+        if not visible:
             try:
                 self.sam_clear_annotation_button_clicked()
                 # self.sam_model_comboBox.setCurrentIndex(0)
@@ -5213,7 +5220,6 @@ class MainWindow(QtWidgets.QMainWindow):
         for widget in self.sam_toolbar.children():
             try:
                 widget.setVisible(visible)
-                widget.setEnabled(setEnabled)
             except:
                 pass
 
@@ -5290,7 +5296,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.sam_finish_annotation_button_clicked)
         self.sam_toolbar.addWidget(self.sam_finish_annotation_button)
 
-        self.set_sam_toolbar_visibility(False, False)
+        self.set_sam_toolbar_visibility(False)
 
     def sam_models(self):
         cwd = os.getcwd()
@@ -5334,7 +5340,7 @@ class MainWindow(QtWidgets.QMainWindow):
         #    padding: 4px 8px;
         #    border: 1px solid #999999;
         # """
-        red, green, black, trans, hoverColor = "#ff0000;", "#00ff00;", "#000000;", "transparent;", "#383E48;"
+        red, green, black, trans, hoverColor = "#ff0000;", "#2D7CFA;", "#000000;", "transparent;", "#383E48;"
         hover_const = "QPushButton::hover { background-color : "
         disabled_const = "QPushButton:disabled { color : #7A7A7A} "
         style_sheet_const = "QPushButton { font-size: 10pt; font-weight: bold; color: #ffffff; background-color: "
@@ -5367,6 +5373,7 @@ class MainWindow(QtWidgets.QMainWindow):
             return
         if not same_image:
             self.sam_clear_annotation_button_clicked()
+            self.sam_buttons_colors("add")
         print("sam add point button clicked")
         self.canvas.setCursor(QtGui.QCursor(QtCore.Qt.CrossCursor))
         self.canvas.SAM_mode = "add point"
@@ -5380,6 +5387,7 @@ class MainWindow(QtWidgets.QMainWindow):
             return
         if not same_image:
             self.sam_clear_annotation_button_clicked()
+            self.sam_buttons_colors("remove")
         print("sam remove point button clicked")
         self.canvas.setCursor(QtGui.QCursor(QtCore.Qt.CrossCursor))
         self.canvas.SAM_mode = "remove point"
