@@ -662,7 +662,7 @@ class MainWindow(QtWidgets.QMainWindow):
         }
 
         edit = action(
-            self.tr("&Edit Label"),
+            self.tr("Edit &Label"),
             self.editLabel,
             shortcuts["edit_label"],
             "edit",
@@ -3199,22 +3199,28 @@ class MainWindow(QtWidgets.QMainWindow):
                     if folderDialog.exec_():
                         pth = utils.exportCOCOvid(
                             json_file_name, self.CURRENT_VIDEO_WIDTH, self.CURRENT_VIDEO_HEIGHT, folderDialog.selectedFiles()[0])
+                    else:
+                        raise Exception("No folder selected")
                 if mot_radio.isChecked():
                     folderDialog = utils.FolderDialog("mot.txt", "txt")
                     if folderDialog.exec_():
                         pth = utils.exportMOT(
                             json_file_name, folderDialog.selectedFiles()[0])
+                    else:
+                        raise Exception("No folder selected")
 
             elif self.current_annotation_mode == "img" or self.current_annotation_mode == "dir":
                 folderDialog = utils.FolderDialog("coco.json", "json")
                 if folderDialog.exec_():
                     pth = utils.exportCOCO(
                         self.target_directory, self.save_path, folderDialog.selectedFiles()[0])
+                else:
+                    raise Exception("No folder selected")
         except Exception as e:
             # Error QMessageBox
             msg = QtWidgets.QMessageBox()
             msg.setIcon(QtWidgets.QMessageBox.Critical)
-            msg.setText(f"Error\n Check Terminal for more details")
+            msg.setText(f"Error\n {e}")
             msg.setWindowTitle(
                 "Export Error")
             # print exception and error line to terminal
@@ -3225,13 +3231,16 @@ class MainWindow(QtWidgets.QMainWindow):
         else:
             # display QMessageBox with ok button and label "Exporting COCO"
             msg = QtWidgets.QMessageBox()
-            msg.setIcon(QtWidgets.QMessageBox.Information)
             try:
+                print(pth)
+                msg.setIcon(QtWidgets.QMessageBox.Information)
                 msg.setText(f"Annotations exported successfully to {pth}")
+                msg.setWindowTitle("Export Success")
             except:
+                msg.setIcon(QtWidgets.QMessageBox.Critical)
                 msg.setText(
-                    f"Annotations exported successfully to Unkown Path")
-            msg.setWindowTitle("Export Success")
+                    f"Please Sepcify a valid path")
+                msg.setWindowTitle("Export Failed")
             msg.setIconPixmap(QtGui.QPixmap(
                 'labelme/icons/done.png', 'PNG').scaled(50, 50, QtCore.Qt.KeepAspectRatio))
             msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
@@ -5256,6 +5265,12 @@ class MainWindow(QtWidgets.QMainWindow):
         self.sam_add_point_button.setStyleSheet(
             "QPushButton { font-size: 10pt; font-weight: bold; }")
         self.sam_add_point_button.setText("Add Point")
+        # set hover text
+        self.sam_add_point_button.setToolTip(
+            self._config["shortcuts"]["SAM_add_point"])
+        # set shortcut
+        self.sam_add_point_button.setShortcut(
+            self._config["shortcuts"]["SAM_add_point"])
         self.sam_add_point_button.clicked.connect(
             self.sam_add_point_button_clicked)
         self.sam_toolbar.addWidget(self.sam_add_point_button)
@@ -5265,15 +5280,27 @@ class MainWindow(QtWidgets.QMainWindow):
         self.sam_remove_point_button.setStyleSheet(
             "QPushButton { font-size: 10pt; font-weight: bold; }")
         self.sam_remove_point_button.setText("Remove Point")
+        # set hover text
+        self.sam_remove_point_button.setToolTip(
+            self._config["shortcuts"]["SAM_remove_point"])
+        # set shortcut
+        self.sam_remove_point_button.setShortcut(
+            self._config["shortcuts"]["SAM_remove_point"])
         self.sam_remove_point_button.clicked.connect(
             self.sam_remove_point_button_clicked)
         self.sam_toolbar.addWidget(self.sam_remove_point_button)
 
-        # add a button for selecting a rectangle in sam
+        # add a button for selecting a box in sam
         self.sam_select_rect_button = QtWidgets.QPushButton()
         self.sam_select_rect_button.setStyleSheet(
             "QPushButton { font-size: 10pt; font-weight: bold; }")
-        self.sam_select_rect_button.setText("Select Rect")
+        self.sam_select_rect_button.setText("Select Box")
+        # set hover text
+        self.sam_select_rect_button.setToolTip(
+            self._config["shortcuts"]["SAM_select_rect"])
+        # set shortcut
+        self.sam_select_rect_button.setShortcut(
+            self._config["shortcuts"]["SAM_select_rect"])
         self.sam_select_rect_button.clicked.connect(
             self.sam_select_rect_button_clicked)
         self.sam_toolbar.addWidget(self.sam_select_rect_button)
@@ -5294,10 +5321,14 @@ class MainWindow(QtWidgets.QMainWindow):
         self.sam_finish_annotation_button.setText("Finish Annotation")
         self.sam_finish_annotation_button.clicked.connect(
             self.sam_finish_annotation_button_clicked)
-        self.sam_toolbar.addWidget(self.sam_finish_annotation_button)
+        # set hover text
+        self.sam_finish_annotation_button.setToolTip(
+            self._config["shortcuts"]["SAM_finish_annotation"])
+        # set shortcut
+        self.sam_finish_annotation_button.setShortcut(
+            self._config["shortcuts"]["SAM_finish_annotation"])
 
-        self.sam_toolbar.hide()
-        self.set_sam_toolbar_visibility(False)
+        self.sam_toolbar.addWidget(self.sam_finish_annotation_button)
 
     def sam_models(self):
         cwd = os.getcwd()

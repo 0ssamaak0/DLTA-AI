@@ -89,7 +89,7 @@ shortcuts:
   fit_width: Ctrl+Shift+F
 
   create_polygon: Ctrl+N
-  create_rectangle: Ctrl+R
+  create_rectangle: 
   create_circle: null
   create_line: null
   create_point: null
@@ -100,8 +100,13 @@ shortcuts:
   undo: Ctrl+Z
   undo_last_point: [Ctrl+Z, Backspace]
   add_point_to_edge: Ctrl+Shift+P
-  edit_label: Ctrl+E
+  edit_label: 
   interpolate: Ctrl+I
   mark_as_key: Ctrl+M
   scale: Ctrl+T
   toggle_keep_prev_mode: Ctrl+P
+
+  SAM_finish_annotation: Ctrl+Return
+  SAM_add_point: Ctrl+A
+  SAM_remove_point: Ctrl+R
+  SAM_select_rect: Ctrl+B
