@@ -60,15 +60,14 @@ class Canvas(QtWidgets.QWidget):
         self.SAM_rects = []
         self.SAM_painter = QtGui.QPainter()
         self.SAM_current = None
-        ################################ mouse tracking
+        # mouse tracking
         self.show_cross_line = True
         self.h_w_of_image = [-1, -1]
-        ################################ Waiting window
+        # Waiting window
         self.is_loading = False
         self.loading_angle = 0
         self.loading_text = "Loading..."
-        
-        
+
         self.shapesBackups = []
         self.current = None
         self.selectedShapes = []  # save the selected shapes here
@@ -96,7 +95,7 @@ class Canvas(QtWidgets.QWidget):
         self.movingShape = False
         self._painter = QtGui.QPainter()
         self._cursor = CURSOR_DEFAULT
-        
+
         # Menus:
         # 0: right-click without selection and dragging of shapes
         # 1: right-click with selection and dragging of shapes
@@ -133,7 +132,7 @@ class Canvas(QtWidgets.QWidget):
         for shape in self.shapes:
             shapesBackup.append(shape.copy())
         if len(self.shapesBackups) > self.num_backups:
-            self.shapesBackups = self.shapesBackups[-self.num_backups - 1 :]
+            self.shapesBackups = self.shapesBackups[-self.num_backups - 1:]
         self.shapesBackups.append(shapesBackup)
 
     @property
@@ -217,8 +216,8 @@ class Canvas(QtWidgets.QWidget):
         self.prevMovePoint = pos
         self.repaint()
         self.restoreCursor()
-        
-        # Polygon drawing.        
+
+        # Polygon drawing.
         if self.drawing():
             self.line.shape_type = self.createMode
 
@@ -318,12 +317,13 @@ class Canvas(QtWidgets.QWidget):
                     self.tr("Click & drag to move shape '%s'") % shape.label
                 )
                 # conf = shape.content (to two decimal places)
-                
-                if shape.group_id!=None:
-                    self.setToolTip(self.tr(f'ID {str(shape.group_id)} {shape.label} {shape.content}'))
+
+                if shape.group_id != None:
+                    self.setToolTip(
+                        self.tr(f'ID {str(shape.group_id)} {shape.label} {shape.content}'))
                 else:
                     self.setToolTip(self.tr(f'{shape.label} {shape.content}'))
-                    
+
                 self.setStatusTip(self.toolTip())
                 self.overrideCursor(CURSOR_GRAB)
                 self.update()
@@ -376,7 +376,7 @@ class Canvas(QtWidgets.QWidget):
             pos = self.transformPos(ev.localPos())
         else:
             pos = self.transformPos(ev.posF())
-        #print("mousePressEvent", pos, "self.mode", self.mode, "self.createMode", self.createMode, "self.drawing()", self.drawing(), "self.editing()", self.editing())
+        # print("mousePressEvent", pos, "self.mode", self.mode, "self.createMode", self.createMode, "self.drawing()", self.drawing(), "self.editing()", self.editing())
         if ev.button() == QtCore.Qt.LeftButton:
             if self.drawing() and self.SAM_mode == "":
                 if self.current:
@@ -411,15 +411,15 @@ class Canvas(QtWidgets.QWidget):
             elif self.SAM_mode == "add point":
                 if not self.outOfPixmap(pos):
                     # add the coordinates and the label (1 forground 0 background)
-                    self.SAM_coordinates.append([pos.x(), pos.y(),1])
-                    #print(self.SAM_coordinates)
+                    self.SAM_coordinates.append([pos.x(), pos.y(), 1])
+                    # print(self.SAM_coordinates)
                     self.pointAdded.emit()
 
             elif self.SAM_mode == 'remove point':
                 if not self.outOfPixmap(pos):
                     # add the coordinates and the label (1 forground 0 background)
-                    self.SAM_coordinates.append([pos.x(), pos.y(),0])
-                    #print(self.SAM_coordinates)
+                    self.SAM_coordinates.append([pos.x(), pos.y(), 0])
+                    # print(self.SAM_coordinates)
                     self.pointAdded.emit()
             elif self.SAM_mode == 'select rect':
                 self.SAM_rect.append(self.correct_pos_for_SAM(pos))
@@ -429,7 +429,7 @@ class Canvas(QtWidgets.QWidget):
                     self.SAM_rects = [self.SAM_rect]
                     self.pointAdded.emit()
                     self.SAM_rect = []
-            # the other is editing mode   
+            # the other is editing mode
             else:
                 group_mode = int(ev.modifiers()) == QtCore.Qt.ControlModifier
                 self.selectShapePoint(pos, multiple_selection_mode=group_mode)
@@ -440,7 +440,7 @@ class Canvas(QtWidgets.QWidget):
             self.selectShapePoint(pos, multiple_selection_mode=group_mode)
             self.prevPoint = pos
             self.repaint()
-            
+
     def handle_right_click(self, menu):
         try:
             setEnabledd = menu.actions()[7].isEnabled()
@@ -459,7 +459,7 @@ class Canvas(QtWidgets.QWidget):
             pos = self.transformPos(ev.localPos())
         else:
             pos = self.transformPos(ev.posF())
-        #print("mouseReleaseEvent", "self.mode", self.mode, "self.createMode", self.createMode, "self.drawing()", self.drawing(), "self.editing()", self.editing())
+        # print("mouseReleaseEvent", "self.mode", self.mode, "self.createMode", self.createMode, "self.drawing()", self.drawing(), "self.editing()", self.editing())
         if ev.button() == QtCore.Qt.RightButton:
             menu = self.menus[len(self.selectedShapesCopy) > 0]
             menu = self.handle_right_click(menu)
@@ -669,7 +669,7 @@ class Canvas(QtWidgets.QWidget):
 
         p.drawPixmap(0, 0, self.pixmap)
         Shape.scale = self.scale
-        
+
         # Draw loading/waiting screen
         if self.is_loading:
             # Draw a semi-transparent rectangle
@@ -701,8 +701,7 @@ class Canvas(QtWidgets.QWidget):
             p.end()
             self.update()
             return
-        
-        
+
         for shape in self.shapes:
             if (shape.selected or not self._hideBackround) and self.isVisible(
                 shape
@@ -727,7 +726,6 @@ class Canvas(QtWidgets.QWidget):
             drawing_shape.fill = True
             drawing_shape.paint(p)
 
-        
         # Draw mouse coordinates
         if self.show_cross_line:
             pen = QtGui.QPen(
@@ -745,7 +743,7 @@ class Canvas(QtWidgets.QWidget):
                 QtCore.QPointF(0, self.prevMovePoint.y()),
                 QtCore.QPointF(self.pixmap.width(), self.prevMovePoint.y()),
             )
-            
+
         # draw SAM rectangle
         if len(self.SAM_rect) == 1:
             pen = QtGui.QPen(
@@ -755,7 +753,7 @@ class Canvas(QtWidgets.QWidget):
             )
             p.setPen(pen)
             p.setOpacity(0.8)
-            
+
             point1 = [self.SAM_rect[0].x(), self.SAM_rect[0].y()]
             corrected = self.correct_pos_for_SAM(self.prevMovePoint)
             point2 = [corrected.x(), corrected.y()]
@@ -764,11 +762,11 @@ class Canvas(QtWidgets.QWidget):
             w = abs(point1[0] - point2[0])
             h = abs(point1[1] - point2[1])
             p.drawRect(x1, y1, w, h)
-            
+
         # draw SAM points
         if len(self.SAM_coordinates) != 0:
             for point in self.SAM_coordinates:
-                color = "#FF0000" if point[2] == 0 else "#2D7CFA"
+                color = "#FF0000" if point[2] == 0 else "#19EB25"
                 pen = QtGui.QPen(
                     QtGui.QColor(color),
                     5 * max(1, int(round(2.0 / Shape.scale))),
@@ -778,7 +776,7 @@ class Canvas(QtWidgets.QWidget):
                 p.setPen(pen)
                 p.setOpacity(0.8)
                 p.drawPoint(point[0], point[1])
-        
+
         if len(self.SAM_rects) != 0:
             box = self.SAM_rects[-1]
             pen = QtGui.QPen(
@@ -788,7 +786,7 @@ class Canvas(QtWidgets.QWidget):
             )
             p.setPen(pen)
             p.setOpacity(0.8)
-            
+
             point1 = [box[0].x(), box[0].y()]
             point2 = [box[1].x(), box[1].y()]
             x1 = min(point1[0], point2[0])
@@ -796,7 +794,6 @@ class Canvas(QtWidgets.QWidget):
             w = abs(point1[0] - point2[0])
             h = abs(point1[1] - point2[1])
             p.drawRect(x1, y1, w, h)
-            
 
         p.end()
 
@@ -1013,4 +1010,3 @@ class Canvas(QtWidgets.QWidget):
         self.pixmap = None
         self.shapesBackups = []
         self.update()
-    

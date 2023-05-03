@@ -125,7 +125,7 @@ class MainWindow(QtWidgets.QMainWindow):
         output_file=None,
         output_dir=None,
     ):
-        self.buttons_text_style_sheet = "QPushButton {font-size: 10pt; margin: 2px 5px; padding: 2px 7px; border: 2px solid; border-radius:10px; font-weight: bold; background-color: #0d69f5; color: #FFFFFF;} QPushButton:hover {background-color: #4990ED;}"
+        self.buttons_text_style_sheet = "QPushButton {font-size: 10pt; margin: 2px 5px; padding: 2px 7px;font-weight: bold; background-color: #0d69f5; color: #FFFFFF;} QPushButton:hover {background-color: #4990ED;}"
 
         if output is not None:
             logger.warning(
@@ -2356,7 +2356,7 @@ class MainWindow(QtWidgets.QMainWindow):
             if result != QtWidgets.QDialog.Accepted:
                 text = False
                 return group_id, text
-            
+
             group_id = properID.value()
             repeated += 1
 
@@ -2635,7 +2635,8 @@ class MainWindow(QtWidgets.QMainWindow):
             text, flags, group_id, content = self.labelDialog.popUp(text)
             if not text:
                 self.labelDialog.edit.setText(previous_text)
-        print(f'---------- after POPUP ----------- group_id: {group_id}, text: {text}')
+        print(
+            f'---------- after POPUP ----------- group_id: {group_id}, text: {text}')
         if text and not self.validateLabel(text):
             self.errorMessage(
                 self.tr("Invalid label"),
@@ -2668,7 +2669,8 @@ class MainWindow(QtWidgets.QMainWindow):
             self.setDirty()
         else:
             if self.canvas.SAM_mode == "finished":
-                print(f'---------- SAM_mode is finished ----------- group_id: {group_id}, text: {text}')
+                print(
+                    f'---------- SAM_mode is finished ----------- group_id: {group_id}, text: {text}')
                 self.current_sam_shape["label"] = text
                 self.current_sam_shape["group_id"] = -1
                 self.canvas.SAM_mode = ""
@@ -2995,7 +2997,8 @@ class MainWindow(QtWidgets.QMainWindow):
             self.loadFile(filename)
 
     def change_curr_model(self, model_name):
-        self.waitWindow(visible=True, text="Wait a second.\nThe Model is being Loaded...")
+        self.waitWindow(
+            visible=True, text="Wait a second.\nThe Model is being Loaded...")
         self.intelligenceHelper.current_model_name, self.intelligenceHelper.current_mm_model = self.intelligenceHelper.make_mm_model(
             model_name)
         self.waitWindow()
@@ -3064,7 +3067,6 @@ class MainWindow(QtWidgets.QMainWindow):
     def openFile(self, _value=False):
         self.config['toolMode'] = 'image'
         self.right_click_menu()
-        
 
         self.current_annotation_mode = "img"
         self.actions.export.setEnabled(False)
@@ -3765,7 +3767,6 @@ class MainWindow(QtWidgets.QMainWindow):
             print("No models selected or no image is loaded, please try again")
         self.current_annotation_mode = self.prev_annotation_mode
 
-
     def Segment_anything(self):
         print('Segment anything')
     # check the visibility of the sam toolbar
@@ -3892,8 +3893,6 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.actions.menu[i].setVisible(image_menu)
             else:
                 self.actions.menu[i].setVisible(True)
-
-        
 
         # NOT WORKING YET
 
@@ -4287,7 +4286,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         return matched_detections, unmatched_detections
 
-    def update_gui_after_tracking(self , index):
+    def update_gui_after_tracking(self, index):
         # self.loadFramefromVideo(self.CURRENT_FRAME_IMAGE, self.INDEX_OF_CURRENT_FRAME)
         # QtWidgets.QApplication.processEvents()
         # progress_value = int((index + 1) / self.FRAMES_TO_TRACK * 100)
@@ -4295,7 +4294,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # QtWidgets.QApplication.processEvents()
         if index != self.FRAMES_TO_TRACK - 1:
-            self.main_video_frames_slider.setValue(self.INDEX_OF_CURRENT_FRAME + 1)
+            self.main_video_frames_slider.setValue(
+                self.INDEX_OF_CURRENT_FRAME + 1)
         QtWidgets.QApplication.processEvents()
 
     def track_buttonClicked_wrapper(self):
@@ -5200,7 +5200,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.canvas.is_loading = False
             self.canvas.loading_text = "Loading..."
         self.canvas.repaint()
-        
+
     def set_sam_toolbar_enable(self, enable=False):
         for widget in self.sam_toolbar.children():
             try:
@@ -5296,6 +5296,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.sam_finish_annotation_button_clicked)
         self.sam_toolbar.addWidget(self.sam_finish_annotation_button)
 
+        self.sam_toolbar.hide()
         self.set_sam_toolbar_visibility(False)
 
     def sam_models(self):
@@ -5313,9 +5314,10 @@ class MainWindow(QtWidgets.QMainWindow):
     def sam_model_comboBox_changed(self):
         self.sam_clear_annotation_button_clicked()
         self.sam_buttons_colors("X")
-        if self.sam_model_comboBox.currentText() == "Select Model (SAM disable)":
+        if self.sam_model_comboBox.currentText() == "Select Model":
             return
-        self.waitWindow(visible=True, text="Wait a second.\nSAM is Processing the image...")
+        self.waitWindow(
+            visible=True, text="Wait a second.\nSAM model is Loading...")
         model_type = self.sam_model_comboBox.currentText()
         with open('models_menu/sam_models.json') as f:
             data = json.load(f)
@@ -5340,30 +5342,40 @@ class MainWindow(QtWidgets.QMainWindow):
         #    padding: 4px 8px;
         #    border: 1px solid #999999;
         # """
-        red, green, black, trans, hoverColor = "#ff0000;", "#2D7CFA;", "#000000;", "transparent;", "#383E48;"
+        red, green, blue, trans = "#FF0000;", "#19EB25;", "#2D7CFA;", "#4B515A;"
         hover_const = "QPushButton::hover { background-color : "
         disabled_const = "QPushButton:disabled { color : #7A7A7A} "
         style_sheet_const = "QPushButton { font-size: 10pt; font-weight: bold; color: #ffffff; background-color: "
-        
-        [add_style, add_hover] = [green, green] if mode == "add" else [trans, hoverColor]
-        [remove_style, remove_hover] = [red, red] if mode == "remove" else [trans, hoverColor]
-        [rect_style, rect_hover] = [green, green] if mode == "rect" else [trans, hoverColor]
-        [clear_style, clear_hover] = [red, red] if mode == "clear" else [trans, hoverColor]
-        [finish_style, finish_hover] = [black, black] if mode == "finish" else [trans, hoverColor]
-        
-        self.sam_add_point_button.setStyleSheet(style_sheet_const + add_style + ";}" + hover_const + add_hover + ";}" + disabled_const)
-        self.sam_remove_point_button.setStyleSheet(style_sheet_const + remove_style + ";}" + hover_const + remove_hover + ";}" + disabled_const)
-        self.sam_select_rect_button.setStyleSheet(style_sheet_const + rect_style + ";}" + hover_const + rect_hover + ";}" + disabled_const)
-        self.sam_clear_annotation_button.setStyleSheet(style_sheet_const + clear_style + ";}" + hover_const + clear_hover + ";}" + disabled_const)
-        self.sam_finish_annotation_button.setStyleSheet(style_sheet_const + finish_style + ";}" + hover_const + finish_hover + ";}" + disabled_const)
-        
-        setEnabled = False if self.sam_model_comboBox.currentText() == "Select Model (SAM disable)" else True
+
+        [add_style, add_hover] = [green, green] if mode == "add" else [trans, green]
+        [remove_style, remove_hover] = [
+            red, red] if mode == "remove" else [trans, red]
+        [rect_style, rect_hover] = [
+            green, green] if mode == "rect" else [trans, green]
+        [clear_style, clear_hover] = [
+            red, red] if mode == "clear" else [trans, red]
+        [finish_style, finish_hover] = [
+            blue, blue] if mode == "finish" else [trans, blue]
+
+        self.sam_add_point_button.setStyleSheet(
+            style_sheet_const + add_style + ";}" + hover_const + add_hover + ";}" + disabled_const)
+        self.sam_remove_point_button.setStyleSheet(
+            style_sheet_const + remove_style + ";}" + hover_const + remove_hover + ";}" + disabled_const)
+        self.sam_select_rect_button.setStyleSheet(
+            style_sheet_const + rect_style + ";}" + hover_const + rect_hover + ";}" + disabled_const)
+        self.sam_clear_annotation_button.setStyleSheet(
+            style_sheet_const + clear_style + ";}" + hover_const + clear_hover + ";}" + disabled_const)
+        self.sam_finish_annotation_button.setStyleSheet(
+            style_sheet_const + finish_style + ";}" + hover_const + finish_hover + ";}" + disabled_const)
+
+        setEnabled = False if self.sam_model_comboBox.currentText(
+        ) == "Select Model (SAM disable)" else True
         self.sam_add_point_button.setEnabled(setEnabled)
         self.sam_remove_point_button.setEnabled(setEnabled)
         self.sam_select_rect_button.setEnabled(setEnabled)
         self.sam_clear_annotation_button.setEnabled(setEnabled)
         self.sam_finish_annotation_button.setEnabled(setEnabled)
-        
+
     def sam_add_point_button_clicked(self):
         self.sam_buttons_colors("add")
         try:
@@ -5421,10 +5433,11 @@ class MainWindow(QtWidgets.QMainWindow):
         except:
             pass
         self.labelList.clear()
-        self.CURRENT_SHAPES_IN_IMG = self.convert_qt_shapes_to_shapes(self.canvas.shapes)
-        self.CURRENT_SHAPES_IN_IMG =  self.check_sam_instance_in_shapes(self.CURRENT_SHAPES_IN_IMG)
+        self.CURRENT_SHAPES_IN_IMG = self.convert_qt_shapes_to_shapes(
+            self.canvas.shapes)
+        self.CURRENT_SHAPES_IN_IMG = self.check_sam_instance_in_shapes(
+            self.CURRENT_SHAPES_IN_IMG)
 
-            
         self.loadLabels(self.CURRENT_SHAPES_IN_IMG)
         # self.loadLabels(self.SAM_SHAPES_IN_IMAGE, replace=False)
 
@@ -5453,10 +5466,12 @@ class MainWindow(QtWidgets.QMainWindow):
         # print("sam qt shape", type(sam_qt_shape), "sam shape", type(self.current_sam_shape))
         self.canvas.finalise(SAM_SHAPE=True)
         # self.SAM_SHAPES_IN_IMAGE.append(self.current_sam_shape)
-        self.CURRENT_SHAPES_IN_IMG = self.convert_qt_shapes_to_shapes(self.canvas.shapes)
+        self.CURRENT_SHAPES_IN_IMG = self.convert_qt_shapes_to_shapes(
+            self.canvas.shapes)
         for shape in self.CURRENT_SHAPES_IN_IMG:
             print(shape["label"])
-        self.CURRENT_SHAPES_IN_IMG =  self.check_sam_instance_in_shapes(self.CURRENT_SHAPES_IN_IMG)
+        self.CURRENT_SHAPES_IN_IMG = self.check_sam_instance_in_shapes(
+            self.CURRENT_SHAPES_IN_IMG)
         if self.current_sam_shape["group_id"] != -1:
             self.CURRENT_SHAPES_IN_IMG.append(self.current_sam_shape)
         self.loadLabels(self.CURRENT_SHAPES_IN_IMG)
@@ -5467,11 +5482,11 @@ class MainWindow(QtWidgets.QMainWindow):
         # explicitly clear instead of being overriden by the next shape
         self.current_sam_shape = None
         self.canvas.SAM_current = None
-        
+
         if self.current_annotation_mode == "video":
             print("sam finish annotation button clicked")
             self.update_current_frame_annotation_button_clicked()
-        
+
     def check_sam_instance_in_shapes(self, shapes):
         if len(shapes) == 0:
             return []
@@ -5480,7 +5495,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 # remove the shape from the list
                 shapes.remove(shape)
         return shapes
-    
+
     def SAM_rects_to_boxes(self, rects):
         res = []
         for rect in rects:
@@ -5548,8 +5563,10 @@ class MainWindow(QtWidgets.QMainWindow):
         # print(f'len of canvas shapes {len(self.canvas.shapes)}')
         # print(f'len of current shapes {len(self.CURRENT_SHAPES_IN_IMG)}')
 
-        self.CURRENT_SHAPES_IN_IMG = self.convert_qt_shapes_to_shapes(self.canvas.shapes)
-        self.CURRENT_SHAPES_IN_IMG =  self.check_sam_instance_in_shapes(self.CURRENT_SHAPES_IN_IMG)
+        self.CURRENT_SHAPES_IN_IMG = self.convert_qt_shapes_to_shapes(
+            self.canvas.shapes)
+        self.CURRENT_SHAPES_IN_IMG = self.check_sam_instance_in_shapes(
+            self.CURRENT_SHAPES_IN_IMG)
 
         self.CURRENT_SHAPES_IN_IMG.append(self.current_sam_shape)
         self.loadLabels(self.CURRENT_SHAPES_IN_IMG)
