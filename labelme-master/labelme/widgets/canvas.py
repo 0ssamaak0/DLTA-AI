@@ -821,7 +821,7 @@ class Canvas(QtWidgets.QWidget):
         if SAM_SHAPE:
             assert self.SAM_current
             self.SAM_current.close()
-            self.shapes.append(self.SAM_current)
+            # self.shapes.append(self.SAM_current)
             self.storeShapes()
             self.SAM_current = None
             self.setHiding(False)

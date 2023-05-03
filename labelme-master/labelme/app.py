@@ -771,6 +771,13 @@ class MainWindow(QtWidgets.QMainWindow):
             None,
             self.tr("show the runtime data")
         )
+        sam = action(
+            self.tr("show/hide toolbar"),
+            self.Segment_anything,
+            None,
+            None,
+            self.tr("show/hide toolbar")
+        )
         openVideo = action(
             self.tr("Open &Video"),
             self.openVideo,
@@ -884,6 +891,8 @@ class MainWindow(QtWidgets.QMainWindow):
             edit=self.menu(self.tr("&Edit")),
             view=self.menu(self.tr("&View")),
             intelligence=self.menu(self.tr("&Auto Annotation")),
+            sam=self.menu(self.tr("&Segment Anything")),
+
             # help=self.menu(self.tr("&Help")),
             recentFiles=QtWidgets.QMenu(self.tr("Open &Recent")),
             saved_models=QtWidgets.QMenu(self.tr("Select Segmentation model")),
@@ -892,7 +901,12 @@ class MainWindow(QtWidgets.QMainWindow):
 
 
         )
-
+        utils.addActions(
+            self.menus.sam,
+            (
+                sam,
+            ),
+        )
         utils.addActions(
             self.menus.file,
             (
@@ -3675,7 +3689,7 @@ class MainWindow(QtWidgets.QMainWindow):
         return images
 
     def annotate_one(self):
-        self.waitWindow(visible=True, text="Wait a second.\nModel is Working...")
+        # self.waitWindow(visible=True, text="Wait a second.\nModel is Working...")
         # self.CURRENT_ANNOATAION_FLAGS['id'] = False
         if self.current_annotation_mode == "video":
             shapes = self.intelligenceHelper.get_shapes_of_one(
@@ -3685,9 +3699,9 @@ class MainWindow(QtWidgets.QMainWindow):
             shapes = self.intelligenceHelper.get_shapes_of_one(
                 self.CURRENT_FRAME_IMAGE, img_array_flag=True, multi_model_flag=True)
             # to handle the bug of the user selecting no models
-            if len(shapes) == 0:
-                self.waitWindow()
-                return
+            # if len(shapes) == 0:
+            #     self.waitWindow()
+            #     return
         else:
             # if self.filename != self.last_file_opened:
             #     self.last_file_opened = self.filename
@@ -3712,12 +3726,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.CURRENT_SHAPES_IN_IMG = shapes
         self.canvas.loadPixmap(QtGui.QPixmap.fromImage(self.image))
         self.loadLabels(self.CURRENT_SHAPES_IN_IMG)
-        self.loadLabels(self.SAM_SHAPES_IN_IMAGE, replace=False)
         self.actions.editMode.setEnabled(True)
         self.actions.undoLastPoint.setEnabled(False)
         self.actions.undo.setEnabled(True)
         self.setDirty()
-        self.waitWindow()
+        # self.waitWindow()
 
     def annotate_batch(self):
         images = []
@@ -3743,6 +3756,15 @@ class MainWindow(QtWidgets.QMainWindow):
         except:
             print("No models selected or no image is loaded, please try again")
         self.current_annotation_mode = self.prev_annotation_mode
+
+
+    def Segment_anything(self):
+        print('Segment anything')
+    # check the visibility of the sam toolbar
+        if self.sam_toolbar.isVisible():
+            self.set_sam_toolbar_visibility(False)
+        else:
+            self.set_sam_toolbar_visibility(True)
 
     def showRuntimeData(self):
         runtime = ""
@@ -3863,6 +3885,7 @@ class MainWindow(QtWidgets.QMainWindow):
             else:
                 self.actions.menu[i].setVisible(True)
 
+        self.Segment_anything()
 
         # NOT WORKING YET
 
@@ -4256,7 +4279,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         return matched_detections, unmatched_detections
 
-    def update_gui_after_tracking(self, index):
+    def update_gui_after_tracking(self , index):
         # self.loadFramefromVideo(self.CURRENT_FRAME_IMAGE, self.INDEX_OF_CURRENT_FRAME)
         # QtWidgets.QApplication.processEvents()
         # progress_value = int((index + 1) / self.FRAMES_TO_TRACK * 100)
@@ -4264,8 +4287,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # QtWidgets.QApplication.processEvents()
         if index != self.FRAMES_TO_TRACK - 1:
-            self.main_video_frames_slider.setValue(
-                self.INDEX_OF_CURRENT_FRAME + 1)
+            self.main_video_frames_slider.setValue(self.INDEX_OF_CURRENT_FRAME + 1)
         QtWidgets.QApplication.processEvents()
 
     def track_buttonClicked_wrapper(self):
@@ -5162,6 +5184,7 @@ class MainWindow(QtWidgets.QMainWindow):
         return img
 
     def waitWindow(self, visible=False, text="Loading..."):
+        print("waitWindow", visible, text)
         if visible:
             self.canvas.is_loading = True
             self.canvas.loading_text = text
@@ -5381,8 +5404,12 @@ class MainWindow(QtWidgets.QMainWindow):
         except:
             pass
         self.labelList.clear()
+        self.CURRENT_SHAPES_IN_IMG = self.convert_qt_shapes_to_shapes(self.canvas.shapes)
+        if len(self.CURRENT_SHAPES_IN_IMG) != 0 and self.CURRENT_SHAPES_IN_IMG[-1]["label"] == "SAM instance"   :
+            self.CURRENT_SHAPES_IN_IMG.pop()
+            
         self.loadLabels(self.CURRENT_SHAPES_IN_IMG)
-        self.loadLabels(self.SAM_SHAPES_IN_IMAGE, replace=False)
+        # self.loadLabels(self.SAM_SHAPES_IN_IMAGE, replace=False)
 
         # later for confirmed sam instances
         # self.laodLabels(self.CURRENT_SAM_SHAPES_IN_IMG,replace=false)
@@ -5408,16 +5435,20 @@ class MainWindow(QtWidgets.QMainWindow):
         self.canvas.SAM_current = sam_qt_shape
         # print("sam qt shape", type(sam_qt_shape), "sam shape", type(self.current_sam_shape))
         self.canvas.finalise(SAM_SHAPE=True)
-        self.SAM_SHAPES_IN_IMAGE.append(self.current_sam_shape)
+        # self.SAM_SHAPES_IN_IMAGE.append(self.current_sam_shape)
+        self.CURRENT_SHAPES_IN_IMG = self.convert_qt_shapes_to_shapes(self.canvas.shapes)
+        if len(self.CURRENT_SHAPES_IN_IMG) != 0 and self.CURRENT_SHAPES_IN_IMG[-1]["label"] == "SAM instance"   :
+                self.CURRENT_SHAPES_IN_IMG.pop()
+        self.CURRENT_SHAPES_IN_IMG.append(self.current_sam_shape)
         self.loadLabels(self.CURRENT_SHAPES_IN_IMG)
-        self.loadLabels(self.SAM_SHAPES_IN_IMAGE, replace=False)
+        # self.loadLabels(self.SAM_SHAPES_IN_IMAGE, replace=False)
         # clear the predictor of the finished shape
         self.sam_predictor.clear_logit()
         self.canvas.SAM_coordinates = []
         # explicitly clear instead of being overriden by the next shape
         self.current_sam_shape = None
         self.canvas.SAM_current = None
-
+        
     def SAM_rects_to_boxes(self, rects):
         res = []
         for rect in rects:
@@ -5467,6 +5498,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         points = self.sam_predictor.mask_to_polygons(mask)
         shape = self.sam_predictor.polygon_to_shape(points, score)
+        # print(self.current_sam_shape)
         self.current_sam_shape = shape
         # if self.CURRENT_SHAPES_IN_IMG != []:
         # if self.CURRENT_SHAPES_IN_IMG[-1]["label"] == "SAM instance"  :
@@ -5480,9 +5512,18 @@ class MainWindow(QtWidgets.QMainWindow):
         self.labelList.clear()
         # self.canvas.loadPixmap(QtGui.QPixmap.fromImage(self.image))
         # we need it since it does replace=True on whatever was on the canvas
+
+        # print(f'len of canvas shapes {len(self.canvas.shapes)}')
+        # print(f'len of current shapes {len(self.CURRENT_SHAPES_IN_IMG)}')
+
+        self.CURRENT_SHAPES_IN_IMG = self.convert_qt_shapes_to_shapes(self.canvas.shapes)
+        if len(self.CURRENT_SHAPES_IN_IMG) != 0 and self.CURRENT_SHAPES_IN_IMG[-1]["label"] == "SAM instance"   :
+            self.CURRENT_SHAPES_IN_IMG.pop()
+        self.CURRENT_SHAPES_IN_IMG.append(self.current_sam_shape)
         self.loadLabels(self.CURRENT_SHAPES_IN_IMG)
-        self.loadLabels(self.SAM_SHAPES_IN_IMAGE, replace=False)
-        self.loadLabels([self.current_sam_shape], replace=False)
+
+        # self.loadLabels(self.SAM_SHAPES_IN_IMAGE, replace=False)
+        # self.loadLabels([self.current_sam_shape], replace=False)
 
         print("done running sam model")
 
