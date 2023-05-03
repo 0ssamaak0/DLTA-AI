@@ -22,10 +22,10 @@ Labelmm is the next generation of annotation tools, harnessing the power of Comp
 [![GitHub issues](https://img.shields.io/github/issues/0ssamaak0/labelmm)](https://github.com/0ssamaak0/labelmm/issues)
 [![GitHub last commit](https://img.shields.io/github/last-commit/0ssamaak0/labelmm)](https://github.com/0ssamaak0/labelmm/commits)
 
-![gif_main](assets/gif_main.gif)
+![gif_main](assets/gif_main2.gif)
 
 <!-- make p with larger font size -->
-[Installation](#installation-%EF%B8%8F)  🛠️ | [Input Modes](#input-modes-%EF%B8%8F) 🎞️ | [Model Selection](#model-selection-) 🤖 | [Object Tracking](#object-tracking-) 🚗 | [Export](#export-) 📤 | [Other Features](#other-features-) 🌟| [Contributing](#contributing-) 🤝| [Resources](#resources-) 🌐 |  [License](#license-) 📜
+[Installation](#installation-%EF%B8%8F)  🛠️ | [Segment Anything](#Segment Anything) 🪄|[Input Modes](#input-modes-%EF%B8%8F) 🎞️ | [Model Selection](#model-selection-) 🤖 | [Object Tracking](#object-tracking-) 🚗 | [Export](#export-) 📤 | [Other Features](#other-features-) 🌟| [Contributing](#contributing-) 🤝| [Resources](#resources-) 🌐 |  [License](#license-) 📜
 
 </div>
 
@@ -84,6 +84,10 @@ or just use Visual Studio installer to Install `MSVC v143 - VS 2022 C++ x64/x86 
 
 </details>
 
+# Segment Anything 🪄
+Labelmm provides a seamless expirence to use lastest Meta models [Segment Anything (SAM)](https://github.com/facebookresearch/segment-anything) and options to modify the results and export them
+
+![Segment Anything](assets/SAM.gif)
 
 # Input Modes 🎞️
 

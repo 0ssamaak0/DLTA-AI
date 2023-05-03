@@ -3407,72 +3407,75 @@ class MainWindow(QtWidgets.QMainWindow):
             if self.config['toolMode'] == 'image':
                 return
             ###########################
-            dialog = QtWidgets.QDialog()
-            dialog.setWindowTitle("Choose Deletion Options")
-            dialog.setWindowModality(Qt.ApplicationModal)
-            dialog.resize(250, 100)
+            # if video mode
+            if self.current_annotation_mode == "video":
+                dialog = QtWidgets.QDialog()
+                dialog.setWindowTitle("Choose Deletion Options")
+                dialog.setWindowModality(Qt.ApplicationModal)
+                dialog.resize(250, 100)
 
-            layout = QtWidgets.QVBoxLayout()
+                layout = QtWidgets.QVBoxLayout()
 
-            label = QtWidgets.QLabel("Choose Deletion Options")
-            layout.addWidget(label)
+                label = QtWidgets.QLabel("Choose Deletion Options")
+                layout.addWidget(label)
 
-            prev = QtWidgets.QRadioButton("this frame and previous frames")
-            next = QtWidgets.QRadioButton("this frame and next frames")
-            all = QtWidgets.QRadioButton(
-                "across all frames (previous and next)")
-            only = QtWidgets.QRadioButton("this frame only")
+                prev = QtWidgets.QRadioButton("this frame and previous frames")
+                next = QtWidgets.QRadioButton("this frame and next frames")
+                all = QtWidgets.QRadioButton(
+                    "across all frames (previous and next)")
+                only = QtWidgets.QRadioButton("this frame only")
 
-            from_to = QtWidgets.QRadioButton("in a specific range of frames")
-            from_frame = QtWidgets.QSpinBox()
-            to_frame = QtWidgets.QSpinBox()
-            from_frame.setRange(1, self.TOTAL_VIDEO_FRAMES)
-            to_frame.setRange(1, self.TOTAL_VIDEO_FRAMES)
-            from_frame.valueChanged.connect(lambda: from_to.toggle())
-            to_frame.valueChanged.connect(lambda: from_to.toggle())
+                from_to = QtWidgets.QRadioButton(
+                    "in a specific range of frames")
+                from_frame = QtWidgets.QSpinBox()
+                to_frame = QtWidgets.QSpinBox()
+                from_frame.setRange(1, self.TOTAL_VIDEO_FRAMES)
+                to_frame.setRange(1, self.TOTAL_VIDEO_FRAMES)
+                from_frame.valueChanged.connect(lambda: from_to.toggle())
+                to_frame.valueChanged.connect(lambda: from_to.toggle())
 
-            if self.config['deleteDefault'] == 'this frame and previous frames':
-                prev.toggle()
-            if self.config['deleteDefault'] == 'this frame and next frames':
-                next.toggle()
-            if self.config['deleteDefault'] == 'across all frames (previous and next)':
-                all.toggle()
-            if self.config['deleteDefault'] == 'this frame only':
-                only.toggle()
-            if self.config['deleteDefault'] == 'in a specific range of frames':
-                from_to.toggle()
+                if self.config['deleteDefault'] == 'this frame and previous frames':
+                    prev.toggle()
+                if self.config['deleteDefault'] == 'this frame and next frames':
+                    next.toggle()
+                if self.config['deleteDefault'] == 'across all frames (previous and next)':
+                    all.toggle()
+                if self.config['deleteDefault'] == 'this frame only':
+                    only.toggle()
+                if self.config['deleteDefault'] == 'in a specific range of frames':
+                    from_to.toggle()
 
-            prev.toggled.connect(lambda: self.config.update(
-                {'deleteDefault': 'this frame and previous frames'}))
-            next.toggled.connect(lambda: self.config.update(
-                {'deleteDefault': 'this frame and next frames'}))
-            all.toggled.connect(lambda: self.config.update(
-                {'deleteDefault': 'across all frames (previous and next)'}))
-            only.toggled.connect(lambda: self.config.update(
-                {'deleteDefault': 'this frame only'}))
-            from_to.toggled.connect(lambda: self.config.update(
-                {'deleteDefault': 'in a specific range of frames'}))
+                prev.toggled.connect(lambda: self.config.update(
+                    {'deleteDefault': 'this frame and previous frames'}))
+                next.toggled.connect(lambda: self.config.update(
+                    {'deleteDefault': 'this frame and next frames'}))
+                all.toggled.connect(lambda: self.config.update(
+                    {'deleteDefault': 'across all frames (previous and next)'}))
+                only.toggled.connect(lambda: self.config.update(
+                    {'deleteDefault': 'this frame only'}))
+                from_to.toggled.connect(lambda: self.config.update(
+                    {'deleteDefault': 'in a specific range of frames'}))
 
-            layout.addWidget(only)
-            layout.addWidget(prev)
-            layout.addWidget(next)
-            layout.addWidget(all)
-            layout.addWidget(from_to)
-            layout.addWidget(from_frame)
-            layout.addWidget(to_frame)
+                layout.addWidget(only)
+                layout.addWidget(prev)
+                layout.addWidget(next)
+                layout.addWidget(all)
+                layout.addWidget(from_to)
+                layout.addWidget(from_frame)
+                layout.addWidget(to_frame)
 
-            buttonBox = QtWidgets.QDialogButtonBox(
-                QtWidgets.QDialogButtonBox.Ok)
-            buttonBox.accepted.connect(dialog.accept)
-            layout.addWidget(buttonBox)
-            dialog.setLayout(layout)
-            result = dialog.exec_()
-            if result == QtWidgets.QDialog.Accepted:
-                for deleted_id in deleted_ids:
-                    self.delete_ids_from_all_frames(
-                        [deleted_id], mode=self.config['deleteDefault'], from_frame=from_frame.value(), to_frame=to_frame.value())
+                buttonBox = QtWidgets.QDialogButtonBox(
+                    QtWidgets.QDialogButtonBox.Ok)
+                buttonBox.accepted.connect(dialog.accept)
+                layout.addWidget(buttonBox)
+                dialog.setLayout(layout)
+                result = dialog.exec_()
+                if result == QtWidgets.QDialog.Accepted:
+                    for deleted_id in deleted_ids:
+                        self.delete_ids_from_all_frames(
+                            [deleted_id], mode=self.config['deleteDefault'], from_frame=from_frame.value(), to_frame=to_frame.value())
 
-            self.main_video_frames_slider_changed()
+                self.main_video_frames_slider_changed()
             ###########################
 
     def delete_ids_from_all_frames(self, deleted_ids, mode, from_frame, to_frame):
