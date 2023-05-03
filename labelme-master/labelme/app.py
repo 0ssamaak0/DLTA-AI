@@ -2635,7 +2635,7 @@ class MainWindow(QtWidgets.QMainWindow):
             text, flags, group_id, content = self.labelDialog.popUp(text)
             if not text:
                 self.labelDialog.edit.setText(previous_text)
-
+        print(f'---------- after POPUP ----------- group_id: {group_id}, text: {text}')
         if text and not self.validateLabel(text):
             self.errorMessage(
                 self.tr("Invalid label"),
@@ -2650,10 +2650,10 @@ class MainWindow(QtWidgets.QMainWindow):
 
         if self.config["toolMode"] == "video":
             group_id, text = self.get_id_from_user(group_id, text)
-
         if text:
             if self.canvas.SAM_mode == "finished":
                 self.current_sam_shape["label"] = text
+                self.current_sam_shape["group_id"] = group_id
                 self.canvas.SAM_mode = ""
             else:
                 self.labelList.clearSelection()
@@ -2667,8 +2667,14 @@ class MainWindow(QtWidgets.QMainWindow):
             self.actions.undo.setEnabled(True)
             self.setDirty()
         else:
-            self.canvas.undoLastLine()
-            self.canvas.shapesBackups.pop()
+            if self.canvas.SAM_mode == "finished":
+                print(f'---------- SAM_mode is finished ----------- group_id: {group_id}, text: {text}')
+                self.current_sam_shape["label"] = text
+                self.current_sam_shape["group_id"] = -1
+                self.canvas.SAM_mode = ""
+            else:
+                self.canvas.undoLastLine()
+                self.canvas.shapesBackups.pop()
 
         if self.config["toolMode"] == "video":
             self.update_current_frame_annotation_button_clicked()
@@ -3455,7 +3461,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     self.delete_ids_from_all_frames(
                         [deleted_id], mode=self.config['deleteDefault'], from_frame=from_frame.value(), to_frame=to_frame.value())
 
-                self.main_video_frames_slider_changed()
+            self.main_video_frames_slider_changed()
             ###########################
 
     def delete_ids_from_all_frames(self, deleted_ids, mode, from_frame, to_frame):
@@ -5387,6 +5393,7 @@ class MainWindow(QtWidgets.QMainWindow):
             return
         if not same_image:
             self.sam_clear_annotation_button_clicked()
+            self.sam_buttons_colors("rect")
         print("sam select rect button clicked")
         self.canvas.setCursor(QtGui.QCursor(QtCore.Qt.CrossCursor))
         self.canvas.SAM_mode = "select rect"
@@ -5442,8 +5449,8 @@ class MainWindow(QtWidgets.QMainWindow):
         for shape in self.CURRENT_SHAPES_IN_IMG:
             print(shape["label"])
         self.CURRENT_SHAPES_IN_IMG =  self.check_sam_instance_in_shapes(self.CURRENT_SHAPES_IN_IMG)
-
-        self.CURRENT_SHAPES_IN_IMG.append(self.current_sam_shape)
+        if self.current_sam_shape["group_id"] != -1:
+            self.CURRENT_SHAPES_IN_IMG.append(self.current_sam_shape)
         self.loadLabels(self.CURRENT_SHAPES_IN_IMG)
         # self.loadLabels(self.SAM_SHAPES_IN_IMAGE, replace=False)
         # clear the predictor of the finished shape
