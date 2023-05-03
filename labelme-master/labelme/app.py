@@ -1881,8 +1881,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 next_segment = self.handlePoints(next_segment, biglen)
             (prev_segment, next_segment) = self.allign(
                 prev_segment, next_segment)
-            prev['segment'] = prev_segment
-            next['segment'] = next_segment
+            records[prev_idx]['segment'] = prev['segment'] = prev_segment
+            records[next_idx]['segment'] = next['segment'] = next_segment
 
             cur_segment = ((next_idx - i) / (next_idx - prev_idx)) * np.array(records[prev_idx]['segment']) + (
                 (i - prev_idx) / (next_idx - prev_idx)) * np.array(records[next_idx]['segment'])
@@ -1978,8 +1978,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 next_segment = self.handlePoints(next_segment, biglen)
             (prev_segment, next_segment) = self.allign(
                 prev_segment, next_segment)
-            prev['segment'] = prev_segment
-            next['segment'] = next_segment
+            records[prev_idx]['segment'] = prev['segment'] = prev_segment
+            records[next_idx]['segment'] = next['segment'] = next_segment
 
             cur_segment = ((next_idx - i) / (next_idx - prev_idx)) * np.array(records[prev_idx]['segment']) + (
                 (i - prev_idx) / (next_idx - prev_idx)) * np.array(records[next_idx]['segment'])

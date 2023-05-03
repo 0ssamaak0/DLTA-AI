@@ -90,7 +90,7 @@ def convert_shapes_to_qt_shapes(shapes):
         # flags = shape["flags"]
         content = shape["content"]
         group_id = shape["group_id"]
-        other_data = shape["other_data"]
+        #other_data = shape["other_data"]
 
         if not points:
             # skip point-empty shape
