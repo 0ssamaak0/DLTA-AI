@@ -1353,21 +1353,21 @@ class MainWindow(QtWidgets.QMainWindow):
 
         icon = utils.newIcon("labels")
         action = QtWidgets.QAction(
-            icon, "1 Byte track", self)
+            icon, "1 Byte track (DEFAULT)", self)
         action.triggered.connect(
             lambda: self.update_tracking_method('bytetrack'))
         menu2.addAction(action)
 
         icon = utils.newIcon("labels")
         action = QtWidgets.QAction(
-            icon, "2 Strong SORT", self)
+            icon, "2 Strong SORT  (lowest id switch)", self)
         action.triggered.connect(
             lambda: self.update_tracking_method('strongsort'))
         menu2.addAction(action)
 
         icon = utils.newIcon("labels")
         action = QtWidgets.QAction(
-            icon, "3 Deep SORT (lowest id switch) DEFAULT", self)
+            icon, "3 Deep SORT", self)
         action.triggered.connect(
             lambda: self.update_tracking_method('deepocsort'))
         menu2.addAction(action)
