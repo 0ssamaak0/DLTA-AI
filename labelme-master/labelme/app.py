@@ -1192,8 +1192,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.imagePath = None
         self.imageData = None
         self.CURRENT_FRAME_IMAGE = None
-        self.CURRENT_SHAPES_IN_IMG = []
-        self.SAM_SHAPES_IN_IMAGE = []
+        # self.CURRENT_SHAPES_IN_IMG = []
+        # self.SAM_SHAPES_IN_IMAGE = []
         self.labelFile = None
         self.otherData = None
         self.canvas.resetState()
@@ -1291,6 +1291,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def setEditMode(self):
         self.sam_finish_annotation_button_clicked()
+        self.sam_buttons_colors('x')
         self.set_sam_toolbar_visibility(visible=True, setEnabled=False)
         try:
             x = self.CURRENT_VIDEO_PATH
@@ -2337,7 +2338,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     mainTEXT + f'AGAIN? REALLY? LAST time for you..')
             if repeated == 3:
                 text = False
-                break
+                return group_id, text
 
             properID = QtWidgets.QSpinBox()
             properID.setRange(1, 1000)
@@ -2354,7 +2355,8 @@ class MainWindow(QtWidgets.QMainWindow):
             result = dialog.exec_()
             if result != QtWidgets.QDialog.Accepted:
                 text = False
-                break
+                return group_id, text
+            
             group_id = properID.value()
             repeated += 1
 
@@ -5405,8 +5407,8 @@ class MainWindow(QtWidgets.QMainWindow):
             pass
         self.labelList.clear()
         self.CURRENT_SHAPES_IN_IMG = self.convert_qt_shapes_to_shapes(self.canvas.shapes)
-        if len(self.CURRENT_SHAPES_IN_IMG) != 0 and self.CURRENT_SHAPES_IN_IMG[-1]["label"] == "SAM instance"   :
-            self.CURRENT_SHAPES_IN_IMG.pop()
+        self.CURRENT_SHAPES_IN_IMG =  self.check_sam_instance_in_shapes(self.CURRENT_SHAPES_IN_IMG)
+
             
         self.loadLabels(self.CURRENT_SHAPES_IN_IMG)
         # self.loadLabels(self.SAM_SHAPES_IN_IMAGE, replace=False)
@@ -5437,8 +5439,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.canvas.finalise(SAM_SHAPE=True)
         # self.SAM_SHAPES_IN_IMAGE.append(self.current_sam_shape)
         self.CURRENT_SHAPES_IN_IMG = self.convert_qt_shapes_to_shapes(self.canvas.shapes)
-        if len(self.CURRENT_SHAPES_IN_IMG) != 0 and self.CURRENT_SHAPES_IN_IMG[-1]["label"] == "SAM instance"   :
-                self.CURRENT_SHAPES_IN_IMG.pop()
+        for shape in self.CURRENT_SHAPES_IN_IMG:
+            print(shape["label"])
+        self.CURRENT_SHAPES_IN_IMG =  self.check_sam_instance_in_shapes(self.CURRENT_SHAPES_IN_IMG)
+
         self.CURRENT_SHAPES_IN_IMG.append(self.current_sam_shape)
         self.loadLabels(self.CURRENT_SHAPES_IN_IMG)
         # self.loadLabels(self.SAM_SHAPES_IN_IMAGE, replace=False)
@@ -5449,6 +5453,19 @@ class MainWindow(QtWidgets.QMainWindow):
         self.current_sam_shape = None
         self.canvas.SAM_current = None
         
+        if self.current_annotation_mode == "video":
+            print("sam finish annotation button clicked")
+            self.update_current_frame_annotation_button_clicked()
+        
+    def check_sam_instance_in_shapes(self, shapes):
+        if len(shapes) == 0:
+            return []
+        for shape in shapes:
+            if shape["label"] == "SAM instance":
+                # remove the shape from the list
+                shapes.remove(shape)
+        return shapes
+    
     def SAM_rects_to_boxes(self, rects):
         res = []
         for rect in rects:
@@ -5517,8 +5534,8 @@ class MainWindow(QtWidgets.QMainWindow):
         # print(f'len of current shapes {len(self.CURRENT_SHAPES_IN_IMG)}')
 
         self.CURRENT_SHAPES_IN_IMG = self.convert_qt_shapes_to_shapes(self.canvas.shapes)
-        if len(self.CURRENT_SHAPES_IN_IMG) != 0 and self.CURRENT_SHAPES_IN_IMG[-1]["label"] == "SAM instance"   :
-            self.CURRENT_SHAPES_IN_IMG.pop()
+        self.CURRENT_SHAPES_IN_IMG =  self.check_sam_instance_in_shapes(self.CURRENT_SHAPES_IN_IMG)
+
         self.CURRENT_SHAPES_IN_IMG.append(self.current_sam_shape)
         self.loadLabels(self.CURRENT_SHAPES_IN_IMG)
 
