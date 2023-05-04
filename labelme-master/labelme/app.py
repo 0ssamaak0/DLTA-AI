@@ -4125,6 +4125,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def right_click_menu(self):
         self.set_sam_toolbar_enable(False)
+        self.sam_model_comboBox.setCurrentIndex(0)
         self.sam_buttons_colors("x")
         # # right click menu
         #         0  createMode,
@@ -5595,7 +5596,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.sam_close_button = QtWidgets.QPushButton()
         self.sam_close_button.setStyleSheet(
             "QPushButton { font-size: 10pt; font-weight: bold; }")
-        self.sam_close_button.setText("Close SAM")
+        self.sam_close_button.setText("RESET")
         self.sam_close_button.clicked.connect(
             self.sam_close_button_clicked)
         self.sam_toolbar.addWidget(self.sam_close_button)
@@ -5690,6 +5691,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.sam_predictor.set_new_image(self.CURRENT_FRAME_IMAGE)
         except:
             print("please open an image first")
+            self.waitWindow()
             return
         self.waitWindow()
         print("done loading model")
