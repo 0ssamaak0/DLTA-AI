@@ -3875,7 +3875,8 @@ class MainWindow(QtWidgets.QMainWindow):
                         id)] = color
 
     def right_click_menu(self):
-
+        self.set_sam_toolbar_enable(False)
+        self.sam_buttons_colors("x")
         # # right click menu
         #         0  createMode,
         #         1  createRectangleMode,
@@ -5349,23 +5350,26 @@ class MainWindow(QtWidgets.QMainWindow):
             self.sam_replace_annotation_button_clicked)
         self.sam_toolbar.addWidget(self.sam_replace_annotation_button)
         
+        self.set_sam_toolbar_enable(False)
+        self.sam_buttons_colors("x")
+        
     def sam_replace_annotation_button_clicked(self):
-        return
         if not self.canvas.selectedShapes:
             return
-        print(f'------------------------------------- len(self.canvas.selectedShapes) = {len(self.canvas.selectedShapes)}')
+        try:
+            same_image = self.sam_predictor.check_image(
+                self.CURRENT_FRAME_IMAGE)
+        except:
+            return
+        
         for shape in self.canvas.selectedShapes:
             try:
-                same_image = self.sam_predictor.check_image(
-                    self.CURRENT_FRAME_IMAGE)
+                self.canvas.shapes.remove(shape)
+                self.canvas.selectedShapes.remove(shape)
+                self.remLabels([shape])
             except:
                 return
-            if not same_image:
-                self.sam_clear_annotation_button_clicked()
-                self.sam_buttons_colors("replace")
-            # self.canvas.shapes.remove(shape)
             shapeX = self.convert_qt_shapes_to_shapes([shape])[0]
-            print(f'converting id {shapeX["group_id"]}, {shape.group_id}')
             x1, y1, x2, y2 = shapeX["bbox"]
             listPOINTS = [min(x1, x2), min(y1, y2), max(x1, x2), max(y1, y2)]
             listPOINTS = [int(round(x)) for x in listPOINTS]
@@ -5378,13 +5382,13 @@ class MainWindow(QtWidgets.QMainWindow):
             SAMshape = self.sam_predictor.polygon_to_shape(points, score)
             shapeX["points"] = SAMshape["points"]
             shapeX = convert_shapes_to_qt_shapes([shapeX])[0]
-            self.canvas.shapes.remove(shape)
             self.canvas.shapes.append(shapeX)
+            self.canvas.selectedShapes.append(shapeX)
+            self.addLabel(shapeX)
         
         if self.current_annotation_mode == "video":
             self.update_current_frame_annotation_button_clicked()
-        else:
-            self.canvas.repaint()
+        
             
 
     def sam_models(self):
