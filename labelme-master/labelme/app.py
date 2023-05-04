@@ -268,6 +268,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.sam_predictor = None
         self.current_sam_shape = None
         self.SAM_SHAPES_IN_IMAGE = []
+        self.sam_last_mode = "rectangle"
 
         self.setCentralWidget(scrollArea)
 
@@ -5630,8 +5631,6 @@ class MainWindow(QtWidgets.QMainWindow):
         if self.current_annotation_mode == "video":
             self.update_current_frame_annotation_button_clicked()
         
-            
-
     def sam_models(self):
         cwd = os.getcwd()
         with open(cwd + '/models_menu/sam_models.json') as f:
@@ -5717,6 +5716,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.sam_replace_annotation_button.setEnabled(setEnabled)
 
     def sam_add_point_button_clicked(self):
+        self.sam_last_mode = "point"
         self.sam_buttons_colors("add")
         try:
             same_image = self.sam_predictor.check_image(
@@ -5745,6 +5745,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.canvas.SAM_mode = "remove point"
 
     def sam_select_rect_button_clicked(self):
+        self.sam_last_mode = "rectangle"
         self.sam_buttons_colors("rect")
         try:
             same_image = self.sam_predictor.check_image(
@@ -5783,6 +5784,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # later for confirmed sam instances
         # self.laodLabels(self.CURRENT_SAM_SHAPES_IN_IMG,replace=false)
+        
+        if self.sam_last_mode == "point":
+            self.sam_add_point_button_clicked()
+        elif self.sam_last_mode == "rectangle":
+            self.sam_select_rect_button_clicked()
 
     def sam_finish_annotation_button_clicked(self):
         self.sam_buttons_colors("finish")
@@ -5798,6 +5804,10 @@ class MainWindow(QtWidgets.QMainWindow):
             if len(self.current_sam_shape) == 0:
                 return
         except:
+            if self.sam_last_mode == "point":
+                self.sam_add_point_button_clicked()
+            elif self.sam_last_mode == "rectangle":
+                self.sam_select_rect_button_clicked()
             return
 
         self.labelList.clear()
@@ -5826,6 +5836,11 @@ class MainWindow(QtWidgets.QMainWindow):
         if self.current_annotation_mode == "video":
             print("sam finish annotation button clicked")
             self.update_current_frame_annotation_button_clicked()
+        
+        if self.sam_last_mode == "point":
+            self.sam_add_point_button_clicked()
+        elif self.sam_last_mode == "rectangle":
+            self.sam_select_rect_button_clicked()
 
     def check_sam_instance_in_shapes(self, shapes):
         if len(shapes) == 0:
