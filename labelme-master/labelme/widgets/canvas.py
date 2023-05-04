@@ -445,7 +445,7 @@ class Canvas(QtWidgets.QWidget):
         try:
             setEnabledd = menu.actions()[7].isEnabled()
             if menu.actions()[8].text() == "&Interpolate":
-                menu.actions()[8].setEnabled(setEnabledd)
+                menu.actions()[8].setEnabled(True)
             if menu.actions()[9].text() == "&Mark as key":
                 menu.actions()[9].setEnabled(setEnabledd)
             if menu.actions()[10].text() == "&Scale":
@@ -686,7 +686,7 @@ class Canvas(QtWidgets.QWidget):
             p.drawEllipse(-20, -20, 40, 40)
             p.drawLine(0, 0, 0, -20)
             p.restore()
-            self.loading_angle += 30
+            self.loading_angle += 5
             if self.loading_angle >= 360:
                 self.loading_angle = 0
 
