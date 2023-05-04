@@ -78,6 +78,8 @@ shortcuts:
   save_to: null
   delete_file: Ctrl+Delete
   export: Ctrl+E
+  copy: Ctrl+C
+  paste: Ctrl+V
 
   open_next: [D, Ctrl+Shift+D]
   open_prev: [A, Ctrl+Shift+A]

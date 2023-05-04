@@ -299,6 +299,7 @@ class MainWindow(QtWidgets.QMainWindow):
                        'EditDefault': "Edit only this frame",
                        'toolMode': 'video'}
         self.key_frames = {}
+        self.copiedShapes = []
         # make CLASS_NAMES_DICT a dictionary of coco class names
         # self.CLASS_NAMES_DICT =
         # self.frame_number = 0
@@ -693,6 +694,22 @@ class MainWindow(QtWidgets.QMainWindow):
             self.tr("Scale the selected polygon"),
             enabled=True,
         )
+        copyShapes = action(
+            self.tr("&Copy"),
+            self.copyShapesSelected,
+            shortcuts["copy"],
+            "edit",
+            self.tr("Copy selected polygons"),
+            enabled=True,
+        )
+        pasteShapes = action(
+            self.tr("&Paste"),
+            self.pasteShapesSelected,
+            shortcuts["paste"],
+            "edit",
+            self.tr("paste copied polygons"),
+            enabled=True,
+        )
         update_curr_frame = action(
             self.tr("&Update current frame"),
             self.update_current_frame_annotation_button_clicked,
@@ -860,6 +877,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 interpolate,
                 mark_as_key,
                 scale,
+                copyShapes,
+                pasteShapes,
                 copy,
                 delete,
                 undo,
@@ -1423,10 +1442,9 @@ class MainWindow(QtWidgets.QMainWindow):
     def createMode_options(self):
         
         self.sam_buttons_colors("X")
-        if self.config['toolMode'] == 'image':
-            self.toggleDrawMode(False, createMode="polygon")
-            self.set_sam_toolbar_enable(True)
-            return
+        self.toggleDrawMode(False, createMode="polygon")
+        self.set_sam_toolbar_enable(True)
+        return
 
         self.update_current_frame_annotation()
 
@@ -2160,6 +2178,32 @@ class MainWindow(QtWidgets.QMainWindow):
         self.calc_trajectory_when_open_video()
         self.main_video_frames_slider_changed()
 
+    def copyShapesSelected(self):
+        if len(self.canvas.selectedShapes) == 0:
+            return
+        self.copiedShapes = self.canvas.selectedShapes
+
+    def pasteShapesSelected(self):
+        if len(self.copiedShapes) == 0:
+            return
+        ids = [shape.group_id for shape in self.canvas.shapes]
+        flag = False
+        for shape in self.copiedShapes:
+            if shape.group_id in ids:
+                flag = True
+                continue
+            self.canvas.shapes.append(shape)
+            self.addLabel(shape)
+        if flag:
+            msg = QtWidgets.QMessageBox()
+            msg.setIcon(QtWidgets.QMessageBox.Information)
+            msg.setText("A Shape(s) with the same ID(s) already exist(s) in this frame.\n\nShapes with no duplicate IDs are Copied Successfully.")
+            msg.setWindowTitle("IDs already exist")
+            msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
+            msg.exec_()
+        if self.current_annotation_mode == "video":
+            self.update_current_frame_annotation_button_clicked()
+        
     def get_bbox_xywh(self, segment):
         segment = np.array(segment)
         x0 = np.min(segment[:, 0])
@@ -3889,20 +3933,22 @@ class MainWindow(QtWidgets.QMainWindow):
         #         8  interpolate,
         #         9  mark_as_key,
         #         10 scale,
-        #         11 copy,
-        #         12 delete,
-        #         13 undo,
-        #         14 undoLastPoint,
-        #         15 addPointToEdge,
-        #         16 removePoint,
-        #         17 update_curr_frame,
-        #         18 ignore_changes
+        #         11 copyShapes,
+        #         12 pasteShapes,
+        #         13 copy,
+        #         14 delete,
+        #         15 undo,
+        #         16 undoLastPoint,
+        #         17 addPointToEdge,
+        #         18 removePoint,
+        #         19 update_curr_frame,
+        #         20 ignore_changes
 
         mode = self.config['toolMode']
         video_menu = True if mode == "video" else False
         image_menu = True if mode == "image" else False
-        video_menu_list = [8, 9, 10, 17, 18]
-        image_menu_list = [1, 2, 3, 4, 5, 11, 13, 14]
+        video_menu_list = [8, 9, 10, 11, 12, 19, 20]
+        image_menu_list = [1, 2, 3, 4, 5, 13, 15, 16]
         for i in range(len(self.actions.menu)):
             if i in video_menu_list:
                 self.actions.menu[i].setVisible(video_menu)
