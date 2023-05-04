@@ -487,7 +487,7 @@ class Canvas(QtWidgets.QWidget):
                 # Delete point if: left-click + SHIFT on a point
                 self.removeSelectedPoint()
         elif ev.button() == QtCore.Qt.LeftButton and len(self.SAM_rect) == 1:
-            if abs(pos.x() - self.SAM_rect[0].x()) + abs(pos.y() - self.SAM_rect[0].y()) > 10:
+            if abs(pos.x() - self.SAM_rect[0].x()) + abs(pos.y() - self.SAM_rect[0].y()) > 50:
                 self.SAM_rect.append(self.correct_pos_for_SAM(pos))
                 print("do smth")
                 # self.SAM_rects.append(self.SAM_rect)
