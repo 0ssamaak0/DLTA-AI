@@ -1446,7 +1446,7 @@ class MainWindow(QtWidgets.QMainWindow):
         return False
 
     def createMode_options(self):
-        
+
         self.sam_buttons_colors("X")
         self.toggleDrawMode(False, createMode="polygon")
         self.set_sam_toolbar_enable(True)
@@ -1716,7 +1716,7 @@ class MainWindow(QtWidgets.QMainWindow):
             ###########################################################
 
     def interpolateMENU(self, item=None):
-        
+
         if len(self.canvas.shapes) > 1:
             mb = QtWidgets.QMessageBox
             msg = self.tr(
@@ -1724,14 +1724,14 @@ class MainWindow(QtWidgets.QMainWindow):
                 "It is more persise but slower than the default interpolation method."
                 "Interpolate with SAM?"
             )
-            answer = mb.warning(self, self.tr("Attention"), msg, mb.Yes | mb.No)
+            answer = mb.warning(self, self.tr(
+                "Attention"), msg, mb.Yes | mb.No)
             if answer != mb.Yes:
                 return
             else:
                 self.interpolate(id=None, only_edited=False, with_sam=True)
                 return
-        
-        
+
         self.update_current_frame_annotation()
         if item and not isinstance(item, LabelListWidgetItem):
             raise TypeError("item must be LabelListWidgetItem type")
@@ -1812,7 +1812,8 @@ class MainWindow(QtWidgets.QMainWindow):
             result = dialog.exec_()
             if result == QtWidgets.QDialog.Accepted:
                 only_edited = True if self.config['interpolationDefault'] == 'interpolate all frames between your KEY frames' else False
-                with_sam = True if self.config['interpolationDefault'] == 'interpolate only missed frames with SAM (more persision, more time)' else False
+                with_sam = True if self.config[
+                    'interpolationDefault'] == 'interpolate only missed frames with SAM (more persision, more time)' else False
                 if only_edited:
                     try:
                         if len(self.key_frames['id_' + str(shape.group_id)]) == 1:
@@ -1828,7 +1829,8 @@ class MainWindow(QtWidgets.QMainWindow):
                         msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
                         msg.exec_()
                         return
-                self.interpolate(id=shape.group_id, only_edited=only_edited, with_sam=with_sam)
+                self.interpolate(id=shape.group_id,
+                                 only_edited=only_edited, with_sam=with_sam)
             ###########################################################
         self.setDirty()
         if not self.uniqLabelList.findItemsByLabel(shape.label):
@@ -1971,15 +1973,15 @@ class MainWindow(QtWidgets.QMainWindow):
         self.main_video_frames_slider_changed()
 
     def interpolate(self, id, only_edited=False, with_sam=False):
-        
+
         self.waitWindow(
             visible=True, text=f'Wait a second.\nID {id} is being interpolated...')
-        
+
         if with_sam:
             self.interpolate_with_sam(id)
             self.waitWindow()
             return
-        
+
         if only_edited:
             self.interpolate_ONLYedited(id)
             self.waitWindow()
@@ -2054,8 +2056,8 @@ class MainWindow(QtWidgets.QMainWindow):
                            for sublist in cur_segment]
             current['bbox'] = cur_bbox
             current['segment'] = cur_segment
-            print(f'type of cur_segment: {type(cur_segment)}, type of a point in cur_segment: {type(cur_segment[0])}, type of a point in cur_segment[0]: {type(cur_segment[0][0])}')
-            
+            print(
+                f'type of cur_segment: {type(cur_segment)}, type of a point in cur_segment: {type(cur_segment[0])}, type of a point in cur_segment[0]: {type(cur_segment[0][0])}')
 
             records[i] = current.copy()
             RECORDS.append(records[i])
@@ -2081,13 +2083,13 @@ class MainWindow(QtWidgets.QMainWindow):
         self.waitWindow()
 
     def interpolate_with_sam(self, id):
-        
+
         self.waitWindow(
             visible=True, text=f'Wait a second.\nIDs is being interpolated with SAM...')
-        
+
         if self.sam_model_comboBox.currentText() == "Select Model (SAM disable)" or len(self.canvas.selectedShapes) == 0:
             return
-        
+
         idsLIST = [shape.group_id for shape in self.canvas.selectedShapes]
         first_frame_idxLIST = [-1 for i in range(len(idsLIST))]
         last_frame_idxLIST = [-1 for i in range(len(idsLIST))]
@@ -2112,7 +2114,8 @@ class MainWindow(QtWidgets.QMainWindow):
         if len(idsLIST) == 0:
             return
 
-        recordsLIST = [[None for ii in range(first_frame_idxLIST[i], last_frame_idxLIST[i] + 1)] for i in range(len(idsLIST))]
+        recordsLIST = [[None for ii in range(
+            first_frame_idxLIST[i], last_frame_idxLIST[i] + 1)] for i in range(len(idsLIST))]
         RECORDSLIST = [[] for i in range(len(idsLIST))]
         for i in range(len(listObj)):
             self.waitWindow(visible=True)
@@ -2123,15 +2126,16 @@ class MainWindow(QtWidgets.QMainWindow):
             for object_ in frameobjects:
                 if (object_['tracker_id'] in idsLIST):
                     index = idsLIST.index(object_['tracker_id'])
-                    recordsLIST[index][listobjframe - first_frame_idxLIST[index]] = object_
-                    
+                    recordsLIST[index][listobjframe -
+                                       first_frame_idxLIST[index]] = object_
+
         records_orgLIST = recordsLIST.copy()
-        
+
         for ididx in range(len(idsLIST)):
             self.waitWindow(visible=True)
             records = recordsLIST[ididx]
             RECORDS = RECORDSLIST[ididx]
-            
+
             first_iter_flag = True
             for i in range(len(records)):
                 self.waitWindow(visible=True)
@@ -2158,11 +2162,10 @@ class MainWindow(QtWidgets.QMainWindow):
                 current['bbox'] = cur_bbox
                 records[i] = current.copy()
                 RECORDS.append(records[i])
-        
+
             recordsLIST[ididx] = records
             RECORDSLIST[ididx] = RECORDS
-        
-        
+
         for i in range(min(first_frame_idxLIST), max(last_frame_idxLIST) + 1):
             self.waitWindow(visible=True)
             frameIDX = i
@@ -2172,36 +2175,42 @@ class MainWindow(QtWidgets.QMainWindow):
                     frameIMAGE)
             except:
                 return
-            
+
             for ididx in range(len(idsLIST)):
                 self.waitWindow(visible=True)
                 if frameIDX < first_frame_idxLIST[ididx] or frameIDX > last_frame_idxLIST[ididx]:
                     continue
-                
-                cur_bbox = recordsLIST[ididx][frameIDX - first_frame_idxLIST[ididx]]['bbox']
-                [x1, y1, x2, y2] = [cur_bbox[0], cur_bbox[1], 
+
+                cur_bbox = recordsLIST[ididx][frameIDX -
+                                              first_frame_idxLIST[ididx]]['bbox']
+                [x1, y1, x2, y2] = [cur_bbox[0], cur_bbox[1],
                                     cur_bbox[2], cur_bbox[3]]
-                listPOINTS = [min(x1, x2) - 20, min(y1, y2) -20, max(x1, x2) +20, max(y1, y2) +20]
+                listPOINTS = [min(x1, x2) - 20, min(y1, y2) -
+                              20, max(x1, x2) + 20, max(y1, y2) + 20]
                 listPOINTS = [int(round(x)) for x in listPOINTS]
                 input_boxes = [listPOINTS]
                 mask, score = self.sam_predictor.predict(point_coords=None,
-                                                    point_labels=None,
-                                                    box=input_boxes,
-                                                    image=frameIMAGE)
+                                                         point_labels=None,
+                                                         box=input_boxes,
+                                                         image=frameIMAGE)
                 points = self.sam_predictor.mask_to_polygons(mask)
                 SAMshape = self.sam_predictor.polygon_to_shape(points, score)
                 cur_segment = SAMshape['points']
-                cur_segment = [[int(cur_segment[i]), int(cur_segment[i + 1])] 
-                            for i in range(0, len(cur_segment), 2)]
-                cur_bbox = [min(np.array(cur_segment)[:,0]), min(np.array(cur_segment)[:,1]), 
-                            max(np.array(cur_segment)[:,0]), max(np.array(cur_segment)[:,1])]
+                cur_segment = [[int(cur_segment[i]), int(cur_segment[i + 1])]
+                               for i in range(0, len(cur_segment), 2)]
+                cur_bbox = [min(np.array(cur_segment)[:, 0]), min(np.array(cur_segment)[:, 1]),
+                            max(np.array(cur_segment)[:, 0]), max(np.array(cur_segment)[:, 1])]
                 cur_bbox = [int(round(x)) for x in cur_bbox]
-                
-                recordsLIST[ididx][frameIDX - first_frame_idxLIST[ididx]]['bbox'] = cur_bbox.copy()
-                RECORDSLIST[ididx][frameIDX - first_frame_idxLIST[ididx]]['bbox'] = cur_bbox.copy()
-                recordsLIST[ididx][frameIDX - first_frame_idxLIST[ididx]]['segment'] = cur_segment.copy()
-                RECORDSLIST[ididx][frameIDX - first_frame_idxLIST[ididx]]['segment'] = cur_segment.copy()
-    
+
+                recordsLIST[ididx][frameIDX -
+                                   first_frame_idxLIST[ididx]]['bbox'] = cur_bbox.copy()
+                RECORDSLIST[ididx][frameIDX -
+                                   first_frame_idxLIST[ididx]]['bbox'] = cur_bbox.copy()
+                recordsLIST[ididx][frameIDX - first_frame_idxLIST[ididx]
+                                   ]['segment'] = cur_segment.copy()
+                RECORDSLIST[ididx][frameIDX - first_frame_idxLIST[ididx]
+                                   ]['segment'] = cur_segment.copy()
+
         for i in range(len(listObj)):
             self.waitWindow(visible=True)
             listobjframe = listObj[i]['frame_idx']
@@ -2210,7 +2219,7 @@ class MainWindow(QtWidgets.QMainWindow):
             for object_ in listObj[i]['frame_data']:
                 if (object_['tracker_id'] in idsLIST):
                     listObj[i]['frame_data'].remove(object_)
-        
+
         for i in range(len(listObj)):
             self.waitWindow(visible=True)
             listobjframe = listObj[i]['frame_idx']
@@ -2219,7 +2228,7 @@ class MainWindow(QtWidgets.QMainWindow):
             for object_ in listObj[i]['frame_data']:
                 if (object_['tracker_id'] in idsLIST):
                     listObj[i]['frame_data'].remove(object_)
-            
+
             for ididx in range(len(idsLIST)):
                 if (listobjframe < first_frame_idxLIST[ididx] or listobjframe > last_frame_idxLIST[ididx]):
                     continue
@@ -2227,12 +2236,12 @@ class MainWindow(QtWidgets.QMainWindow):
                 idx = max(idx, 0)
                 idx = min(idx, len(RECORDSLIST[ididx]) - 1)
                 listObj[i]['frame_data'].append(RECORDSLIST[ididx][idx])
-                
+
         self.waitWindow()
         self.load_objects_to_json(listObj)
         self.calc_trajectory_when_open_video()
         self.main_video_frames_slider_changed()
-        
+
     def get_frame_by_idx(self, frameIDX):
         self.CAP.set(cv2.CAP_PROP_POS_FRAMES, frameIDX - 1)
         success, img = self.CAP.read()
@@ -2402,13 +2411,14 @@ class MainWindow(QtWidgets.QMainWindow):
         if flag:
             msg = QtWidgets.QMessageBox()
             msg.setIcon(QtWidgets.QMessageBox.Information)
-            msg.setText("A Shape(s) with the same ID(s) already exist(s) in this frame.\n\nShapes with no duplicate IDs are Copied Successfully.")
+            msg.setText(
+                "A Shape(s) with the same ID(s) already exist(s) in this frame.\n\nShapes with no duplicate IDs are Copied Successfully.")
             msg.setWindowTitle("IDs already exist")
             msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
             msg.exec_()
         if self.current_annotation_mode == "video":
             self.update_current_frame_annotation_button_clicked()
-        
+
     def get_bbox_xywh(self, segment):
         segment = np.array(segment)
         x0 = np.min(segment[:, 0])
@@ -5465,7 +5475,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if visible:
             self.canvas.is_loading = True
             if text is not None:
-                self.canvas.loading_text = text 
+                self.canvas.loading_text = text
         else:
             self.canvas.is_loading = False
             self.canvas.loading_text = "Loading..."
@@ -5474,7 +5484,8 @@ class MainWindow(QtWidgets.QMainWindow):
     def set_sam_toolbar_enable(self, enable=False):
         for widget in self.sam_toolbar.children():
             try:
-                widget.setEnabled(enable or widget.accessibleName() == 'sam_replace_annotation_button' or widget.accessibleName() == 'sam_model_comboBox')
+                widget.setEnabled(enable or widget.accessibleName(
+                ) == 'sam_replace_annotation_button' or widget.accessibleName() == 'sam_model_comboBox')
             except:
                 pass
 
@@ -5529,7 +5540,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.sam_add_point_button.setText("Add Point")
         # set hover text
         self.sam_add_point_button.setToolTip(
-         f'shortcut ({self._config["shortcuts"]["SAM_add_point"]}')
+            f'shortcut ({self._config["shortcuts"]["SAM_add_point"]})')
         # set shortcut
         self.sam_add_point_button.setShortcut(
             self._config["shortcuts"]["SAM_add_point"])
@@ -5544,7 +5555,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.sam_remove_point_button.setText("Remove Point")
         # set hover text
         self.sam_remove_point_button.setToolTip(
-            f'shortcut ({self._config["shortcuts"]["SAM_remove_point"]}')
+            f'shortcut ({self._config["shortcuts"]["SAM_remove_point"]})')
         # set shortcut
         self.sam_remove_point_button.setShortcut(
             self._config["shortcuts"]["SAM_remove_point"])
@@ -5559,7 +5570,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.sam_select_rect_button.setText("Select Box")
         # set hover text
         self.sam_select_rect_button.setToolTip(
-           f'shortcut ({self._config["shortcuts"]["SAM_select_rect"]}')
+            f'shortcut ({self._config["shortcuts"]["SAM_select_rect"]}')
         # set shortcut
         self.sam_select_rect_button.setShortcut(
             self._config["shortcuts"]["SAM_select_rect"])
@@ -5590,7 +5601,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.sam_finish_annotation_button.setShortcut(
             self._config["shortcuts"]["SAM_finish_annotation"])
         self.sam_toolbar.addWidget(self.sam_finish_annotation_button)
-        
+
         # add a point of close SAM
         self.sam_close_button = QtWidgets.QPushButton()
         self.sam_close_button.setStyleSheet(
@@ -5599,24 +5610,25 @@ class MainWindow(QtWidgets.QMainWindow):
         self.sam_close_button.clicked.connect(
             self.sam_close_button_clicked)
         self.sam_toolbar.addWidget(self.sam_close_button)
-        
+
         # add a point of replace with SAM
         self.sam_replace_annotation_button = QtWidgets.QPushButton()
-        self.sam_replace_annotation_button.setAccessibleName("sam_replace_annotation_button")
+        self.sam_replace_annotation_button.setAccessibleName(
+            "sam_replace_annotation_button")
         self.sam_replace_annotation_button.setStyleSheet(
             "QPushButton { font-size: 10pt; font-weight: bold; }")
         self.sam_replace_annotation_button.setText("Replace selected with SAM")
         self.sam_replace_annotation_button.clicked.connect(
             self.sam_replace_annotation_button_clicked)
         self.sam_toolbar.addWidget(self.sam_replace_annotation_button)
-        
+
         self.set_sam_toolbar_enable(False)
         self.sam_buttons_colors("x")
-        
+
     def sam_close_button_clicked(self):
         self.sam_finish_annotation_button_clicked()
-        self.createMode_options()        
-        
+        self.createMode_options()
+
     def sam_replace_annotation_button_clicked(self):
         if not self.canvas.selectedShapes:
             return
@@ -5625,7 +5637,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.CURRENT_FRAME_IMAGE)
         except:
             return
-        
+
         for shape in self.canvas.selectedShapes:
             try:
                 self.canvas.shapes.remove(shape)
@@ -5639,9 +5651,9 @@ class MainWindow(QtWidgets.QMainWindow):
             listPOINTS = [int(round(x)) for x in listPOINTS]
             input_boxes = [listPOINTS]
             mask, score = self.sam_predictor.predict(point_coords=None,
-                                                 point_labels=None,
-                                                 box=input_boxes,
-                                                 image=self.CURRENT_FRAME_IMAGE)
+                                                     point_labels=None,
+                                                     box=input_boxes,
+                                                     image=self.CURRENT_FRAME_IMAGE)
             points = self.sam_predictor.mask_to_polygons(mask)
             SAMshape = self.sam_predictor.polygon_to_shape(points, score)
             shapeX["points"] = SAMshape["points"]
@@ -5649,10 +5661,10 @@ class MainWindow(QtWidgets.QMainWindow):
             self.canvas.shapes.append(shapeX)
             self.canvas.selectedShapes.append(shapeX)
             self.addLabel(shapeX)
-        
+
         if self.current_annotation_mode == "video":
             self.update_current_frame_annotation_button_clicked()
-        
+
     def sam_models(self):
         cwd = os.getcwd()
         with open(cwd + '/models_menu/sam_models.json') as f:
@@ -5816,7 +5828,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # later for confirmed sam instances
         # self.laodLabels(self.CURRENT_SAM_SHAPES_IN_IMG,replace=false)
-        
+
         if self.sam_last_mode == "point":
             self.sam_add_point_button_clicked()
         elif self.sam_last_mode == "rectangle":
@@ -5869,7 +5881,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if self.current_annotation_mode == "video":
             print("sam finish annotation button clicked")
             self.update_current_frame_annotation_button_clicked()
-        
+
         if self.sam_last_mode == "point":
             self.sam_add_point_button_clicked()
         elif self.sam_last_mode == "rectangle":
