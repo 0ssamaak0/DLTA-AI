@@ -108,7 +108,7 @@ shortcuts:
   scale: Ctrl+T
   toggle_keep_prev_mode: Ctrl+P
 
-  SAM_finish_annotation: Ctrl+Return
-  SAM_add_point: Ctrl+A
-  SAM_remove_point: Ctrl+G
-  SAM_select_rect: Ctrl+B
+  SAM_finish_annotation: Return
+  SAM_add_point: A
+  SAM_remove_point: G
+  SAM_select_rect: B

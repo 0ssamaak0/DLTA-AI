@@ -5529,7 +5529,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.sam_add_point_button.setText("Add Point")
         # set hover text
         self.sam_add_point_button.setToolTip(
-            self._config["shortcuts"]["SAM_add_point"])
+         f'shortcut ({self._config["shortcuts"]["SAM_add_point"]}')
         # set shortcut
         self.sam_add_point_button.setShortcut(
             self._config["shortcuts"]["SAM_add_point"])
@@ -5544,7 +5544,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.sam_remove_point_button.setText("Remove Point")
         # set hover text
         self.sam_remove_point_button.setToolTip(
-            self._config["shortcuts"]["SAM_remove_point"])
+            f'shortcut ({self._config["shortcuts"]["SAM_remove_point"]}')
         # set shortcut
         self.sam_remove_point_button.setShortcut(
             self._config["shortcuts"]["SAM_remove_point"])
@@ -5559,7 +5559,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.sam_select_rect_button.setText("Select Box")
         # set hover text
         self.sam_select_rect_button.setToolTip(
-            self._config["shortcuts"]["SAM_select_rect"])
+           f'shortcut ({self._config["shortcuts"]["SAM_select_rect"]}')
         # set shortcut
         self.sam_select_rect_button.setShortcut(
             self._config["shortcuts"]["SAM_select_rect"])
