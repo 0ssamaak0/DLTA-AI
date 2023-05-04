@@ -1756,19 +1756,26 @@ class MainWindow(QtWidgets.QMainWindow):
                 "interpolate only missed frames between detected frames")
             only_edited = QtWidgets.QRadioButton(
                 "interpolate all frames between your KEY frames")
+            with_sam = QtWidgets.QRadioButton(
+                "interpolate only missed frames with SAM (more persision, more time)")
 
             if self.config['interpolationDefault'] == 'interpolate only missed frames between detected frames':
                 only_missed.toggle()
             if self.config['interpolationDefault'] == 'interpolate all frames between your KEY frames':
                 only_edited.toggle()
+            if self.config['interpolationDefault'] == 'interpolate only missed frames with SAM (more persision, more time)':
+                with_sam.toggle()
 
             only_missed.toggled.connect(lambda: self.config.update(
                 {'interpolationDefault': 'interpolate only missed frames between detected frames'}))
             only_edited.toggled.connect(lambda: self.config.update(
                 {'interpolationDefault': 'interpolate all frames between your KEY frames'}))
+            with_sam.toggled.connect(lambda: self.config.update(
+                {'interpolationDefault': 'interpolate only missed frames with SAM (more persision, more time)'}))
 
             layout.addWidget(only_missed)
             layout.addWidget(only_edited)
+            layout.addWidget(with_sam)
 
             buttonBox = QtWidgets.QDialogButtonBox(
                 QtWidgets.QDialogButtonBox.Ok)
@@ -1778,8 +1785,8 @@ class MainWindow(QtWidgets.QMainWindow):
             result = dialog.exec_()
             if result == QtWidgets.QDialog.Accepted:
                 only_edited = True if self.config['interpolationDefault'] == 'interpolate all frames between your KEY frames' else False
+                with_sam = True if self.config['interpolationDefault'] == 'interpolate only missed frames with SAM (more persision, more time)' else False
                 if only_edited:
-                    print(self.key_frames['id_' + str(shape.group_id)])
                     try:
                         if len(self.key_frames['id_' + str(shape.group_id)]) == 1:
                             shape.group_id = 1/0
@@ -1794,7 +1801,7 @@ class MainWindow(QtWidgets.QMainWindow):
                         msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
                         msg.exec_()
                         return
-                self.interpolate(id=shape.group_id, only_edited=only_edited)
+                self.interpolate(id=shape.group_id, only_edited=only_edited, with_sam=with_sam)
             ###########################################################
         self.setDirty()
         if not self.uniqLabelList.findItemsByLabel(shape.label):
@@ -1936,9 +1943,19 @@ class MainWindow(QtWidgets.QMainWindow):
         self.calc_trajectory_when_open_video()
         self.main_video_frames_slider_changed()
 
-    def interpolate(self, id, only_edited=False):
+    def interpolate(self, id, only_edited=False, with_sam=False):
+        
+        self.waitWindow(
+            visible=True, text=f'Wait a second.\nID {id} is being interpolated...')
+        
+        if with_sam:
+            self.interpolate_with_sam(id)
+            self.waitWindow()
+            return
+        
         if only_edited:
             self.interpolate_ONLYedited(id)
+            self.waitWindow()
             return
 
         first_frame_idx = -1
@@ -1978,7 +1995,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 continue
             if first_iter_flag:
                 first_iter_flag = False
-                prev_idx = i - 1
+            prev_idx = i - 1
             prev = records[i - 1]
             current = prev
 
@@ -2010,6 +2027,8 @@ class MainWindow(QtWidgets.QMainWindow):
                            for sublist in cur_segment]
             current['bbox'] = cur_bbox
             current['segment'] = cur_segment
+            print(f'type of cur_segment: {type(cur_segment)}, type of a point in cur_segment: {type(cur_segment[0])}, type of a point in cur_segment[0]: {type(cur_segment[0][0])}')
+            
 
             records[i] = current.copy()
             RECORDS.append(records[i])
@@ -2032,6 +2051,121 @@ class MainWindow(QtWidgets.QMainWindow):
         self.load_objects_to_json(listObj)
         self.calc_trajectory_when_open_video()
         self.main_video_frames_slider_changed()
+        self.waitWindow()
+
+    def interpolate_with_sam(self, id):
+        
+        if self.sam_model_comboBox.currentText() == "Select Model (SAM disable)":
+            return
+        
+        first_frame_idx = -1
+        last_frame_idx = -1
+        listObj = self.load_objects_from_json()
+        for i in range(len(listObj)):
+            listobjframe = listObj[i]['frame_idx']
+            frameobjects = listObj[i]['frame_data']
+            for object_ in frameobjects:
+                if (object_['tracker_id'] == id):
+                    first_frame_idx = min(
+                        first_frame_idx, listobjframe) if first_frame_idx != -1 else listobjframe
+                    last_frame_idx = max(
+                        last_frame_idx, listobjframe) if last_frame_idx != -1 else listobjframe
+        if (first_frame_idx == -1 or last_frame_idx == -1):
+            return
+        if (first_frame_idx >= last_frame_idx):
+            return
+
+        records = [None for i in range(first_frame_idx, last_frame_idx + 1)]
+        RECORDS = []
+        for i in range(len(listObj)):
+            listobjframe = listObj[i]['frame_idx']
+            if (listobjframe < first_frame_idx or listobjframe > last_frame_idx):
+                continue
+            frameobjects = listObj[i]['frame_data']
+            for object_ in frameobjects:
+                if (object_['tracker_id'] == id):
+                    records[listobjframe - first_frame_idx] = object_
+                    break
+        records_org = records.copy()
+        
+        first_iter_flag = True
+        for i in range(len(records)):
+            if (records[i] != None):
+                RECORDS.append(records[i])
+                continue
+            if first_iter_flag:
+                first_iter_flag = False
+                prev_idx = i - 1
+            prev = records[i - 1]
+            current = prev
+
+            next = records[i + 1]
+            next_idx = i + 1
+            for j in range(i + 1, len(records)):
+                if (records[j] != None):
+                    next = records[j]
+                    next_idx = j
+                    break
+            cur_bbox = ((next_idx - i) / (next_idx - prev_idx)) * np.array(records[prev_idx]['bbox']) + (
+                (i - prev_idx) / (next_idx - prev_idx)) * np.array(records[next_idx]['bbox'])
+            cur_bbox = [int(cur_bbox[i]) for i in range(len(cur_bbox))]
+
+            ##########################################################
+            frameIDX = i + first_frame_idx
+            frameIMAGE = self.get_frame_by_idx(frameIDX)
+            try:
+                same_image = self.sam_predictor.check_image(
+                    frameIMAGE)
+            except:
+                return
+            [x1, y1, x2, y2] = [cur_bbox[0], cur_bbox[1], 
+                                cur_bbox[2], cur_bbox[3]]
+            listPOINTS = [min(x1, x2) - 20, min(y1, y2) -20, max(x1, x2) +20, max(y1, y2) +20]
+            listPOINTS = [int(round(x)) for x in listPOINTS]
+            input_boxes = [listPOINTS]
+            mask, score = self.sam_predictor.predict(point_coords=None,
+                                                 point_labels=None,
+                                                 box=input_boxes,
+                                                 image=frameIMAGE)
+            points = self.sam_predictor.mask_to_polygons(mask)
+            SAMshape = self.sam_predictor.polygon_to_shape(points, score)
+            cur_segment = SAMshape['points']
+            cur_segment = [[int(cur_segment[i]), int(cur_segment[i + 1])] 
+                           for i in range(0, len(cur_segment), 2)]
+            cur_bbox = [min(np.array(cur_segment)[:,0]), min(np.array(cur_segment)[:,1]), 
+                        max(np.array(cur_segment)[:,0]), max(np.array(cur_segment)[:,1])]
+            cur_bbox = [int(round(x)) for x in cur_bbox]
+            ##########################################################
+            
+            current['bbox'] = cur_bbox
+            current['segment'] = cur_segment
+
+            records[i] = current.copy()
+            RECORDS.append(records[i])
+
+        appended_frames = []
+        for i in range(len(listObj)):
+            listobjframe = listObj[i]['frame_idx']
+            if (listobjframe < first_frame_idx or listobjframe > last_frame_idx):
+                continue
+            appended = records_org[listobjframe - first_frame_idx]
+            if appended == None:
+                appended = RECORDS[max(listobjframe - first_frame_idx - 1, 0)]
+                listObj[i]['frame_data'].append(appended)
+            appended_frames.append(listobjframe)
+
+        for frame in range(first_frame_idx, last_frame_idx + 1):
+            if (frame not in appended_frames):
+                listObj.append({'frame_idx': frame, 'frame_data': [
+                               RECORDS[max(frame - first_frame_idx - 1, 0)]]})
+        self.load_objects_to_json(listObj)
+        self.calc_trajectory_when_open_video()
+        self.main_video_frames_slider_changed()
+        
+    def get_frame_by_idx(self, frameIDX):
+        self.CAP.set(cv2.CAP_PROP_POS_FRAMES, frameIDX - 1)
+        success, img = self.CAP.read()
+        return img
 
     def scaleMENU(self, item=None):
         self.update_current_frame_annotation()
