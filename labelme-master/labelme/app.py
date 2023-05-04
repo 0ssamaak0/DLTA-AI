@@ -5678,9 +5678,12 @@ class MainWindow(QtWidgets.QMainWindow):
         return models
 
     def sam_model_comboBox_changed(self):
+        self.canvas.cancelManualDrawing()
         self.sam_clear_annotation_button_clicked()
         self.sam_buttons_colors("X")
         if self.sam_model_comboBox.currentText() == "Select Model (SAM disable)":
+            self.createMode_options()
+            self.set_sam_toolbar_enable(False)
             return
         model_type = self.sam_model_comboBox.currentText()
         self.waitWindow(
@@ -5702,6 +5705,11 @@ class MainWindow(QtWidgets.QMainWindow):
             return
         self.waitWindow()
         print("done loading model")
+        self.createMode_options()
+        if self.sam_last_mode == "point":
+            self.sam_add_point_button_clicked()
+        elif self.sam_last_mode == "rectangle":
+            self.sam_select_rect_button_clicked()
 
     def sam_buttons_colors(self, mode):
         # style_sheet = """
