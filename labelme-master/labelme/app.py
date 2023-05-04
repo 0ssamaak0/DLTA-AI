@@ -1313,6 +1313,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.sam_finish_annotation_button_clicked()
         self.sam_buttons_colors('x')
         self.set_sam_toolbar_enable(False)
+        self.canvas.SAM_mode = ""
+        self.canvas.SAM_coordinates = []
+        self.canvas.SAM_rect = []
+        self.canvas.SAM_rects = []
+        self.canvas.SAM_current = None
         try:
             x = self.CURRENT_VIDEO_PATH
         except:
@@ -1445,6 +1450,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.sam_buttons_colors("X")
         self.toggleDrawMode(False, createMode="polygon")
         self.set_sam_toolbar_enable(True)
+        self.canvas.SAM_mode = ""
+        self.canvas.SAM_coordinates = []
+        self.canvas.SAM_rect = []
+        self.canvas.SAM_rects = []
+        self.canvas.SAM_current = None
         return
 
         self.update_current_frame_annotation()
@@ -5581,10 +5591,18 @@ class MainWindow(QtWidgets.QMainWindow):
             self._config["shortcuts"]["SAM_finish_annotation"])
         self.sam_toolbar.addWidget(self.sam_finish_annotation_button)
         
+        # add a point of close SAM
+        self.sam_close_button = QtWidgets.QPushButton()
+        self.sam_close_button.setStyleSheet(
+            "QPushButton { font-size: 10pt; font-weight: bold; }")
+        self.sam_close_button.setText("Close SAM")
+        self.sam_close_button.clicked.connect(
+            self.sam_close_button_clicked)
+        self.sam_toolbar.addWidget(self.sam_close_button)
+        
         # add a point of replace with SAM
         self.sam_replace_annotation_button = QtWidgets.QPushButton()
         self.sam_replace_annotation_button.setAccessibleName("sam_replace_annotation_button")
-        # self.sam_replace_annotation_button.setObjectName("sam_replace_annotation_button")
         self.sam_replace_annotation_button.setStyleSheet(
             "QPushButton { font-size: 10pt; font-weight: bold; }")
         self.sam_replace_annotation_button.setText("Replace selected with SAM")
@@ -5594,6 +5612,10 @@ class MainWindow(QtWidgets.QMainWindow):
         
         self.set_sam_toolbar_enable(False)
         self.sam_buttons_colors("x")
+        
+    def sam_close_button_clicked(self):
+        self.sam_finish_annotation_button_clicked()
+        self.createMode_options()        
         
     def sam_replace_annotation_button_clicked(self):
         if not self.canvas.selectedShapes:
@@ -5716,12 +5738,14 @@ class MainWindow(QtWidgets.QMainWindow):
         self.sam_replace_annotation_button.setEnabled(setEnabled)
 
     def sam_add_point_button_clicked(self):
+        self.canvas.cancelManualDrawing()
         self.sam_last_mode = "point"
         self.sam_buttons_colors("add")
         try:
             same_image = self.sam_predictor.check_image(
                 self.CURRENT_FRAME_IMAGE)
         except:
+            self.sam_buttons_colors("x")
             return
         if not same_image:
             self.sam_clear_annotation_button_clicked()
@@ -5731,11 +5755,13 @@ class MainWindow(QtWidgets.QMainWindow):
         self.canvas.SAM_mode = "add point"
 
     def sam_remove_point_button_clicked(self):
+        self.canvas.cancelManualDrawing()
         self.sam_buttons_colors("remove")
         try:
             same_image = self.sam_predictor.check_image(
                 self.CURRENT_FRAME_IMAGE)
         except:
+            self.sam_buttons_colors("x")
             return
         if not same_image:
             self.sam_clear_annotation_button_clicked()
@@ -5745,12 +5771,14 @@ class MainWindow(QtWidgets.QMainWindow):
         self.canvas.SAM_mode = "remove point"
 
     def sam_select_rect_button_clicked(self):
+        self.canvas.cancelManualDrawing()
         self.sam_last_mode = "rectangle"
         self.sam_buttons_colors("rect")
         try:
             same_image = self.sam_predictor.check_image(
                 self.CURRENT_FRAME_IMAGE)
         except:
+            self.sam_buttons_colors("x")
             return
         if not same_image:
             self.sam_clear_annotation_button_clicked()
@@ -5762,6 +5790,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.CURRENT_FRAME_IMAGE.shape[0], self.CURRENT_FRAME_IMAGE.shape[1]]
 
     def sam_clear_annotation_button_clicked(self):
+        self.canvas.cancelManualDrawing()
         self.sam_buttons_colors("clear")
         print("sam clear annotation button clicked")
         self.canvas.SAM_coordinates = []
@@ -5791,6 +5820,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.sam_select_rect_button_clicked()
 
     def sam_finish_annotation_button_clicked(self):
+        self.canvas.cancelManualDrawing()
         self.sam_buttons_colors("finish")
         # return the cursor to normal
         self.canvas.setCursor(QtGui.QCursor(QtCore.Qt.ArrowCursor))

@@ -943,6 +943,11 @@ class Canvas(QtWidgets.QWidget):
             self.update()
         elif key == QtCore.Qt.Key_Return and self.canCloseShape():
             self.finalise()
+            
+    def cancelManualDrawing(self):
+        self.current = None
+        self.drawingPolygon.emit(False)
+        self.update()
 
     def setLastLabel(self, text, flags):
         assert text
