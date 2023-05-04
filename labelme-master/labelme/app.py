@@ -5671,6 +5671,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.sam_buttons_colors("X")
         if self.sam_model_comboBox.currentText() == "Select Model (SAM disable)":
             self.createMode_options()
+            self.set_sam_toolbar_enable(False)
             return
         model_type = self.sam_model_comboBox.currentText()
         self.waitWindow(
