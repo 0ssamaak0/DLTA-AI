@@ -1386,6 +1386,8 @@ class MainWindow(QtWidgets.QMainWindow):
         menu2.addAction(action)
 
     def update_tracking_method(self, method='bytetrack'):
+        self.waitWindow(
+            visible=True, text=f'Wait a second.\n{method} is Loading...')
         self.tracking_method = method
         self.tracking_config = ROOT / 'trackers' / \
             method / 'configs' / (method + '.yaml')
@@ -1399,6 +1401,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 if hasattr(self.tracker.model, 'warmup'):
                     self.tracker.model.warmup()
                     # print('Warmup done')
+        self.waitWindow()
 
         print(f'Changed tracking method to {method}')
 
@@ -1418,10 +1421,11 @@ class MainWindow(QtWidgets.QMainWindow):
         return False
 
     def createMode_options(self):
-        self.set_sam_toolbar_enable(True)
+        
         self.sam_buttons_colors("X")
         if self.config['toolMode'] == 'image':
             self.toggleDrawMode(False, createMode="polygon")
+            self.set_sam_toolbar_enable(True)
             return
 
         self.update_current_frame_annotation()
@@ -1469,6 +1473,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if result == QtWidgets.QDialog.Accepted:
             if self.config['creationDefault'] == 'Create new shape (ie. not detected before)':
                 self.toggleDrawMode(False, createMode="polygon")
+                self.set_sam_toolbar_enable(True)
             elif self.config['creationDefault'] == 'Copy existing shape (ie. detected before)':
                 self.copy_existing_shape(shape_id.value())
 
@@ -2998,7 +3003,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def change_curr_model(self, model_name):
         self.waitWindow(
-            visible=True, text="Wait a second.\nThe Model is being Loaded...")
+            visible=True, text=f'Wait a second.\n{model_name} is being Loaded...')
         self.intelligenceHelper.current_model_name, self.intelligenceHelper.current_mm_model = self.intelligenceHelper.make_mm_model(
             model_name)
         self.waitWindow()
@@ -5216,7 +5221,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def set_sam_toolbar_enable(self, enable=False):
         for widget in self.sam_toolbar.children():
             try:
-                widget.setEnabled(enable)
+                widget.setEnabled(enable or widget.accessibleName() == 'sam_replace_annotation_button' or widget.accessibleName() == 'sam_model_comboBox')
             except:
                 pass
 
@@ -5254,6 +5259,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # add a dropdown menu to select the sam model
         self.sam_model_comboBox = QtWidgets.QComboBox()
+        self.sam_model_comboBox.setAccessibleName("sam_model_comboBox")
         # add a label inside the combobox that says "Select Model (SAM disable)" and make it unselectable
         self.sam_model_comboBox.addItem("Select Model (SAM disable)")
         self.sam_model_comboBox.addItems(self.sam_models())
@@ -5330,8 +5336,56 @@ class MainWindow(QtWidgets.QMainWindow):
         # set shortcut
         self.sam_finish_annotation_button.setShortcut(
             self._config["shortcuts"]["SAM_finish_annotation"])
-
         self.sam_toolbar.addWidget(self.sam_finish_annotation_button)
+        
+        # add a point of replace with SAM
+        self.sam_replace_annotation_button = QtWidgets.QPushButton()
+        self.sam_replace_annotation_button.setAccessibleName("sam_replace_annotation_button")
+        # self.sam_replace_annotation_button.setObjectName("sam_replace_annotation_button")
+        self.sam_replace_annotation_button.setStyleSheet(
+            "QPushButton { font-size: 10pt; font-weight: bold; }")
+        self.sam_replace_annotation_button.setText("Replace selected with SAM")
+        self.sam_replace_annotation_button.clicked.connect(
+            self.sam_replace_annotation_button_clicked)
+        self.sam_toolbar.addWidget(self.sam_replace_annotation_button)
+        
+    def sam_replace_annotation_button_clicked(self):
+        return
+        if not self.canvas.selectedShapes:
+            return
+        print(f'------------------------------------- len(self.canvas.selectedShapes) = {len(self.canvas.selectedShapes)}')
+        for shape in self.canvas.selectedShapes:
+            try:
+                same_image = self.sam_predictor.check_image(
+                    self.CURRENT_FRAME_IMAGE)
+            except:
+                return
+            if not same_image:
+                self.sam_clear_annotation_button_clicked()
+                self.sam_buttons_colors("replace")
+            # self.canvas.shapes.remove(shape)
+            shapeX = self.convert_qt_shapes_to_shapes([shape])[0]
+            print(f'converting id {shapeX["group_id"]}, {shape.group_id}')
+            x1, y1, x2, y2 = shapeX["bbox"]
+            listPOINTS = [min(x1, x2), min(y1, y2), max(x1, x2), max(y1, y2)]
+            listPOINTS = [int(round(x)) for x in listPOINTS]
+            input_boxes = [listPOINTS]
+            mask, score = self.sam_predictor.predict(point_coords=None,
+                                                 point_labels=None,
+                                                 box=input_boxes,
+                                                 image=self.CURRENT_FRAME_IMAGE)
+            points = self.sam_predictor.mask_to_polygons(mask)
+            SAMshape = self.sam_predictor.polygon_to_shape(points, score)
+            shapeX["points"] = SAMshape["points"]
+            shapeX = convert_shapes_to_qt_shapes([shapeX])[0]
+            self.canvas.shapes.remove(shape)
+            self.canvas.shapes.append(shapeX)
+        
+        if self.current_annotation_mode == "video":
+            self.update_current_frame_annotation_button_clicked()
+        else:
+            self.canvas.repaint()
+            
 
     def sam_models(self):
         cwd = os.getcwd()
@@ -5348,11 +5402,11 @@ class MainWindow(QtWidgets.QMainWindow):
     def sam_model_comboBox_changed(self):
         self.sam_clear_annotation_button_clicked()
         self.sam_buttons_colors("X")
-        if self.sam_model_comboBox.currentText() == "Select Model":
+        if self.sam_model_comboBox.currentText() == "Select Model (SAM disable)":
             return
-        self.waitWindow(
-            visible=True, text="Wait a second.\nSAM model is Loading...")
         model_type = self.sam_model_comboBox.currentText()
+        self.waitWindow(
+            visible=True, text=f'Wait a second.\n{model_type} is Loading...')
         with open('models_menu/sam_models.json') as f:
             data = json.load(f)
         for model in data:
@@ -5390,6 +5444,8 @@ class MainWindow(QtWidgets.QMainWindow):
             red, red] if mode == "clear" else [trans, red]
         [finish_style, finish_hover] = [
             blue, blue] if mode == "finish" else [trans, blue]
+        [replace_style, replace_hover] = [
+            blue, blue] if mode == "replace" else [trans, blue]
 
         self.sam_add_point_button.setStyleSheet(
             style_sheet_const + add_style + ";}" + hover_const + add_hover + ";}" + disabled_const)
@@ -5401,14 +5457,19 @@ class MainWindow(QtWidgets.QMainWindow):
             style_sheet_const + clear_style + ";}" + hover_const + clear_hover + ";}" + disabled_const)
         self.sam_finish_annotation_button.setStyleSheet(
             style_sheet_const + finish_style + ";}" + hover_const + finish_hover + ";}" + disabled_const)
+        self.sam_replace_annotation_button.setStyleSheet(
+            style_sheet_const + replace_style + ";}" + hover_const + replace_hover + ";}" + disabled_const)
 
         setEnabled = False if self.sam_model_comboBox.currentText(
         ) == "Select Model (SAM disable)" else True
+        if setEnabled:
+            return
         self.sam_add_point_button.setEnabled(setEnabled)
         self.sam_remove_point_button.setEnabled(setEnabled)
         self.sam_select_rect_button.setEnabled(setEnabled)
         self.sam_clear_annotation_button.setEnabled(setEnabled)
         self.sam_finish_annotation_button.setEnabled(setEnabled)
+        self.sam_replace_annotation_button.setEnabled(setEnabled)
 
     def sam_add_point_button_clicked(self):
         self.sam_buttons_colors("add")
