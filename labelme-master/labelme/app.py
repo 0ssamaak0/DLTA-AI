@@ -1705,6 +1705,22 @@ class MainWindow(QtWidgets.QMainWindow):
             ###########################################################
 
     def interpolateMENU(self, item=None):
+        
+        if len(self.canvas.shapes) > 1:
+            mb = QtWidgets.QMessageBox
+            msg = self.tr(
+                "Batch Interpolation is only available with SAM"
+                "It is more persise but slower than the default interpolation method."
+                "Interpolate with SAM?"
+            )
+            answer = mb.warning(self, self.tr("Attention"), msg, mb.Yes | mb.No)
+            if answer != mb.Yes:
+                return
+            else:
+                self.interpolate(id=None, only_edited=False, with_sam=True)
+                return
+        
+        
         self.update_current_frame_annotation()
         if item and not isinstance(item, LabelListWidgetItem):
             raise TypeError("item must be LabelListWidgetItem type")
@@ -2055,109 +2071,153 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def interpolate_with_sam(self, id):
         
-        if self.sam_model_comboBox.currentText() == "Select Model (SAM disable)":
+        self.waitWindow(
+            visible=True, text=f'Wait a second.\nIDs is being interpolated with SAM...')
+        
+        if self.sam_model_comboBox.currentText() == "Select Model (SAM disable)" or len(self.canvas.selectedShapes) == 0:
             return
         
-        first_frame_idx = -1
-        last_frame_idx = -1
+        idsLIST = [shape.group_id for shape in self.canvas.selectedShapes]
+        first_frame_idxLIST = [-1 for i in range(len(idsLIST))]
+        last_frame_idxLIST = [-1 for i in range(len(idsLIST))]
         listObj = self.load_objects_from_json()
         for i in range(len(listObj)):
+            self.waitWindow(visible=True)
             listobjframe = listObj[i]['frame_idx']
             frameobjects = listObj[i]['frame_data']
             for object_ in frameobjects:
-                if (object_['tracker_id'] == id):
-                    first_frame_idx = min(
-                        first_frame_idx, listobjframe) if first_frame_idx != -1 else listobjframe
-                    last_frame_idx = max(
-                        last_frame_idx, listobjframe) if last_frame_idx != -1 else listobjframe
-        if (first_frame_idx == -1 or last_frame_idx == -1):
-            return
-        if (first_frame_idx >= last_frame_idx):
+                if (object_['tracker_id'] in idsLIST):
+                    index = idsLIST.index(object_['tracker_id'])
+                    first_frame_idxLIST[index] = min(
+                        first_frame_idxLIST[index], listobjframe) if first_frame_idxLIST[index] != -1 else listobjframe
+                    last_frame_idxLIST[index] = max(
+                        last_frame_idxLIST[index], listobjframe) if last_frame_idxLIST[index] != -1 else listobjframe
+        for i in range(len(idsLIST)):
+            self.waitWindow(visible=True)
+            if (first_frame_idxLIST[i] == -1 or last_frame_idxLIST[i] == -1 or first_frame_idxLIST[i] >= last_frame_idxLIST[i]):
+                idsLIST.pop(i)
+                first_frame_idxLIST.pop(i)
+                last_frame_idxLIST.pop(i)
+        if len(idsLIST) == 0:
             return
 
-        records = [None for i in range(first_frame_idx, last_frame_idx + 1)]
-        RECORDS = []
+        recordsLIST = [[None for ii in range(first_frame_idxLIST[i], last_frame_idxLIST[i] + 1)] for i in range(len(idsLIST))]
+        RECORDSLIST = [[] for i in range(len(idsLIST))]
         for i in range(len(listObj)):
+            self.waitWindow(visible=True)
             listobjframe = listObj[i]['frame_idx']
-            if (listobjframe < first_frame_idx or listobjframe > last_frame_idx):
+            if (listobjframe < min(first_frame_idxLIST) or listobjframe > max(last_frame_idxLIST)):
                 continue
             frameobjects = listObj[i]['frame_data']
             for object_ in frameobjects:
-                if (object_['tracker_id'] == id):
-                    records[listobjframe - first_frame_idx] = object_
-                    break
-        records_org = records.copy()
+                if (object_['tracker_id'] in idsLIST):
+                    index = idsLIST.index(object_['tracker_id'])
+                    recordsLIST[index][listobjframe - first_frame_idxLIST[index]] = object_
+                    
+        records_orgLIST = recordsLIST.copy()
         
-        first_iter_flag = True
-        for i in range(len(records)):
-            if (records[i] != None):
+        for ididx in range(len(idsLIST)):
+            self.waitWindow(visible=True)
+            records = recordsLIST[ididx]
+            RECORDS = RECORDSLIST[ididx]
+            
+            first_iter_flag = True
+            for i in range(len(records)):
+                self.waitWindow(visible=True)
+                if (records[i] != None):
+                    RECORDS.append(records[i])
+                    continue
+                if first_iter_flag:
+                    first_iter_flag = False
+                    prev_idx = i - 1
+                prev = records[i - 1]
+                current = prev
+
+                next = records[i + 1]
+                next_idx = i + 1
+                for j in range(i + 1, len(records)):
+                    self.waitWindow(visible=True)
+                    if (records[j] != None):
+                        next = records[j]
+                        next_idx = j
+                        break
+                cur_bbox = ((next_idx - i) / (next_idx - prev_idx)) * np.array(records[prev_idx]['bbox']) + (
+                    (i - prev_idx) / (next_idx - prev_idx)) * np.array(records[next_idx]['bbox'])
+                cur_bbox = [int(cur_bbox[i]) for i in range(len(cur_bbox))]
+                current['bbox'] = cur_bbox
+                records[i] = current.copy()
                 RECORDS.append(records[i])
-                continue
-            if first_iter_flag:
-                first_iter_flag = False
-                prev_idx = i - 1
-            prev = records[i - 1]
-            current = prev
-
-            next = records[i + 1]
-            next_idx = i + 1
-            for j in range(i + 1, len(records)):
-                if (records[j] != None):
-                    next = records[j]
-                    next_idx = j
-                    break
-            cur_bbox = ((next_idx - i) / (next_idx - prev_idx)) * np.array(records[prev_idx]['bbox']) + (
-                (i - prev_idx) / (next_idx - prev_idx)) * np.array(records[next_idx]['bbox'])
-            cur_bbox = [int(cur_bbox[i]) for i in range(len(cur_bbox))]
-
-            ##########################################################
-            frameIDX = i + first_frame_idx
+        
+            recordsLIST[ididx] = records
+            RECORDSLIST[ididx] = RECORDS
+        
+        
+        for i in range(min(first_frame_idxLIST), max(last_frame_idxLIST) + 1):
+            self.waitWindow(visible=True)
+            frameIDX = i
             frameIMAGE = self.get_frame_by_idx(frameIDX)
             try:
                 same_image = self.sam_predictor.check_image(
                     frameIMAGE)
             except:
                 return
-            [x1, y1, x2, y2] = [cur_bbox[0], cur_bbox[1], 
-                                cur_bbox[2], cur_bbox[3]]
-            listPOINTS = [min(x1, x2) - 20, min(y1, y2) -20, max(x1, x2) +20, max(y1, y2) +20]
-            listPOINTS = [int(round(x)) for x in listPOINTS]
-            input_boxes = [listPOINTS]
-            mask, score = self.sam_predictor.predict(point_coords=None,
-                                                 point_labels=None,
-                                                 box=input_boxes,
-                                                 image=frameIMAGE)
-            points = self.sam_predictor.mask_to_polygons(mask)
-            SAMshape = self.sam_predictor.polygon_to_shape(points, score)
-            cur_segment = SAMshape['points']
-            cur_segment = [[int(cur_segment[i]), int(cur_segment[i + 1])] 
-                           for i in range(0, len(cur_segment), 2)]
-            cur_bbox = [min(np.array(cur_segment)[:,0]), min(np.array(cur_segment)[:,1]), 
-                        max(np.array(cur_segment)[:,0]), max(np.array(cur_segment)[:,1])]
-            cur_bbox = [int(round(x)) for x in cur_bbox]
-            ##########################################################
             
-            current['bbox'] = cur_bbox
-            current['segment'] = cur_segment
-
-            records[i] = current.copy()
-            RECORDS.append(records[i])
-
-        appended_frames = []
+            for ididx in range(len(idsLIST)):
+                self.waitWindow(visible=True)
+                if frameIDX < first_frame_idxLIST[ididx] or frameIDX > last_frame_idxLIST[ididx]:
+                    continue
+                
+                cur_bbox = recordsLIST[ididx][frameIDX - first_frame_idxLIST[ididx]]['bbox']
+                [x1, y1, x2, y2] = [cur_bbox[0], cur_bbox[1], 
+                                    cur_bbox[2], cur_bbox[3]]
+                listPOINTS = [min(x1, x2) - 20, min(y1, y2) -20, max(x1, x2) +20, max(y1, y2) +20]
+                listPOINTS = [int(round(x)) for x in listPOINTS]
+                input_boxes = [listPOINTS]
+                mask, score = self.sam_predictor.predict(point_coords=None,
+                                                    point_labels=None,
+                                                    box=input_boxes,
+                                                    image=frameIMAGE)
+                points = self.sam_predictor.mask_to_polygons(mask)
+                SAMshape = self.sam_predictor.polygon_to_shape(points, score)
+                cur_segment = SAMshape['points']
+                cur_segment = [[int(cur_segment[i]), int(cur_segment[i + 1])] 
+                            for i in range(0, len(cur_segment), 2)]
+                cur_bbox = [min(np.array(cur_segment)[:,0]), min(np.array(cur_segment)[:,1]), 
+                            max(np.array(cur_segment)[:,0]), max(np.array(cur_segment)[:,1])]
+                cur_bbox = [int(round(x)) for x in cur_bbox]
+                
+                recordsLIST[ididx][frameIDX - first_frame_idxLIST[ididx]]['bbox'] = cur_bbox.copy()
+                RECORDSLIST[ididx][frameIDX - first_frame_idxLIST[ididx]]['bbox'] = cur_bbox.copy()
+                recordsLIST[ididx][frameIDX - first_frame_idxLIST[ididx]]['segment'] = cur_segment.copy()
+                RECORDSLIST[ididx][frameIDX - first_frame_idxLIST[ididx]]['segment'] = cur_segment.copy()
+    
         for i in range(len(listObj)):
+            self.waitWindow(visible=True)
             listobjframe = listObj[i]['frame_idx']
-            if (listobjframe < first_frame_idx or listobjframe > last_frame_idx):
+            if (listobjframe < min(first_frame_idxLIST) or listobjframe > max(last_frame_idxLIST)):
                 continue
-            appended = records_org[listobjframe - first_frame_idx]
-            if appended == None:
-                appended = RECORDS[max(listobjframe - first_frame_idx - 1, 0)]
-                listObj[i]['frame_data'].append(appended)
-            appended_frames.append(listobjframe)
-
-        for frame in range(first_frame_idx, last_frame_idx + 1):
-            if (frame not in appended_frames):
-                listObj.append({'frame_idx': frame, 'frame_data': [
-                               RECORDS[max(frame - first_frame_idx - 1, 0)]]})
+            for object_ in listObj[i]['frame_data']:
+                if (object_['tracker_id'] in idsLIST):
+                    listObj[i]['frame_data'].remove(object_)
+        
+        for i in range(len(listObj)):
+            self.waitWindow(visible=True)
+            listobjframe = listObj[i]['frame_idx']
+            if (listobjframe < min(first_frame_idxLIST) or listobjframe > max(last_frame_idxLIST)):
+                continue
+            for object_ in listObj[i]['frame_data']:
+                if (object_['tracker_id'] in idsLIST):
+                    listObj[i]['frame_data'].remove(object_)
+            
+            for ididx in range(len(idsLIST)):
+                if (listobjframe < first_frame_idxLIST[ididx] or listobjframe > last_frame_idxLIST[ididx]):
+                    continue
+                idx = listobjframe - first_frame_idxLIST[ididx]
+                idx = max(idx, 0)
+                idx = min(idx, len(RECORDSLIST[ididx]) - 1)
+                listObj[i]['frame_data'].append(RECORDSLIST[ididx][idx])
+                
+        self.waitWindow()
         self.load_objects_to_json(listObj)
         self.calc_trajectory_when_open_video()
         self.main_video_frames_slider_changed()
@@ -5389,11 +5449,12 @@ class MainWindow(QtWidgets.QMainWindow):
 
         return img
 
-    def waitWindow(self, visible=False, text="Loading..."):
+    def waitWindow(self, visible=False, text=None):
         print("waitWindow", visible, text)
         if visible:
             self.canvas.is_loading = True
-            self.canvas.loading_text = text
+            if text is not None:
+                self.canvas.loading_text = text 
         else:
             self.canvas.is_loading = False
             self.canvas.loading_text = "Loading..."
