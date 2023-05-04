@@ -5355,11 +5355,14 @@ class MainWindow(QtWidgets.QMainWindow):
         model_type = self.sam_model_comboBox.currentText()
         with open('models_menu/sam_models.json') as f:
             data = json.load(f)
+        checkpoint_path = ""
         for model in data:
             if model['name'] == model_type:
                 checkpoint_path = model['checkpoint']
         # print(model_type, checkpoint_path, device)
-        self.sam_predictor = Sam_Predictor(model_type, checkpoint_path, device)
+        if checkpoint_path != "":
+            self.sam_predictor = Sam_Predictor(
+                model_type, checkpoint_path, device)
         try:
             self.sam_predictor.set_new_image(self.CURRENT_FRAME_IMAGE)
         except:
