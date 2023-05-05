@@ -1978,7 +1978,7 @@ class MainWindow(QtWidgets.QMainWindow):
             visible=True, text=f'Wait a second.\nID {id} is being interpolated...')
 
         if with_sam:
-            self.interpolate_with_sam(id)
+            self.interpolate_with_sam()
             self.waitWindow()
             return
 
@@ -2082,7 +2082,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.main_video_frames_slider_changed()
         self.waitWindow()
 
-    def interpolate_with_sam(self, id):
+    def interpolate_with_sam(self):
 
         self.waitWindow(
             visible=True, text=f'Wait a second.\nIDs is being interpolated with SAM...')
@@ -2183,24 +2183,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
                 cur_bbox = recordsLIST[ididx][frameIDX -
                                               first_frame_idxLIST[ididx]]['bbox']
-                [x1, y1, x2, y2] = [cur_bbox[0], cur_bbox[1],
-                                    cur_bbox[2], cur_bbox[3]]
-                listPOINTS = [min(x1, x2) - 20, min(y1, y2) -
-                              20, max(x1, x2) + 20, max(y1, y2) + 20]
-                listPOINTS = [int(round(x)) for x in listPOINTS]
-                input_boxes = [listPOINTS]
-                mask, score = self.sam_predictor.predict(point_coords=None,
-                                                         point_labels=None,
-                                                         box=input_boxes,
-                                                         image=frameIMAGE)
-                points = self.sam_predictor.mask_to_polygons(mask)
-                SAMshape = self.sam_predictor.polygon_to_shape(points, score)
-                cur_segment = SAMshape['points']
-                cur_segment = [[int(cur_segment[i]), int(cur_segment[i + 1])]
-                               for i in range(0, len(cur_segment), 2)]
-                cur_bbox = [min(np.array(cur_segment)[:, 0]), min(np.array(cur_segment)[:, 1]),
-                            max(np.array(cur_segment)[:, 0]), max(np.array(cur_segment)[:, 1])]
-                cur_bbox = [int(round(x)) for x in cur_bbox]
+                cur_bbox, cur_segment = self.sam_bbox_segment(self.CURRENT_FRAME_IMAGE, 
+                                                              cur_bbox, 
+                                                              itr = 1)
 
                 recordsLIST[ididx][frameIDX -
                                    first_frame_idxLIST[ididx]]['bbox'] = cur_bbox.copy()
@@ -2246,6 +2231,34 @@ class MainWindow(QtWidgets.QMainWindow):
         self.CAP.set(cv2.CAP_PROP_POS_FRAMES, frameIDX - 1)
         success, img = self.CAP.read()
         return img
+    
+    def sam_bbox_segment(self, frameIMAGE, cur_bbox, itr = 1, forSHAPE = False):
+        [x1, y1, x2, y2] = [cur_bbox[0], cur_bbox[1],
+                            cur_bbox[2], cur_bbox[3]]
+        listPOINTS = [min(x1, x2), min(y1, y2), 
+                        max(x1, x2), max(y1, y2)]
+        listPOINTS = [int(round(x)) for x in listPOINTS]
+        input_boxes = [listPOINTS]
+        mask, score = self.sam_predictor.predict(point_coords=None,
+                                                    point_labels=None,
+                                                    box=input_boxes,
+                                                    image=frameIMAGE)
+        points = self.sam_predictor.mask_to_polygons(mask)
+        SAMshape = self.sam_predictor.polygon_to_shape(points, score)
+        cur_segment = SAMshape['points']
+        cur_segment = [[int(cur_segment[i]), int(cur_segment[i + 1])]
+                        for i in range(0, len(cur_segment), 2)]
+        cur_bbox = [min(np.array(cur_segment)[:, 0]), min(np.array(cur_segment)[:, 1]),
+                    max(np.array(cur_segment)[:, 0]), max(np.array(cur_segment)[:, 1])]
+        cur_bbox = [int(round(x)) for x in cur_bbox]
+        
+        if itr == 1:
+            if forSHAPE:
+                return cur_bbox, SAMshape['points']
+            else:
+                return cur_bbox, cur_segment
+        else:
+            return self.sam_bbox_segment(frameIMAGE, cur_bbox, itr - 1, forSHAPE)
 
     def scaleMENU(self, item=None):
         self.update_current_frame_annotation()
@@ -5648,16 +5661,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 return
             shapeX = self.convert_qt_shapes_to_shapes([shape])[0]
             x1, y1, x2, y2 = shapeX["bbox"]
-            listPOINTS = [min(x1, x2), min(y1, y2), max(x1, x2), max(y1, y2)]
-            listPOINTS = [int(round(x)) for x in listPOINTS]
-            input_boxes = [listPOINTS]
-            mask, score = self.sam_predictor.predict(point_coords=None,
-                                                     point_labels=None,
-                                                     box=input_boxes,
-                                                     image=self.CURRENT_FRAME_IMAGE)
-            points = self.sam_predictor.mask_to_polygons(mask)
-            SAMshape = self.sam_predictor.polygon_to_shape(points, score)
-            shapeX["points"] = SAMshape["points"]
+            cur_bbox, cur_segment = self.sam_bbox_segment(self.CURRENT_FRAME_IMAGE, [x1, y1, x2, y2], itr = 1, forSHAPE = True)
+            shapeX["points"] = cur_segment
             shapeX = convert_shapes_to_qt_shapes([shapeX])[0]
             self.canvas.shapes.append(shapeX)
             self.canvas.selectedShapes.append(shapeX)
