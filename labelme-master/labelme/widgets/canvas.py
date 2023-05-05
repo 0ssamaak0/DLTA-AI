@@ -30,6 +30,7 @@ class Canvas(QtWidgets.QWidget):
     vertexSelected = QtCore.Signal(bool)
     # SAM signals
     pointAdded = QtCore.Signal()
+    reset = QtCore.Signal()
 
     CREATE, EDIT = 0, 1
     CREATE, EDIT = 0, 1
@@ -937,6 +938,8 @@ class Canvas(QtWidgets.QWidget):
 
     def keyPressEvent(self, ev):
         key = ev.key()
+        if key == QtCore.Qt.Key_Escape and self.SAM_mode != "":
+            self.reset.emit()
         if key == QtCore.Qt.Key_Escape and self.current:
             self.current = None
             self.drawingPolygon.emit(False)

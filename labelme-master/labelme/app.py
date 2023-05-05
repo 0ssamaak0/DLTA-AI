@@ -905,6 +905,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.canvas.edgeSelected.connect(self.canvasShapeEdgeSelected)
         self.canvas.vertexSelected.connect(self.actions.removePoint.setEnabled)
+        self.canvas.reset.connect(self.sam_reset_beutton_clicked)
 
         self.menus = utils.struct(
             file=self.menu(self.tr("&File")),
@@ -5622,7 +5623,7 @@ class MainWindow(QtWidgets.QMainWindow):
             "QPushButton { font-size: 10pt; font-weight: bold; }")
         self.sam_close_button.setText("RESET")
         self.sam_close_button.clicked.connect(
-            self.sam_close_button_clicked)
+            self.sam_reset_beutton_clicked)
         self.sam_toolbar.addWidget(self.sam_close_button)
 
         # add a point of replace with SAM
@@ -5639,7 +5640,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.set_sam_toolbar_enable(False)
         self.sam_buttons_colors("x")
 
-    def sam_close_button_clicked(self):
+    def sam_reset_beutton_clicked(self):
         self.sam_finish_annotation_button_clicked()
         self.createMode_options()
 
