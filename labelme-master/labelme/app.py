@@ -4335,9 +4335,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self.loadFramefromVideo(frame_array, frame_idx)
         else:
             pass
-        
-        if self.sam_model_comboBox.currentIndex() != 0:
-            self.sam_reset_button_clicked()
 
     def frames_to_track_slider_changed(self):
         self.FRAMES_TO_TRACK = self.frames_to_track_slider.value()
@@ -5506,7 +5503,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.sam_buttons_colors("x")
 
     def sam_reset_button_clicked(self):
-        self.sam_finish_annotation_button_clicked()
+        self.sam_clear_annotation_button_clicked()
         self.createMode_options()
 
     def sam_replace_annotation_button_clicked(self):
@@ -5710,10 +5707,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # later for confirmed sam instances
         # self.laodLabels(self.CURRENT_SAM_SHAPES_IN_IMG,replace=false)
 
-        if self.sam_last_mode == "point":
-            self.sam_add_point_button_clicked()
-        elif self.sam_last_mode == "rectangle":
-            self.sam_select_rect_button_clicked()
+        
 
     def sam_finish_annotation_button_clicked(self):
         self.canvas.cancelManualDrawing()
@@ -5763,10 +5757,7 @@ class MainWindow(QtWidgets.QMainWindow):
             print("sam finish annotation button clicked")
             self.update_current_frame_annotation_button_clicked()
 
-        if self.sam_last_mode == "point":
-            self.sam_add_point_button_clicked()
-        elif self.sam_last_mode == "rectangle":
-            self.sam_select_rect_button_clicked()
+        
 
     def check_sam_instance_in_shapes(self, shapes):
         if len(shapes) == 0:
