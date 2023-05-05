@@ -905,7 +905,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.canvas.edgeSelected.connect(self.canvasShapeEdgeSelected)
         self.canvas.vertexSelected.connect(self.actions.removePoint.setEnabled)
-        self.canvas.reset.connect(self.sam_reset_beutton_clicked)
+        self.canvas.reset.connect(self.sam_reset_button_clicked)
 
         self.menus = utils.struct(
             file=self.menu(self.tr("&File")),
@@ -1311,7 +1311,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.actions.editMode.setEnabled(not edit)
 
     def setEditMode(self):
-        self.sam_finish_annotation_button_clicked()
+        if self.sam_model_comboBox.currentText() != "Select Model (SAM disable)":
+            self.sam_finish_annotation_button_clicked()
         self.sam_buttons_colors('x')
         self.set_sam_toolbar_enable(False)
         self.canvas.SAM_mode = ""
@@ -4473,6 +4474,9 @@ class MainWindow(QtWidgets.QMainWindow):
             self.loadFramefromVideo(frame_array, frame_idx)
         else:
             pass
+        
+        if self.sam_model_comboBox.currentIndex() != 0:
+            self.sam_reset_button_clicked()
 
     def frames_to_track_slider_changed(self):
         self.FRAMES_TO_TRACK = self.frames_to_track_slider.value()
@@ -5623,7 +5627,7 @@ class MainWindow(QtWidgets.QMainWindow):
             "QPushButton { font-size: 10pt; font-weight: bold; }")
         self.sam_close_button.setText("RESET")
         self.sam_close_button.clicked.connect(
-            self.sam_reset_beutton_clicked)
+            self.sam_reset_button_clicked)
         self.sam_toolbar.addWidget(self.sam_close_button)
 
         # add a point of replace with SAM
@@ -5640,7 +5644,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.set_sam_toolbar_enable(False)
         self.sam_buttons_colors("x")
 
-    def sam_reset_beutton_clicked(self):
+    def sam_reset_button_clicked(self):
         self.sam_finish_annotation_button_clicked()
         self.createMode_options()
 
