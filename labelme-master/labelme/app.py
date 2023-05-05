@@ -1718,8 +1718,11 @@ class MainWindow(QtWidgets.QMainWindow):
             ###########################################################
 
     def interpolateMENU(self, item=None):
+        
+        if len(self.canvas.selectedShapes) == 0:
+            return
 
-        if len(self.canvas.shapes) > 1:
+        if len(self.canvas.selectedShapes) > 1:
             mb = QtWidgets.QMessageBox
             msg = self.tr(
                 "Batch Interpolation is only available with SAM"
@@ -1735,161 +1738,83 @@ class MainWindow(QtWidgets.QMainWindow):
                 return
 
         self.update_current_frame_annotation()
-        if item and not isinstance(item, LabelListWidgetItem):
-            raise TypeError("item must be LabelListWidgetItem type")
-        if not self.canvas.editing():
-            return
-        if not item:
-            item = self.currentItem()
-        if item is None:
-            return
-        shape = item.shape()
-        if shape is None:
-            return
-        text, flags, group_id, content = self.labelDialog.popUp(
-            text=shape.label,
-            flags=shape.flags,
-            group_id=shape.group_id,
-            content=shape.content,
-            skip_flag=True
-        )
-        if text is None:
-            return
-        if not self.validateLabel(text):
-            self.errorMessage(
-                self.tr("Invalid label"),
-                self.tr("Invalid label '{}' with validation type '{}'").format(
-                    text, self._config["validate_label"]
-                ),
-            )
-            return
-        shape.label = text
-        shape.flags = flags
-        shape.group_id = group_id
-        shape.content = content
-        if shape.group_id is None:
-            item.setText(shape.label)
-        else:
-            ###########################################################
-            dialog = QtWidgets.QDialog()
-            dialog.setWindowTitle("Choose Interpolation Options")
-            dialog.setWindowModality(Qt.ApplicationModal)
-            dialog.resize(250, 100)
+        
+        id = self.canvas.selectedShapes[0].group_id
+        
+        dialog = QtWidgets.QDialog()
+        dialog.setWindowTitle("Choose Interpolation Options")
+        dialog.setWindowModality(Qt.ApplicationModal)
+        dialog.resize(250, 100)
 
-            layout = QtWidgets.QVBoxLayout()
+        layout = QtWidgets.QVBoxLayout()
 
-            label = QtWidgets.QLabel("Choose Interpolation Options")
-            layout.addWidget(label)
+        label = QtWidgets.QLabel("Choose Interpolation Options")
+        layout.addWidget(label)
 
-            only_missed = QtWidgets.QRadioButton(
-                "interpolate only missed frames between detected frames")
-            only_edited = QtWidgets.QRadioButton(
-                "interpolate all frames between your KEY frames")
-            with_sam = QtWidgets.QRadioButton(
-                "interpolate only missed frames with SAM (more persision, more time)")
+        only_missed = QtWidgets.QRadioButton(
+            "interpolate only missed frames between detected frames")
+        only_edited = QtWidgets.QRadioButton(
+            "interpolate all frames between your KEY frames")
+        with_sam = QtWidgets.QRadioButton(
+            "interpolate only missed frames with SAM (more persision, more time)")
 
-            if self.config['interpolationDefault'] == 'interpolate only missed frames between detected frames':
-                only_missed.toggle()
-            if self.config['interpolationDefault'] == 'interpolate all frames between your KEY frames':
-                only_edited.toggle()
-            if self.config['interpolationDefault'] == 'interpolate only missed frames with SAM (more persision, more time)':
-                with_sam.toggle()
+        if self.config['interpolationDefault'] == 'interpolate only missed frames between detected frames':
+            only_missed.toggle()
+        if self.config['interpolationDefault'] == 'interpolate all frames between your KEY frames':
+            only_edited.toggle()
+        if self.config['interpolationDefault'] == 'interpolate only missed frames with SAM (more persision, more time)':
+            with_sam.toggle()
 
-            only_missed.toggled.connect(lambda: self.config.update(
-                {'interpolationDefault': 'interpolate only missed frames between detected frames'}))
-            only_edited.toggled.connect(lambda: self.config.update(
-                {'interpolationDefault': 'interpolate all frames between your KEY frames'}))
-            with_sam.toggled.connect(lambda: self.config.update(
-                {'interpolationDefault': 'interpolate only missed frames with SAM (more persision, more time)'}))
+        only_missed.toggled.connect(lambda: self.config.update(
+            {'interpolationDefault': 'interpolate only missed frames between detected frames'}))
+        only_edited.toggled.connect(lambda: self.config.update(
+            {'interpolationDefault': 'interpolate all frames between your KEY frames'}))
+        with_sam.toggled.connect(lambda: self.config.update(
+            {'interpolationDefault': 'interpolate only missed frames with SAM (more persision, more time)'}))
 
-            layout.addWidget(only_missed)
-            layout.addWidget(only_edited)
-            layout.addWidget(with_sam)
+        layout.addWidget(only_missed)
+        layout.addWidget(only_edited)
+        layout.addWidget(with_sam)
 
-            buttonBox = QtWidgets.QDialogButtonBox(
-                QtWidgets.QDialogButtonBox.Ok)
-            buttonBox.accepted.connect(dialog.accept)
-            layout.addWidget(buttonBox)
-            dialog.setLayout(layout)
-            result = dialog.exec_()
-            if result == QtWidgets.QDialog.Accepted:
-                only_edited = True if self.config['interpolationDefault'] == 'interpolate all frames between your KEY frames' else False
-                with_sam = True if self.config[
-                    'interpolationDefault'] == 'interpolate only missed frames with SAM (more persision, more time)' else False
-                if only_edited:
-                    try:
-                        if len(self.key_frames['id_' + str(shape.group_id)]) == 1:
-                            shape.group_id = 1/0
-                        else:
-                            pass
-                    except:
-                        msg = QtWidgets.QMessageBox()
-                        msg.setIcon(QtWidgets.QMessageBox.Information)
-                        msg.setText(
-                            f"No KEY frames found for this shape ID ({shape.group_id}).\n    ie. less than 2 key frames\n The interpolation is NOT performed.")
-                        msg.setWindowTitle("No KEY frames found")
-                        msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
-                        msg.exec_()
-                        return
-                self.interpolate(id=shape.group_id,
-                                 only_edited=only_edited, with_sam=with_sam)
-            ###########################################################
-        self.setDirty()
-        if not self.uniqLabelList.findItemsByLabel(shape.label):
-            item = QtWidgets.QListWidgetItem()
-            item.setData(Qt.UserRole, shape.label)
-            self.uniqLabelList.addItem(item)
+        buttonBox = QtWidgets.QDialogButtonBox(
+            QtWidgets.QDialogButtonBox.Ok)
+        buttonBox.accepted.connect(dialog.accept)
+        layout.addWidget(buttonBox)
+        dialog.setLayout(layout)
+        result = dialog.exec_()
+        if result == QtWidgets.QDialog.Accepted:
+            only_edited = True if self.config['interpolationDefault'] == 'interpolate all frames between your KEY frames' else False
+            with_sam = True if self.config[
+                'interpolationDefault'] == 'interpolate only missed frames with SAM (more persision, more time)' else False
+            if only_edited:
+                try:
+                    if len(self.key_frames['id_' + str(id)]) == 1:
+                        id = 1/0
+                    else:
+                        pass
+                except:
+                    msg = QtWidgets.QMessageBox()
+                    msg.setIcon(QtWidgets.QMessageBox.Information)
+                    msg.setText(
+                        f"No KEY frames found for this shape ID ({id}).\n    ie. less than 2 key frames\n The interpolation is NOT performed.")
+                    msg.setWindowTitle("No KEY frames found")
+                    msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
+                    msg.exec_()
+                    return
+            self.interpolate(id=id,
+                                only_edited=only_edited, with_sam=with_sam)
 
-    def mark_as_key(self, item=None):
+    def mark_as_key(self):
         self.update_current_frame_annotation()
-        if item and not isinstance(item, LabelListWidgetItem):
-            raise TypeError("item must be LabelListWidgetItem type")
-        if not self.canvas.editing():
-            return
-        if not item:
-            item = self.currentItem()
-        if item is None:
-            return
-        shape = item.shape()
-        if shape is None:
-            return
-        text, flags, group_id, content = self.labelDialog.popUp(
-            text=shape.label,
-            flags=shape.flags,
-            group_id=shape.group_id,
-            content=shape.content,
-            skip_flag=True
-        )
-        if text is None:
-            return
-        if not self.validateLabel(text):
-            self.errorMessage(
-                self.tr("Invalid label"),
-                self.tr("Invalid label '{}' with validation type '{}'").format(
-                    text, self._config["validate_label"]
-                ),
-            )
-            return
-        shape.label = text
-        shape.flags = flags
-        shape.group_id = group_id
-        shape.content = content
-        if shape.group_id is None:
-            item.setText(shape.label)
-        else:
-            id = shape.group_id
-            try:
-                self.key_frames['id_' +
-                                str(id)].append(self.INDEX_OF_CURRENT_FRAME)
-            except:
-                self.key_frames['id_' +
-                                str(id)] = [self.INDEX_OF_CURRENT_FRAME]
-            self.main_video_frames_slider_changed()
-        self.setDirty()
-        if not self.uniqLabelList.findItemsByLabel(shape.label):
-            item = QtWidgets.QListWidgetItem()
-            item.setData(Qt.UserRole, shape.label)
-            self.uniqLabelList.addItem(item)
+        id = self.canvas.selectedShapes[0].group_id
+        try:
+            self.key_frames['id_' +
+                            str(id)].append(self.INDEX_OF_CURRENT_FRAME)
+        except:
+            self.key_frames['id_' +
+                            str(id)] = [self.INDEX_OF_CURRENT_FRAME]
+        self.main_video_frames_slider_changed()
+        
 
     def interpolate_ONLYedited(self, id):
         key_frames = self.key_frames['id_' + str(id)]
@@ -2263,149 +2188,85 @@ class MainWindow(QtWidgets.QMainWindow):
             return self.sam_bbox_segment(frameIMAGE, cur_bbox, itr - 1, forSHAPE)
 
     def scaleMENU(self, item=None):
-        self.update_current_frame_annotation()
-        if item and not isinstance(item, LabelListWidgetItem):
-            raise TypeError("item must be LabelListWidgetItem type")
-        if not self.canvas.editing():
+        originalshape = self.canvas.selectedShapes[0].copy()
+        xx = [originalshape.points[i].x() for i in range(len(originalshape.points))]
+        yy = [originalshape.points[i].y() for i in range(len(originalshape.points))]
+        center = [sum(xx) / len(xx), sum(yy) / len(yy)]
+        
+        dialog = QtWidgets.QDialog()
+        dialog.setWindowTitle("Scaling")
+        dialog.setWindowModality(Qt.ApplicationModal)
+        dialog.resize(400, 400)
+
+        layout = QtWidgets.QVBoxLayout()
+
+        label = QtWidgets.QLabel(
+            "Scaling object with ID: " + str(originalshape.group_id) + "\n ")
+        label.setStyleSheet(
+            "QLabel { font-weight: bold; }")
+        layout.addWidget(label)
+
+        xLabel = QtWidgets.QLabel()
+        xLabel.setText("Width(x) factor is: " + "100" + "%")
+        yLabel = QtWidgets.QLabel()
+        yLabel.setText("Hight(y) factor is: " + "100" + "%")
+
+        xSlider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
+        xSlider.setMinimum(50)
+        xSlider.setMaximum(150)
+        xSlider.setValue(100)
+        xSlider.setTickPosition(
+            QtWidgets.QSlider.TicksBelow)
+        xSlider.setTickInterval(1)
+        xSlider.setMaximumWidth(750)
+        xSlider.valueChanged.connect(lambda: xLabel.setText(
+            "Width(x) factor is: " + str(xSlider.value()) + "%"))
+        xSlider.valueChanged.connect(lambda: self.scale(originalshape, center, xSlider.value(), ySlider.value()))
+
+        ySlider = QtWidgets.QSlider(QtCore.Qt.Vertical)
+        ySlider.setMinimum(50)
+        ySlider.setMaximum(150)
+        ySlider.setValue(100)
+        ySlider.setTickPosition(
+            QtWidgets.QSlider.TicksBelow)
+        ySlider.setTickInterval(1)
+        ySlider.setMaximumWidth(750)
+        ySlider.valueChanged.connect(lambda: yLabel.setText(
+            "Hight(y) factor is: " + str(ySlider.value()) + "%"))
+        ySlider.valueChanged.connect(lambda: self.scale(originalshape, center, xSlider.value(), ySlider.value()))
+
+        layout.addWidget(xLabel)
+        layout.addWidget(yLabel)
+        layout.addWidget(xSlider)
+        layout.addWidget(ySlider)
+
+        buttonBox = QtWidgets.QDialogButtonBox(
+            QtWidgets.QDialogButtonBox.Ok)
+        buttonBox.accepted.connect(dialog.accept)
+        layout.addWidget(buttonBox)
+        dialog.setLayout(layout)
+        result = dialog.exec_()
+        if result == QtWidgets.QDialog.Accepted:
+            self.update_current_frame_annotation_button_clicked()
             return
-        if not item:
-            item = self.currentItem()
-        if item is None:
-            return
-        shape = item.shape()
-        if shape is None:
-            return
-        text, flags, group_id, content = self.labelDialog.popUp(
-            text=shape.label,
-            flags=shape.flags,
-            group_id=shape.group_id,
-            content=shape.content,
-            skip_flag=True
-        )
-        if text is None:
-            return
-        if not self.validateLabel(text):
-            self.errorMessage(
-                self.tr("Invalid label"),
-                self.tr("Invalid label '{}' with validation type '{}'").format(
-                    text, self._config["validate_label"]
-                ),
-            )
-            return
-        shape.label = text
-        shape.flags = flags
-        shape.group_id = group_id
-        shape.content = content
-        if shape.group_id is None:
-            item.setText(shape.label)
         else:
+            self.main_video_frames_slider_changed()
+            return
 
-            shape = self.convert_qt_shapes_to_shapes([shape])[0]
-            tracker_id = shape['group_id']
-            bbox = [shape['bbox'][0], shape['bbox'][1], shape['bbox']
-                    [2] - shape['bbox'][0], shape['bbox'][3] - shape['bbox'][1]]
-            confidence = shape['content']
-            class_name = shape['label']
-            class_id = coco_classes.index(
-                class_name) if class_name in coco_classes else -1
-            segmentXYXY = shape['points']
-            segment = [[segmentXYXY[i], segmentXYXY[i + 1]]
-                       for i in range(0, len(segmentXYXY), 2)]
-            SHAPE = {'tracker_id': tracker_id,
-                     'bbox': bbox,
-                     'confidence': confidence,
-                     'class_name': class_name,
-                     'class_id': class_id,
-                     'segment': segment}
-
-            dialog = QtWidgets.QDialog()
-            dialog.setWindowTitle("Scaling")
-            dialog.setWindowModality(Qt.ApplicationModal)
-            dialog.resize(400, 400)
-
-            layout = QtWidgets.QVBoxLayout()
-
-            label = QtWidgets.QLabel(
-                "Scaling object with ID: " + str(SHAPE['tracker_id']) + "\n ")
-            label.setStyleSheet(
-                "QLabel { font-weight: bold; }")
-            layout.addWidget(label)
-
-            xLabel = QtWidgets.QLabel()
-            xLabel.setText("Width(x) factor is: " + "100" + "%")
-            yLabel = QtWidgets.QLabel()
-            yLabel.setText("Hight(y) factor is: " + "100" + "%")
-
-            xSlider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
-            xSlider.setMinimum(50)
-            xSlider.setMaximum(150)
-            xSlider.setValue(100)
-            xSlider.setTickPosition(
-                QtWidgets.QSlider.TicksBelow)
-            xSlider.setTickInterval(1)
-            xSlider.setMaximumWidth(750)
-            xSlider.valueChanged.connect(lambda: xLabel.setText(
-                "Width(x) factor is: " + str(xSlider.value()) + "%"))
-            xSlider.valueChanged.connect(lambda: self.scale(
-                SHAPE, xSlider.value(), ySlider.value()))
-
-            ySlider = QtWidgets.QSlider(QtCore.Qt.Vertical)
-            ySlider.setMinimum(50)
-            ySlider.setMaximum(150)
-            ySlider.setValue(100)
-            ySlider.setTickPosition(
-                QtWidgets.QSlider.TicksBelow)
-            ySlider.setTickInterval(1)
-            ySlider.setMaximumWidth(750)
-            ySlider.valueChanged.connect(lambda: yLabel.setText(
-                "Hight(y) factor is: " + str(ySlider.value()) + "%"))
-            ySlider.valueChanged.connect(lambda: self.scale(
-                SHAPE, xSlider.value(), ySlider.value()))
-
-            layout.addWidget(xLabel)
-            layout.addWidget(yLabel)
-            layout.addWidget(xSlider)
-            layout.addWidget(ySlider)
-
-            buttonBox = QtWidgets.QDialogButtonBox(
-                QtWidgets.QDialogButtonBox.Ok)
-            buttonBox.accepted.connect(dialog.accept)
-            layout.addWidget(buttonBox)
-            dialog.setLayout(layout)
-            result = dialog.exec_()
-            if result == QtWidgets.QDialog.Accepted:
-                return
-            else:
-                self.scale(SHAPE, 100, 100)
-                return
-
-    def scale(self, oldshape, ratioX, ratioY):
+    def scale(self, originalshape, center, ratioX, ratioY):
         ratioX = ratioX / 100
         ratioY = ratioY / 100
-        shape = oldshape.copy()
-        segment = shape['segment']
-        tr0, tr1, w, h = shape['bbox']
-        segment = [[(p[0] - tr0) * ratioX + tr0, (p[1] - tr1)
-                    * ratioY + tr1] for p in segment]
-        w = w * ratioX
-        h = h * ratioY
-        shape['segment'] = segment
-        shape['bbox'] = [tr0, tr1, w, h]
-
-        listobj = self.load_objects_from_json()
-        for i in range(len(listobj)):
-            listobjframe = listobj[i]['frame_idx']
-            if listobjframe != self.INDEX_OF_CURRENT_FRAME:
-                continue
-            for objectt in listobj[i]['frame_data']:
-                if objectt['tracker_id'] == shape['tracker_id']:
-                    objectt['segment'] = shape['segment']
-                    objectt['bbox'] = self.get_bbox_xywh(shape['segment'])
-                    break
-
-        self.load_objects_to_json(listobj)
-        self.calc_trajectory_when_open_video()
-        self.main_video_frames_slider_changed()
+        
+        shape = self.canvas.selectedShapes[0]
+        self.canvas.shapes.remove(shape)
+        self.canvas.selectedShapes.remove(shape)
+        self.remLabels([shape])
+        for i in range(len(shape.points)):
+            shape.points[i].setX((originalshape.points[i].x() - center[0]) * ratioX + center[0])
+            shape.points[i].setY((originalshape.points[i].y() - center[1]) * ratioY + center[1])
+        self.canvas.shapes.append(shape)
+        self.canvas.selectedShapes.append(shape)
+        self.addLabel(shape)
 
     def copyShapesSelected(self):
         if len(self.canvas.selectedShapes) == 0:
