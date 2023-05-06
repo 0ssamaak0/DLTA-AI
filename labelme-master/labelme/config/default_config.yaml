@@ -81,8 +81,8 @@ shortcuts:
   copy: Ctrl+C
   paste: Ctrl+V
 
-  open_next: [D, Ctrl+Shift+D]
-  open_prev: [A, Ctrl+Shift+A]
+  open_next: null
+  open_prev: null
 
   zoom_in: [Ctrl++, Ctrl+=]
   zoom_out: Ctrl+-
@@ -110,5 +110,5 @@ shortcuts:
 
   SAM_finish_annotation: Return
   SAM_add_point: A
-  SAM_remove_point: G
+  SAM_remove_point: R
   SAM_select_rect: B
