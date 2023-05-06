@@ -1816,7 +1816,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.main_video_frames_slider_changed()
         
     def interpolate(self, id, only_edited=False, with_sam=False):
-
+    
         self.waitWindow(
             visible=True, text=f'Wait a second.\nID {id} is being interpolated...')
 
@@ -1848,6 +1848,8 @@ class MainWindow(QtWidgets.QMainWindow):
             return
         if (first_frame_idx >= last_frame_idx):
             return
+
+        listObj = self.fill_empty_listObj_frames(listObj, first_frame_idx, last_frame_idx)
 
         records = [None for i in range(first_frame_idx, last_frame_idx + 1)]
         RECORDS = []
@@ -1926,14 +1928,35 @@ class MainWindow(QtWidgets.QMainWindow):
                 listObj[i]['frame_data'].append(appended)
             appended_frames.append(listobjframe)
 
-        for frame in range(first_frame_idx, last_frame_idx + 1):
-            if (frame not in appended_frames):
-                listObj.append({'frame_idx': frame, 'frame_data': [
-                               RECORDS[max(frame - first_frame_idx - 1, 0)]]})
+        # for frame in range(first_frame_idx, last_frame_idx + 1):
+        #     if (frame not in appended_frames):
+        #         listObj.append({'frame_idx': frame, 'frame_data': [
+        #                        RECORDS[max(frame - first_frame_idx - 1, 0)]]})
         self.load_objects_to_json(listObj)
         self.calc_trajectory_when_open_video()
         self.main_video_frames_slider_changed()
         self.waitWindow()
+
+
+
+    def fill_empty_listObj_frames(self, listObj , start_idx , end_idx ) : 
+        # checks the list object and fills empty frames with empty data
+
+        frames = list(range(start_idx, end_idx + 1))
+        print (f'frames : {frames}')
+        # ex : start_idx = 1 , end_idx = 5
+        for i in listObj : 
+            if i['frame_idx'] in frames:
+                frames.pop(frames.index(i['frame_idx']))
+        
+        print (f'frames : {frames}')
+        for frame in frames : 
+            listObj.append({'frame_idx': frame, 'frame_data': []})
+            print(f'frame {frame} is added to listObj')
+            
+        listObj = sorted(listObj, key=lambda k: k['frame_idx'])
+
+        return listObj
 
     def interpolate_with_sam(self):
         
@@ -1975,6 +1998,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if len(idsLIST) == 0:
             self.waitWindow()
             return
+        listObj = self.fill_empty_listObj_frames(listObj, min(first_frame_idxLIST), max(last_frame_idxLIST))
 
         recordsLIST = [[None for ii in range(
             first_frame_idxLIST[i], last_frame_idxLIST[i] + 1)] for i in range(len(idsLIST))]
@@ -5670,6 +5694,7 @@ class MainWindow(QtWidgets.QMainWindow):
             print(shape["label"])
         self.CURRENT_SHAPES_IN_IMG = self.check_sam_instance_in_shapes(
             self.CURRENT_SHAPES_IN_IMG)
+        
         if self.current_sam_shape["group_id"] != -1:
             self.CURRENT_SHAPES_IN_IMG.append(self.current_sam_shape)
         self.loadLabels(self.CURRENT_SHAPES_IN_IMG)
