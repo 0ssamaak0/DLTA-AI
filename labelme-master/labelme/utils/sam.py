@@ -48,9 +48,9 @@ class Sam_Predictor():
                                                                mask_input=self.mask_logit[None, :, :],
                                                                multimask_output=multimask_output)
         else:
-            print(f'----------------------- boxes')
+            # print(f'----------------------- boxes')
             if len(box) == 1:
-                print(f'----------------------- only one box')
+                # print(f'----------------------- only one box')
                 input_box = np.array(box[0])
                 masks, scores, logits = self.predictor.predict(point_coords=point_coords, 
                                                             point_labels=point_labels,
@@ -58,7 +58,7 @@ class Sam_Predictor():
                                                             multimask_output=multimask_output)
                 
             else:
-                print(f'----------------------- multiple boxes')
+                # print(f'----------------------- multiple boxes')
                 input_box = np.array(box[0])
                 box_tensor = torch.tensor(box, device=self.predictor.device)
                 box_transformed = self.predictor.transform.apply_boxes_torch(box_tensor, image.shape[:2])
@@ -134,11 +134,11 @@ class Sam_Predictor():
         
     def check_image(self , new_image):
         if not np.array_equal(self.image, new_image):
-            print("image changed_1")
+            # print("image changed_1")
             self.mask_logit = None
             self.image = new_image
             self.predictor.set_image(new_image)
-            print("image changed_2")
+            # print("image changed_2")
             return False
         return True
 
