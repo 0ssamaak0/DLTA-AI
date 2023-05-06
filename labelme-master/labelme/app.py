@@ -1758,13 +1758,13 @@ class MainWindow(QtWidgets.QMainWindow):
         only_edited = QtWidgets.QRadioButton(
             "interpolate all frames between your KEY frames")
         with_sam = QtWidgets.QRadioButton(
-            "interpolate only missed frames with SAM (more precision, more time)")
+            "interpolate ALL frames with SAM (more precision, more time)")
 
         if self.config['interpolationDefault'] == 'interpolate only missed frames between detected frames':
             only_missed.toggle()
         if self.config['interpolationDefault'] == 'interpolate all frames between your KEY frames':
             only_edited.toggle()
-        if self.config['interpolationDefault'] == 'interpolate only missed frames with SAM (more precision, more time)':
+        if self.config['interpolationDefault'] == 'interpolate ALL frames with SAM (more precision, more time)':
             with_sam.toggle()
 
         only_missed.toggled.connect(lambda: self.config.update(
@@ -1772,7 +1772,7 @@ class MainWindow(QtWidgets.QMainWindow):
         only_edited.toggled.connect(lambda: self.config.update(
             {'interpolationDefault': 'interpolate all frames between your KEY frames'}))
         with_sam.toggled.connect(lambda: self.config.update(
-            {'interpolationDefault': 'interpolate only missed frames with SAM (more precision, more time)'}))
+            {'interpolationDefault': 'interpolate ALL frames with SAM (more precision, more time)'}))
 
         layout.addWidget(only_missed)
         layout.addWidget(only_edited)
@@ -1787,7 +1787,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if result == QtWidgets.QDialog.Accepted:
             only_edited = True if self.config['interpolationDefault'] == 'interpolate all frames between your KEY frames' else False
             with_sam = True if self.config[
-                'interpolationDefault'] == 'interpolate only missed frames with SAM (more precision, more time)' else False
+                'interpolationDefault'] == 'interpolate ALL frames with SAM (more precision, more time)' else False
             if only_edited:
                 try:
                     if len(self.key_frames['id_' + str(id)]) == 1:
@@ -2063,8 +2063,8 @@ class MainWindow(QtWidgets.QMainWindow):
                     records[i] = current.copy()
                     RECORDS.append(current)
 
-                cur_bbox, cur_segment = self.sam_bbox_segment(
-                    frameIMAGE, cur_bbox, 1.2)
+                cur_bbox, cur_segment = self.sam_enhanced_bbox_segment(
+                    frameIMAGE, cur_bbox, 1.2, max_itr=5, forSHAPE=False)
 
                 current['bbox'] = cur_bbox.copy()
                 current['segment'] = cur_segment.copy()
@@ -2110,7 +2110,7 @@ class MainWindow(QtWidgets.QMainWindow):
         success, img = self.CAP.read()
         return img
 
-    def sam_bbox_segment(self, frameIMAGE, cur_bbox, thresh, forSHAPE=False):
+    def sam_enhanced_bbox_segment(self, frameIMAGE, cur_bbox, thresh, max_itr = 5, forSHAPE=False):
         oldAREA = abs(cur_bbox[2] - cur_bbox[0]) * \
             abs(cur_bbox[3] - cur_bbox[1])
         [x1, y1, x2, y2] = [cur_bbox[0], cur_bbox[1],
@@ -2136,13 +2136,13 @@ class MainWindow(QtWidgets.QMainWindow):
         bigger, smaller = max(oldAREA, newAREA), min(oldAREA, newAREA)
         print(
             f'oldAREA: {oldAREA}, newAREA: {newAREA}, bigger/smaller: {bigger/smaller}')
-        if bigger/smaller < thresh:
+        if bigger/smaller < thresh or max_itr == 1:
             if forSHAPE:
                 return cur_bbox, SAMshape['points']
             else:
                 return cur_bbox, cur_segment
         else:
-            return self.sam_bbox_segment(frameIMAGE, cur_bbox, thresh, forSHAPE)
+            return self.sam_enhanced_bbox_segment(frameIMAGE, cur_bbox, thresh, max_itr-1, forSHAPE)
 
     def scaleMENU(self, item=None):
         originalshape = self.canvas.selectedShapes[0].copy()
@@ -5501,8 +5501,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 return
             shapeX = self.convert_qt_shapes_to_shapes([shape])[0]
             x1, y1, x2, y2 = shapeX["bbox"]
-            cur_bbox, cur_segment = self.sam_bbox_segment(
-                self.CURRENT_FRAME_IMAGE, [x1, y1, x2, y2], 1.2, forSHAPE=True)
+            cur_bbox, cur_segment = self.sam_enhanced_bbox_segment(
+                self.CURRENT_FRAME_IMAGE, [x1, y1, x2, y2], 1.2, max_itr = 5, forSHAPE=True)
             shapeX["points"] = cur_segment
             shapeX = convert_shapes_to_qt_shapes([shapeX])[0]
             self.canvas.shapes.append(shapeX)
