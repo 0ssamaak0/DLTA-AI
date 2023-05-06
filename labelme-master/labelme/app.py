@@ -1312,7 +1312,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def setEditMode(self):
         if self.sam_model_comboBox.currentText() != "Select Model (SAM disable)":
-            self.sam_finish_annotation_button_clicked()
+            self.sam_clear_annotation_button_clicked()
         self.sam_buttons_colors('x')
         self.set_sam_toolbar_enable(False)
         self.canvas.SAM_mode = ""
@@ -2795,7 +2795,6 @@ class MainWindow(QtWidgets.QMainWindow):
             if self.canvas.SAM_mode == "finished":
                 self.current_sam_shape["label"] = text
                 self.current_sam_shape["group_id"] = group_id
-                self.canvas.SAM_mode = ""
             else:
                 self.labelList.clearSelection()
                 # shape below is of type qt shape
@@ -4303,6 +4302,9 @@ class MainWindow(QtWidgets.QMainWindow):
         # print(1)
 
     def main_video_frames_slider_changed(self):
+        
+        if self.sam_model_comboBox.currentIndex() != 0 and self.canvas.SAM_mode != "finished" and not self.TrackingMode:
+            self.sam_clear_annotation_button_clicked()
 
         try:
             x = self.CURRENT_VIDEO_PATH
@@ -4839,6 +4841,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.main_video_frames_slider.setValue(1)
 
     def update_current_frame_annotation_button_clicked(self):
+        
+        if self.sam_model_comboBox.currentIndex() != 0 and self.canvas.SAM_mode != "finished" and not self.TrackingMode:
+            self.sam_clear_annotation_button_clicked()
+        
         try:
             x = self.CURRENT_VIDEO_PATH
         except:
@@ -5533,6 +5539,10 @@ class MainWindow(QtWidgets.QMainWindow):
 
         if self.current_annotation_mode == "video":
             self.update_current_frame_annotation_button_clicked()
+        else:
+            self.sam_clear_annotation_button_clicked()
+        
+        self.sam_buttons_colors("X")
 
     def sam_models(self):
         cwd = os.getcwd()
@@ -5707,8 +5717,6 @@ class MainWindow(QtWidgets.QMainWindow):
         # later for confirmed sam instances
         # self.laodLabels(self.CURRENT_SAM_SHAPES_IN_IMG,replace=false)
 
-        
-
     def sam_finish_annotation_button_clicked(self):
         self.canvas.cancelManualDrawing()
         self.sam_buttons_colors("finish")
@@ -5751,14 +5759,17 @@ class MainWindow(QtWidgets.QMainWindow):
         self.canvas.SAM_coordinates = []
         # explicitly clear instead of being overriden by the next shape
         self.current_sam_shape = None
-        self.canvas.SAM_current = None
+        self.canvas.SAM_current = None        
+        self.canvas.SAM_mode = ""
 
         if self.current_annotation_mode == "video":
             print("sam finish annotation button clicked")
             self.update_current_frame_annotation_button_clicked()
-
+        else:
+            self.canvas.shapes = convert_shapes_to_qt_shapes(
+                self.CURRENT_SHAPES_IN_IMG)
+            self.sam_clear_annotation_button_clicked()
         
-
     def check_sam_instance_in_shapes(self, shapes):
         if len(shapes) == 0:
             return []
