@@ -1936,13 +1936,21 @@ class MainWindow(QtWidgets.QMainWindow):
         self.waitWindow()
 
     def interpolate_with_sam(self):
-
+        
         self.waitWindow(
-            visible=True, text=f'Wait a second.\nIDs is being interpolated with SAM...')
+            visible=True, text=f'Wait a second.\nIDs are being interpolated with SAM...')
 
         if self.sam_model_comboBox.currentText() == "Select Model (SAM disable)" or len(self.canvas.selectedShapes) == 0:
+            msg = QtWidgets.QMessageBox()
+            msg.setIcon(QtWidgets.QMessageBox.Information)
+            msg.setText(
+                "No shape selected or SAM is disabled.\nPlease select a shape and enable SAM.")
+            msg.setWindowTitle("No shape selected or SAM is disabled")
+            msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
+            msg.exec_()
+            
+            self.waitWindow()
             return
-
         idsLIST = [shape.group_id for shape in self.canvas.selectedShapes]
         first_frame_idxLIST = [-1 for i in range(len(idsLIST))]
         last_frame_idxLIST = [-1 for i in range(len(idsLIST))]
@@ -1965,6 +1973,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 first_frame_idxLIST.pop(i)
                 last_frame_idxLIST.pop(i)
         if len(idsLIST) == 0:
+            self.waitWindow()
             return
 
         recordsLIST = [[None for ii in range(
@@ -1984,44 +1993,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
         records_orgLIST = recordsLIST.copy()
 
-        for ididx in range(len(idsLIST)):
-            self.waitWindow(visible=True)
-            records = recordsLIST[ididx]
-            RECORDS = RECORDSLIST[ididx]
-
-            first_iter_flag = True
-            for i in range(len(records)):
-                self.waitWindow(visible=True)
-                if (records[i] != None):
-                    RECORDS.append(records[i])
-                    continue
-                if first_iter_flag:
-                    first_iter_flag = False
-                    prev_idx = i - 1
-                prev = records[i - 1]
-                current = prev
-
-                next = records[i + 1]
-                next_idx = i + 1
-                for j in range(i + 1, len(records)):
-                    self.waitWindow(visible=True)
-                    if (records[j] != None):
-                        next = records[j]
-                        next_idx = j
-                        break
-                cur_bbox = ((next_idx - i) / (next_idx - prev_idx)) * np.array(records[prev_idx]['bbox']) + (
-                    (i - prev_idx) / (next_idx - prev_idx)) * np.array(records[next_idx]['bbox'])
-                cur_bbox = [int(cur_bbox[i]) for i in range(len(cur_bbox))]
-                current['bbox'] = cur_bbox
-                records[i] = current.copy()
-                RECORDS.append(records[i])
-
-            recordsLIST[ididx] = records
-            RECORDSLIST[ididx] = RECORDS
-
-        for i in range(min(first_frame_idxLIST), max(last_frame_idxLIST) + 1):
-            self.waitWindow(visible=True)
-            frameIDX = i
+        for frameIDX in range(min(first_frame_idxLIST), max(last_frame_idxLIST) + 1):
+            self.waitWindow(visible=True, text=f'Wait a second.\nIDs are being interpolated with SAM...\nFrame {frameIDX}')
+            
             frameIMAGE = self.get_frame_by_idx(frameIDX)
             try:
                 same_image = self.sam_predictor.check_image(
@@ -2030,39 +2004,49 @@ class MainWindow(QtWidgets.QMainWindow):
                 return
 
             for ididx in range(len(idsLIST)):
+                i = frameIDX - first_frame_idxLIST[ididx]
                 self.waitWindow(visible=True)
                 if frameIDX < first_frame_idxLIST[ididx] or frameIDX > last_frame_idxLIST[ididx]:
                     continue
-
-                cur_bbox = recordsLIST[ididx][frameIDX -
-                                              first_frame_idxLIST[ididx]]['bbox']
-                cur_bbox, cur_segment = self.sam_bbox_segment(self.CURRENT_FRAME_IMAGE, 
-                                                              cur_bbox, 
-                                                              itr = 1)
-
-                recordsLIST[ididx][frameIDX -
-                                   first_frame_idxLIST[ididx]]['bbox'] = cur_bbox.copy()
-                RECORDSLIST[ididx][frameIDX -
-                                   first_frame_idxLIST[ididx]]['bbox'] = cur_bbox.copy()
-                recordsLIST[ididx][frameIDX - first_frame_idxLIST[ididx]
-                                   ]['segment'] = cur_segment.copy()
-                RECORDSLIST[ididx][frameIDX - first_frame_idxLIST[ididx]
-                                   ]['segment'] = cur_segment.copy()
+                
+                records = recordsLIST[ididx]
+                RECORDS = RECORDSLIST[ididx]
+                if (records[i] != None):
+                    current = records[i]
+                    cur_bbox = records[frameIDX - first_frame_idxLIST[ididx]]['bbox']
+                    RECORDS.append(current)
+                else:
+                    prev_idx = i - 1
+                    current = records[i - 1]
+                    next_idx = i + 1
+                    for j in range(i + 1, len(records)):
+                        self.waitWindow(visible=True)
+                        if (records[j] != None):
+                            next_idx = j
+                            break
+                    cur_bbox = ((next_idx - i) / (next_idx - prev_idx)) * np.array(records[prev_idx]['bbox']) + (
+                        (i - prev_idx) / (next_idx - prev_idx)) * np.array(records[next_idx]['bbox'])
+                    cur_bbox = [int(cur_bbox[i]) for i in range(len(cur_bbox))]
+                    current['bbox'] = cur_bbox.copy()
+                    records[i] = current.copy()
+                    RECORDS.append(current)
+                
+                cur_bbox, cur_segment = self.sam_bbox_segment(frameIMAGE, cur_bbox, 1.1)
+                
+                current['bbox'] = cur_bbox.copy()
+                current['segment'] = cur_segment.copy()
+                
+                recordsLIST[ididx][i]['bbox'] = cur_bbox.copy()
+                RECORDSLIST[ididx][i]['bbox'] = cur_bbox.copy()
+                recordsLIST[ididx][i]['segment'] = cur_segment.copy()
+                RECORDSLIST[ididx][i]['segment'] = cur_segment.copy()
 
         for i in range(len(listObj)):
-            self.waitWindow(visible=True)
+            self.waitWindow(visible=True, text=f'Wait a second.\nIDs are being interpolated with SAM...\nAlmost done')
             listobjframe = listObj[i]['frame_idx']
             if (listobjframe < min(first_frame_idxLIST) or listobjframe > max(last_frame_idxLIST)):
                 continue
-            for object_ in listObj[i]['frame_data']:
-                if (object_['tracker_id'] in idsLIST):
-                    listObj[i]['frame_data'].remove(object_)
-
-        for i in range(len(listObj)):
-            self.waitWindow(visible=True)
-            listobjframe = listObj[i]['frame_idx']
-            if (listobjframe < min(first_frame_idxLIST) or listobjframe > max(last_frame_idxLIST)):
-                continue
+            
             for object_ in listObj[i]['frame_data']:
                 if (object_['tracker_id'] in idsLIST):
                     listObj[i]['frame_data'].remove(object_)
@@ -2085,7 +2069,8 @@ class MainWindow(QtWidgets.QMainWindow):
         success, img = self.CAP.read()
         return img
     
-    def sam_bbox_segment(self, frameIMAGE, cur_bbox, itr = 1, forSHAPE = False):
+    def sam_bbox_segment(self, frameIMAGE, cur_bbox, thresh, forSHAPE = False):
+        oldAREA = abs(cur_bbox[2] - cur_bbox[0]) * abs(cur_bbox[3] - cur_bbox[1])
         [x1, y1, x2, y2] = [cur_bbox[0], cur_bbox[1],
                             cur_bbox[2], cur_bbox[3]]
         listPOINTS = [min(x1, x2), min(y1, y2), 
@@ -2104,14 +2089,16 @@ class MainWindow(QtWidgets.QMainWindow):
         cur_bbox = [min(np.array(cur_segment)[:, 0]), min(np.array(cur_segment)[:, 1]),
                     max(np.array(cur_segment)[:, 0]), max(np.array(cur_segment)[:, 1])]
         cur_bbox = [int(round(x)) for x in cur_bbox]
-        
-        if itr == 1:
+        newAREA = abs(cur_bbox[2] - cur_bbox[0]) * abs(cur_bbox[3] - cur_bbox[1])
+        bigger, smaller = max(oldAREA, newAREA), min(oldAREA, newAREA)
+        print(f'oldAREA: {oldAREA}, newAREA: {newAREA}, bigger/smaller: {bigger/smaller}')
+        if bigger/smaller < thresh :
             if forSHAPE:
                 return cur_bbox, SAMshape['points']
             else:
                 return cur_bbox, cur_segment
         else:
-            return self.sam_bbox_segment(frameIMAGE, cur_bbox, itr - 1, forSHAPE)
+            return self.sam_bbox_segment(frameIMAGE, cur_bbox, thresh, forSHAPE)
 
     def scaleMENU(self, item=None):
         originalshape = self.canvas.selectedShapes[0].copy()
@@ -5280,7 +5267,6 @@ class MainWindow(QtWidgets.QMainWindow):
         return img
 
     def waitWindow(self, visible=False, text=None):
-        print("waitWindow", visible, text)
         if visible:
             self.canvas.is_loading = True
             if text is not None:
@@ -5294,7 +5280,7 @@ class MainWindow(QtWidgets.QMainWindow):
         for widget in self.sam_toolbar.children():
             try:
                 widget.setEnabled(enable or widget.accessibleName(
-                ) == 'sam_replace_annotation_button' or widget.accessibleName() == 'sam_model_comboBox')
+                ) == 'sam_enhance_annotation_button' or widget.accessibleName() == 'sam_model_comboBox')
             except:
                 pass
 
@@ -5421,15 +5407,15 @@ class MainWindow(QtWidgets.QMainWindow):
         self.sam_toolbar.addWidget(self.sam_close_button)
 
         # add a point of replace with SAM
-        self.sam_replace_annotation_button = QtWidgets.QPushButton()
-        self.sam_replace_annotation_button.setAccessibleName(
-            "sam_replace_annotation_button")
-        self.sam_replace_annotation_button.setStyleSheet(
+        self.sam_enhance_annotation_button = QtWidgets.QPushButton()
+        self.sam_enhance_annotation_button.setAccessibleName(
+            "sam_enhance_annotation_button")
+        self.sam_enhance_annotation_button.setStyleSheet(
             "QPushButton { font-size: 10pt; font-weight: bold; }")
-        self.sam_replace_annotation_button.setText("Replace selected with SAM")
-        self.sam_replace_annotation_button.clicked.connect(
-            self.sam_replace_annotation_button_clicked)
-        self.sam_toolbar.addWidget(self.sam_replace_annotation_button)
+        self.sam_enhance_annotation_button.setText("Enhance selected with SAM")
+        self.sam_enhance_annotation_button.clicked.connect(
+            self.sam_enhance_annotation_button_clicked)
+        self.sam_toolbar.addWidget(self.sam_enhance_annotation_button)
 
         self.set_sam_toolbar_enable(False)
         self.sam_buttons_colors("x")
@@ -5438,8 +5424,16 @@ class MainWindow(QtWidgets.QMainWindow):
         self.sam_clear_annotation_button_clicked()
         self.createMode_options()
 
-    def sam_replace_annotation_button_clicked(self):
-        if not self.canvas.selectedShapes:
+    def sam_enhance_annotation_button_clicked(self):
+        if self.sam_model_comboBox.currentText() == "Select Model (SAM disable)" or len(self.canvas.selectedShapes) == 0:
+            msg = QtWidgets.QMessageBox()
+            msg.setIcon(QtWidgets.QMessageBox.Information)
+            msg.setText(
+                "No shape selected or SAM is disabled.\nPlease select a shape and enable SAM.")
+            msg.setWindowTitle("No shape selected or SAM is disabled")
+            msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
+            msg.exec_()
+            
             return
         try:
             same_image = self.sam_predictor.check_image(
@@ -5456,7 +5450,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 return
             shapeX = self.convert_qt_shapes_to_shapes([shape])[0]
             x1, y1, x2, y2 = shapeX["bbox"]
-            cur_bbox, cur_segment = self.sam_bbox_segment(self.CURRENT_FRAME_IMAGE, [x1, y1, x2, y2], itr = 1, forSHAPE = True)
+            cur_bbox, cur_segment = self.sam_bbox_segment(self.CURRENT_FRAME_IMAGE, [x1, y1, x2, y2], 1.01, forSHAPE = True)
             shapeX["points"] = cur_segment
             shapeX = convert_shapes_to_qt_shapes([shapeX])[0]
             self.canvas.shapes.append(shapeX)
@@ -5552,7 +5546,7 @@ class MainWindow(QtWidgets.QMainWindow):
             style_sheet_const + clear_style + ";}" + hover_const + clear_hover + ";}" + disabled_const)
         self.sam_finish_annotation_button.setStyleSheet(
             style_sheet_const + finish_style + ";}" + hover_const + finish_hover + ";}" + disabled_const)
-        self.sam_replace_annotation_button.setStyleSheet(
+        self.sam_enhance_annotation_button.setStyleSheet(
             style_sheet_const + replace_style + ";}" + hover_const + replace_hover + ";}" + disabled_const)
 
         setEnabled = False if self.sam_model_comboBox.currentText(
@@ -5564,7 +5558,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.sam_select_rect_button.setEnabled(setEnabled)
         self.sam_clear_annotation_button.setEnabled(setEnabled)
         self.sam_finish_annotation_button.setEnabled(setEnabled)
-        self.sam_replace_annotation_button.setEnabled(setEnabled)
+        self.sam_enhance_annotation_button.setEnabled(setEnabled)
 
     def sam_add_point_button_clicked(self):
         self.canvas.cancelManualDrawing()
