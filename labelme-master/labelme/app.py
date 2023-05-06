@@ -1815,90 +1815,6 @@ class MainWindow(QtWidgets.QMainWindow):
                             str(id)] = [self.INDEX_OF_CURRENT_FRAME]
         self.main_video_frames_slider_changed()
         
-
-    def interpolate_ONLYedited(self, id):
-        key_frames = self.key_frames['id_' + str(id)]
-        first_frame_idx = np.min(key_frames)
-        last_frame_idx = np.max(key_frames)
-
-        listObj = self.load_objects_from_json()
-        records = [None for i in range(first_frame_idx, last_frame_idx + 1)]
-        RECORDS = []
-        for i in range(len(listObj)):
-            listobjframe = listObj[i]['frame_idx']
-            if (listobjframe < first_frame_idx or listobjframe > last_frame_idx):
-                continue
-            for object_ in listObj[i]['frame_data']:
-                if (object_['tracker_id'] == id):
-                    if not (listobjframe in key_frames):
-                        listObj[i]['frame_data'].remove(object_)
-                        break
-                    records[listobjframe - first_frame_idx] = object_
-                    break
-        records_org = records.copy()
-
-        first_iter_flag = True
-        for i in range(len(records)):
-            if (records[i] != None):
-                RECORDS.append(records[i])
-                continue
-            if first_iter_flag:
-                first_iter_flag = False
-                prev_idx = i - 1
-            prev = records[i - 1]
-            current = prev
-
-            next = records[i + 1]
-            next_idx = i + 1
-            for j in range(i + 1, len(records)):
-                if (records[j] != None):
-                    next = records[j]
-                    next_idx = j
-                    break
-            cur_bbox = ((next_idx - i) / (next_idx - prev_idx)) * np.array(records[prev_idx]['bbox']) + (
-                (i - prev_idx) / (next_idx - prev_idx)) * np.array(records[next_idx]['bbox'])
-            cur_bbox = [int(cur_bbox[i]) for i in range(len(cur_bbox))]
-
-            prev_segment = prev['segment']
-            next_segment = next['segment']
-            if len(prev_segment) != len(next_segment):
-                biglen = max(len(prev_segment), len(next_segment))
-                prev_segment = self.handlePoints(prev_segment, biglen)
-                next_segment = self.handlePoints(next_segment, biglen)
-            (prev_segment, next_segment) = self.allign(
-                prev_segment, next_segment)
-            records[prev_idx]['segment'] = prev['segment'] = prev_segment
-            records[next_idx]['segment'] = next['segment'] = next_segment
-
-            cur_segment = ((next_idx - i) / (next_idx - prev_idx)) * np.array(records[prev_idx]['segment']) + (
-                (i - prev_idx) / (next_idx - prev_idx)) * np.array(records[next_idx]['segment'])
-            cur_segment = [[int(sublist[0]), int(sublist[1])]
-                           for sublist in cur_segment]
-            current['bbox'] = cur_bbox
-            current['segment'] = cur_segment
-
-            records[i] = current.copy()
-            RECORDS.append(records[i])
-
-        appended_frames = []
-        for i in range(len(listObj)):
-            listobjframe = listObj[i]['frame_idx']
-            if (listobjframe < first_frame_idx or listobjframe > last_frame_idx):
-                continue
-            appended = records_org[listobjframe - first_frame_idx]
-            if appended == None:
-                appended = RECORDS[max(listobjframe - first_frame_idx - 1, 0)]
-                listObj[i]['frame_data'].append(appended)
-            appended_frames.append(listobjframe)
-
-        for frame in range(first_frame_idx, last_frame_idx + 1):
-            if (frame not in appended_frames):
-                listObj.append({'frame_idx': frame, 'frame_data': [
-                               RECORDS[max(frame - first_frame_idx - 1, 0)]]})
-        self.load_objects_to_json(listObj)
-        self.calc_trajectory_when_open_video()
-        self.main_video_frames_slider_changed()
-
     def interpolate(self, id, only_edited=False, with_sam=False):
 
         self.waitWindow(
@@ -1908,24 +1824,26 @@ class MainWindow(QtWidgets.QMainWindow):
             self.interpolate_with_sam()
             self.waitWindow()
             return
-
-        if only_edited:
-            self.interpolate_ONLYedited(id)
-            self.waitWindow()
-            return
-
-        first_frame_idx = -1
-        last_frame_idx = -1
         listObj = self.load_objects_from_json()
-        for i in range(len(listObj)):
-            listobjframe = listObj[i]['frame_idx']
-            frameobjects = listObj[i]['frame_data']
-            for object_ in frameobjects:
-                if (object_['tracker_id'] == id):
-                    first_frame_idx = min(
-                        first_frame_idx, listobjframe) if first_frame_idx != -1 else listobjframe
-                    last_frame_idx = max(
-                        last_frame_idx, listobjframe) if last_frame_idx != -1 else listobjframe
+        if only_edited:
+            try:
+                key_frames = self.key_frames['id_' + str(id)]
+            except:
+                return
+            first_frame_idx = np.min(key_frames)
+            last_frame_idx = np.max(key_frames)
+        else:
+            first_frame_idx = -1
+            last_frame_idx = -1
+            for i in range(len(listObj)):
+                listobjframe = listObj[i]['frame_idx']
+                frameobjects = listObj[i]['frame_data']
+                for object_ in frameobjects:
+                    if (object_['tracker_id'] == id):
+                        first_frame_idx = min(
+                            first_frame_idx, listobjframe) if first_frame_idx != -1 else listobjframe
+                        last_frame_idx = max(
+                            last_frame_idx, listobjframe) if last_frame_idx != -1 else listobjframe
         if (first_frame_idx == -1 or last_frame_idx == -1):
             return
         if (first_frame_idx >= last_frame_idx):
@@ -1937,12 +1855,16 @@ class MainWindow(QtWidgets.QMainWindow):
             listobjframe = listObj[i]['frame_idx']
             if (listobjframe < first_frame_idx or listobjframe > last_frame_idx):
                 continue
+            if (only_edited and not (listobjframe in key_frames)):
+                continue
             frameobjects = listObj[i]['frame_data']
             for object_ in frameobjects:
                 if (object_['tracker_id'] == id):
                     records[listobjframe - first_frame_idx] = object_
                     break
         records_org = records.copy()
+        
+        xx = [records[i] != None for i in range(len(records))]
 
         first_iter_flag = True
         for i in range(len(records)):
@@ -1994,6 +1916,10 @@ class MainWindow(QtWidgets.QMainWindow):
             listobjframe = listObj[i]['frame_idx']
             if (listobjframe < first_frame_idx or listobjframe > last_frame_idx):
                 continue
+            if (only_edited and not (listobjframe in key_frames)):
+                for object_ in listObj[i]['frame_data']:
+                    if (object_['tracker_id'] == id):
+                        listObj[i]['frame_data'].remove(object_)
             appended = records_org[listobjframe - first_frame_idx]
             if appended == None:
                 appended = RECORDS[max(listobjframe - first_frame_idx - 1, 0)]
