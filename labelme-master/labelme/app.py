@@ -3116,6 +3116,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if selected_model_name != -1:
             self.intelligenceHelper.current_model_name, self.intelligenceHelper.current_mm_model = self.intelligenceHelper.make_mm_model_more(
                 selected_model_name, config, checkpoint)
+        self.updateSamControls()
 
     def openPrevImg(self, _value=False):
         keep_prev = self._config["keep_prev"]
@@ -5470,6 +5471,14 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.set_sam_toolbar_enable(False)
         self.sam_buttons_colors("x")
+
+    def updateSamControls(self):
+        # remove all items from the combobox
+        self.sam_model_comboBox.clear()
+        # call the sam_models function to get all the models
+        self.sam_model_comboBox.addItem("Select Model (SAM disable)")
+        self.sam_model_comboBox.addItems(self.sam_models())
+        print("updated sam models")
 
     def sam_reset_button_clicked(self):
         self.sam_clear_annotation_button_clicked()
