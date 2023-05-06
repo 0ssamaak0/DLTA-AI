@@ -5803,7 +5803,16 @@ class MainWindow(QtWidgets.QMainWindow):
         if self.sam_predictor is None or self.sam_model_comboBox.currentText() == "Select Model (SAM disable)":
             print("please select a model")
             return
+        
+        
+        try:
+            same_image = self.sam_predictor.check_image(
+                self.CURRENT_FRAME_IMAGE)
+        except:
+            self.sam_buttons_colors("x")
+            return
 
+        
         # prepre the input format for SAM
 
         input_points, input_labels = self.SAM_points_and_labels_from_coordinates(
