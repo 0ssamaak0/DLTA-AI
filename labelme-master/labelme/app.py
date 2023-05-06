@@ -7,6 +7,8 @@ import os.path as osp
 import re
 import traceback
 import webbrowser
+import copy
+
 # import asyncio
 # import PyQt5
 # from qtpy.QtCore import Signal, Slot
@@ -1756,13 +1758,13 @@ class MainWindow(QtWidgets.QMainWindow):
         only_edited = QtWidgets.QRadioButton(
             "interpolate all frames between your KEY frames")
         with_sam = QtWidgets.QRadioButton(
-            "interpolate only missed frames with SAM (more persision, more time)")
+            "interpolate only missed frames with SAM (more precision, more time)")
 
         if self.config['interpolationDefault'] == 'interpolate only missed frames between detected frames':
             only_missed.toggle()
         if self.config['interpolationDefault'] == 'interpolate all frames between your KEY frames':
             only_edited.toggle()
-        if self.config['interpolationDefault'] == 'interpolate only missed frames with SAM (more persision, more time)':
+        if self.config['interpolationDefault'] == 'interpolate only missed frames with SAM (more precision, more time)':
             with_sam.toggle()
 
         only_missed.toggled.connect(lambda: self.config.update(
@@ -1770,7 +1772,7 @@ class MainWindow(QtWidgets.QMainWindow):
         only_edited.toggled.connect(lambda: self.config.update(
             {'interpolationDefault': 'interpolate all frames between your KEY frames'}))
         with_sam.toggled.connect(lambda: self.config.update(
-            {'interpolationDefault': 'interpolate only missed frames with SAM (more persision, more time)'}))
+            {'interpolationDefault': 'interpolate only missed frames with SAM (more precision, more time)'}))
 
         layout.addWidget(only_missed)
         layout.addWidget(only_edited)
@@ -1785,7 +1787,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if result == QtWidgets.QDialog.Accepted:
             only_edited = True if self.config['interpolationDefault'] == 'interpolate all frames between your KEY frames' else False
             with_sam = True if self.config[
-                'interpolationDefault'] == 'interpolate only missed frames with SAM (more persision, more time)' else False
+                'interpolationDefault'] == 'interpolate only missed frames with SAM (more precision, more time)' else False
             if only_edited:
                 try:
                     if len(self.key_frames['id_' + str(id)]) == 1:
@@ -1943,16 +1945,12 @@ class MainWindow(QtWidgets.QMainWindow):
         # checks the list object and fills empty frames with empty data
 
         frames = list(range(start_idx, end_idx + 1))
-        print (f'frames : {frames}')
-        # ex : start_idx = 1 , end_idx = 5
         for i in listObj : 
             if i['frame_idx'] in frames:
                 frames.pop(frames.index(i['frame_idx']))
         
-        print (f'frames : {frames}')
         for frame in frames : 
             listObj.append({'frame_idx': frame, 'frame_data': []})
-            print(f'frame {frame} is added to listObj')
             
         listObj = sorted(listObj, key=lambda k: k['frame_idx'])
 
@@ -1978,10 +1976,11 @@ class MainWindow(QtWidgets.QMainWindow):
         first_frame_idxLIST = [-1 for i in range(len(idsLIST))]
         last_frame_idxLIST = [-1 for i in range(len(idsLIST))]
         listObj = self.load_objects_from_json()
+        
         for i in range(len(listObj)):
             self.waitWindow(visible=True)
             listobjframe = listObj[i]['frame_idx']
-            frameobjects = listObj[i]['frame_data']
+            frameobjects = listObj[i]['frame_data'].copy()
             for object_ in frameobjects:
                 if (object_['tracker_id'] in idsLIST):
                     index = idsLIST.index(object_['tracker_id'])
@@ -1998,8 +1997,17 @@ class MainWindow(QtWidgets.QMainWindow):
         if len(idsLIST) == 0:
             self.waitWindow()
             return
+        
         listObj = self.fill_empty_listObj_frames(listObj, min(first_frame_idxLIST), max(last_frame_idxLIST))
+        
+        
+        for f in listObj:
+            if f['frame_idx'] == min(first_frame_idxLIST):
+                print(f'first interpolation frame : {f["frame_idx"]}')
+                first_frame_data = copy.deepcopy(f['frame_data'])
+                break
 
+        
         recordsLIST = [[None for ii in range(
             first_frame_idxLIST[i], last_frame_idxLIST[i] + 1)] for i in range(len(idsLIST))]
         RECORDSLIST = [[] for i in range(len(idsLIST))]
@@ -2008,7 +2016,7 @@ class MainWindow(QtWidgets.QMainWindow):
             listobjframe = listObj[i]['frame_idx']
             if (listobjframe < min(first_frame_idxLIST) or listobjframe > max(last_frame_idxLIST)):
                 continue
-            frameobjects = listObj[i]['frame_data']
+            frameobjects = listObj[i]['frame_data'].copy()
             for object_ in frameobjects:
                 if (object_['tracker_id'] in idsLIST):
                     index = idsLIST.index(object_['tracker_id'])
@@ -2055,7 +2063,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     records[i] = current.copy()
                     RECORDS.append(current)
                 
-                cur_bbox, cur_segment = self.sam_bbox_segment(frameIMAGE, cur_bbox, 1.1)
+                cur_bbox, cur_segment = self.sam_bbox_segment(frameIMAGE, cur_bbox, 1.2)
                 
                 current['bbox'] = cur_bbox.copy()
                 current['segment'] = cur_segment.copy()
@@ -2084,6 +2092,15 @@ class MainWindow(QtWidgets.QMainWindow):
                 listObj[i]['frame_data'].append(RECORDSLIST[ididx][idx])
 
         self.waitWindow()
+        
+        
+        for f in listObj:
+            if f['frame_idx'] == min(first_frame_idxLIST):
+                print(f'first interpolation frame : {f["frame_idx"]}')
+                f['frame_data'] = first_frame_data
+                break
+        
+        
         self.load_objects_to_json(listObj)
         self.calc_trajectory_when_open_video()
         self.main_video_frames_slider_changed()
@@ -5299,6 +5316,8 @@ class MainWindow(QtWidgets.QMainWindow):
             self.canvas.is_loading = False
             self.canvas.loading_text = "Loading..."
         self.canvas.repaint()
+        QtWidgets.QApplication.processEvents()
+
 
     def set_sam_toolbar_enable(self, enable=False):
         for widget in self.sam_toolbar.children():
@@ -5474,7 +5493,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 return
             shapeX = self.convert_qt_shapes_to_shapes([shape])[0]
             x1, y1, x2, y2 = shapeX["bbox"]
-            cur_bbox, cur_segment = self.sam_bbox_segment(self.CURRENT_FRAME_IMAGE, [x1, y1, x2, y2], 1.01, forSHAPE = True)
+            cur_bbox, cur_segment = self.sam_bbox_segment(self.CURRENT_FRAME_IMAGE, [x1, y1, x2, y2], 1.2, forSHAPE = True)
             shapeX["points"] = cur_segment
             shapeX = convert_shapes_to_qt_shapes([shapeX])[0]
             self.canvas.shapes.append(shapeX)
@@ -5639,7 +5658,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def sam_clear_annotation_button_clicked(self):
         self.canvas.cancelManualDrawing()
         self.sam_buttons_colors("clear")
-        print("sam clear annotation button clicked")
+        # print("sam clear annotation button clicked")
         self.canvas.SAM_coordinates = []
         self.canvas.SAM_mode = ""
         self.canvas.SAM_rect = []
