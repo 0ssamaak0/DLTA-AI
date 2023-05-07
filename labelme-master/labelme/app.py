@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 import functools
 import json
+import orjson
+import time
 import math
 import os
 import os.path as osp
@@ -1461,57 +1463,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.canvas.SAM_current = None
         return
 
-        self.update_current_frame_annotation()
-
-        dialog = QtWidgets.QDialog()
-        dialog.setWindowTitle("Choose Creation Options")
-        dialog.setWindowModality(Qt.ApplicationModal)
-        dialog.resize(250, 100)
-
-        layout = QtWidgets.QVBoxLayout()
-
-        label = QtWidgets.QLabel("Choose Creation Options")
-        layout.addWidget(label)
-
-        new = QtWidgets.QRadioButton(
-            "Create new shape (ie. not detected before)")
-        existing = QtWidgets.QRadioButton(
-            "Copy existing shape (ie. detected before)")
-
-        shape_id = QtWidgets.QSpinBox()
-        shape_id.setMinimum(1)
-        shape_id.setMaximum(1000000)
-        shape_id.valueChanged.connect(lambda: existing.toggle())
-
-        if self.config['creationDefault'] == 'Create new shape (ie. not detected before)':
-            new.toggle()
-        if self.config['creationDefault'] == 'Copy existing shape (ie. detected before)':
-            existing.toggle()
-
-        new.toggled.connect(lambda: self.config.update(
-            {'creationDefault': 'Create new shape (ie. not detected before)'}))
-        existing.toggled.connect(lambda: self.config.update(
-            {'creationDefault': 'Copy existing shape (ie. detected before)'}))
-
-        layout.addWidget(new)
-        layout.addWidget(existing)
-        layout.addWidget(shape_id)
-
-        buttonBox = QtWidgets.QDialogButtonBox(
-            QtWidgets.QDialogButtonBox.Ok)
-        buttonBox.accepted.connect(dialog.accept)
-        layout.addWidget(buttonBox)
-        dialog.setLayout(layout)
-        result = dialog.exec_()
-        if result == QtWidgets.QDialog.Accepted:
-            if self.config['creationDefault'] == 'Create new shape (ie. not detected before)':
-                self.toggleDrawMode(False, createMode="polygon")
-                self.set_sam_toolbar_enable(True)
-            elif self.config['creationDefault'] == 'Copy existing shape (ie. detected before)':
-                self.copy_existing_shape(shape_id.value())
 
     def copy_existing_shape(self, shape_id):
-        listobj = self.load_objects_from_json()
+        listobj = self.load_objects_from_json__orjson()
         prev_frame = -1
         prev_shape = None
         next_frame = self.TOTAL_VIDEO_FRAMES + 2
@@ -1577,7 +1531,7 @@ class MainWindow(QtWidgets.QMainWindow):
             listobj.append(frame)
             listobj = sorted(listobj, key=lambda k: k['frame_idx'])
 
-        self.load_objects_to_json(listobj)
+        self.load_objects_to_json__orjson(listobj)
         self.calc_trajectory_when_open_video()
         self.main_video_frames_slider_changed()
 
@@ -1674,7 +1628,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     all_frames = True if self.config['EditDefault'] == 'Edit all frames with this ID' else False
                     only_this_frame = True if self.config['EditDefault'] == 'Edit only this frame' else False
 
-            listObj = self.load_objects_from_json()
+            listObj = self.load_objects_from_json__orjson()
 
             for i in range(len(listObj)):
                 listObjframe = listObj[i]['frame_idx']
@@ -1714,7 +1668,7 @@ class MainWindow(QtWidgets.QMainWindow):
                             return
 
             listObj = sorted(listObj, key=lambda k: k['frame_idx'])
-            self.load_objects_to_json(listObj)
+            self.load_objects_to_json__orjson(listObj)
             self.calc_trajectory_when_open_video()
             self.main_video_frames_slider_changed()
             ###########################################################
@@ -1826,7 +1780,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.interpolate_with_sam()
             self.waitWindow()
             return
-        listObj = self.load_objects_from_json()
+        listObj = self.load_objects_from_json__orjson()
         if only_edited:
             try:
                 key_frames = self.key_frames['id_' + str(id)]
@@ -1935,7 +1889,7 @@ class MainWindow(QtWidgets.QMainWindow):
         #     if (frame not in appended_frames):
         #         listObj.append({'frame_idx': frame, 'frame_data': [
         #                        RECORDS[max(frame - first_frame_idx - 1, 0)]]})
-        self.load_objects_to_json(listObj)
+        self.load_objects_to_json__orjson(listObj)
         self.calc_trajectory_when_open_video()
         self.main_video_frames_slider_changed()
         self.waitWindow()
@@ -1974,7 +1928,7 @@ class MainWindow(QtWidgets.QMainWindow):
         idsLIST = [shape.group_id for shape in self.canvas.selectedShapes]
         first_frame_idxLIST = [-1 for i in range(len(idsLIST))]
         last_frame_idxLIST = [-1 for i in range(len(idsLIST))]
-        listObj = self.load_objects_from_json()
+        listObj = self.load_objects_from_json__orjson()
 
         for i in range(len(listObj)):
             self.waitWindow(visible=True)
@@ -2101,7 +2055,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 f['frame_data'] = first_frame_data
                 break
 
-        self.load_objects_to_json(listObj)
+        self.load_objects_to_json__orjson(listObj)
         self.calc_trajectory_when_open_video()
         self.main_video_frames_slider_changed()
 
@@ -2384,33 +2338,10 @@ class MainWindow(QtWidgets.QMainWindow):
             sumY += point[1]
         return [int(sumX / len(points)), int(sumY / len(points))]
 
-    def load_objects_from_json(self):
-        listObj = [{'frame_idx': i + 1, 'frame_data': []}
-                   for i in range(self.TOTAL_VIDEO_FRAMES)]
-        json_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}_tracking_results.json'
-        if not os.path.exists(json_file_name):
-            with open(json_file_name, 'w') as jf:
-                json.dump(listObj, jf,
-                          indent=4,
-                          separators=(',', ': '))
-            jf.close()
-        with open(json_file_name, 'r') as jf:
-            listObj = json.load(jf)
-        jf.close()
-        return listObj
-
-    def load_objects_to_json(self, listObj):
-        json_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}_tracking_results.json'
-        with open(json_file_name, 'w') as json_file:
-            json.dump(listObj, json_file,
-                      indent=4,
-                      separators=(',', ': '))
-        json_file.close()
-
     def is_id_repeated(self, group_id, frameIdex=-1):
         if frameIdex == -1:
             frameIdex = self.INDEX_OF_CURRENT_FRAME
-        listobj = self.load_objects_from_json()
+        listobj = self.load_objects_from_json__orjson()
         for i in range(len(listobj)):
             listobjframe = listobj[i]['frame_idx']
             if listobjframe != frameIdex:
@@ -3584,7 +3515,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def delete_ids_from_all_frames(self, deleted_ids, mode, from_frame, to_frame):
         from_frame, to_frame = np.min(
             [from_frame, to_frame]), np.max([from_frame, to_frame])
-        listObj = self.load_objects_from_json()
+        listObj = self.load_objects_from_json__orjson()
 
         if mode == 'this frame and previous frames':
             to_frame = self.INDEX_OF_CURRENT_FRAME
@@ -3608,7 +3539,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     self.CURRENT_ANNOATAION_TRAJECTORIES['id_' +
                                                          str(id)][frame_idx - 1] = (-1, -1)
 
-        self.load_objects_to_json(listObj)
+        self.load_objects_to_json__orjson(listObj)
 
     def copyShape(self):
         if self.config['toolMode'] == 'video':
@@ -3930,7 +3861,7 @@ class MainWindow(QtWidgets.QMainWindow):
         return frameHours, frameMinutes, frameSeconds, frameMilliseconds
 
     def calc_trajectory_when_open_video(self, ):
-        listobj = self.load_objects_from_json()
+        listobj = self.load_objects_from_json__orjson()
         if len(listobj) == 0:
             return
         for i in range(len(listobj)):
@@ -4107,7 +4038,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # we need to parse from it data for the current frame
 
         target_frame_idx = index
-        listObj = self.load_objects_from_json()
+        listObj = self.load_objects_from_json__orjson()
 
         listObj = np.array(listObj)
 
@@ -5851,6 +5782,61 @@ class MainWindow(QtWidgets.QMainWindow):
         print("done running sam model")
 
 
+    def load_objects_from_json__json(self):
+        start_time = time.time()
+        listObj = [{'frame_idx': i + 1, 'frame_data': []}
+                    for i in range(self.TOTAL_VIDEO_FRAMES)]
+        json_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}_tracking_results.json'
+        if not os.path.exists(json_file_name):
+            with open(json_file_name, 'w') as jf:
+                json.dump(listObj, jf,
+                            indent=4,
+                            separators=(',', ': '))
+            jf.close()
+        with open(json_file_name, 'r') as jf:
+            listObj = json.load(jf)
+        jf.close()
+        end_time = time.time()
+        print(f"Time taken to load json with (json)library is : {int((end_time - start_time)*1000)} ms" + "\n")
+        return listObj
+    
+    def load_objects_to_json__json(self, listObj):
+        start_time = time.time()
+        json_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}_tracking_results.json'
+        with open(json_file_name, 'w') as json_file:
+            json.dump(listObj, json_file,
+                      indent=4,
+                      separators=(',', ': '))
+        json_file.close()
+        end_time = time.time()
+        print(f"Time taken to write json with (json)library is : {int((end_time - start_time)*1000)} ms" + "\n")
+
+    def load_objects_from_json__orjson(self):
+        start_time = time.time()
+        listObj = [{'frame_idx': i + 1, 'frame_data': []}
+                    for i in range(self.TOTAL_VIDEO_FRAMES)]
+        json_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}_tracking_results.json'
+        if not os.path.exists(json_file_name):
+            with open(json_file_name, "wb") as jf:
+                jf.write(orjson.dumps(""))
+            jf.close()
+        with open(json_file_name, "rb") as jf:
+            listObj = orjson.loads(jf.read())
+        jf.close()
+        end_time = time.time()
+        print(f"Time taken to load json with (orjson)library is : {int((end_time - start_time)*1000)} ms" + "\n")
+        return listObj
+    
+    def load_objects_to_json__orjson(self, listObj):
+        start_time = time.time()
+        json_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}_tracking_results.json'
+        with open(json_file_name, "wb") as jf:
+            jf.write(orjson.dumps(listObj))
+        jf.close()
+        end_time = time.time()
+        print(f"Time taken to write json with (orjson)library is : {int((end_time - start_time)*1000)} ms" + "\n")
+
+    
 # important parameters across the gui
 
 # INDEX_OF_CURRENT_FRAME
