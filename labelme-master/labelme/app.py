@@ -2341,6 +2341,13 @@ class MainWindow(QtWidgets.QMainWindow):
     def is_id_repeated(self, group_id, frameIdex=-1):
         if frameIdex == -1:
             frameIdex = self.INDEX_OF_CURRENT_FRAME
+            
+        if frameIdex == self.INDEX_OF_CURRENT_FRAME:
+            for shape in self.canvas.shapes:
+                if shape.group_id == group_id:
+                    return True
+            return False
+            
         listobj = self.load_objects_from_json__orjson()
         for i in range(len(listobj)):
             listobjframe = listobj[i]['frame_idx']
@@ -4398,18 +4405,7 @@ class MainWindow(QtWidgets.QMainWindow):
         json_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}_tracking_results.json'
 
         # first we need to check there is a json file with the same name as the video
-        listObj = []
-        if os.path.exists(json_file_name):
-            print('json file exists')
-            with open(json_file_name, 'r') as jf:
-                listObj = json.load(jf)
-            jf.close()
-        else:
-            # make a json file with the same name as the video
-            print('json file does not exist , creating a new one')
-            with open(json_file_name, 'w') as jf:
-                json.dump(listObj, jf)
-            jf.close()
+        listObj = self.load_objects_from_json__orjson()
 
         existing_annotation = False
         shapes = self.canvas.shapes
@@ -4556,11 +4552,7 @@ class MainWindow(QtWidgets.QMainWindow):
             print('finished tracking for frame ', self.INDEX_OF_CURRENT_FRAME)
 
         listObj = sorted(listObj, key=lambda k: k['frame_idx'])
-        with open(json_file_name, 'w') as json_file:
-            json.dump(listObj, json_file,
-                      indent=4,
-                      separators=(',', ': '))
-        json_file.close()
+        self.load_objects_to_json__orjson(listObj)
 
         self.TrackingMode = False
         self.labelFile = None
@@ -4660,9 +4652,7 @@ class MainWindow(QtWidgets.QMainWindow):
         input_cap = cv2.VideoCapture(input_video_file_name)
         output_cap = cv2.VideoWriter(output_video_file_name, cv2.VideoWriter_fourcc(
             *'mp4v'), 30, (int(self.CURRENT_VIDEO_WIDTH), int(self.CURRENT_VIDEO_HEIGHT)))
-        with open(json_file_name, 'r') as jf:
-            listObj = json.load(jf)
-        jf.close()
+        listObj = self.load_objects_from_json__orjson()
 
         # make a progress bar for exporting video (with percentage of progress)   TO DO LATER
 
@@ -4748,14 +4738,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.main_video_frames_slider_changed()
 
     def update_current_frame_annotation(self):
-        json_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}_tracking_results.json'
-        if not os.path.exists(json_file_name):
-            with open(json_file_name, 'w') as jf:
-                json.dump([], jf)
-            jf.close()
-        with open(json_file_name, 'r') as jf:
-            listObj = json.load(jf)
-        jf.close()
+        
+        listObj = self.load_objects_from_json__orjson()
 
         json_frame = {}
         json_frame.update({'frame_idx': self.INDEX_OF_CURRENT_FRAME})
@@ -4790,11 +4774,12 @@ class MainWindow(QtWidgets.QMainWindow):
         listObj.append(json_frame)
 
         listObj = sorted(listObj, key=lambda k: k['frame_idx'])
-        with open(json_file_name, 'w') as json_file:
-            json.dump(listObj, json_file,
-                      indent=4,
-                      separators=(',', ': '))
-        json_file.close()
+        # with open(json_file_name, 'w') as json_file:
+        #     json.dump(listObj, json_file,
+        #               indent=4,
+        #               separators=(',', ': '))
+        # json_file.close()
+        self.load_objects_to_json__orjson(listObj)
         print("saved frame annotation")
 
     def trajectory_length_lineEdit_changed(self):
@@ -5812,29 +5797,23 @@ class MainWindow(QtWidgets.QMainWindow):
         print(f"Time taken to write json with (json)library is : {int((end_time - start_time)*1000)} ms" + "\n")
 
     def load_objects_from_json__orjson(self):
-        start_time = time.time()
         listObj = [{'frame_idx': i + 1, 'frame_data': []}
                     for i in range(self.TOTAL_VIDEO_FRAMES)]
         json_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}_tracking_results.json'
         if not os.path.exists(json_file_name):
             with open(json_file_name, "wb") as jf:
-                jf.write(orjson.dumps(""))
+                jf.write(orjson.dumps(listObj))
             jf.close()
         with open(json_file_name, "rb") as jf:
             listObj = orjson.loads(jf.read())
         jf.close()
-        end_time = time.time()
-        print(f"Time taken to load json with (orjson)library is : {int((end_time - start_time)*1000)} ms" + "\n")
         return listObj
     
     def load_objects_to_json__orjson(self, listObj):
-        start_time = time.time()
         json_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}_tracking_results.json'
         with open(json_file_name, "wb") as jf:
-            jf.write(orjson.dumps(listObj))
+            jf.write(orjson.dumps(listObj, option=orjson.OPT_INDENT_2))
         jf.close()
-        end_time = time.time()
-        print(f"Time taken to write json with (orjson)library is : {int((end_time - start_time)*1000)} ms" + "\n")
 
     
 # important parameters across the gui
