@@ -25,7 +25,7 @@ Labelmm is the next generation of annotation tools, harnessing the power of Comp
 ![gif_main](assets/gif_main2.gif)
 
 <!-- make p with larger font size -->
-[Installation](#installation-%EF%B8%8F)  🛠️ | [Segment Anything](#Segment Anything) 🪄|[Input Modes](#input-modes-%EF%B8%8F) 🎞️ | [Model Selection](#model-selection-) 🤖 | [Object Tracking](#object-tracking-) 🚗 | [Export](#export-) 📤 | [Other Features](#other-features-) 🌟| [Contributing](#contributing-) 🤝| [Resources](#resources-) 🌐 |  [License](#license-) 📜
+[Installation](#installation-%EF%B8%8F)  🛠️ | [Segment Anything](#segment-anything-) 🪄|[Input Modes](#input-modes-%EF%B8%8F) 🎞️ | [Model Selection](#model-selection-) 🤖 | [Object Tracking](#object-tracking-) 🚗 | [Export](#export-) 📤 | [Other Features](#other-features-) 🌟| [Contributing](#contributing-) 🤝| [Resources](#resources-) 🌐 |  [License](#license-) 📜
 
 </div>
 
