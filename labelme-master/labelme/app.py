@@ -2322,14 +2322,20 @@ class MainWindow(QtWidgets.QMainWindow):
                     return True
             return False
             
-        listobj = self.load_objects_from_json__orjson()
-        for i in range(len(listobj)):
-            listobjframe = listobj[i]['frame_idx']
-            if listobjframe != frameIdex:
-                continue
-            for object_ in listobj[i]['frame_data']:
-                if object_['tracker_id'] == group_id:
-                    return True
+        listObj = self.load_objects_from_json__orjson()
+        # for i in range(len(listobj)):
+        #     listobjframe = listobj[i]['frame_idx']
+        #     if listobjframe != frameIdex:
+        #         continue
+        #     for object_ in listobj[i]['frame_data']:
+        #         if object_['tracker_id'] == group_id:
+        #             return True
+                
+        listObj = self.load_objects_from_json__orjson()
+        for object_ in listObj[frameIdex - 1]['frame_data']:
+            if object_['tracker_id'] == group_id:
+                return True
+        
         return False
 
     def get_id_from_user(self, group_id, text):
@@ -2694,6 +2700,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.canvas.shapesBackups.pop()
 
         if self.config["toolMode"] == "video":
+            self.update_current_frame_annotation_button_clicked()
             self.update_current_frame_annotation_button_clicked()
 
     def scrollRequest(self, delta, orientation):
@@ -3797,12 +3804,12 @@ class MainWindow(QtWidgets.QMainWindow):
         return frameHours, frameMinutes, frameSeconds, frameMilliseconds
 
     def calc_trajectory_when_open_video(self, ):
-        listobj = self.load_objects_from_json__orjson()
-        if len(listobj) == 0:
+        listObj = self.load_objects_from_json__orjson()
+        if len(listObj) == 0:
             return
-        for i in range(len(listobj)):
-            listobjframe = listobj[i]['frame_idx']
-            for object in listobj[i]['frame_data']:
+        for i in range(len(listObj)):
+            listobjframe = listObj[i]['frame_idx']
+            for object in listObj[i]['frame_data']:
                 id = object['tracker_id']
                 self.rec_frame_for_id(id, listobjframe)
                 label = object['class_name']
