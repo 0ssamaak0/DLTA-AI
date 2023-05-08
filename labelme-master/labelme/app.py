@@ -1465,77 +1465,6 @@ class MainWindow(QtWidgets.QMainWindow):
         return
 
 
-    def copy_existing_shape(self, shape_id):
-        listobj = self.load_objects_from_json__orjson()
-        prev_frame = -1
-        prev_shape = None
-        next_frame = self.TOTAL_VIDEO_FRAMES + 2
-        next_shape = None
-        for i in range(len(listobj)):
-            listobjframe = listobj[i]['frame_idx']
-            if listobjframe > next_frame or listobjframe < prev_frame:
-                continue
-            for object_ in listobj[i]['frame_data']:
-                if object_['tracker_id'] == shape_id:
-                    if listobjframe > self.INDEX_OF_CURRENT_FRAME and listobjframe < next_frame:
-                        next_frame = listobjframe
-                        next_shape = object_
-                    if listobjframe < self.INDEX_OF_CURRENT_FRAME and listobjframe > prev_frame:
-                        prev_frame = listobjframe
-                        prev_shape = object_
-
-        shape = None
-
-        if prev_shape is None and next_shape is None:
-            msg = QtWidgets.QMessageBox()
-            msg.setIcon(QtWidgets.QMessageBox.Information)
-            msg.setText("No shape found with that ID")
-            msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
-            msg.exec_()
-            return
-        elif prev_shape is None:
-            shape = next_shape
-        elif next_shape is None:
-            shape = prev_shape
-        elif self.INDEX_OF_CURRENT_FRAME - prev_frame < next_frame - self.INDEX_OF_CURRENT_FRAME:
-            shape = prev_shape
-        else:
-            shape = next_shape
-
-        flag = True
-        exists = False
-        for i in range(len(listobj)):
-
-            listobjframe = listobj[i]['frame_idx']
-            if listobjframe != self.INDEX_OF_CURRENT_FRAME:
-                continue
-            exists = True
-            for object_ in listobj[i]['frame_data']:
-                if object_['tracker_id'] == shape_id:
-                    flag = False
-                    msg = QtWidgets.QMessageBox()
-                    msg.setIcon(QtWidgets.QMessageBox.Information)
-                    msg.setText(
-                        "A Shape with that ID already exists in this frame.")
-                    msg.setWindowTitle("ID already exists")
-                    msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
-                    msg.exec_()
-                    break
-
-            if flag:
-                listobj[i]['frame_data'].append(shape)
-                break
-
-        if not exists:
-            frame = {'frame_idx': self.INDEX_OF_CURRENT_FRAME,
-                     'frame_data': [shape]}
-            listobj.append(frame)
-            listobj = sorted(listobj, key=lambda k: k['frame_idx'])
-
-        self.load_objects_to_json__orjson(listobj)
-        self.calc_trajectory_when_open_video()
-        self.main_video_frames_slider_changed()
-
     def editLabel(self, item=None):
         if self.current_annotation_mode == 'video':
             self.update_current_frame_annotation()
@@ -1813,6 +1742,7 @@ class MainWindow(QtWidgets.QMainWindow):
             return
         
         listObj = self.load_objects_from_json__orjson()
+        
         if only_edited:
             try:
                 key_frames = self.key_frames['id_' + str(id)]
@@ -1821,41 +1751,33 @@ class MainWindow(QtWidgets.QMainWindow):
             first_frame_idx = np.min(key_frames)
             last_frame_idx = np.max(key_frames)
         else:
-            first_frame_idx = -1
-            last_frame_idx = -1
-            for i in range(len(listObj)):
-                listobjframe = listObj[i]['frame_idx']
-                frameobjects = listObj[i]['frame_data']
-                for object_ in frameobjects:
-                    if (object_['tracker_id'] == id):
-                        first_frame_idx = min(
-                            first_frame_idx, listobjframe) if first_frame_idx != -1 else listobjframe
-                        last_frame_idx = max(
-                            last_frame_idx, listobjframe) if last_frame_idx != -1 else listobjframe
-        if (first_frame_idx == -1 or last_frame_idx == -1):
-            return
+            first_frame_idx = min(self.id_frames_rec['id_' + str(id)])
+            last_frame_idx = max(self.id_frames_rec['id_' + str(id)])
+            
         if (first_frame_idx >= last_frame_idx):
             return
 
-        listObj = self.fill_empty_listObj_frames(
-            listObj, first_frame_idx, last_frame_idx)
+        # listObj = self.fill_empty_listObj_frames(
+        #     listObj, first_frame_idx, last_frame_idx)
 
         records = [None for i in range(first_frame_idx, last_frame_idx + 1)]
         RECORDS = []
-        for i in range(len(listObj)):
+        for i in range(first_frame_idx - 1, last_frame_idx, 1):
             listobjframe = listObj[i]['frame_idx']
-            if (listobjframe < first_frame_idx or listobjframe > last_frame_idx):
-                continue
-            if (only_edited and not (listobjframe in key_frames)):
-                continue
             frameobjects = listObj[i]['frame_data']
             for object_ in frameobjects:
                 if (object_['tracker_id'] == id):
-                    records[listobjframe - first_frame_idx] = object_
+                    if (only_edited and not (listobjframe in key_frames)):
+                        listObj[i]['frame_data'].remove(object_)
+                    else:
+                        records[listobjframe - first_frame_idx] = copy.deepcopy(object_)
+                        listObj[i]['frame_data'].remove(object_)
                     break
-        records_org = records.copy()
+                    
+                    
+        # records_org = records.copy()
 
-        xx = [records[i] != None for i in range(len(records))]
+        
 
         first_iter_flag = True
         for i in range(len(records)):
@@ -1902,20 +1824,20 @@ class MainWindow(QtWidgets.QMainWindow):
             records[i] = current.copy()
             RECORDS.append(records[i])
 
-        appended_frames = []
-        for i in range(len(listObj)):
+        # appended_frames = []
+        for i in range(first_frame_idx - 1, last_frame_idx, 1):
             listobjframe = listObj[i]['frame_idx']
-            if (listobjframe < first_frame_idx or listobjframe > last_frame_idx):
-                continue
-            if (only_edited and not (listobjframe in key_frames)):
-                for object_ in listObj[i]['frame_data']:
-                    if (object_['tracker_id'] == id):
-                        listObj[i]['frame_data'].remove(object_)
-            appended = records_org[listobjframe - first_frame_idx]
-            if appended == None:
-                appended = RECORDS[max(listobjframe - first_frame_idx - 1, 0)]
-                listObj[i]['frame_data'].append(appended)
-            appended_frames.append(listobjframe)
+            # if (only_edited and not (listobjframe in key_frames)):
+            #     for object_ in listObj[i]['frame_data']:
+            #         if (object_['tracker_id'] == id):
+            #             listObj[i]['frame_data'].remove(object_)
+            #             break
+            listObj[i]['frame_data'].append(RECORDS[max(listobjframe - first_frame_idx - 1, 0)])
+            # appended = records_org[listobjframe - first_frame_idx]
+            # if appended == None:
+            #     appended = RECORDS[max(listobjframe - first_frame_idx - 1, 0)]
+            #     listObj[i]['frame_data'].append(appended)
+            # appended_frames.append(listobjframe)
 
         # for frame in range(first_frame_idx, last_frame_idx + 1):
         #     if (frame not in appended_frames):
@@ -1926,20 +1848,20 @@ class MainWindow(QtWidgets.QMainWindow):
         self.main_video_frames_slider_changed()
         self.waitWindow()
 
-    def fill_empty_listObj_frames(self, listObj, start_idx, end_idx):
-        # checks the list object and fills empty frames with empty data
+    # def fill_empty_listObj_frames(self, listObj, start_idx, end_idx):
+    #     # checks the list object and fills empty frames with empty data
 
-        frames = list(range(start_idx, end_idx + 1))
-        for i in listObj:
-            if i['frame_idx'] in frames:
-                frames.pop(frames.index(i['frame_idx']))
+    #     frames = list(range(start_idx, end_idx + 1))
+    #     for i in listObj:
+    #         if i['frame_idx'] in frames:
+    #             frames.pop(frames.index(i['frame_idx']))
 
-        for frame in frames:
-            listObj.append({'frame_idx': frame, 'frame_data': []})
+    #     for frame in frames:
+    #         listObj.append({'frame_idx': frame, 'frame_data': []})
 
-        listObj = sorted(listObj, key=lambda k: k['frame_idx'])
+    #     listObj = sorted(listObj, key=lambda k: k['frame_idx'])
 
-        return listObj
+    #     return listObj
 
     def interpolate_with_sam(self):
 
@@ -2000,8 +1922,8 @@ class MainWindow(QtWidgets.QMainWindow):
         #     self.waitWindow()
         #     return
         listObj = self.load_objects_from_json__orjson()
-        listObj = self.fill_empty_listObj_frames(
-            listObj, min(first_frame_idxLIST), max(last_frame_idxLIST))
+        # listObj = self.fill_empty_listObj_frames(
+        #     listObj, min(first_frame_idxLIST), max(last_frame_idxLIST))
 
         # for f in listObj:
         #     if f['frame_idx'] == min(first_frame_idxLIST):
