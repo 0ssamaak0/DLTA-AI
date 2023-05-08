@@ -1519,9 +1519,9 @@ class MainWindow(QtWidgets.QMainWindow):
                     self.uniqLabelList.addItem(item)
                 return
             ###########################################################
-            all_frames = False
+            idChanged = old_group_id != new_group_id
             only_this_frame = False
-            if old_group_id != new_group_id:
+            if idChanged:
                 dialog = QtWidgets.QDialog()
                 dialog.setWindowTitle("Choose Edit Options")
                 dialog.setWindowModality(Qt.ApplicationModal)
@@ -1555,47 +1555,148 @@ class MainWindow(QtWidgets.QMainWindow):
                 dialog.setLayout(layout)
                 result = dialog.exec_()
                 if result == QtWidgets.QDialog.Accepted:
-                    all_frames = True if self.config['EditDefault'] == 'Edit all frames with this ID' else False
                     only_this_frame = True if self.config['EditDefault'] == 'Edit only this frame' else False
 
             listObj = self.load_objects_from_json__orjson()
-
-            for i in range(len(listObj)):
-                listObjframe = listObj[i]['frame_idx']
-                if only_this_frame and listObjframe != self.INDEX_OF_CURRENT_FRAME:
-                    continue
-                for object_ in listObj[i]['frame_data']:
-                    if object_['tracker_id'] == new_group_id:
-                        listObj[i]['frame_data'].remove(object_)
-                        object_['class_name'] = shape.label
-                        object_['confidence'] = str(1.0)
-                        object_['class_id'] = coco_classes.index(
-                            shape.label) if shape.label in coco_classes else -1
-                        listObj[i]['frame_data'].append(object_)
-
-                    elif object_['tracker_id'] == old_group_id:
-                        listObj[i]['frame_data'].remove(object_)
-                        object_['class_name'] = shape.label
-                        object_['confidence'] = str(1.0)
-                        object_['class_id'] = coco_classes.index(
-                            shape.label) if shape.label in coco_classes else -1
-                        object_['tracker_id'] = new_group_id
-                        listObj[i]['frame_data'].append(object_)
-
-                sum = 0
-                for object_ in listObj[i]['frame_data']:
-                    if object_['tracker_id'] == new_group_id:
-                        sum += 1
-                        if sum > 1:
+            
+            old_id_frame_record = copy.deepcopy(self.id_frames_rec['id_' + str(old_group_id)])
+            
+            if not idChanged:
+                for frame in old_id_frame_record:
+                    for object_ in listObj[frame - 1]['frame_data']:
+                        if object_['tracker_id'] == old_group_id:
+                            object_['class_name'] = shape.label
+                            object_['confidence'] = str(1.0)
+                            object_['class_id'] = coco_classes.index(
+                                shape.label) if shape.label in coco_classes else -1
+                            break
+            else:
+                if only_this_frame:
+                    
+                    try:
+                        new_id_frame_record = copy.deepcopy(self.id_frames_rec['id_' + str(new_group_id)])
+                        # check duplicates
+                        if self.is_id_repeated(new_group_id):
                             shape.group_id = old_group_id
                             msg = QtWidgets.QMessageBox()
                             msg.setIcon(QtWidgets.QMessageBox.Information)
                             msg.setText(
-                                f"Two shapes with the same ID exists in at least one frame.\nApparantly, a shape with ID ({new_group_id}) already exists with another shape with ID ({old_group_id}) like in frame ({listObjframe}) and the edit will result in two shapes with the same ID ({new_group_id}).\n\n The edit is NOT performed.")
+                                f"Two shapes with the same ID exists.\nApparantly, a shape with ID ({new_group_id}) already exists with another shape with ID ({old_group_id}) in the CURRENT FRAME and the edit will result in two shapes with the same ID in the same frame.\n\n The edit is NOT performed.")
+                            msg.setWindowTitle("Warning")
+                            msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
+                            msg.exec_()
+                            return
+                    except:
+                        new_id_frame_record = set()
+                        pass
+                        
+                    self.rec_frame_for_id(old_group_id, self.INDEX_OF_CURRENT_FRAME, type_='remove')
+                    self.rec_frame_for_id(new_group_id, self.INDEX_OF_CURRENT_FRAME, type_='add')
+                    for object_ in listObj[self.INDEX_OF_CURRENT_FRAME - 1]['frame_data']:
+                        if object_['tracker_id'] == old_group_id:
+                            object_['class_name'] = shape.label
+                            object_['confidence'] = str(1.0)
+                            object_['class_id'] = coco_classes.index(
+                                shape.label) if shape.label in coco_classes else -1
+                            object_['tracker_id'] = new_group_id
+                            break
+                    
+                    for frame in new_id_frame_record:
+                        for object_ in listObj[frame - 1]['frame_data']:
+                            if object_['tracker_id'] == new_group_id:
+                                object_['class_name'] = shape.label
+                                object_['confidence'] = str(1.0)
+                                object_['class_id'] = coco_classes.index(
+                                    shape.label) if shape.label in coco_classes else -1
+                                # object_['tracker_id'] = new_group_id
+                                break
+                            
+                            
+                else:       # edit all frames with this ID
+                    
+                    try:
+                        new_id_frame_record = copy.deepcopy(self.id_frames_rec['id_' + str(new_group_id)])
+                        # check duplicates
+                        union = old_id_frame_record.union(new_id_frame_record)
+                        Intersection = old_id_frame_record.intersection(new_id_frame_record)
+                        if len(Intersection) != 0:
+                            shape.group_id = old_group_id
+                            msg = QtWidgets.QMessageBox()
+                            msg.setIcon(QtWidgets.QMessageBox.Information)
+                            msg.setText(
+                                f'Two shapes with the same ID exists in at least one frame.\nApparantly, a shape with ID ({new_group_id}) already exists with another shape with ID ({old_group_id}).\nLike in frames ({Intersection}) and the edit will result in two shapes with the same ID ({new_group_id}).\n\n The edit is NOT performed.')
                             msg.setWindowTitle("ID already exists")
                             msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
                             msg.exec_()
                             return
+                    except:
+                        new_id_frame_record = set()
+                        union = old_id_frame_record
+                        pass
+                    
+                    self.id_frames_rec['id_' + str(new_group_id)] = union
+                    self.id_frames_rec['id_' + str(old_group_id)] = set()
+                    
+                    for frame in old_id_frame_record:
+                        for object_ in listObj[frame - 1]['frame_data']:
+                            if object_['tracker_id'] == old_group_id:
+                                object_['class_name'] = shape.label
+                                object_['confidence'] = str(1.0)
+                                object_['class_id'] = coco_classes.index(
+                                    shape.label) if shape.label in coco_classes else -1
+                                object_['tracker_id'] = new_group_id
+                                break
+                    for frame in new_id_frame_record:
+                        for object_ in listObj[frame - 1]['frame_data']:
+                            if object_['tracker_id'] == new_group_id:
+                                object_['class_name'] = shape.label
+                                object_['confidence'] = str(1.0)
+                                object_['class_id'] = coco_classes.index(
+                                    shape.label) if shape.label in coco_classes else -1
+                                # object_['tracker_id'] = new_group_id
+                                break
+                    
+                    
+
+
+
+
+            # for i in range(len(listObj)):
+            #     listObjframe = listObj[i]['frame_idx']
+            #     if only_this_frame and listObjframe != self.INDEX_OF_CURRENT_FRAME:
+            #         continue
+            #     for object_ in listObj[i]['frame_data']:
+            #         if object_['tracker_id'] == new_group_id:
+            #             listObj[i]['frame_data'].remove(object_)
+            #             object_['class_name'] = shape.label
+            #             object_['confidence'] = str(1.0)
+            #             object_['class_id'] = coco_classes.index(
+            #                 shape.label) if shape.label in coco_classes else -1
+            #             listObj[i]['frame_data'].append(object_)
+
+            #         elif object_['tracker_id'] == old_group_id:
+            #             listObj[i]['frame_data'].remove(object_)
+            #             object_['class_name'] = shape.label
+            #             object_['confidence'] = str(1.0)
+            #             object_['class_id'] = coco_classes.index(
+            #                 shape.label) if shape.label in coco_classes else -1
+            #             object_['tracker_id'] = new_group_id
+            #             listObj[i]['frame_data'].append(object_)
+
+            #     sum = 0
+            #     for object_ in listObj[i]['frame_data']:
+            #         if object_['tracker_id'] == new_group_id:
+            #             sum += 1
+            #             if sum > 1:
+            #                 shape.group_id = old_group_id
+            #                 msg = QtWidgets.QMessageBox()
+            #                 msg.setIcon(QtWidgets.QMessageBox.Information)
+            #                 msg.setText(
+            #                     f"Two shapes with the same ID exists in at least one frame.\nApparantly, a shape with ID ({new_group_id}) already exists with another shape with ID ({old_group_id}) like in frame ({listObjframe}) and the edit will result in two shapes with the same ID ({new_group_id}).\n\n The edit is NOT performed.")
+            #                 msg.setWindowTitle("ID already exists")
+            #                 msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
+            #                 msg.exec_()
+            #                 return
 
             listObj = sorted(listObj, key=lambda k: k['frame_idx'])
             self.load_objects_to_json__orjson(listObj)
@@ -1710,9 +1811,9 @@ class MainWindow(QtWidgets.QMainWindow):
                             str(id)] = [self.INDEX_OF_CURRENT_FRAME]
         self.main_video_frames_slider_changed()
 
-    def rec_frame_for_id(self, id, frame, type='add'):
+    def rec_frame_for_id(self, id, frame, type_='add'):
         
-        if type == 'add':
+        if type_ == 'add':
             try:
                 self.id_frames_rec['id_' + str(id)].add(frame)
             except:
@@ -1833,6 +1934,7 @@ class MainWindow(QtWidgets.QMainWindow):
             #             listObj[i]['frame_data'].remove(object_)
             #             break
             listObj[i]['frame_data'].append(RECORDS[max(listobjframe - first_frame_idx - 1, 0)])
+            self.rec_frame_for_id(id, listobjframe)
             # appended = records_org[listobjframe - first_frame_idx]
             # if appended == None:
             #     appended = RECORDS[max(listobjframe - first_frame_idx - 1, 0)]
@@ -2017,6 +2119,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 idx = max(idx, 0)
                 idx = min(idx, len(RECORDSLIST[ididx]) - 1)
                 listObj[i]['frame_data'].append(RECORDSLIST[ididx][idx])
+                self.rec_frame_for_id(idsLIST[ididx], listobjframe)
 
         self.waitWindow()
 
@@ -2317,7 +2420,6 @@ class MainWindow(QtWidgets.QMainWindow):
             
         if frameIdex == self.INDEX_OF_CURRENT_FRAME:
             for shape in self.canvas.shapes:
-                print(f'group_id: {group_id}, shape.group_id: {shape.group_id}')
                 if shape.group_id == group_id:
                     return True
             return False
@@ -3527,7 +3629,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     listObj[i]['frame_data'].remove(object_)
                     self.CURRENT_ANNOATAION_TRAJECTORIES['id_' +
                                                          str(id)][frame_idx - 1] = (-1, -1)
-                    self.rec_frame_for_id(id, frame_idx, type='remove')
+                    self.rec_frame_for_id(id, frame_idx, type_='remove')
 
         self.load_objects_to_json__orjson(listObj)
 
@@ -4463,6 +4565,7 @@ class MainWindow(QtWidgets.QMainWindow):
             json_frame.update({'frame_idx': self.INDEX_OF_CURRENT_FRAME})
             json_frame_object_list = []
             for shape in self.CURRENT_SHAPES_IN_IMG:
+                self.rec_frame_for_id(int(shape["group_id"]), self.INDEX_OF_CURRENT_FRAME, type_='add')
                 json_tracked_object = {}
                 json_tracked_object['tracker_id'] = int(shape["group_id"])
                 json_tracked_object['bbox'] = [int(i) for i in shape['bbox']]
