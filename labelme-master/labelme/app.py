@@ -304,6 +304,7 @@ class MainWindow(QtWidgets.QMainWindow):
                        'EditDefault': "Edit only this frame",
                        'toolMode': 'video'}
         self.key_frames = {}
+        self.id_frames_rec = {}
         self.copiedShapes = []
         # make CLASS_NAMES_DICT a dictionary of coco class names
         # self.CLASS_NAMES_DICT =
@@ -1780,6 +1781,27 @@ class MainWindow(QtWidgets.QMainWindow):
                             str(id)] = [self.INDEX_OF_CURRENT_FRAME]
         self.main_video_frames_slider_changed()
 
+    def rec_frame_for_id(self, id, frame, type='add'):
+        
+        if type == 'add':
+            try:
+                self.id_frames_rec['id_' + str(id)].add(frame)
+            except:
+                self.id_frames_rec['id_' + str(id)] = set()
+                self.id_frames_rec['id_' + str(id)].add(frame)
+        else:
+            try:
+                self.id_frames_rec['id_' + str(id)].remove(frame)
+            except:
+                pass
+        # try:
+        #     [minf, maxf] = self.min_max_frames['id_' + str(id)]
+        #     minf = min(frame, minf)
+        #     maxf = max(frame, maxf)
+        #     self.min_max_frames['id_' + str(id)] = [minf, maxf]
+        # except:
+        #     self.min_max_frames['id_' + str(id)] = [frame, frame]
+
     def interpolate(self, id, only_edited=False, with_sam=False):
 
         self.waitWindow(
@@ -1936,33 +1958,48 @@ class MainWindow(QtWidgets.QMainWindow):
             self.waitWindow()
             return
         
-        idsLIST = [shape.group_id for shape in self.canvas.selectedShapes]
-        first_frame_idxLIST = [-1 for i in range(len(idsLIST))]
-        last_frame_idxLIST = [-1 for i in range(len(idsLIST))]
-        listObj = self.load_objects_from_json__orjson()
-
-        for i in range(len(listObj)):
-            self.waitWindow(visible=True)
-            listobjframe = listObj[i]['frame_idx']
-            frameobjects = listObj[i]['frame_data'].copy()
-            for object_ in frameobjects:
-                if (object_['tracker_id'] in idsLIST):
-                    index = idsLIST.index(object_['tracker_id'])
-                    first_frame_idxLIST[index] = min(
-                        first_frame_idxLIST[index], listobjframe) if first_frame_idxLIST[index] != -1 else listobjframe
-                    last_frame_idxLIST[index] = max(
-                        last_frame_idxLIST[index], listobjframe) if last_frame_idxLIST[index] != -1 else listobjframe
-                    
-        for i in range(len(idsLIST)):
-            self.waitWindow(visible=True)
-            if (first_frame_idxLIST[i] >= last_frame_idxLIST[i]):
-                idsLIST.pop(i)
-                first_frame_idxLIST.pop(i)
-                last_frame_idxLIST.pop(i)
+        idsLIST = []
+        first_frame_idxLIST = []
+        last_frame_idxLIST = []
+        for shape in self.canvas.selectedShapes:
+            id = shape.group_id
+            [minf, maxf] = [min(self.id_frames_rec['id_' + str(id)]), max(self.id_frames_rec['id_' + str(id)])]
+            if minf == maxf:
+                continue
+            idsLIST.append(id)
+            first_frame_idxLIST.append(minf)
+            last_frame_idxLIST.append(maxf)
         if len(idsLIST) == 0:
             self.waitWindow()
             return
+        
+        # idsLIST = [shape.group_id for shape in self.canvas.selectedShapes]
+        # first_frame_idxLIST = [-1 for i in range(len(idsLIST))]
+        # last_frame_idxLIST = [-1 for i in range(len(idsLIST))]
+        # listObj = self.load_objects_from_json__orjson()
 
+        # for i in range(len(listObj)):
+        #     self.waitWindow(visible=True)
+        #     listobjframe = listObj[i]['frame_idx']
+        #     frameobjects = listObj[i]['frame_data'].copy()
+        #     for object_ in frameobjects:
+        #         if (object_['tracker_id'] in idsLIST):
+        #             index = idsLIST.index(object_['tracker_id'])
+        #             first_frame_idxLIST[index] = min(
+        #                 first_frame_idxLIST[index], listobjframe) if first_frame_idxLIST[index] != -1 else listobjframe
+        #             last_frame_idxLIST[index] = max(
+        #                 last_frame_idxLIST[index], listobjframe) if last_frame_idxLIST[index] != -1 else listobjframe
+                    
+        # for i in range(len(idsLIST)):
+        #     self.waitWindow(visible=True)
+        #     if (first_frame_idxLIST[i] >= last_frame_idxLIST[i]):
+        #         idsLIST.pop(i)
+        #         first_frame_idxLIST.pop(i)
+        #         last_frame_idxLIST.pop(i)
+        # if len(idsLIST) == 0:
+        #     self.waitWindow()
+        #     return
+        listObj = self.load_objects_from_json__orjson()
         listObj = self.fill_empty_listObj_frames(
             listObj, min(first_frame_idxLIST), max(last_frame_idxLIST))
 
@@ -2214,6 +2251,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 continue
             self.canvas.shapes.append(shape)
             self.addLabel(shape)
+            self.rec_frame_for_id(shape.group_id, self.INDEX_OF_CURRENT_FRAME)
         if flag:
             msg = QtWidgets.QMessageBox()
             msg.setIcon(QtWidgets.QMessageBox.Information)
@@ -2357,6 +2395,7 @@ class MainWindow(QtWidgets.QMainWindow):
             
         if frameIdex == self.INDEX_OF_CURRENT_FRAME:
             for shape in self.canvas.shapes:
+                print(f'group_id: {group_id}, shape.group_id: {shape.group_id}')
                 if shape.group_id == group_id:
                     return True
             return False
@@ -2716,6 +2755,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 shape.group_id = group_id
                 shape.content = content
                 self.addLabel(shape)
+                self.rec_frame_for_id(group_id, self.INDEX_OF_CURRENT_FRAME)
             self.actions.editMode.setEnabled(True)
             self.actions.undoLastPoint.setEnabled(False)
             self.actions.undo.setEnabled(True)
@@ -3558,6 +3598,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     listObj[i]['frame_data'].remove(object_)
                     self.CURRENT_ANNOATAION_TRAJECTORIES['id_' +
                                                          str(id)][frame_idx - 1] = (-1, -1)
+                    self.rec_frame_for_id(id, frame_idx, type='remove')
 
         self.load_objects_to_json__orjson(listObj)
 
@@ -3567,66 +3608,19 @@ class MainWindow(QtWidgets.QMainWindow):
             shape = self.canvas.selectedShapes[0]
             text = shape.label
             text, flags, group_id, content = self.labelDialog.popUp(text)
-            shape.group_id = group_id
+            shape.group_id = -1
             shape.content = content
             shape.label = text
             shape.flags = flags
 
-            mainTEXT = "A Shape with that ID already exists in this frame.\n\n"
-            repeated = 0
-
-            while self.is_id_repeated(group_id):
-                dialog = QtWidgets.QDialog()
-                dialog.setWindowTitle("ID already exists")
-                dialog.setWindowModality(Qt.ApplicationModal)
-                dialog.resize(450, 100)
-
-                if repeated == 0:
-                    label = QtWidgets.QLabel(
-                        mainTEXT + f'Please try a new ID: ')
-                if repeated == 1:
-                    label = QtWidgets.QLabel(
-                        mainTEXT + f'OH GOD.. AGAIN? I hpoe you are not doing this on purpose..')
-                if repeated == 2:
-                    label = QtWidgets.QLabel(
-                        mainTEXT + f'AGAIN? REALLY? LAST time for you..')
-                if repeated == 3:
-                    text = False
-                    break
-
-                properID = QtWidgets.QSpinBox()
-                properID.setRange(1, 1000)
-
-                buttonBox = QtWidgets.QDialogButtonBox(
-                    QtWidgets.QDialogButtonBox.Ok)
-                buttonBox.accepted.connect(dialog.accept)
-
-                layout = QtWidgets.QVBoxLayout()
-                layout.addWidget(label)
-                layout.addWidget(properID)
-                layout.addWidget(buttonBox)
-                dialog.setLayout(layout)
-                result = dialog.exec_()
-                if result != QtWidgets.QDialog.Accepted:
-                    text = False
-                    break
-                group_id = properID.value()
-                repeated += 1
-
-            if repeated > 1:
-                msg = QtWidgets.QMessageBox()
-                msg.setIcon(QtWidgets.QMessageBox.Information)
-                msg.setText(f"OH, Finally..!")
-                msg.setWindowTitle(" ")
-                msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
-                msg.exec_()
+            group_id, text = self.get_id_from_user(group_id, text)
 
             if text:
                 self.labelList.clearSelection()
                 shape = self.canvas.setLastLabel(text, flags)
                 shape.group_id = group_id
-                shape.content = content
                 self.addLabel(shape)
+                self.rec_frame_for_id(shape.group_id, self.INDEX_OF_CURRENT_FRAME)
                 self.actions.editMode.setEnabled(True)
                 self.actions.undoLastPoint.setEnabled(False)
                 self.actions.undo.setEnabled(True)
@@ -3888,6 +3882,7 @@ class MainWindow(QtWidgets.QMainWindow):
             listobjframe = listobj[i]['frame_idx']
             for object in listobj[i]['frame_data']:
                 id = object['tracker_id']
+                self.rec_frame_for_id(id, listobjframe)
                 label = object['class_name']
                 # color calculation
                 idx = coco_classes.index(
@@ -3991,6 +3986,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.CURRENT_ANNOATAION_TRAJECTORIES.clear()
         self.CURRENT_ANNOATAION_TRAJECTORIES['length'] = length_Value
         self.CURRENT_ANNOATAION_TRAJECTORIES['alpha'] = alpha_Value
+        self.key_frames.clear()
+        self.id_frames_rec.clear()
 
         self.config['toolMode'] = "video"
         self.right_click_menu()
@@ -4717,6 +4714,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.CURRENT_ANNOATAION_TRAJECTORIES['length'] = length_Value
         self.CURRENT_ANNOATAION_TRAJECTORIES['alpha'] = alpha_Value
         self.key_frames.clear()
+        self.id_frames_rec.clear()
 
         for shape in self.canvas.shapes:
             self.canvas.deleteShape(shape)
@@ -5663,6 +5661,9 @@ class MainWindow(QtWidgets.QMainWindow):
         try:
             if self.current_sam_shape["group_id"] != -1:
                 self.CURRENT_SHAPES_IN_IMG.append(self.current_sam_shape)
+                
+            self.rec_frame_for_id(self.current_sam_shape["group_id"], self.INDEX_OF_CURRENT_FRAME)
+            
         except:
             pass
         self.loadLabels(self.CURRENT_SHAPES_IN_IMG)
