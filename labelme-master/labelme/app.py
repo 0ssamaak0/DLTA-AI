@@ -1673,30 +1673,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.main_video_frames_slider_changed()
             ###########################################################
 
-    def interpolateMENU(self, item=None):
-
-        if len(self.canvas.selectedShapes) == 0:
-            return
-
-        if len(self.canvas.selectedShapes) > 1:
-            mb = QtWidgets.QMessageBox
-            msg = self.tr(
-                "Batch Interpolation is only available with SAM\n"
-                "It is more persise but slower than the default interpolation method.\n"
-                "Interpolate with SAM?"
-            )
-            answer = mb.warning(self, self.tr(
-                "Attention"), msg, mb.Yes | mb.No)
-            if answer != mb.Yes:
-                return
-            else:
-                self.interpolate(id=None, only_edited=False, with_sam=True)
-                return
-
-        self.update_current_frame_annotation()
-
-        id = self.canvas.selectedShapes[0].group_id
-
+    def interpolateGUI(self):
         dialog = QtWidgets.QDialog()
         dialog.setWindowTitle("Choose Interpolation Options")
         dialog.setWindowModality(Qt.ApplicationModal)
@@ -1738,27 +1715,59 @@ class MainWindow(QtWidgets.QMainWindow):
         layout.addWidget(buttonBox)
         dialog.setLayout(layout)
         result = dialog.exec_()
-        if result == QtWidgets.QDialog.Accepted:
-            only_edited = True if self.config['interpolationDefault'] == 'interpolate all frames between your KEY frames' else False
-            with_sam = True if self.config[
-                'interpolationDefault'] == 'interpolate ALL frames with SAM (more precision, more time)' else False
-            if only_edited:
+        if result != QtWidgets.QDialog.Accepted:
+            return False
+        
+        only_edited = True if self.config['interpolationDefault'] == 'interpolate all frames between your KEY frames' else False
+        if only_edited:
                 try:
+                    id = self.canvas.selectedShapes[0].group_id
                     if len(self.key_frames['id_' + str(id)]) == 1:
-                        id = 1/0
-                    else:
-                        pass
+                        x = 1/0
                 except:
                     msg = QtWidgets.QMessageBox()
                     msg.setIcon(QtWidgets.QMessageBox.Information)
                     msg.setText(
-                        f"No KEY frames found for this shape ID ({id}).\n    ie. less than 2 key frames\n The interpolation is NOT performed.")
+                        f"No KEY frames found for this shape ID.\n    ie. less than 2 key frames\n The interpolation is NOT performed.")
                     msg.setWindowTitle("No KEY frames found")
                     msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
                     msg.exec_()
-                    return
+                    return False
+        return True
+
+    def interpolateMENU(self, item=None):
+
+        if len(self.canvas.selectedShapes) == 0:
+            return
+
+        if len(self.canvas.selectedShapes) > 1:
+            mb = QtWidgets.QMessageBox
+            msg = self.tr(
+                "Batch Interpolation is only available with SAM\n"
+                "It is more persise but slower than the default interpolation method.\n"
+                "Interpolate with SAM?"
+            )
+            answer = mb.warning(self, self.tr(
+                "Attention"), msg, mb.Yes | mb.No)
+            if answer != mb.Yes:
+                return
+            else:
+                self.interpolate(id=None, only_edited=False, with_sam=True)
+                return
+
+        self.update_current_frame_annotation()
+
+        id = self.canvas.selectedShapes[0].group_id
+
+        result = self.interpolateGUI()
+        
+        if result:
+            only_edited = True if self.config['interpolationDefault'] == 'interpolate all frames between your KEY frames' else False
+            with_sam = True if self.config[
+                'interpolationDefault'] == 'interpolate ALL frames with SAM (more precision, more time)' else False
             self.interpolate(id=id,
-                             only_edited=only_edited, with_sam=with_sam)
+                             only_edited=only_edited, 
+                             with_sam=with_sam)
 
     def mark_as_key(self):
         self.update_current_frame_annotation()
@@ -1780,6 +1789,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.interpolate_with_sam()
             self.waitWindow()
             return
+        
         listObj = self.load_objects_from_json__orjson()
         if only_edited:
             try:
@@ -1864,8 +1874,8 @@ class MainWindow(QtWidgets.QMainWindow):
                            for sublist in cur_segment]
             current['bbox'] = cur_bbox
             current['segment'] = cur_segment
-            print(
-                f'type of cur_segment: {type(cur_segment)}, type of a point in cur_segment: {type(cur_segment[0])}, type of a point in cur_segment[0]: {type(cur_segment[0][0])}')
+            # print(
+            #     f'type of cur_segment: {type(cur_segment)}, type of a point in cur_segment: {type(cur_segment[0])}, type of a point in cur_segment[0]: {type(cur_segment[0][0])}')
 
             records[i] = current.copy()
             RECORDS.append(records[i])
@@ -1925,6 +1935,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
             self.waitWindow()
             return
+        
         idsLIST = [shape.group_id for shape in self.canvas.selectedShapes]
         first_frame_idxLIST = [-1 for i in range(len(idsLIST))]
         last_frame_idxLIST = [-1 for i in range(len(idsLIST))]
@@ -1941,9 +1952,10 @@ class MainWindow(QtWidgets.QMainWindow):
                         first_frame_idxLIST[index], listobjframe) if first_frame_idxLIST[index] != -1 else listobjframe
                     last_frame_idxLIST[index] = max(
                         last_frame_idxLIST[index], listobjframe) if last_frame_idxLIST[index] != -1 else listobjframe
+                    
         for i in range(len(idsLIST)):
             self.waitWindow(visible=True)
-            if (first_frame_idxLIST[i] == -1 or last_frame_idxLIST[i] == -1 or first_frame_idxLIST[i] >= last_frame_idxLIST[i]):
+            if (first_frame_idxLIST[i] >= last_frame_idxLIST[i]):
                 idsLIST.pop(i)
                 first_frame_idxLIST.pop(i)
                 last_frame_idxLIST.pop(i)
@@ -1954,28 +1966,28 @@ class MainWindow(QtWidgets.QMainWindow):
         listObj = self.fill_empty_listObj_frames(
             listObj, min(first_frame_idxLIST), max(last_frame_idxLIST))
 
-        for f in listObj:
-            if f['frame_idx'] == min(first_frame_idxLIST):
-                print(f'first interpolation frame : {f["frame_idx"]}')
-                first_frame_data = copy.deepcopy(f['frame_data'])
-                break
+        # for f in listObj:
+        #     if f['frame_idx'] == min(first_frame_idxLIST):
+        #         print(f'first interpolation frame : {f["frame_idx"]}')
+        #         print(f'first interpolation frame : {listObj[min(first_frame_idxLIST) - 1]["frame_idx"]}')
+        #         break
+        first_frame_data = copy.deepcopy(listObj[min(first_frame_idxLIST) - 1]['frame_data'])
 
         recordsLIST = [[None for ii in range(
             first_frame_idxLIST[i], last_frame_idxLIST[i] + 1)] for i in range(len(idsLIST))]
         RECORDSLIST = [[] for i in range(len(idsLIST))]
-        for i in range(len(listObj)):
+        for i in range(min(first_frame_idxLIST) - 1, max(last_frame_idxLIST), 1):
             self.waitWindow(visible=True)
             listobjframe = listObj[i]['frame_idx']
-            if (listobjframe < min(first_frame_idxLIST) or listobjframe > max(last_frame_idxLIST)):
-                continue
             frameobjects = listObj[i]['frame_data'].copy()
             for object_ in frameobjects:
                 if (object_['tracker_id'] in idsLIST):
                     index = idsLIST.index(object_['tracker_id'])
                     recordsLIST[index][listobjframe -
-                                       first_frame_idxLIST[index]] = object_
+                                       first_frame_idxLIST[index]] = copy.deepcopy(object_)
+                    listObj[i]['frame_data'].remove(object_)
 
-        records_orgLIST = recordsLIST.copy()
+        # records_orgLIST = recordsLIST.copy()
 
         for frameIDX in range(min(first_frame_idxLIST), max(last_frame_idxLIST) + 1):
             self.waitWindow(
@@ -2028,16 +2040,16 @@ class MainWindow(QtWidgets.QMainWindow):
                 recordsLIST[ididx][i]['segment'] = cur_segment.copy()
                 RECORDSLIST[ididx][i]['segment'] = cur_segment.copy()
 
-        for i in range(len(listObj)):
+        for i in range(min(first_frame_idxLIST) - 1, max(last_frame_idxLIST), 1):
             self.waitWindow(
                 visible=True, text=f'Wait a second.\nIDs are being interpolated with SAM...\nAlmost done')
             listobjframe = listObj[i]['frame_idx']
-            if (listobjframe < min(first_frame_idxLIST) or listobjframe > max(last_frame_idxLIST)):
-                continue
-
-            for object_ in listObj[i]['frame_data']:
-                if (object_['tracker_id'] in idsLIST):
-                    listObj[i]['frame_data'].remove(object_)
+            
+            
+            
+            # for object_ in listObj[i]['frame_data']:
+            #     if (object_['tracker_id'] in idsLIST):
+            #         listObj[i]['frame_data'].remove(object_)
 
             for ididx in range(len(idsLIST)):
                 if (listobjframe < first_frame_idxLIST[ididx] or listobjframe > last_frame_idxLIST[ididx]):
@@ -2049,11 +2061,12 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.waitWindow()
 
-        for f in listObj:
-            if f['frame_idx'] == min(first_frame_idxLIST):
-                print(f'first interpolation frame : {f["frame_idx"]}')
-                f['frame_data'] = first_frame_data
-                break
+        # for f in listObj:
+        #     if f['frame_idx'] == min(first_frame_idxLIST):
+        #         print(f'first interpolation frame : {f["frame_idx"]}')
+        #         f['frame_data'] = first_frame_data
+        #         break
+        listObj[min(first_frame_idxLIST) - 1]['frame_data'] = first_frame_data
 
         self.load_objects_to_json__orjson(listObj)
         self.calc_trajectory_when_open_video()
