@@ -676,6 +676,14 @@ class MainWindow(QtWidgets.QMainWindow):
             self.tr("Modify the label of the selected polygon"),
             enabled=False,
         )
+        enhance = action(
+            self.tr("&AI Enhance"),
+            self.sam_enhance_annotation_button_clicked,
+            shortcuts["enhance"],
+            "edit",
+            self.tr("Enhance the selected polygon with AI"),
+            enabled=True,
+        )
         interpolate = action(
             self.tr("&Interpolate"),
             self.interpolateMENU,
@@ -880,6 +888,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 createLineStripMode,
                 editMode,
                 edit,
+                enhance,
                 interpolate,
                 mark_as_key,
                 scale,
@@ -4007,25 +4016,26 @@ class MainWindow(QtWidgets.QMainWindow):
         #         5  createLineStripMode,
         #         6  editMode,
         #         7  edit,
-        #         8  interpolate,
-        #         9  mark_as_key,
-        #         10 scale,
-        #         11 copyShapes,
-        #         12 pasteShapes,
-        #         13 copy,
-        #         14 delete,
-        #         15 undo,
-        #         16 undoLastPoint,
-        #         17 addPointToEdge,
-        #         18 removePoint,
-        #         19 update_curr_frame,
-        #         20 ignore_changes
+        #         8  enhance,
+        #         9  interpolate,
+        #         10  mark_as_key,
+        #         11 scale,
+        #         12 copyShapes,
+        #         13 pasteShapes,
+        #         14 copy,
+        #         15 delete,
+        #         16 undo,
+        #         17 undoLastPoint,
+        #         18 addPointToEdge,
+        #         19 removePoint,
+        #         20 update_curr_frame,
+        #         21 ignore_changes
 
         mode = self.config['toolMode']
         video_menu = True if mode == "video" else False
         image_menu = True if mode == "image" else False
-        video_menu_list = [8, 9, 10, 11, 12, 19, 20]
-        image_menu_list = [1, 2, 3, 4, 5, 13, 15, 16]
+        video_menu_list = [8, 9, 10, 11, 12, 13, 20, 21]
+        image_menu_list = [1, 2, 3, 4, 5, 14, 16, 17]
         for i in range(len(self.actions.menu)):
             if i in video_menu_list:
                 self.actions.menu[i].setVisible(video_menu)
