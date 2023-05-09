@@ -1768,8 +1768,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def interpolateMENU(self, item=None):
 
-        if len(self.canvas.selectedShapes) == 0:
-            return
+        
+            
 
         # if len(self.canvas.selectedShapes) > 1:
         #     mb = QtWidgets.QMessageBox
@@ -1785,10 +1785,21 @@ class MainWindow(QtWidgets.QMainWindow):
         #     else:
         #         self.interpolate(id=None, only_edited=False, with_sam=True)
         #         return
-
-        self.update_current_frame_annotation()
-
-        id = self.canvas.selectedShapes[0].group_id
+        if len(self.canvas.selectedShapes) == 0:
+            mb = QtWidgets.QMessageBox
+            msg = self.tr("Interpolate all IDs?\n")
+            answer = mb.warning(self, self.tr(
+                "Attention"), msg, mb.Yes | mb.No)
+            if answer != mb.Yes:
+                return
+            else:
+                self.update_current_frame_annotation()
+                keys = list(self.id_frames_rec.keys())
+                ids = [int(keys[i][3:]) for i in range(len(keys))]
+        else:
+            self.update_current_frame_annotation()
+            ids = [shape.group_id for shape in self.canvas.selectedShapes]
+            id = self.canvas.selectedShapes[0].group_id
 
         result = self.interpolateGUI()
         
@@ -1798,12 +1809,12 @@ class MainWindow(QtWidgets.QMainWindow):
                 'interpolationDefault'] == 'interpolate ALL frames with SAM (more precision, more time)' else False
             
             if with_sam:
-                self.interpolate(id=id,
+                self.interpolate(id=ids,
                                 only_edited=False, 
                                 with_sam=True)
             else:
-                for shape in self.canvas.selectedShapes:
-                    self.interpolate(id=shape.group_id,
+                for id in ids:
+                    self.interpolate(id=id,
                                     only_edited=only_edited, 
                                     with_sam=False)
 
@@ -1977,29 +1988,46 @@ class MainWindow(QtWidgets.QMainWindow):
         self.waitWindow(
             visible=True, text=f'Wait a second.\nIDs are being interpolated with SAM...')
 
-        if self.sam_model_comboBox.currentText() == "Select Model (SAM disable)" or len(self.canvas.selectedShapes) == 0:
+        if self.sam_model_comboBox.currentText() == "Select Model (SAM disable)":
             msg = QtWidgets.QMessageBox()
             msg.setIcon(QtWidgets.QMessageBox.Information)
             msg.setText(
-                "No shape selected or SAM is disabled.\nPlease select a shape and enable SAM.")
-            msg.setWindowTitle("No shape selected or SAM is disabled")
+                "SAM is disabled.\nPlease enable SAM.")
+            msg.setWindowTitle("SAM is disabled")
             msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
             msg.exec_()
 
             self.waitWindow()
             return
         
-        idsLIST = []
-        first_frame_idxLIST = []
-        last_frame_idxLIST = []
-        for shape in self.canvas.selectedShapes:
-            id = shape.group_id
-            [minf, maxf] = [min(self.id_frames_rec['id_' + str(id)]), max(self.id_frames_rec['id_' + str(id)])]
-            if minf == maxf:
-                continue
-            idsLIST.append(id)
-            first_frame_idxLIST.append(minf)
-            last_frame_idxLIST.append(maxf)
+        if len(self.canvas.selectedShapes) == 0:
+            keys = list(self.id_frames_rec.keys())
+            idsLIST = [int(keys[i][3:]) for i in range(len(keys))]
+            first_frame_idxLIST = []
+            last_frame_idxLIST = []
+            for id in idsLIST:
+                try:
+                    [minf, maxf] = [min(self.id_frames_rec['id_' + str(id)]), max(self.id_frames_rec['id_' + str(id)])]
+                except:
+                    continue
+                if minf == maxf:
+                    continue
+                first_frame_idxLIST.append(minf)
+                last_frame_idxLIST.append(maxf)
+            
+        else:
+            idsLIST = []
+            first_frame_idxLIST = []
+            last_frame_idxLIST = []
+            for shape in self.canvas.selectedShapes:
+                id = shape.group_id
+                [minf, maxf] = [min(self.id_frames_rec['id_' + str(id)]), max(self.id_frames_rec['id_' + str(id)])]
+                if minf == maxf:
+                    continue
+                idsLIST.append(id)
+                first_frame_idxLIST.append(minf)
+                last_frame_idxLIST.append(maxf)
+        
         if len(idsLIST) == 0:
             self.waitWindow()
             return
