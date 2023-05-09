@@ -1698,7 +1698,7 @@ class MainWindow(QtWidgets.QMainWindow):
             #                 msg.exec_()
             #                 return
 
-            listObj = sorted(listObj, key=lambda k: k['frame_idx'])
+            # listObj = sorted(listObj, key=lambda k: k['frame_idx'])
             self.load_objects_to_json__orjson(listObj)
             self.calc_trajectory_when_open_video()
             self.main_video_frames_slider_changed()
@@ -3621,11 +3621,11 @@ class MainWindow(QtWidgets.QMainWindow):
             to_frame = self.TOTAL_VIDEO_FRAMES
             from_frame = 1
 
-        for i in range(len(listObj)):
+        for i in range(from_frame, to_frame + 1, 1):
             frame_idx = listObj[i]['frame_idx']
             for object_ in listObj[i]['frame_data']:
                 id = object_['tracker_id']
-                if id in deleted_ids and from_frame <= frame_idx <= to_frame:
+                if id in deleted_ids:
                     listObj[i]['frame_data'].remove(object_)
                     self.CURRENT_ANNOATAION_TRAJECTORIES['id_' +
                                                          str(id)][frame_idx - 1] = (-1, -1)
@@ -4091,28 +4091,28 @@ class MainWindow(QtWidgets.QMainWindow):
         listObj = np.array(listObj)
 
         shapes = []
-        for i in range(len(listObj)):
-            frame_idx = listObj[i]['frame_idx']
-            if frame_idx == target_frame_idx:
-                # print (listObj[i])
-                # print(i)
-                frame_objects = listObj[i]['frame_data']
-                for object_ in frame_objects:
-                    shape = {}
-                    shape["label"] = object_["class_name"]
-                    shape["group_id"] = (object_['tracker_id'])
-                    shape["content"] = (object_['confidence'])
-                    shape["bbox"] = object_['bbox']
-                    points = object_['segment']
-                    points = np.array(points, np.int16).flatten().tolist()
-                    shape["points"] = points
-                    shape["shape_type"] = "polygon"
-                    shape["other_data"] = {}
-                    shape["flags"] = {}
-                    shapes.append(shape)
-                continue
+        # for i in range(len(listObj)):
+        i = target_frame_idx - 1
+        frame_idx = listObj[i]['frame_idx']
+        # if frame_idx == target_frame_idx:
+            # print (listObj[i])
+            # print(i)
+        frame_objects = listObj[i]['frame_data']
+        for object_ in frame_objects:
+            shape = {}
+            shape["label"] = object_["class_name"]
+            shape["group_id"] = (object_['tracker_id'])
+            shape["content"] = (object_['confidence'])
+            shape["bbox"] = object_['bbox']
+            points = object_['segment']
+            points = np.array(points, np.int16).flatten().tolist()
+            shape["points"] = points
+            shape["shape_type"] = "polygon"
+            shape["other_data"] = {}
+            shape["flags"] = {}
+            shapes.append(shape)
 
-            self.CURRENT_SHAPES_IN_IMG = shapes
+        self.CURRENT_SHAPES_IN_IMG = shapes
 
     def loadFramefromVideo(self, frame_array, index=1):
         # filename = str(index) + ".jpg"
@@ -4582,18 +4582,22 @@ class MainWindow(QtWidgets.QMainWindow):
 
             json_frame.update({'frame_data': json_frame_object_list})
 
-            for h in range(len(listObj)):
-                if listObj[h]['frame_idx'] == self.INDEX_OF_CURRENT_FRAME:
-                    listObj.pop(h)
-                    break
+            # for h in range(len(listObj)):
+            #     if listObj[h]['frame_idx'] == self.INDEX_OF_CURRENT_FRAME:
+            #         listObj.pop(h)
+            #         break
+            # listObj.pop(self.INDEX_OF_CURRENT_FRAME - 1)
+                
+                
             # sort the list of frames by the frame index
-            listObj.append(json_frame)
+            # listObj.append(json_frame)
+            listObj[self.INDEX_OF_CURRENT_FRAME - 1] = json_frame
 
             QtWidgets.QApplication.processEvents()
             self.update_gui_after_tracking(i)
             print('finished tracking for frame ', self.INDEX_OF_CURRENT_FRAME)
 
-        listObj = sorted(listObj, key=lambda k: k['frame_idx'])
+        # listObj = sorted(listObj, key=lambda k: k['frame_idx'])
         self.load_objects_to_json__orjson(listObj)
 
         self.TrackingMode = False
@@ -4809,14 +4813,16 @@ class MainWindow(QtWidgets.QMainWindow):
             json_frame_object_list.append(json_tracked_object)
         json_frame.update({'frame_data': json_frame_object_list})
 
-        for h in range(len(listObj)):
-            if listObj[h]['frame_idx'] == self.INDEX_OF_CURRENT_FRAME:
-                listObj.pop(h)
-                break
+        # for h in range(len(listObj)):
+        #     if listObj[h]['frame_idx'] == self.INDEX_OF_CURRENT_FRAME:
+        #         listObj.pop(h)
+        #         break
+        # listObj.pop(self.INDEX_OF_CURRENT_FRAME - 1)
 
-        listObj.append(json_frame)
+        # listObj.append(json_frame)
+        listObj[self.INDEX_OF_CURRENT_FRAME - 1] = json_frame
 
-        listObj = sorted(listObj, key=lambda k: k['frame_idx'])
+        # listObj = sorted(listObj, key=lambda k: k['frame_idx'])
         # with open(json_file_name, 'w') as json_file:
         #     json.dump(listObj, json_file,
         #               indent=4,
