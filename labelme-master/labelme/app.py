@@ -1771,20 +1771,20 @@ class MainWindow(QtWidgets.QMainWindow):
         if len(self.canvas.selectedShapes) == 0:
             return
 
-        if len(self.canvas.selectedShapes) > 1:
-            mb = QtWidgets.QMessageBox
-            msg = self.tr(
-                "Batch Interpolation is only available with SAM\n"
-                "It is more persise but slower than the default interpolation method.\n"
-                "Interpolate with SAM?"
-            )
-            answer = mb.warning(self, self.tr(
-                "Attention"), msg, mb.Yes | mb.No)
-            if answer != mb.Yes:
-                return
-            else:
-                self.interpolate(id=None, only_edited=False, with_sam=True)
-                return
+        # if len(self.canvas.selectedShapes) > 1:
+        #     mb = QtWidgets.QMessageBox
+        #     msg = self.tr(
+        #         "Batch Interpolation is only available with SAM\n"
+        #         "It is more persise but slower than the default interpolation method.\n"
+        #         "Interpolate with SAM?"
+        #     )
+        #     answer = mb.warning(self, self.tr(
+        #         "Attention"), msg, mb.Yes | mb.No)
+        #     if answer != mb.Yes:
+        #         return
+        #     else:
+        #         self.interpolate(id=None, only_edited=False, with_sam=True)
+        #         return
 
         self.update_current_frame_annotation()
 
@@ -1796,9 +1796,16 @@ class MainWindow(QtWidgets.QMainWindow):
             only_edited = True if self.config['interpolationDefault'] == 'interpolate all frames between your KEY frames' else False
             with_sam = True if self.config[
                 'interpolationDefault'] == 'interpolate ALL frames with SAM (more precision, more time)' else False
-            self.interpolate(id=id,
-                             only_edited=only_edited, 
-                             with_sam=with_sam)
+            
+            if with_sam:
+                self.interpolate(id=id,
+                                only_edited=False, 
+                                with_sam=True)
+            else:
+                for shape in self.canvas.selectedShapes:
+                    self.interpolate(id=shape.group_id,
+                                    only_edited=only_edited, 
+                                    with_sam=False)
 
     def mark_as_key(self):
         self.update_current_frame_annotation()
