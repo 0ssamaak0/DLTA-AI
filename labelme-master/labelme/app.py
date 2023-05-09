@@ -3641,7 +3641,17 @@ class MainWindow(QtWidgets.QMainWindow):
         self.load_objects_to_json__orjson(listObj)
 
     def copyShape(self):
-        if self.config['toolMode'] == 'video':
+        
+        if len(self.canvas.selectedShapes) > 1 and self.config['toolMode'] == 'video':
+            org = copy.deepcopy(self.canvas.shapes)
+            self.canvas.endMove(copy=True)
+            self.canvas.undoLastLine()
+            self.canvas.shapesBackups.pop()
+            self.canvas.shapes = org
+            self.update_current_frame_annotation_button_clicked()
+            return
+        
+        elif self.config['toolMode'] == 'video':
             self.canvas.endMove(copy=True)
             shape = self.canvas.selectedShapes[0]
             text = shape.label
@@ -3666,7 +3676,7 @@ class MainWindow(QtWidgets.QMainWindow):
             else:
                 self.canvas.undoLastLine()
                 self.canvas.shapesBackups.pop()
-
+                
             self.update_current_frame_annotation_button_clicked()
 
             return
