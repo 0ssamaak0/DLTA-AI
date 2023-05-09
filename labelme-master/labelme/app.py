@@ -3628,7 +3628,7 @@ class MainWindow(QtWidgets.QMainWindow):
             to_frame = self.TOTAL_VIDEO_FRAMES
             from_frame = 1
 
-        for i in range(from_frame, to_frame + 1, 1):
+        for i in range(from_frame - 1, to_frame, 1):
             frame_idx = listObj[i]['frame_idx']
             for object_ in listObj[i]['frame_data']:
                 id = object_['tracker_id']
