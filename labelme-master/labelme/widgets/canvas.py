@@ -444,13 +444,13 @@ class Canvas(QtWidgets.QWidget):
 
     def handle_right_click(self, menu):
         try:
-            setEnabledd = menu.actions()[7].isEnabled()
-            if menu.actions()[8].text() == "&Interpolate":
-                menu.actions()[8].setEnabled(True)
-            if menu.actions()[9].text() == "&Mark as key":
-                menu.actions()[9].setEnabled(setEnabledd)
-            if menu.actions()[10].text() == "&Scale":
+            setEnabledd = menu.actions()[7].text() == "Edit &Label" and menu.actions()[7].isEnabled()
+            if menu.actions()[8].text() == "&AI Enhance":
+                menu.actions()[8].setEnabled(setEnabledd)
+            if menu.actions()[10].text() == "&Mark as key":
                 menu.actions()[10].setEnabled(setEnabledd)
+            if menu.actions()[11].text() == "&Scale":
+                menu.actions()[11].setEnabled(setEnabledd)
         except:
             pass
         return menu
