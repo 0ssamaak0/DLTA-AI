@@ -3682,9 +3682,9 @@ class MainWindow(QtWidgets.QMainWindow):
             return
 
         self.canvas.endMove(copy=True)
-        self.labelList.clearSelection()
         for shape in self.canvas.selectedShapes:
             self.addLabel(shape)
+        self.labelList.clearSelection()
         self.setDirty()
 
     def moveShape(self):
