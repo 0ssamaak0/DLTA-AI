@@ -445,8 +445,8 @@ class Canvas(QtWidgets.QWidget):
     def handle_right_click(self, menu):
         try:
             setEnabledd = menu.actions()[7].text() == "Edit &Label" and menu.actions()[7].isEnabled()
-            if menu.actions()[8].text() == "&AI Enhance":
-                menu.actions()[8].setEnabled(setEnabledd)
+            # if menu.actions()[8].text() == "&AI Enhance":
+            #     menu.actions()[8].setEnabled(setEnabledd)
             if menu.actions()[10].text() == "&Mark as key":
                 menu.actions()[10].setEnabled(setEnabledd)
             if menu.actions()[11].text() == "&Scale":

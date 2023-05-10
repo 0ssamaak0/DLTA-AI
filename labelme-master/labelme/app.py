@@ -4093,7 +4093,7 @@ class MainWindow(QtWidgets.QMainWindow):
             return
         videoFile = QtWidgets.QFileDialog.getOpenFileName(
             self, self.tr("%s - Choose Video") % __appname__, ".",
-            self.tr("Video files (*.mp4 *.avi)")
+            self.tr("Video files (*.mp4 *.avi *.mov)")
         )
 
         if videoFile[0]:
@@ -4108,9 +4108,11 @@ class MainWindow(QtWidgets.QMainWindow):
             self.CURRENT_VIDEO_HEIGHT = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
             self.CURRENT_VIDEO_WIDTH = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
             self.CAP = cap
-            # making the total video frames equal to the total frames in the video file - 1 as the indexing starts from 0
+            # # making the total video frames equal to the total frames in the video file - 1 as the indexing starts from 0
+            # self.TOTAL_VIDEO_FRAMES = int(
+            #     self.CAP.get(cv2.CAP_PROP_FRAME_COUNT - 1) )
             self.TOTAL_VIDEO_FRAMES = int(
-                self.CAP.get(cv2.CAP_PROP_FRAME_COUNT) - 1)
+                self.CAP.get(cv2.CAP_PROP_FRAME_COUNT ) )
             self.CURRENT_VIDEO_FPS = self.CAP.get(cv2.CAP_PROP_FPS)
             print("Total Frames : ", self.TOTAL_VIDEO_FRAMES)
             self.main_video_frames_slider.setMaximum(self.TOTAL_VIDEO_FRAMES)
@@ -4520,13 +4522,16 @@ class MainWindow(QtWidgets.QMainWindow):
         self.TrackingMode = True
         bs = 1
         curr_frame, prev_frame = None, None
-        # debugging_vid = cv2.VideoWriter(
-        #     'tracking_debugging.mp4', cv2.VideoWriter_fourcc(*'mp4v'), 10, (frame_shape[1], frame_shape[0]))
 
-        for i in range(self.FRAMES_TO_TRACK):
+        if self.FRAMES_TO_TRACK + self.INDEX_OF_CURRENT_FRAME <= self.TOTAL_VIDEO_FRAMES:
+            number_of_frames_to_track  = self.FRAMES_TO_TRACK
+        else: 
+            number_of_frames_to_track  = self.TOTAL_VIDEO_FRAMES - self.INDEX_OF_CURRENT_FRAME
+            
+        for i in range(number_of_frames_to_track):
             QtWidgets.QApplication.processEvents()
             self.tracking_progress_bar.setValue(
-                int((i + 1) / self.FRAMES_TO_TRACK * 100))
+                int((i + 1) / number_of_frames_to_track * 100))
 
             # if self.stop_tracking:
             #     print('\n\n\nstopped tracking\n\n\n')
@@ -4651,6 +4656,7 @@ class MainWindow(QtWidgets.QMainWindow):
             QtWidgets.QApplication.processEvents()
             self.update_gui_after_tracking(i)
             print('finished tracking for frame ', self.INDEX_OF_CURRENT_FRAME)
+            
 
         # listObj = sorted(listObj, key=lambda k: k['frame_idx'])
         self.load_objects_to_json__orjson(listObj)
@@ -4752,36 +4758,36 @@ class MainWindow(QtWidgets.QMainWindow):
         output_video_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}_tracking_results.mp4'
         input_cap = cv2.VideoCapture(input_video_file_name)
         output_cap = cv2.VideoWriter(output_video_file_name, cv2.VideoWriter_fourcc(
-            *'mp4v'), 30, (int(self.CURRENT_VIDEO_WIDTH), int(self.CURRENT_VIDEO_HEIGHT)))
+            *'mp4v'), int(self.CURRENT_VIDEO_FPS), (int(self.CURRENT_VIDEO_WIDTH), int(self.CURRENT_VIDEO_HEIGHT)))
         listObj = self.load_objects_from_json__orjson()
 
         # make a progress bar for exporting video (with percentage of progress)   TO DO LATER
 
-        for target_frame_idx in range(self.TOTAL_VIDEO_FRAMES):
-            print(target_frame_idx)
+        for target_frame_idx in range(self.TOTAL_VIDEO_FRAMES ):
             self.INDEX_OF_CURRENT_FRAME = target_frame_idx + 1
             ret, image = input_cap.read()
             shapes = []
-            for i in range(len(listObj)):
-                frame_idx = listObj[i]['frame_idx']
-                if int(frame_idx) == target_frame_idx:
-                    frame_objects = listObj[i]['frame_data']
-                    for object_ in frame_objects:
-                        shape = {}
-                        shape["label"] = coco_classes[object_['class_id']]
-                        shape["group_id"] = str(object_['tracker_id'])
-                        shape["content"] = str(object_['confidence'])
-                        shape["bbox"] = object_['bbox']
-                        points = object_['segment']
-                        points = np.array(points, np.int16).flatten().tolist()
-                        shape["points"] = points
-                        shape["shape_type"] = "polygon"
-                        shape["other_data"] = {}
-                        shape["flags"] = {}
-                        shapes.append(shape)
-                    continue
+            self.waitWindow(
+            visible=True, text=f'Wait a second.\nFrame {target_frame_idx} is being exported...')
+            frame_idx = listObj[target_frame_idx]['frame_idx']
+            frame_objects = listObj[target_frame_idx]['frame_data']
+            print(frame_idx)
+            for object_ in frame_objects:
+                shape = {}
+                shape["label"] = object_['class_name']
+                shape["group_id"] = str(object_['tracker_id'])
+                shape["content"] = str(object_['confidence'])
+                shape["bbox"] = object_['bbox']
+                points = object_['segment']
+                points = np.array(points, np.int16).flatten().tolist()
+                shape["points"] = points
+                shape["shape_type"] = "polygon"
+                shape["other_data"] = {}
+                shape["flags"] = {}
+                shapes.append(shape)
+                
             if len(shapes) == 0:
-                output_cap.write(image)
+                # output_cap.write(image)
                 continue
             image = self.draw_bb_on_image(image, shapes, imgage_qt_flag=False)
             output_cap.write(image)
@@ -4789,6 +4795,8 @@ class MainWindow(QtWidgets.QMainWindow):
         input_cap.release()
         output_cap.release()
         print("done exporting video")
+        self.waitWindow()
+
         self.INDEX_OF_CURRENT_FRAME = self.main_video_frames_slider.value()
         # show message saying that the video is exported
         msg = QtWidgets.QMessageBox()
