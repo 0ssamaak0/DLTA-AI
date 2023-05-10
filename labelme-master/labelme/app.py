@@ -279,6 +279,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # for Export
         self.target_directory = ""
         self.save_path = ""
+        self.global_listObj = []
 
         # for video annotation
         self.frame_time = 0
@@ -5901,6 +5902,7 @@ class MainWindow(QtWidgets.QMainWindow):
         return listObj
     
     def load_objects_to_json__json(self, listObj):
+
         start_time = time.time()
         json_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}_tracking_results.json'
         with open(json_file_name, 'w') as json_file:
@@ -5912,6 +5914,8 @@ class MainWindow(QtWidgets.QMainWindow):
         print(f"Time taken to write json with (json)library is : {int((end_time - start_time)*1000)} ms" + "\n")
 
     def load_objects_from_json__orjson(self):
+        if self.global_listObj != [] : 
+            return self.global_listObj
         listObj = [{'frame_idx': i + 1, 'frame_data': []}
                     for i in range(self.TOTAL_VIDEO_FRAMES)]
         json_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}_tracking_results.json'
@@ -5925,6 +5929,7 @@ class MainWindow(QtWidgets.QMainWindow):
         return listObj
     
     def load_objects_to_json__orjson(self, listObj):
+        self.global_listObj = listObj
         json_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}_tracking_results.json'
         with open(json_file_name, "wb") as jf:
             jf.write(orjson.dumps(listObj, option=orjson.OPT_INDENT_2))
