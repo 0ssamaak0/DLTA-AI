@@ -4808,6 +4808,7 @@ class MainWindow(QtWidgets.QMainWindow):
         msg.exec_()
 
     def clear_video_annotations_button_clicked(self):
+        self.global_listObj = []
         length_Value = self.CURRENT_ANNOATAION_TRAJECTORIES['length']
         alpha_Value = self.CURRENT_ANNOATAION_TRAJECTORIES['alpha']
         self.CURRENT_ANNOATAION_TRAJECTORIES.clear()
