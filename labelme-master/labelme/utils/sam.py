@@ -78,6 +78,21 @@ class Sam_Predictor():
         
         return mask, score
     
+    
+    def predict_batch(self,  boxes=None, image=None):
+        boxes = np.array(boxes)
+        input_boxes = torch.tensor(boxes, device=self.predictor.device)
+        transformed_boxes = self.predictor.transform.apply_boxes_torch(input_boxes, image.shape[:2])
+        masks, scores, logits = self.predictor.predict_torch(
+        point_coords=None,
+        point_labels=None,
+        boxes=transformed_boxes,
+        multimask_output=False,
+    )
+        return masks, scores
+
+    
+    
     def get_contour_length(self, contour):
         contour_start = contour
         contour_end = np.r_[contour[1:], contour[0:1]]
