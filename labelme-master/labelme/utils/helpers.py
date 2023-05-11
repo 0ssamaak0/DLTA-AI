@@ -2,7 +2,11 @@ import numpy as np
 import random
 # from .qt import QTPoint
 import cv2
-from PyQt5 import QtGui
+from qtpy import QtCore
+from qtpy.QtCore import Qt
+from qtpy.QtCore import QThread
+from qtpy import QtGui
+from qtpy import QtWidgets
 from labelme import PY2
 import os
 import json
@@ -900,6 +904,318 @@ def load_objects_to_json__orjson(json_file_name, listObj):
     with open(json_file_name, "wb") as jf:
         jf.write(orjson.dumps(listObj, option=orjson.OPT_INDENT_2))
     jf.close()
+
+
+
+
+
+
+
+
+
+# GUI functions
+
+def OKmsgBox(title, text):
+    
+    """
+    Summary:
+        Show an OK message box.
+        
+    Args:
+        title: the title of the message box
+        text: the text of the message box
+        
+    Returns:
+        msgBox.exec_(): the result of the message box
+    """
+    
+    msgBox = QtWidgets.QMessageBox()
+    msgBox.setIcon(QtWidgets.QMessageBox.Information)
+    msgBox.setText(text)
+    msgBox.setWindowTitle(title)
+    msgBox.setStandardButtons(QtWidgets.QMessageBox.Ok)
+    return msgBox.exec_()
+
+
+def editLabel_idChanged_GUI(config):
+    
+    """
+    Summary:
+        Show a dialog to choose the edit options when the id of a shape is changed.
+        (Edit only this frame or Edit all frames with this ID)
+        
+    Args:
+        config: a dictionary of configurations
+        
+    Returns:
+        result: the result of the dialog
+        config: the updated dictionary of configurations
+    """
+    
+    dialog = QtWidgets.QDialog()
+    dialog.setWindowTitle("Choose Edit Options")
+    dialog.setWindowModality(Qt.ApplicationModal)
+    dialog.resize(250, 100)
+
+    layout = QtWidgets.QVBoxLayout()
+
+    label = QtWidgets.QLabel("Choose Edit Options")
+    layout.addWidget(label)
+
+    only = QtWidgets.QRadioButton("Edit only this frame")
+    all = QtWidgets.QRadioButton("Edit all frames with this ID")
+
+    if config['EditDefault'] == 'Edit only this frame':
+        only.toggle()
+    if config['EditDefault'] == 'Edit all frames with this ID':
+        all.toggle()
+
+    only.toggled.connect(lambda: config.update(
+        {'EditDefault': 'Edit only this frame'}))
+    all.toggled.connect(lambda: config.update(
+        {'EditDefault': 'Edit all frames with this ID'}))
+
+    layout.addWidget(only)
+    layout.addWidget(all)
+
+    buttonBox = QtWidgets.QDialogButtonBox(
+        QtWidgets.QDialogButtonBox.Ok)
+    buttonBox.accepted.connect(dialog.accept)
+    layout.addWidget(buttonBox)
+    dialog.setLayout(layout)
+    result = dialog.exec_()
+    return result, config
+
+
+def interpolationOptions_GUI(config):
+    
+    """
+    Summary:
+        Show a dialog to choose the interpolation options.
+        (   interpolate only missed frames between detected frames, 
+            interpolate all frames between your KEY frames, 
+            interpolate ALL frames with SAM (more precision, more time) )
+            
+    Args:
+        config: a dictionary of configurations
+        
+    Returns:
+        result: the result of the dialog
+        config: the updated dictionary of configurations
+    """
+    
+    dialog = QtWidgets.QDialog()
+    dialog.setWindowTitle("Choose Interpolation Options")
+    dialog.setWindowModality(Qt.ApplicationModal)
+    dialog.resize(250, 100)
+
+    layout = QtWidgets.QVBoxLayout()
+
+    label = QtWidgets.QLabel("Choose Interpolation Options")
+    layout.addWidget(label)
+
+    only_missed = QtWidgets.QRadioButton(
+        "interpolate only missed frames between detected frames")
+    only_edited = QtWidgets.QRadioButton(
+        "interpolate all frames between your KEY frames")
+    with_sam = QtWidgets.QRadioButton(
+        "interpolate ALL frames with SAM (more precision, more time)")
+
+    if config['interpolationDefault'] == 'interpolate only missed frames between detected frames':
+        only_missed.toggle()
+    if config['interpolationDefault'] == 'interpolate all frames between your KEY frames':
+        only_edited.toggle()
+    if config['interpolationDefault'] == 'interpolate ALL frames with SAM (more precision, more time)':
+        with_sam.toggle()
+
+    only_missed.toggled.connect(lambda: config.update(
+        {'interpolationDefault': 'interpolate only missed frames between detected frames'}))
+    only_edited.toggled.connect(lambda: config.update(
+        {'interpolationDefault': 'interpolate all frames between your KEY frames'}))
+    with_sam.toggled.connect(lambda: config.update(
+        {'interpolationDefault': 'interpolate ALL frames with SAM (more precision, more time)'}))
+
+    layout.addWidget(only_missed)
+    layout.addWidget(only_edited)
+    layout.addWidget(with_sam)
+
+    buttonBox = QtWidgets.QDialogButtonBox(
+        QtWidgets.QDialogButtonBox.Ok)
+    buttonBox.accepted.connect(dialog.accept)
+    layout.addWidget(buttonBox)
+    dialog.setLayout(layout)
+    result = dialog.exec_()
+    
+    return result, config
+
+
+def exportData_GUI():
+    
+    """
+    Summary:
+        Show a dialog to choose the export options in video mode.
+        (COCO Format (Detection / Segmentation), MOT Format (Tracking))
+        
+    Args:
+        None
+        
+    Returns:
+        result: the result of the dialog
+        coco_radio.isChecked(): a flag to indicate if the COCO Format is checked
+        mot_radio.isChecked(): a flag to indicate if the MOT Format is checked
+    """
+    
+    dialog = QtWidgets.QDialog()
+    dialog.setWindowTitle("Choose Export Options")
+    dialog.setWindowModality(Qt.ApplicationModal)
+    dialog.resize(250, 100)
+
+    layout = QtWidgets.QVBoxLayout()
+
+    label = QtWidgets.QLabel("Choose Export Options")
+    layout.addWidget(label)
+
+    # Create a button group to hold the radio buttons
+    button_group = QtWidgets.QButtonGroup()
+
+    # Create the radio buttons and add them to the button group
+    coco_radio = QtWidgets.QRadioButton(
+        "COCO Format (Detection / Segmentation)")
+    mot_radio = QtWidgets.QRadioButton("MOT Format (Tracking)")
+    button_group.addButton(coco_radio)
+    button_group.addButton(mot_radio)
+
+    # Add the radio buttons to the layout
+    layout.addWidget(coco_radio)
+    layout.addWidget(mot_radio)
+
+    buttonBox = QtWidgets.QDialogButtonBox(
+        QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel)
+    buttonBox.accepted.connect(dialog.accept)
+    buttonBox.rejected.connect(dialog.reject)
+
+    layout.addWidget(buttonBox)
+
+    dialog.setLayout(layout)
+
+    result = dialog.exec_()
+    
+    return result, coco_radio.isChecked(), mot_radio.isChecked()
+
+
+def deleteSelectedShape_GUI(TOTAL_VIDEO_FRAMES, INDEX_OF_CURRENT_FRAME, config):
+    
+    """
+    Summary:
+        Show a dialog to choose the deletion options.
+        (   this frame and previous frames,
+            this frame and next frames,
+            across all frames (previous and next),
+            this frame only,
+            in a specific range of frames           )
+            
+    Args:
+        TOTAL_VIDEO_FRAMES: the total number of frames
+        config: a dictionary of configurations
+        
+    Returns:
+        result: the result of the dialog
+        config: the updated dictionary of configurations
+        fromFrameVAL: the start frame of the deletion range
+        toFrameVAL: the end frame of the deletion range
+    """
+    
+    dialog = QtWidgets.QDialog()
+    dialog.setWindowTitle("Choose Deletion Options")
+    dialog.setWindowModality(Qt.ApplicationModal)
+    dialog.resize(250, 100)
+
+    layout = QtWidgets.QVBoxLayout()
+
+    label = QtWidgets.QLabel("Choose Deletion Options")
+    layout.addWidget(label)
+
+    prev = QtWidgets.QRadioButton("this frame and previous frames")
+    next = QtWidgets.QRadioButton("this frame and next frames")
+    all = QtWidgets.QRadioButton(
+        "across all frames (previous and next)")
+    only = QtWidgets.QRadioButton("this frame only")
+
+    from_to = QtWidgets.QRadioButton(
+        "in a specific range of frames")
+    from_frame = QtWidgets.QSpinBox()
+    to_frame = QtWidgets.QSpinBox()
+    from_frame.setRange(1, TOTAL_VIDEO_FRAMES)
+    to_frame.setRange(1, TOTAL_VIDEO_FRAMES)
+    from_frame.valueChanged.connect(lambda: from_to.toggle())
+    to_frame.valueChanged.connect(lambda: from_to.toggle())
+
+    if config['deleteDefault'] == 'this frame and previous frames':
+        prev.toggle()
+    if config['deleteDefault'] == 'this frame and next frames':
+        next.toggle()
+    if config['deleteDefault'] == 'across all frames (previous and next)':
+        all.toggle()
+    if config['deleteDefault'] == 'this frame only':
+        only.toggle()
+    if config['deleteDefault'] == 'in a specific range of frames':
+        from_to.toggle()
+
+    prev.toggled.connect(lambda: config.update(
+        {'deleteDefault': 'this frame and previous frames'}))
+    next.toggled.connect(lambda: config.update(
+        {'deleteDefault': 'this frame and next frames'}))
+    all.toggled.connect(lambda: config.update(
+        {'deleteDefault': 'across all frames (previous and next)'}))
+    only.toggled.connect(lambda: config.update(
+        {'deleteDefault': 'this frame only'}))
+    from_to.toggled.connect(lambda: config.update(
+        {'deleteDefault': 'in a specific range of frames'}))
+
+    layout.addWidget(only)
+    layout.addWidget(prev)
+    layout.addWidget(next)
+    layout.addWidget(all)
+    layout.addWidget(from_to)
+    layout.addWidget(from_frame)
+    layout.addWidget(to_frame)
+
+    buttonBox = QtWidgets.QDialogButtonBox(
+        QtWidgets.QDialogButtonBox.Ok)
+    buttonBox.accepted.connect(dialog.accept)
+    layout.addWidget(buttonBox)
+    dialog.setLayout(layout)
+    result = dialog.exec_()
+    
+    mode = config['deleteDefault']
+    fromFrameVAL = from_frame.value() 
+    toFrameVAL  = to_frame.value()
+    
+    if mode == 'this frame and previous frames':
+        toFrameVAL = INDEX_OF_CURRENT_FRAME
+        fromFrameVAL = 1
+    elif mode == 'this frame and next frames':
+        toFrameVAL = TOTAL_VIDEO_FRAMES
+        fromFrameVAL = INDEX_OF_CURRENT_FRAME
+    elif mode == 'this frame only':
+        toFrameVAL = INDEX_OF_CURRENT_FRAME
+        fromFrameVAL = INDEX_OF_CURRENT_FRAME
+    elif mode == 'across all frames (previous and next)':
+        toFrameVAL = TOTAL_VIDEO_FRAMES
+        fromFrameVAL = 1
+    
+    return result, config, fromFrameVAL, toFrameVAL
+
+
+
+
+
+
+
+
+
+
+
 
 
 
