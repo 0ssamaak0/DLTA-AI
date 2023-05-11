@@ -1529,44 +1529,15 @@ class MainWindow(QtWidgets.QMainWindow):
                     item.setData(Qt.UserRole, shape.label)
                     self.uniqLabelList.addItem(item)
                 return
-            ###########################################################
+            
             idChanged = old_group_id != new_group_id
             only_this_frame = False
             if idChanged:
-                dialog = QtWidgets.QDialog()
-                dialog.setWindowTitle("Choose Edit Options")
-                dialog.setWindowModality(Qt.ApplicationModal)
-                dialog.resize(250, 100)
-
-                layout = QtWidgets.QVBoxLayout()
-
-                label = QtWidgets.QLabel("Choose Edit Options")
-                layout.addWidget(label)
-
-                only = QtWidgets.QRadioButton("Edit only this frame")
-                all = QtWidgets.QRadioButton("Edit all frames with this ID")
-
-                if self.config['EditDefault'] == 'Edit only this frame':
-                    only.toggle()
-                if self.config['EditDefault'] == 'Edit all frames with this ID':
-                    all.toggle()
-
-                only.toggled.connect(lambda: self.config.update(
-                    {'EditDefault': 'Edit only this frame'}))
-                all.toggled.connect(lambda: self.config.update(
-                    {'EditDefault': 'Edit all frames with this ID'}))
-
-                layout.addWidget(only)
-                layout.addWidget(all)
-
-                buttonBox = QtWidgets.QDialogButtonBox(
-                    QtWidgets.QDialogButtonBox.Ok)
-                buttonBox.accepted.connect(dialog.accept)
-                layout.addWidget(buttonBox)
-                dialog.setLayout(layout)
-                result = dialog.exec_()
+                result, self.config = helpers.editLabel_idChanged_GUI(self.config)
                 if result == QtWidgets.QDialog.Accepted:
                     only_this_frame = True if self.config['EditDefault'] == 'Edit only this frame' else False
+                else:
+                    return
 
             listObj = self.load_objects_from_json__orjson()
             
@@ -1589,13 +1560,8 @@ class MainWindow(QtWidgets.QMainWindow):
                         # check duplicates
                         if self.is_id_repeated(new_group_id):
                             shape.group_id = old_group_id
-                            msg = QtWidgets.QMessageBox()
-                            msg.setIcon(QtWidgets.QMessageBox.Information)
-                            msg.setText(
-                                f"Two shapes with the same ID exists.\nApparantly, a shape with ID ({new_group_id}) already exists with another shape with ID ({old_group_id}) in the CURRENT FRAME and the edit will result in two shapes with the same ID in the same frame.\n\n The edit is NOT performed.")
-                            msg.setWindowTitle("Warning")
-                            msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
-                            msg.exec_()
+                            helpers.OKmsgBox("Warning", 
+                                             f"Two shapes with the same ID exists.\nApparantly, a shape with ID ({new_group_id}) already exists with another shape with ID ({old_group_id}) in the CURRENT FRAME and the edit will result in two shapes with the same ID in the same frame.\n\n The edit is NOT performed.")
                             return
                     except:
                         new_id_frame_record = set()
@@ -1632,13 +1598,8 @@ class MainWindow(QtWidgets.QMainWindow):
                         Intersection = old_id_frame_record.intersection(new_id_frame_record)
                         if len(Intersection) != 0:
                             shape.group_id = old_group_id
-                            msg = QtWidgets.QMessageBox()
-                            msg.setIcon(QtWidgets.QMessageBox.Information)
-                            msg.setText(
-                                f'Two shapes with the same ID exists in at least one frame.\nApparantly, a shape with ID ({new_group_id}) already exists with another shape with ID ({old_group_id}).\nLike in frames ({Intersection}) and the edit will result in two shapes with the same ID ({new_group_id}).\n\n The edit is NOT performed.')
-                            msg.setWindowTitle("ID already exists")
-                            msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
-                            msg.exec_()
+                            helpers.OKmsgBox("ID already exists",
+                                             f'Two shapes with the same ID exists in at least one frame.\nApparantly, a shape with ID ({new_group_id}) already exists with another shape with ID ({old_group_id}).\nLike in frames ({Intersection}) and the edit will result in two shapes with the same ID ({new_group_id}).\n\n The edit is NOT performed.')
                             return
                     except:
                         new_id_frame_record = set()
@@ -1713,69 +1674,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.load_objects_to_json__orjson(listObj)
             self.calc_trajectory_when_open_video()
             self.main_video_frames_slider_changed()
-            ###########################################################
-
-    def interpolateGUI(self):
-        dialog = QtWidgets.QDialog()
-        dialog.setWindowTitle("Choose Interpolation Options")
-        dialog.setWindowModality(Qt.ApplicationModal)
-        dialog.resize(250, 100)
-
-        layout = QtWidgets.QVBoxLayout()
-
-        label = QtWidgets.QLabel("Choose Interpolation Options")
-        layout.addWidget(label)
-
-        only_missed = QtWidgets.QRadioButton(
-            "interpolate only missed frames between detected frames")
-        only_edited = QtWidgets.QRadioButton(
-            "interpolate all frames between your KEY frames")
-        with_sam = QtWidgets.QRadioButton(
-            "interpolate ALL frames with SAM (more precision, more time)")
-
-        if self.config['interpolationDefault'] == 'interpolate only missed frames between detected frames':
-            only_missed.toggle()
-        if self.config['interpolationDefault'] == 'interpolate all frames between your KEY frames':
-            only_edited.toggle()
-        if self.config['interpolationDefault'] == 'interpolate ALL frames with SAM (more precision, more time)':
-            with_sam.toggle()
-
-        only_missed.toggled.connect(lambda: self.config.update(
-            {'interpolationDefault': 'interpolate only missed frames between detected frames'}))
-        only_edited.toggled.connect(lambda: self.config.update(
-            {'interpolationDefault': 'interpolate all frames between your KEY frames'}))
-        with_sam.toggled.connect(lambda: self.config.update(
-            {'interpolationDefault': 'interpolate ALL frames with SAM (more precision, more time)'}))
-
-        layout.addWidget(only_missed)
-        layout.addWidget(only_edited)
-        layout.addWidget(with_sam)
-
-        buttonBox = QtWidgets.QDialogButtonBox(
-            QtWidgets.QDialogButtonBox.Ok)
-        buttonBox.accepted.connect(dialog.accept)
-        layout.addWidget(buttonBox)
-        dialog.setLayout(layout)
-        result = dialog.exec_()
-        if result != QtWidgets.QDialog.Accepted:
-            return False
-        
-        only_edited = True if self.config['interpolationDefault'] == 'interpolate all frames between your KEY frames' else False
-        if only_edited:
-                try:
-                    id = self.canvas.selectedShapes[0].group_id
-                    if len(self.key_frames['id_' + str(id)]) == 1:
-                        x = 1/0
-                except:
-                    msg = QtWidgets.QMessageBox()
-                    msg.setIcon(QtWidgets.QMessageBox.Information)
-                    msg.setText(
-                        f"No KEY frames found for this shape ID.\n    ie. less than 2 key frames\n The interpolation is NOT performed.")
-                    msg.setWindowTitle("No KEY frames found")
-                    msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
-                    msg.exec_()
-                    return False
-        return True
+           
 
     def interpolateMENU(self, item=None):
 
@@ -1812,23 +1711,36 @@ class MainWindow(QtWidgets.QMainWindow):
             ids = [shape.group_id for shape in self.canvas.selectedShapes]
             id = self.canvas.selectedShapes[0].group_id
 
-        result = self.interpolateGUI()
+        result, self.config = helpers.interpolationOptions_GUI(self.config)
         
-        if result:
-            only_edited = True if self.config['interpolationDefault'] == 'interpolate all frames between your KEY frames' else False
-            with_sam = True if self.config[
-                'interpolationDefault'] == 'interpolate ALL frames with SAM (more precision, more time)' else False
-            
-            if with_sam:
-                self.interpolate(id=ids,
-                                only_edited=False, 
-                                with_sam=True)
-            else:
-                for id in ids:
-                    self.interpolate(id=id,
-                                    only_edited=only_edited, 
-                                    with_sam=False)
-            self.waitWindow()
+        if result != QtWidgets.QDialog.Accepted:
+            return
+        
+        only_edited = True if self.config[
+            'interpolationDefault'] == 'interpolate all frames between your KEY frames' else False
+        with_sam = True if self.config[
+            'interpolationDefault'] == 'interpolate ALL frames with SAM (more precision, more time)' else False
+        
+        if only_edited:
+                try:
+                    id = self.canvas.selectedShapes[0].group_id
+                    if len(self.key_frames['id_' + str(id)]) == 1:
+                        x = 1/0
+                except:
+                    helpers.OKmsgBox("No KEY frames found", 
+                                        f"No KEY frames found for this shape ID.\n    ie. less than 2 key frames\n The interpolation is NOT performed.")
+                    return
+        
+        if with_sam:
+            self.interpolate(id=ids,
+                            only_edited=False, 
+                            with_sam=True)
+        else:
+            for id in ids:
+                self.interpolate(id=id,
+                                only_edited=only_edited, 
+                                with_sam=False)
+        self.waitWindow()
 
     def mark_as_key(self):
         self.update_current_frame_annotation()
@@ -1999,14 +1911,8 @@ class MainWindow(QtWidgets.QMainWindow):
             visible=True, text=f'Wait a second.\nIDs are being interpolated with SAM...')
 
         if self.sam_model_comboBox.currentText() == "Select Model (SAM disable)":
-            msg = QtWidgets.QMessageBox()
-            msg.setIcon(QtWidgets.QMessageBox.Information)
-            msg.setText(
-                "SAM is disabled.\nPlease enable SAM.")
-            msg.setWindowTitle("SAM is disabled")
-            msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
-            msg.exec_()
-
+            helpers.OKmsgBox("SAM is disabled", 
+                             f"SAM is disabled.\nPlease enable SAM.")
             return
         
         if len(self.canvas.selectedShapes) == 0:
@@ -2308,10 +2214,13 @@ class MainWindow(QtWidgets.QMainWindow):
         self.copiedShapes = self.canvas.selectedShapes
 
     def pasteShapesSelected(self):
+        
         if len(self.copiedShapes) == 0:
             return
+        
         ids = [shape.group_id for shape in self.canvas.shapes]
         flag = False
+        
         for shape in self.copiedShapes:
             if shape.group_id in ids:
                 flag = True
@@ -2319,14 +2228,11 @@ class MainWindow(QtWidgets.QMainWindow):
             self.canvas.shapes.append(shape)
             self.addLabel(shape)
             self.rec_frame_for_id(shape.group_id, self.INDEX_OF_CURRENT_FRAME)
+            
         if flag:
-            msg = QtWidgets.QMessageBox()
-            msg.setIcon(QtWidgets.QMessageBox.Information)
-            msg.setText(
-                "A Shape(s) with the same ID(s) already exist(s) in this frame.\n\nShapes with no duplicate IDs are Copied Successfully.")
-            msg.setWindowTitle("IDs already exist")
-            msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
-            msg.exec_()
+            helpers.OKmsgBox("IDs already exist", 
+                             "A Shape(s) with the same ID(s) already exist(s) in this frame.\n\nShapes with no duplicate IDs are Copied Successfully.")
+            
         if self.current_annotation_mode == "video":
             self.update_current_frame_annotation_button_clicked()
 
@@ -2418,12 +2324,7 @@ class MainWindow(QtWidgets.QMainWindow):
             repeated += 1
 
         if repeated > 1:
-            msg = QtWidgets.QMessageBox()
-            msg.setIcon(QtWidgets.QMessageBox.Information)
-            msg.setText(f"OH, Finally..!")
-            msg.setWindowTitle(" ")
-            msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
-            msg.exec_()
+            helpers.OKmsgBox("Finally..!", "OH, Finally..!")
 
         return group_id, text
 
@@ -3209,40 +3110,8 @@ class MainWindow(QtWidgets.QMainWindow):
     def exportData(self):
         try:
             if self.current_annotation_mode == "video":
-                dialog = QtWidgets.QDialog()
-                dialog.setWindowTitle("Choose Export Options")
-                dialog.setWindowModality(Qt.ApplicationModal)
-                dialog.resize(250, 100)
-
-                layout = QtWidgets.QVBoxLayout()
-
-                label = QtWidgets.QLabel("Choose Export Options")
-                layout.addWidget(label)
-
-                # Create a button group to hold the radio buttons
-                button_group = QtWidgets.QButtonGroup()
-
-                # Create the radio buttons and add them to the button group
-                coco_radio = QtWidgets.QRadioButton(
-                    "COCO Format (Detection / Segmentation)")
-                mot_radio = QtWidgets.QRadioButton("MOT Format (Tracking)")
-                button_group.addButton(coco_radio)
-                button_group.addButton(mot_radio)
-
-                # Add the radio buttons to the layout
-                layout.addWidget(coco_radio)
-                layout.addWidget(mot_radio)
-
-                buttonBox = QtWidgets.QDialogButtonBox(
-                    QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel)
-                buttonBox.accepted.connect(dialog.accept)
-                buttonBox.rejected.connect(dialog.reject)
-
-                layout.addWidget(buttonBox)
-
-                dialog.setLayout(layout)
-
-                result = dialog.exec_()
+                
+                result, coco_radio, mot_radio = helpers.exportData_GUI()
                 if not result:
                     return
 
@@ -3251,14 +3120,14 @@ class MainWindow(QtWidgets.QMainWindow):
 
                 pth = self.CURRENT_VIDEO_PATH
                 # Check which radio button is checked and export accordingly
-                if coco_radio.isChecked():
+                if coco_radio:
                     folderDialog = utils.FolderDialog("coco.json", "json")
                     if folderDialog.exec_():
                         pth = utils.exportCOCOvid(
                             json_file_name, self.CURRENT_VIDEO_WIDTH, self.CURRENT_VIDEO_HEIGHT, folderDialog.selectedFiles()[0])
                     else:
                         raise Exception("No folder selected")
-                if mot_radio.isChecked():
+                if mot_radio:
                     folderDialog = utils.FolderDialog("mot.txt", "txt")
                     if folderDialog.exec_():
                         pth = utils.exportMOT(
@@ -3463,95 +3332,24 @@ class MainWindow(QtWidgets.QMainWindow):
                     action.setEnabled(False)
             if self.config['toolMode'] == 'image':
                 return
-            ###########################
+            
             # if video mode
-            if self.current_annotation_mode == "video":
-                dialog = QtWidgets.QDialog()
-                dialog.setWindowTitle("Choose Deletion Options")
-                dialog.setWindowModality(Qt.ApplicationModal)
-                dialog.resize(250, 100)
+            result, self.config, fromFrameVAL, toFrameVAL = helpers.deleteSelectedShape_GUI(
+                self.TOTAL_VIDEO_FRAMES,
+                self.INDEX_OF_CURRENT_FRAME,
+                self.config)
+            if result == QtWidgets.QDialog.Accepted:
+                for deleted_id in deleted_ids:
+                    self.delete_ids_from_all_frames(
+                        [deleted_id], from_frame=fromFrameVAL, to_frame=toFrameVAL)
 
-                layout = QtWidgets.QVBoxLayout()
+            self.main_video_frames_slider_changed()
+            
 
-                label = QtWidgets.QLabel("Choose Deletion Options")
-                layout.addWidget(label)
-
-                prev = QtWidgets.QRadioButton("this frame and previous frames")
-                next = QtWidgets.QRadioButton("this frame and next frames")
-                all = QtWidgets.QRadioButton(
-                    "across all frames (previous and next)")
-                only = QtWidgets.QRadioButton("this frame only")
-
-                from_to = QtWidgets.QRadioButton(
-                    "in a specific range of frames")
-                from_frame = QtWidgets.QSpinBox()
-                to_frame = QtWidgets.QSpinBox()
-                from_frame.setRange(1, self.TOTAL_VIDEO_FRAMES)
-                to_frame.setRange(1, self.TOTAL_VIDEO_FRAMES)
-                from_frame.valueChanged.connect(lambda: from_to.toggle())
-                to_frame.valueChanged.connect(lambda: from_to.toggle())
-
-                if self.config['deleteDefault'] == 'this frame and previous frames':
-                    prev.toggle()
-                if self.config['deleteDefault'] == 'this frame and next frames':
-                    next.toggle()
-                if self.config['deleteDefault'] == 'across all frames (previous and next)':
-                    all.toggle()
-                if self.config['deleteDefault'] == 'this frame only':
-                    only.toggle()
-                if self.config['deleteDefault'] == 'in a specific range of frames':
-                    from_to.toggle()
-
-                prev.toggled.connect(lambda: self.config.update(
-                    {'deleteDefault': 'this frame and previous frames'}))
-                next.toggled.connect(lambda: self.config.update(
-                    {'deleteDefault': 'this frame and next frames'}))
-                all.toggled.connect(lambda: self.config.update(
-                    {'deleteDefault': 'across all frames (previous and next)'}))
-                only.toggled.connect(lambda: self.config.update(
-                    {'deleteDefault': 'this frame only'}))
-                from_to.toggled.connect(lambda: self.config.update(
-                    {'deleteDefault': 'in a specific range of frames'}))
-
-                layout.addWidget(only)
-                layout.addWidget(prev)
-                layout.addWidget(next)
-                layout.addWidget(all)
-                layout.addWidget(from_to)
-                layout.addWidget(from_frame)
-                layout.addWidget(to_frame)
-
-                buttonBox = QtWidgets.QDialogButtonBox(
-                    QtWidgets.QDialogButtonBox.Ok)
-                buttonBox.accepted.connect(dialog.accept)
-                layout.addWidget(buttonBox)
-                dialog.setLayout(layout)
-                result = dialog.exec_()
-                if result == QtWidgets.QDialog.Accepted:
-                    for deleted_id in deleted_ids:
-                        self.delete_ids_from_all_frames(
-                            [deleted_id], mode=self.config['deleteDefault'], from_frame=from_frame.value(), to_frame=to_frame.value())
-
-                self.main_video_frames_slider_changed()
-            ###########################
-
-    def delete_ids_from_all_frames(self, deleted_ids, mode, from_frame, to_frame):
+    def delete_ids_from_all_frames(self, deleted_ids, from_frame, to_frame):
         from_frame, to_frame = np.min(
             [from_frame, to_frame]), np.max([from_frame, to_frame])
         listObj = self.load_objects_from_json__orjson()
-
-        if mode == 'this frame and previous frames':
-            to_frame = self.INDEX_OF_CURRENT_FRAME
-            from_frame = 1
-        elif mode == 'this frame and next frames':
-            to_frame = self.TOTAL_VIDEO_FRAMES
-            from_frame = self.INDEX_OF_CURRENT_FRAME
-        elif mode == 'this frame only':
-            to_frame = self.INDEX_OF_CURRENT_FRAME
-            from_frame = self.INDEX_OF_CURRENT_FRAME
-        elif mode == 'across all frames (previous and next)':
-            to_frame = self.TOTAL_VIDEO_FRAMES
-            from_frame = 1
 
         for i in range(from_frame - 1, to_frame, 1):
             frame_idx = listObj[i]['frame_idx']
@@ -3825,12 +3623,7 @@ class MainWindow(QtWidgets.QMainWindow):
             runtime = ('Labelmm is Using CPU')
 
         # show runtime in QMessageBox
-        msg = QtWidgets.QMessageBox()
-        msg.setIcon(QtWidgets.QMessageBox.Information)
-        msg.setText(runtime)
-        msg.setWindowTitle("Runtime Data")
-        msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
-        msg.exec_()
+        helpers.OKmsgBox("Runtime Data", runtime)
 
     # VIDEO PROCESSING FUNCTIONS (ALL CONNECTED TO THE VIDEO PROCESSING TOOLBAR)
 
@@ -4571,12 +4364,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.INDEX_OF_CURRENT_FRAME = self.main_video_frames_slider.value()
         # show message saying that the video is exported
-        msg = QtWidgets.QMessageBox()
-        msg.setIcon(QtWidgets.QMessageBox.Information)
-        msg.setText("Done Exporting Video")
-        msg.setWindowTitle("Export Video")
-        msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
-        msg.exec_()
+        helpers.OKmsgBox("Export Video", "Done Exporting Video")
 
     def clear_video_annotations_button_clicked(self):
         self.global_listObj = []
@@ -4599,12 +4387,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # now delete the json file if it exists
         if os.path.exists(json_file_name):
             os.remove(json_file_name)
-        msg = QtWidgets.QMessageBox()
-        msg.setIcon(QtWidgets.QMessageBox.Information)
-        msg.setText("All video frames annotations are cleared")
-        msg.setWindowTitle("clear annotations")
-        msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
-        msg.exec_()
+        helpers.OKmsgBox("clear annotations", "All video frames annotations are cleared")
         self.main_video_frames_slider.setValue(2)
         self.main_video_frames_slider.setValue(1)
 
@@ -5120,14 +4903,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def sam_enhance_annotation_button_clicked(self):
         if self.sam_model_comboBox.currentText() == "Select Model (SAM disable)" or len(self.canvas.selectedShapes) == 0:
-            msg = QtWidgets.QMessageBox()
-            msg.setIcon(QtWidgets.QMessageBox.Information)
-            msg.setText(
-                "No shape selected or SAM is disabled.\nPlease select a shape and enable SAM.")
-            msg.setWindowTitle("No shape selected or SAM is disabled")
-            msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
-            msg.exec_()
-
+            helpers.OKmsgBox("No shape selected or SAM is disabled", "No shape selected or SAM is disabled.\nPlease select a shape and enable SAM.")
             return
         try:
             same_image = self.sam_predictor.check_image(
