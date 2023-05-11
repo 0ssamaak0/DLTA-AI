@@ -44,6 +44,7 @@ from .intelligence import Intelligence
 from .intelligence import convert_shapes_to_qt_shapes
 from .intelligence import coco_classes, color_palette
 from .utils.sam import Sam_Predictor
+from .utils import helpers
 
 from onemetric.cv.utils.iou import box_iou_batch
 from dataclasses import dataclass
@@ -1827,6 +1828,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     self.interpolate(id=id,
                                     only_edited=only_edited, 
                                     with_sam=False)
+            self.waitWindow()
 
     def mark_as_key(self):
         self.update_current_frame_annotation()
@@ -1867,7 +1869,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
         if with_sam:
             self.interpolate_with_sam()
-            self.waitWindow()
             return
         
         listObj = self.load_objects_from_json__orjson()
@@ -1976,7 +1977,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.load_objects_to_json__orjson(listObj)
         self.calc_trajectory_when_open_video()
         self.main_video_frames_slider_changed()
-        self.waitWindow()
 
     # def fill_empty_listObj_frames(self, listObj, start_idx, end_idx):
     #     # checks the list object and fills empty frames with empty data
@@ -2007,7 +2007,6 @@ class MainWindow(QtWidgets.QMainWindow):
             msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
             msg.exec_()
 
-            self.waitWindow()
             return
         
         if len(self.canvas.selectedShapes) == 0:
@@ -2039,7 +2038,6 @@ class MainWindow(QtWidgets.QMainWindow):
                 last_frame_idxLIST.append(maxf)
         
         if len(idsLIST) == 0:
-            self.waitWindow()
             return
         
         # idsLIST = [shape.group_id for shape in self.canvas.selectedShapes]
@@ -2166,7 +2164,6 @@ class MainWindow(QtWidgets.QMainWindow):
                 listObj[i]['frame_data'].append(RECORDSLIST[ididx][idx])
                 self.rec_frame_for_id(idsLIST[ididx], listobjframe)
 
-        self.waitWindow()
 
         # for f in listObj:
         #     if f['frame_idx'] == min(first_frame_idxLIST):
@@ -2333,131 +2330,23 @@ class MainWindow(QtWidgets.QMainWindow):
         if self.current_annotation_mode == "video":
             self.update_current_frame_annotation_button_clicked()
 
-    def get_bbox_xywh(self, segment):
-        segment = np.array(segment)
-        x0 = np.min(segment[:, 0])
-        y0 = np.min(segment[:, 1])
-        x1 = np.max(segment[:, 0])
-        y1 = np.max(segment[:, 1])
-        return [x0, y0, x1, y1]
+    def get_bbox_xyxy(self, segment):
+        return helpers.get_bbox_xyxy(segment)
 
     def addPoints(self, shape, n):
-        res = shape.copy()
-        sub = 1.0 * n / (len(shape) - 1)
-        if sub == 0:
-            return res
-        if sub < 1:
-            res = []
-            res.append(shape[0])
-            flag = True
-            for i in range(len(shape) - 1):
-                dif = [shape[i + 1][0] - shape[i][0],
-                       shape[i + 1][1] - shape[i][1]]
-                newPoint = [shape[i][0] + dif[0] *
-                            0.5, shape[i][1] + dif[1] * 0.5]
-                if flag:
-                    res.append(newPoint)
-                res.append(shape[i + 1])
-                n -= 1
-                if n == 0:
-                    flag = False
-            return res
-        else:
-            now = int(sub) + 1
-            res = []
-            res.append(shape[0])
-            for i in range(len(shape) - 1):
-                dif = [shape[i + 1][0] - shape[i][0],
-                       shape[i + 1][1] - shape[i][1]]
-                for j in range(1, now):
-                    newPoint = [shape[i][0] + dif[0] * j /
-                                now, shape[i][1] + dif[1] * j / now]
-                    res.append(newPoint)
-                res.append(shape[i + 1])
-            return self.addPoints(res, n + len(shape) - len(res))
+        return helpers.addPoints(shape, n)
 
     def reducePoints(self, polygon, n):
-        if n >= len(polygon):
-            return polygon
-        distances = polygon.copy()
-        for i in range(len(polygon)):
-            mid = (np.array(polygon[i - 1]) +
-                   np.array(polygon[(i + 1) % len(polygon)])) / 2
-            dif = np.array(polygon[i]) - mid
-            dist_mid = np.sqrt(dif[0] * dif[0] + dif[1] * dif[1])
-
-            dif_right = np.array(
-                polygon[(i + 1) % len(polygon)]) - np.array(polygon[i])
-            dist_right = np.sqrt(
-                dif_right[0] * dif_right[0] + dif_right[1] * dif_right[1])
-
-            dif_left = np.array(polygon[i - 1]) - np.array(polygon[i])
-            dist_left = np.sqrt(
-                dif_left[0] * dif_left[0] + dif_left[1] * dif_left[1])
-
-            distances[i] = min(dist_mid, dist_right, dist_left)
-        distances = [distances[i] + random.random()
-                     for i in range(len(distances))]
-        ratio = 1.0 * n / len(polygon)
-        threshold = np.percentile(distances, 100 - ratio * 100)
-
-        i = 0
-        while i < len(polygon):
-            if distances[i] < threshold:
-                polygon[i] = None
-                i += 1
-            i += 1
-        res = [x for x in polygon if x is not None]
-        return self.reducePoints(res, n)
+        return helpers.reducePoints(polygon, n)
 
     def handlePoints(self, polygon, n):
-        if n == len(polygon):
-            return polygon
-        elif n > len(polygon):
-            return self.addPoints(polygon, n - len(polygon))
-        else:
-            return self.reducePoints(polygon, n)
+        return helpers.handlePoints(polygon, n)
 
     def allign(self, shape1, shape2):
-        shape1_center = self.centerOFmass(shape1)
-        shape1_org = [[shape1[i][0] - shape1_center[0], shape1[i]
-                       [1] - shape1_center[1]] for i in range(len(shape1))]
-        shape2_center = self.centerOFmass(shape2)
-        shape2_org = [[shape2[i][0] - shape2_center[0], shape2[i]
-                       [1] - shape2_center[1]] for i in range(len(shape2))]
-
-        shape1_slope = np.arctan2(
-            np.array(shape1_org)[:, 1], np.array(shape1_org)[:, 0]).tolist()
-        shape2_slope = np.arctan2(
-            np.array(shape2_org)[:, 1], np.array(shape2_org)[:, 0]).tolist()
-
-        shape1_alligned = []
-        shape2_alligned = []
-
-        for i in range(len(shape1_slope)):
-            x1 = np.argmax(shape1_slope)
-            x2 = np.argmax(shape2_slope)
-            shape1_alligned.append(shape1_org[x1])
-            shape2_alligned.append(shape2_org[x2])
-            shape1_org.pop(x1)
-            shape2_org.pop(x2)
-            shape1_slope.pop(x1)
-            shape2_slope.pop(x2)
-
-        shape1_alligned = [[shape1_alligned[i][0] + shape1_center[0], shape1_alligned[i]
-                            [1] + shape1_center[1]] for i in range(len(shape1_alligned))]
-        shape2_alligned = [[shape2_alligned[i][0] + shape2_center[0], shape2_alligned[i]
-                            [1] + shape2_center[1]] for i in range(len(shape2_alligned))]
-
-        return (shape1_alligned, shape2_alligned)
+        return helpers.allign(shape1, shape2)
 
     def centerOFmass(self, points):
-        sumX = 0
-        sumY = 0
-        for point in points:
-            sumX += point[0]
-            sumY += point[1]
-        return [int(sumX / len(points)), int(sumY / len(points))]
+        return helpers.centerOFmass(points)
 
     def is_id_repeated(self, group_id, frameIdex=-1):
         if frameIdex == -1:
@@ -2697,9 +2586,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.flag_widget.addItem(item)
 
     def flattener(self, list_2d):
-        points = [(p.x(), p.y()) for p in list_2d]
-        points = np.array(points, np.int16).flatten().tolist()
-        return points
+        return helpers.flattener(list_2d)
 
     def saveLabels(self, filename):
         lf = LabelFile()
@@ -3950,15 +3837,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def mapFrameToTime(self, frameNumber):
         # get the fps of the video
         fps = self.CAP.get(cv2.CAP_PROP_FPS)
-        # get the time of the frame
-        frameTime = frameNumber / fps
-        frameHours = int(frameTime / 3600)
-        frameMinutes = int((frameTime - frameHours * 3600) / 60)
-        frameSeconds = int(frameTime - frameHours * 3600 - frameMinutes * 60)
-        frameMilliseconds = int(
-            (frameTime - frameHours * 3600 - frameMinutes * 60 - frameSeconds) * 1000)
-        # print them in formal time format
-        return frameHours, frameMinutes, frameSeconds, frameMilliseconds
+        return helpers.mapFrameToTime(frameNumber, fps)
 
     def calc_trajectory_when_open_video(self, ):
         listObj = self.load_objects_from_json__orjson()
@@ -4349,12 +4228,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.main_video_frames_slider.setValue(self.INDEX_OF_CURRENT_FRAME + 1)
 
     def class_name_to_id(self, class_name):
-        try:
-            # map from coco_classes(a list of coco class names) to class_id
-            return coco_classes.index(class_name)
-        except:
-            # this means that the class name is not in the coco dataset
-            return -1
+        return helpers.class_name_to_id(class_name)
 
     def track_assigned_objects_button_clicked(self):
         # first check if there is objects in self.canvas.shapes list or not . if not then output a error message and return
@@ -4370,80 +4244,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.TRACK_ASSIGNED_OBJECTS_ONLY = False
 
     def compute_iou(self, box1, box2):
-        """
-        Computes IOU between two bounding boxes.
-
-        Args:
-            box1 (list): List of 4 coordinates (xmin, ymin, xmax, ymax) of the first box.
-            box2 (list): List of 4 coordinates (xmin, ymin, xmax, ymax) of the second box.
-
-        Returns:
-            iou (float): IOU between the two boxes.
-        """
-        # Compute intersection coordinates
-        xmin = max(box1[0], box2[0])
-        ymin = max(box1[1], box2[1])
-        xmax = min(box1[2], box2[2])
-        ymax = min(box1[3], box2[3])
-
-        # Compute intersection area
-        if xmin < xmax and ymin < ymax:
-            intersection_area = (xmax - xmin) * (ymax - ymin)
-        else:
-            intersection_area = 0
-
-        # Compute union area
-        box1_area = (box1[2] - box1[0]) * (box1[3] - box1[1])
-        box2_area = (box2[2] - box2[0]) * (box2[3] - box2[1])
-        union_area = box1_area + box2_area - intersection_area
-
-        # Compute IOU
-        iou = intersection_area / union_area if union_area > 0 else 0
-
-        return iou
+        return helpers.compute_iou(box1, box2)
 
     def match_detections_with_tracks(self, detections, tracks, iou_threshold=0.5):
-        """
-        Match detections with tracks based on their bounding boxes using IOU threshold.
-
-        Args:
-            detections (list): List of detections, each detection is a dictionary with keys (bbox, confidence, class_id)
-            tracks (list): List of tracks, each track is a tuple of (bboxes, track_id, class, conf)
-            iou_threshold (float): IOU threshold for matching detections with tracks.
-
-        Returns:
-            matched_detections (list): List of detections that are matched with tracks, each detection is a dictionary with keys (bbox, confidence, class_id)
-            unmatched_detections (list): List of detections that are not matched with any tracks, each detection is a dictionary with keys (bbox, confidence, class_id)
-        """
-        matched_detections = []
-        unmatched_detections = []
-
-        # Loop through each detection
-        for detection in detections:
-            detection_bbox = detection['bbox']
-            # Loop through each track
-            max_iou = 0
-            matched_track = None
-            for track in tracks:
-                track_bbox = track[0:4]
-
-                # Compute IOU between detection and track
-                iou = self.compute_iou(detection_bbox, track_bbox)
-
-                # Check if IOU is greater than threshold and better than previous matches
-                if iou > iou_threshold and iou > max_iou:
-                    matched_track = track
-                    max_iou = iou
-
-            # If a track was matched, add detection to matched_detections list and remove the matched track from tracks list
-            if matched_track is not None:
-                detection['group_id'] = int(matched_track[4])
-                matched_detections.append(detection)
-                tracks.remove(matched_track)
-            else:
-                unmatched_detections.append(detection)
-
-        return matched_detections, unmatched_detections
+       return helpers.match_detections_with_tracks(detections, tracks, iou_threshold)
 
     def update_gui_after_tracking(self, index):
         # self.loadFramefromVideo(self.CURRENT_FRAME_IMAGE, self.INDEX_OF_CURRENT_FRAME)
@@ -4468,29 +4272,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.thread.start()
 
     def get_boxes_conf_classids_segments(self, shapes):
-        boxes = []
-        confidences = []
-        class_ids = []
-        segments = []
-        for s in shapes:
-            label = s["label"]
-            points = s["points"]
-            # points are one dimensional array of x1,y1,x2,y2,x3,y3,x4,y4
-            # we will convert it to a 2 dimensional array of points (segment)
-            segment = []
-            for j in range(0, len(points), 2):
-                segment.append([int(points[j]), int(points[j + 1])])
-            # if points is empty pass
-            # if len(points) == 0:
-            #     continue
-            segments.append(segment)
-
-            boxes.append(self.intelligenceHelper.get_bbox(segment))
-            confidences.append(float(s["content"]))
-            class_ids.append(coco_classes.index(
-                label)if label in coco_classes else -1)
-
-        return boxes, confidences, class_ids, segments
+        return helpers.get_boxes_conf_classids_segments(shapes)
 
     def track_buttonClicked(self):
 
@@ -4671,20 +4453,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.tracking_progress_bar.setValue(0)
 
     def convert_qt_shapes_to_shapes(self, qt_shapes):
-        shapes = []
-        for s in qt_shapes:
-            shapes.append(dict(
-                label=s.label.encode("utf-8") if PY2 else s.label,
-                # convert points into 1D array
-                points=self.flattener(s.points),
-                bbox=self.intelligenceHelper.get_bbox(
-                    [(p.x(), p.y()) for p in s.points]),
-                group_id=s.group_id,
-                content=s.content,
-                shape_type=s.shape_type,
-                flags=s.flags,
-            ))
-        return shapes
+        return helpers.convert_qt_shapes_to_shapes(qt_shapes)
 
     def track_full_video_button_clicked(self):
         self.FRAMES_TO_TRACK = int(
@@ -4768,8 +4537,8 @@ class MainWindow(QtWidgets.QMainWindow):
             self.INDEX_OF_CURRENT_FRAME = target_frame_idx + 1
             ret, image = input_cap.read()
             shapes = []
-            self.waitWindow(
-            visible=True, text=f'Wait a second.\nFrame {target_frame_idx} is being exported...')
+            # self.waitWindow(
+            #         visible=True, text=f'Wait a second.\nFrame {target_frame_idx} is being exported...')
             frame_idx = listObj[target_frame_idx]['frame_idx']
             frame_objects = listObj[target_frame_idx]['frame_data']
             print(frame_idx)
@@ -4790,7 +4559,9 @@ class MainWindow(QtWidgets.QMainWindow):
             if len(shapes) == 0:
                 # output_cap.write(image)
                 continue
-            image = self.draw_bb_on_image(image, shapes, imgage_qt_flag=False)
+            self.waitWindow(
+                    visible=True, text=f'Wait a second.\nFrame {target_frame_idx} is being exported...')
+            image = self.draw_bb_on_image(image, shapes, image_qt_flag=False)
             output_cap.write(image)
 
         input_cap.release()
@@ -5159,193 +4930,26 @@ class MainWindow(QtWidgets.QMainWindow):
         self.set_video_controls_visibility(False)
 
     def convert_QT_to_cv(self, incomingImage):
-        '''  Converts a QImage into an opencv MAT format  '''
-
-        incomingImage = incomingImage.convertToFormat(4)
-
-        width = incomingImage.width()
-        height = incomingImage.height()
-
-        ptr = incomingImage.bits()
-        ptr.setsize(incomingImage.byteCount())
-        arr = np.array(ptr).reshape(height, width, 4)  # Copies the data
-        return arr
+        return helpers.convert_QT_to_cv(incomingImage)
 
     def convert_cv_to_qt(self, cv_img):
-        rgb_image = cv2.cvtColor(cv_img, cv2.COLOR_BGR2RGB)
-        h, w, ch = rgb_image.shape
-        bytes_per_line = ch * w
-        convert_to_Qt_format = QtGui.QImage(
-            rgb_image.data, w, h, bytes_per_line, QtGui.QImage.Format_RGB888)
-        return convert_to_Qt_format
+        return helpers.convert_cv_to_qt(cv_img)
 
     def draw_bb_id(self, image, x, y, w, h, id, label, color=(0, 0, 255), thickness=1):
-        if self.CURRENT_ANNOATAION_FLAGS['bbox']:
-            image = cv2.rectangle(
-                image, (x, y), (x + w, y + h), color, thickness + 1)
-            if (False):
-                thick = 5
-                colorx = (236, 199, 113)
-                image = cv2.line(image, (x, y), (x + 20, y),
-                                 colorx, thickness + 1 + thick)
-                image = cv2.line(image, (x, y), (x, y + 20),
-                                 colorx, thickness + 1 + thick)
-                image = cv2.line(image, (x + w, y), (x + w - 20, y),
-                                 colorx, thickness + 1 + thick)
-                image = cv2.line(image, (x + w, y), (x + w, y + 20),
-                                 colorx, thickness + 1 + thick)
-                image = cv2.line(image, (x, y + h), (x + 20, y + h),
-                                 colorx, thickness + 1 + thick)
-                image = cv2.line(image, (x, y + h), (x, y + h - 20),
-                                 colorx, thickness + 1 + thick)
-                image = cv2.line(image, (x + w, y + h), (x +
-                                 w - 20, y + h), colorx, thickness + 1 + thick)
-                image = cv2.line(image, (x + w, y + h), (x + w,
-                                 y + h - 20), colorx, thickness + 1 + thick)
-
-        if self.CURRENT_ANNOATAION_FLAGS['id'] or self.CURRENT_ANNOATAION_FLAGS['class']:
-            if self.CURRENT_ANNOATAION_FLAGS['id'] and self.CURRENT_ANNOATAION_FLAGS['class']:
-                text = f'#{id} {label}'
-            if self.CURRENT_ANNOATAION_FLAGS['id'] and not self.CURRENT_ANNOATAION_FLAGS['class']:
-                text = f'#{id}'
-            if not self.CURRENT_ANNOATAION_FLAGS['id'] and self.CURRENT_ANNOATAION_FLAGS['class']:
-                text = f'{label}'
-
-            if image.shape[0] < 1000:
-                fontscale = 0.5
-            else:
-                fontscale = 0.7
-            text_width, text_height = cv2.getTextSize(
-                text, cv2.FONT_HERSHEY_SIMPLEX, fontscale, thickness)[0]
-            text_x = x + 10
-            text_y = y - 10
-
-            text_background_x1 = x
-            text_background_y1 = y - 2 * 10 - text_height
-
-            text_background_x2 = x + 2 * 10 + text_width
-            text_background_y2 = y
-
-            # fontscale is proportional to the image size
-            cv2.rectangle(
-                img=image,
-                pt1=(text_background_x1, text_background_y1),
-                pt2=(text_background_x2, text_background_y2),
-                color=color,
-                thickness=cv2.FILLED,
-            )
-            cv2.putText(
-                img=image,
-                text=text,
-                org=(text_x, text_y),
-                fontFace=cv2.FONT_HERSHEY_SIMPLEX,
-                fontScale=fontscale,
-                color=(0, 0, 0),
-                thickness=thickness,
-                lineType=cv2.LINE_AA,
-            )
-
-        # there is no bbox but there is id or class
-        if (not self.CURRENT_ANNOATAION_FLAGS['bbox']) and (self.CURRENT_ANNOATAION_FLAGS['id'] or self.CURRENT_ANNOATAION_FLAGS['class']):
-            image = cv2.line(image, (x + int(w / 2), y + int(h / 2)),
-                             (x + 50, y - 5), color, thickness + 1)
-
-        return image
+        return helpers.draw_bb_id(self.CURRENT_ANNOATAION_FLAGS, image, x, y, w, h, id, label, color, thickness)
 
     def draw_trajectories(self, img, shapes):
-        x = self.CURRENT_ANNOATAION_TRAJECTORIES['length']
-        for shape in shapes:
-            id = shape["group_id"]
-            pts_traj = self.CURRENT_ANNOATAION_TRAJECTORIES['id_' + str(id)][max(
-                self.INDEX_OF_CURRENT_FRAME - x, 0): self.INDEX_OF_CURRENT_FRAME]
-            pts_poly = np.array([[x, y] for x, y in zip(
-                shape["points"][0::2], shape["points"][1::2])])
-            color_poly = self.CURRENT_ANNOATAION_TRAJECTORIES['id_color_' + str(
-                id)]
+        return helpers.draw_trajectories(self.CURRENT_ANNOATAION_TRAJECTORIES,
+                                         self.INDEX_OF_CURRENT_FRAME,
+                                         self.CURRENT_ANNOATAION_FLAGS, 
+                                         img, shapes)
 
-            if self.CURRENT_ANNOATAION_FLAGS['mask']:
-                original_img = img.copy()
-                if pts_poly is not None:
-                    cv2.fillPoly(img, pts=[pts_poly], color=color_poly)
-                alpha = self.CURRENT_ANNOATAION_TRAJECTORIES['alpha']
-                img = cv2.addWeighted(original_img, alpha, img, 1 - alpha, 0)
-            for i in range(len(pts_traj) - 1, 0, - 1):
-
-                thickness = (len(pts_traj) - i <= 10) * 1 + (len(pts_traj) -
-                                                             i <= 20) * 1 + (len(pts_traj) - i <= 30) * 1 + 3
-                # max_thickness = 6
-                # thickness = max(1, round(i / len(pts_traj) * max_thickness))
-
-                if pts_traj[i - 1] is None or pts_traj[i] is None:
-                    continue
-                if pts_traj[i] == (-1, - 1) or pts_traj[i - 1] == (-1, - 1):
-                    break
-
-                # color_traj = tuple(int(0.95 * x) for x in color_poly)
-                color_traj = color_poly
-
-                if self.CURRENT_ANNOATAION_FLAGS['traj']:
-                    cv2.line(img, pts_traj[i - 1],
-                             pts_traj[i], color_traj, thickness)
-                    if ((len(pts_traj) - 1 - i) % 10 == 0):
-                        cv2.circle(img, pts_traj[i], 3, (0, 0, 0), -1)
-
-        return img
-
-    def draw_bb_on_image(self, image, shapes, imgage_qt_flag=True):
-        img = image
-        if imgage_qt_flag:
-            img = self.convert_QT_to_cv(image)
-
-        for shape in shapes:
-            id = shape["group_id"]
-            label = shape["label"]
-
-            # color calculation
-            idx = coco_classes.index(label) if label in coco_classes else -1
-            idx = idx % len(color_palette)
-            color = color_palette[idx] if idx != -1 else (0, 0, 255)
-
-            (x1, y1, x2, y2) = shape["bbox"]
-            x, y, w, h = int(x1), int(y1), int(x2 - x1), int(y2 - y1)
-            img = self.draw_bb_id(img, x, y, w, h, id,
-                                  label, color, thickness=1)
-            center = (int((x1 + x2) / 2), int((y1 + y2) / 2))
-            try:
-                centers_rec = self.CURRENT_ANNOATAION_TRAJECTORIES['id_' + str(
-                    id)]
-                try:
-                    (xp, yp) = centers_rec[self.INDEX_OF_CURRENT_FRAME - 2]
-                    (xn, yn) = center
-                    if (xp == -1 or xn == -1):
-                        c = 5 / 0
-                    r = 0.5
-                    x = r * xn + (1 - r) * xp
-                    y = r * yn + (1 - r) * yp
-                    center = (int(x), int(y))
-                except:
-                    pass
-                centers_rec[self.INDEX_OF_CURRENT_FRAME - 1] = center
-                self.CURRENT_ANNOATAION_TRAJECTORIES['id_' +
-                                                     str(id)] = centers_rec
-                self.CURRENT_ANNOATAION_TRAJECTORIES['id_color_' +
-                                                     str(id)] = color
-            except:
-                centers_rec = [(-1, - 1)] * int(self.TOTAL_VIDEO_FRAMES)
-                centers_rec[self.INDEX_OF_CURRENT_FRAME - 1] = center
-                self.CURRENT_ANNOATAION_TRAJECTORIES['id_' +
-                                                     str(id)] = centers_rec
-                self.CURRENT_ANNOATAION_TRAJECTORIES['id_color_' +
-                                                     str(id)] = color
-
-        # print(sys.getsizeof(self.CURRENT_ANNOATAION_TRAJECTORIES))
-
-        img = self.draw_trajectories(img, shapes)
-
-        if imgage_qt_flag:
-            img = self.convert_cv_to_qt(img, )
-
-        return img
+    def draw_bb_on_image(self, image, shapes, image_qt_flag=True):
+        return helpers.draw_bb_on_image(self.CURRENT_ANNOATAION_TRAJECTORIES,
+                                        self.INDEX_OF_CURRENT_FRAME,
+                                         self.CURRENT_ANNOATAION_FLAGS, 
+                                        self.TOTAL_VIDEO_FRAMES,
+                                        image, shapes, image_qt_flag)
 
     def waitWindow(self, visible=False, text=None):
         if visible:
@@ -5797,33 +5401,10 @@ class MainWindow(QtWidgets.QMainWindow):
         return shapes
 
     def SAM_rects_to_boxes(self, rects):
-        res = []
-        for rect in rects:
-            listPOINTS = [min(rect[0].x(), rect[1].x()),
-                          min(rect[0].y(), rect[1].y()),
-                          max(rect[0].x(), rect[1].x()),
-                          max(rect[0].y(), rect[1].y())]
-            listPOINTS = [int(round(x)) for x in listPOINTS]
-            res.append(listPOINTS)
-        if len(res) == 0:
-            res = None
-        return res
+        return helpers.SAM_rects_to_boxes(rects)
 
     def SAM_points_and_labels_from_coordinates(self, coordinates):
-        input_points = []
-        input_labels = []
-        for coordinate in coordinates:
-            input_points.append(
-                [int(round(coordinate[0])), int(round(coordinate[1]))])
-            input_labels.append(coordinate[2])
-        if len(input_points) == 0:
-            input_points = None
-            input_labels = None
-        else:
-            input_points = np.array(input_points)
-            input_labels = np.array(input_labels)
-
-        return input_points, input_labels
+        return helpers.SAM_points_and_labels_from_coordinates(coordinates)
 
     def run_sam_model(self):
 
@@ -5883,58 +5464,27 @@ class MainWindow(QtWidgets.QMainWindow):
 
         print("done running sam model")
 
-
     def load_objects_from_json__json(self):
-        start_time = time.time()
-        listObj = [{'frame_idx': i + 1, 'frame_data': []}
-                    for i in range(self.TOTAL_VIDEO_FRAMES)]
+        if self.global_listObj != [] : 
+            return self.global_listObj
         json_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}_tracking_results.json'
-        if not os.path.exists(json_file_name):
-            with open(json_file_name, 'w') as jf:
-                json.dump(listObj, jf,
-                            indent=4,
-                            separators=(',', ': '))
-            jf.close()
-        with open(json_file_name, 'r') as jf:
-            listObj = json.load(jf)
-        jf.close()
-        end_time = time.time()
-        print(f"Time taken to load json with (json)library is : {int((end_time - start_time)*1000)} ms" + "\n")
-        return listObj
+        return helpers.load_objects_from_json__json(json_file_name, self.TOTAL_VIDEO_FRAMES)
     
     def load_objects_to_json__json(self, listObj):
-
-        start_time = time.time()
+        self.global_listObj = listObj
         json_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}_tracking_results.json'
-        with open(json_file_name, 'w') as json_file:
-            json.dump(listObj, json_file,
-                      indent=4,
-                      separators=(',', ': '))
-        json_file.close()
-        end_time = time.time()
-        print(f"Time taken to write json with (json)library is : {int((end_time - start_time)*1000)} ms" + "\n")
+        helpers.load_objects_to_json__json(json_file_name, listObj)
 
     def load_objects_from_json__orjson(self):
         if self.global_listObj != [] : 
             return self.global_listObj
-        listObj = [{'frame_idx': i + 1, 'frame_data': []}
-                    for i in range(self.TOTAL_VIDEO_FRAMES)]
         json_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}_tracking_results.json'
-        if not os.path.exists(json_file_name):
-            with open(json_file_name, "wb") as jf:
-                jf.write(orjson.dumps(listObj))
-            jf.close()
-        with open(json_file_name, "rb") as jf:
-            listObj = orjson.loads(jf.read())
-        jf.close()
-        return listObj
+        return helpers.load_objects_from_json__orjson(json_file_name, self.TOTAL_VIDEO_FRAMES)
     
     def load_objects_to_json__orjson(self, listObj):
         self.global_listObj = listObj
         json_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}_tracking_results.json'
-        with open(json_file_name, "wb") as jf:
-            jf.write(orjson.dumps(listObj, option=orjson.OPT_INDENT_2))
-        jf.close()
+        helpers.load_objects_to_json__orjson(json_file_name, listObj)
 
     
 # important parameters across the gui
