@@ -2121,69 +2121,8 @@ class MainWindow(QtWidgets.QMainWindow):
         else:
             return self.sam_enhanced_bbox_segment(frameIMAGE, cur_bbox, thresh, max_itr-1, forSHAPE)
 
-    def scaleMENU(self, item=None):
-        originalshape = self.canvas.selectedShapes[0].copy()
-        xx = [originalshape.points[i].x()
-              for i in range(len(originalshape.points))]
-        yy = [originalshape.points[i].y()
-              for i in range(len(originalshape.points))]
-        center = [sum(xx) / len(xx), sum(yy) / len(yy)]
-
-        dialog = QtWidgets.QDialog()
-        dialog.setWindowTitle("Scaling")
-        dialog.setWindowModality(Qt.ApplicationModal)
-        dialog.resize(400, 400)
-
-        layout = QtWidgets.QVBoxLayout()
-
-        label = QtWidgets.QLabel(
-            "Scaling object with ID: " + str(originalshape.group_id) + "\n ")
-        label.setStyleSheet(
-            "QLabel { font-weight: bold; }")
-        layout.addWidget(label)
-
-        xLabel = QtWidgets.QLabel()
-        xLabel.setText("Width(x) factor is: " + "100" + "%")
-        yLabel = QtWidgets.QLabel()
-        yLabel.setText("Hight(y) factor is: " + "100" + "%")
-
-        xSlider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
-        xSlider.setMinimum(50)
-        xSlider.setMaximum(150)
-        xSlider.setValue(100)
-        xSlider.setTickPosition(
-            QtWidgets.QSlider.TicksBelow)
-        xSlider.setTickInterval(1)
-        xSlider.setMaximumWidth(750)
-        xSlider.valueChanged.connect(lambda: xLabel.setText(
-            "Width(x) factor is: " + str(xSlider.value()) + "%"))
-        xSlider.valueChanged.connect(lambda: self.scale(
-            originalshape, center, xSlider.value(), ySlider.value()))
-
-        ySlider = QtWidgets.QSlider(QtCore.Qt.Vertical)
-        ySlider.setMinimum(50)
-        ySlider.setMaximum(150)
-        ySlider.setValue(100)
-        ySlider.setTickPosition(
-            QtWidgets.QSlider.TicksBelow)
-        ySlider.setTickInterval(1)
-        ySlider.setMaximumWidth(750)
-        ySlider.valueChanged.connect(lambda: yLabel.setText(
-            "Hight(y) factor is: " + str(ySlider.value()) + "%"))
-        ySlider.valueChanged.connect(lambda: self.scale(
-            originalshape, center, xSlider.value(), ySlider.value()))
-
-        layout.addWidget(xLabel)
-        layout.addWidget(yLabel)
-        layout.addWidget(xSlider)
-        layout.addWidget(ySlider)
-
-        buttonBox = QtWidgets.QDialogButtonBox(
-            QtWidgets.QDialogButtonBox.Ok)
-        buttonBox.accepted.connect(dialog.accept)
-        layout.addWidget(buttonBox)
-        dialog.setLayout(layout)
-        result = dialog.exec_()
+    def scaleMENU(self):
+        result = helpers.scaleMENU_GUI(self)
         if result == QtWidgets.QDialog.Accepted:
             self.update_current_frame_annotation_button_clicked()
             return
@@ -2191,22 +2130,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self.main_video_frames_slider_changed()
             return
 
-    def scale(self, originalshape, center, ratioX, ratioY):
-        ratioX = ratioX / 100
-        ratioY = ratioY / 100
-
-        shape = self.canvas.selectedShapes[0]
-        self.canvas.shapes.remove(shape)
-        self.canvas.selectedShapes.remove(shape)
-        self.remLabels([shape])
-        for i in range(len(shape.points)):
-            shape.points[i].setX(
-                (originalshape.points[i].x() - center[0]) * ratioX + center[0])
-            shape.points[i].setY(
-                (originalshape.points[i].y() - center[1]) * ratioY + center[1])
-        self.canvas.shapes.append(shape)
-        self.canvas.selectedShapes.append(shape)
-        self.addLabel(shape)
 
     def copyShapesSelected(self):
         if len(self.canvas.selectedShapes) == 0:
@@ -2255,78 +2178,10 @@ class MainWindow(QtWidgets.QMainWindow):
         return helpers.centerOFmass(points)
 
     def is_id_repeated(self, group_id, frameIdex=-1):
-        if frameIdex == -1:
-            frameIdex = self.INDEX_OF_CURRENT_FRAME
-            
-        if frameIdex == self.INDEX_OF_CURRENT_FRAME:
-            for shape in self.canvas.shapes:
-                if shape.group_id == group_id:
-                    return True
-            return False
-            
-        listObj = self.load_objects_from_json__orjson()
-        # for i in range(len(listobj)):
-        #     listobjframe = listobj[i]['frame_idx']
-        #     if listobjframe != frameIdex:
-        #         continue
-        #     for object_ in listobj[i]['frame_data']:
-        #         if object_['tracker_id'] == group_id:
-        #             return True
-                
-        listObj = self.load_objects_from_json__orjson()
-        for object_ in listObj[frameIdex - 1]['frame_data']:
-            if object_['tracker_id'] == group_id:
-                return True
-        
-        return False
+        return helpers.is_id_repeated(self, group_id, frameIdex)
 
     def get_id_from_user(self, group_id, text):
-
-        mainTEXT = "A Shape with that ID already exists in this frame.\n\n"
-        repeated = 0
-
-        while self.is_id_repeated(group_id):
-            dialog = QtWidgets.QDialog()
-            dialog.setWindowTitle("ID already exists")
-            dialog.setWindowModality(Qt.ApplicationModal)
-            dialog.resize(450, 100)
-
-            if repeated == 0:
-                label = QtWidgets.QLabel(mainTEXT + f'Please try a new ID: ')
-            if repeated == 1:
-                label = QtWidgets.QLabel(
-                    mainTEXT + f'OH GOD.. AGAIN? I hpoe you are not doing this on purpose..')
-            if repeated == 2:
-                label = QtWidgets.QLabel(
-                    mainTEXT + f'AGAIN? REALLY? LAST time for you..')
-            if repeated == 3:
-                text = False
-                return group_id, text
-
-            properID = QtWidgets.QSpinBox()
-            properID.setRange(1, 1000)
-
-            buttonBox = QtWidgets.QDialogButtonBox(
-                QtWidgets.QDialogButtonBox.Ok)
-            buttonBox.accepted.connect(dialog.accept)
-
-            layout = QtWidgets.QVBoxLayout()
-            layout.addWidget(label)
-            layout.addWidget(properID)
-            layout.addWidget(buttonBox)
-            dialog.setLayout(layout)
-            result = dialog.exec_()
-            if result != QtWidgets.QDialog.Accepted:
-                text = False
-                return group_id, text
-
-            group_id = properID.value()
-            repeated += 1
-
-        if repeated > 1:
-            helpers.OKmsgBox("Finally..!", "OH, Finally..!")
-
-        return group_id, text
+        return helpers.getIDfromUser_GUI(self, group_id, text)
 
     def fileSearchChanged(self):
         self.importDirImages(
