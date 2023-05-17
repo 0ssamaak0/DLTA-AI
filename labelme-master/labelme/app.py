@@ -314,6 +314,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.INDEX_OF_CURRENT_FRAME = 1
         # # for image annotation
         # self.last_file_opened = ""
+        self.interrupted = False
 
         features = QtWidgets.QDockWidget.DockWidgetFeatures()
         for dock in ["flag_dock", "label_dock", "shape_dock", "file_dock"]:
@@ -902,7 +903,7 @@ class MainWindow(QtWidgets.QMainWindow):
             openVideo=openVideo,
             fileMenuActions=(open_, opendir, save, saveAs, close, quit),
             modelExplorer=modelExplorer,
-            runtime_data = runtime_data,
+            runtime_data=runtime_data,
             tool=(),
             # XXX: need to add some actions here to activate the shortcut
             editMenu=(
@@ -959,6 +960,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.canvas.edgeSelected.connect(self.canvasShapeEdgeSelected)
         self.canvas.vertexSelected.connect(self.actions.removePoint.setEnabled)
         self.canvas.reset.connect(self.sam_reset_button_clicked)
+        self.canvas.interrupted.connect(self.SETinterrupted)
 
         self.menus = utils.struct(
             file=self.menu(self.tr("&File")),
@@ -1080,7 +1082,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
             ),
         )
-
 
         self.menus.file.aboutToShow.connect(self.updateFileMenu)
         self.menus.file.aboutToShow.connect(self.update_models_menu)
@@ -1326,6 +1327,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.recentFiles.insert(0, filename)
 
     # Callbacks
+    
+    def SETinterrupted(self):
+        self.interrupted = True
 
     def undoShapeEdit(self):
         self.canvas.restoreShape()
@@ -1658,8 +1662,16 @@ class MainWindow(QtWidgets.QMainWindow):
                                 object_['confidence'] = str(1.0)
                                 object_['class_id'] = coco_classes.index(
                                     shape.label) if shape.label in coco_classes else -1
-                                # object_['tracker_id'] = new_group_id
                                 break
+                    frame = self.INDEX_OF_CURRENT_FRAME 
+                    center = self.CURRENT_ANNOATAION_TRAJECTORIES['id_' + str(old_group_id)][frame - 1]
+                    self.CURRENT_ANNOATAION_TRAJECTORIES['id_' + str(old_group_id)][frame - 1] = (-1, -1)
+                    try:
+                        self.CURRENT_ANNOATAION_TRAJECTORIES['id_' + str(new_group_id)][frame - 1] = center
+                    except:
+                        self.CURRENT_ANNOATAION_TRAJECTORIES['id_' + str(new_group_id)] = [(-1, -1)] * self.TOTAL_VIDEO_FRAMES
+                        self.CURRENT_ANNOATAION_TRAJECTORIES['id_' + str(new_group_id)][frame - 1] = center
+                            
 
                 else:       # edit all frames with this ID
 
@@ -1686,6 +1698,13 @@ class MainWindow(QtWidgets.QMainWindow):
                     for frame in old_id_frame_record:
                         for object_ in listObj[frame - 1]['frame_data']:
                             if object_['tracker_id'] == old_group_id:
+                                center = self.CURRENT_ANNOATAION_TRAJECTORIES['id_' + str(old_group_id)][frame - 1]
+                                self.CURRENT_ANNOATAION_TRAJECTORIES['id_' + str(old_group_id)][frame - 1] = (-1, -1)
+                                try:
+                                    self.CURRENT_ANNOATAION_TRAJECTORIES['id_' + str(new_group_id)][frame - 1] = center
+                                except:
+                                    self.CURRENT_ANNOATAION_TRAJECTORIES['id_' + str(new_group_id)] = [(-1, -1)] * self.TOTAL_VIDEO_FRAMES
+                                    self.CURRENT_ANNOATAION_TRAJECTORIES['id_' + str(new_group_id)][frame - 1] = center
                                 object_['class_name'] = shape.label
                                 object_['confidence'] = str(1.0)
                                 object_['class_id'] = coco_classes.index(
@@ -1702,64 +1721,11 @@ class MainWindow(QtWidgets.QMainWindow):
                                 # object_['tracker_id'] = new_group_id
                                 break
 
-            # for i in range(len(listObj)):
-            #     listObjframe = listObj[i]['frame_idx']
-            #     if only_this_frame and listObjframe != self.INDEX_OF_CURRENT_FRAME:
-            #         continue
-            #     for object_ in listObj[i]['frame_data']:
-            #         if object_['tracker_id'] == new_group_id:
-            #             listObj[i]['frame_data'].remove(object_)
-            #             object_['class_name'] = shape.label
-            #             object_['confidence'] = str(1.0)
-            #             object_['class_id'] = coco_classes.index(
-            #                 shape.label) if shape.label in coco_classes else -1
-            #             listObj[i]['frame_data'].append(object_)
-
-            #         elif object_['tracker_id'] == old_group_id:
-            #             listObj[i]['frame_data'].remove(object_)
-            #             object_['class_name'] = shape.label
-            #             object_['confidence'] = str(1.0)
-            #             object_['class_id'] = coco_classes.index(
-            #                 shape.label) if shape.label in coco_classes else -1
-            #             object_['tracker_id'] = new_group_id
-            #             listObj[i]['frame_data'].append(object_)
-
-            #     sum = 0
-            #     for object_ in listObj[i]['frame_data']:
-            #         if object_['tracker_id'] == new_group_id:
-            #             sum += 1
-            #             if sum > 1:
-            #                 shape.group_id = old_group_id
-            #                 msg = QtWidgets.QMessageBox()
-            #                 msg.setIcon(QtWidgets.QMessageBox.Information)
-            #                 msg.setText(
-            #                     f"Two shapes with the same ID exists in at least one frame.\nApparantly, a shape with ID ({new_group_id}) already exists with another shape with ID ({old_group_id}) like in frame ({listObjframe}) and the edit will result in two shapes with the same ID ({new_group_id}).\n\n The edit is NOT performed.")
-            #                 msg.setWindowTitle("ID already exists")
-            #                 msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
-            #                 msg.exec_()
-            #                 return
-
-            # listObj = sorted(listObj, key=lambda k: k['frame_idx'])
             self.load_objects_to_json__orjson(listObj)
-            self.calc_trajectory_when_open_video()
             self.main_video_frames_slider_changed()
 
     def interpolateMENU(self, item=None):
 
-        # if len(self.canvas.selectedShapes) > 1:
-        #     mb = QtWidgets.QMessageBox
-        #     msg = self.tr(
-        #         "Batch Interpolation is only available with SAM\n"
-        #         "It is more persise but slower than the default interpolation method.\n"
-        #         "Interpolate with SAM?"
-        #     )
-        #     answer = mb.warning(self, self.tr(
-        #         "Attention"), msg, mb.Yes | mb.No)
-        #     if answer != mb.Yes:
-        #         return
-        #     else:
-        #         self.interpolate(id=None, only_edited=False, with_sam=True)
-        #         return
         if len(self.canvas.selectedShapes) == 0:
             mb = QtWidgets.QMessageBox
             msg = self.tr("Interpolate all IDs?\n")
@@ -1787,21 +1753,29 @@ class MainWindow(QtWidgets.QMainWindow):
             'interpolationDefault'] == 'interpolate ALL frames with SAM (more precision, more time)' else False
 
         if only_edited:
-            try:
-                id = self.canvas.selectedShapes[0].group_id
-                if len(self.key_frames['id_' + str(id)]) == 1:
-                    x = 1/0
-            except:
-                helpers.OKmsgBox("No KEY frames found",
-                                 f"No KEY frames found for this shape ID.\n    ie. less than 2 key frames\n The interpolation is NOT performed.")
-                return
+            allAccepted, allRejected, ids = helpers.checkKeyFrames(ids, self.key_frames)
+            if not allAccepted:
+                if allRejected:
+                    helpers.OKmsgBox("Key Frames Error",
+                                     f"All of the selected IDs have no KEY frames.\n    ie. less than 2 key frames\n The interpolation is NOT performed.")
+                    return
+                else:
+                    resutl = helpers.OKmsgBox("Key Frames Error", 
+                                     f"Some of the selected IDs have no KEY frames.\n    ie. less than 2 key frames\n The interpolation is performed only for the IDs with KEY frames.\nIDs: {ids}.")
+                    if resutl != QtWidgets.QMessageBox.Ok:
+                        return
 
+        self.interrupted = False
         if with_sam:
             self.interpolate(id=ids,
                              only_edited=False,
                              with_sam=True)
         else:
             for id in ids:
+                QtWidgets.QApplication.processEvents()
+                if self.interrupted:
+                    self.interrupted = False
+                    break
                 self.interpolate(id=id,
                                  only_edited=only_edited,
                                  with_sam=False)
@@ -1831,13 +1805,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.id_frames_rec['id_' + str(id)].remove(frame)
             except:
                 pass
-        # try:
-        #     [minf, maxf] = self.min_max_frames['id_' + str(id)]
-        #     minf = min(frame, minf)
-        #     maxf = max(frame, maxf)
-        #     self.min_max_frames['id_' + str(id)] = [minf, maxf]
-        # except:
-        #     self.min_max_frames['id_' + str(id)] = [frame, frame]
+        
 
     def interpolate(self, id, only_edited=False, with_sam=False):
 
@@ -1864,9 +1832,6 @@ class MainWindow(QtWidgets.QMainWindow):
         if (first_frame_idx >= last_frame_idx):
             return
 
-        # listObj = self.fill_empty_listObj_frames(
-        #     listObj, first_frame_idx, last_frame_idx)
-
         records = [None for i in range(first_frame_idx, last_frame_idx + 1)]
         RECORDS = []
         for i in range(first_frame_idx - 1, last_frame_idx, 1):
@@ -1882,10 +1847,15 @@ class MainWindow(QtWidgets.QMainWindow):
                         listObj[i]['frame_data'].remove(object_)
                     break
 
-        # records_org = records.copy()
-
         first_iter_flag = True
         for i in range(len(records)):
+            
+            QtWidgets.QApplication.processEvents()
+            if self.interrupted:
+                self.interrupted = False
+                self.main_video_frames_slider_changed()
+                return
+            
             if (records[i] != None):
                 RECORDS.append(records[i])
                 continue
@@ -1893,7 +1863,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 first_iter_flag = False
             prev_idx = i - 1
             prev = records[i - 1]
-            current = prev
+            current = copy.deepcopy(prev)
 
             next = records[i + 1]
             next_idx = i + 1
@@ -1923,51 +1893,20 @@ class MainWindow(QtWidgets.QMainWindow):
                            for sublist in cur_segment]
             current['bbox'] = cur_bbox
             current['segment'] = cur_segment
-            # print(
-            #     f'type of cur_segment: {type(cur_segment)}, type of a point in cur_segment: {type(cur_segment[0])}, type of a point in cur_segment[0]: {type(cur_segment[0][0])}')
 
             records[i] = current.copy()
             RECORDS.append(records[i])
 
-        # appended_frames = []
-        for i in range(first_frame_idx - 1, last_frame_idx, 1):
+        frames = range(first_frame_idx - 1, last_frame_idx, 1)
+        for i in frames:
             listobjframe = listObj[i]['frame_idx']
-            # if (only_edited and not (listobjframe in key_frames)):
-            #     for object_ in listObj[i]['frame_data']:
-            #         if (object_['tracker_id'] == id):
-            #             listObj[i]['frame_data'].remove(object_)
-            #             break
             listObj[i]['frame_data'].append(
                 RECORDS[max(listobjframe - first_frame_idx - 1, 0)])
             self.rec_frame_for_id(id, listobjframe)
-            # appended = records_org[listobjframe - first_frame_idx]
-            # if appended == None:
-            #     appended = RECORDS[max(listobjframe - first_frame_idx - 1, 0)]
-            #     listObj[i]['frame_data'].append(appended)
-            # appended_frames.append(listobjframe)
-
-        # for frame in range(first_frame_idx, last_frame_idx + 1):
-        #     if (frame not in appended_frames):
-        #         listObj.append({'frame_idx': frame, 'frame_data': [
-        #                        RECORDS[max(frame - first_frame_idx - 1, 0)]]})
+        
         self.load_objects_to_json__orjson(listObj)
-        self.calc_trajectory_when_open_video()
+        self.calc_trajectory_when_open_video(frames)
         self.main_video_frames_slider_changed()
-
-    # def fill_empty_listObj_frames(self, listObj, start_idx, end_idx):
-    #     # checks the list object and fills empty frames with empty data
-
-    #     frames = list(range(start_idx, end_idx + 1))
-    #     for i in listObj:
-    #         if i['frame_idx'] in frames:
-    #             frames.pop(frames.index(i['frame_idx']))
-
-    #     for frame in frames:
-    #         listObj.append({'frame_idx': frame, 'frame_data': []})
-
-    #     listObj = sorted(listObj, key=lambda k: k['frame_idx'])
-
-    #     return listObj
 
     def interpolate_with_sam(self):
 
@@ -1981,10 +1920,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
         if len(self.canvas.selectedShapes) == 0:
             keys = list(self.id_frames_rec.keys())
-            idsLIST = [int(keys[i][3:]) for i in range(len(keys))]
+            idsLISTX = [int(keys[i][3:]) for i in range(len(keys))]
+            idsLIST = []
             first_frame_idxLIST = []
             last_frame_idxLIST = []
-            for id in idsLIST:
+            for id in idsLISTX:
                 try:
                     [minf, maxf] = [min(
                         self.id_frames_rec['id_' + str(id)]), max(self.id_frames_rec['id_' + str(id)])]
@@ -1994,6 +1934,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     continue
                 first_frame_idxLIST.append(minf)
                 last_frame_idxLIST.append(maxf)
+                idsLIST.append(id)
 
         else:
             idsLIST = []
@@ -2012,47 +1953,12 @@ class MainWindow(QtWidgets.QMainWindow):
         if len(idsLIST) == 0:
             return
 
-        # idsLIST = [shape.group_id for shape in self.canvas.selectedShapes]
-        # first_frame_idxLIST = [-1 for i in range(len(idsLIST))]
-        # last_frame_idxLIST = [-1 for i in range(len(idsLIST))]
-        # listObj = self.load_objects_from_json__orjson()
-
-        # for i in range(len(listObj)):
-        #     self.waitWindow(visible=True)
-        #     listobjframe = listObj[i]['frame_idx']
-        #     frameobjects = listObj[i]['frame_data'].copy()
-        #     for object_ in frameobjects:
-        #         if (object_['tracker_id'] in idsLIST):
-        #             index = idsLIST.index(object_['tracker_id'])
-        #             first_frame_idxLIST[index] = min(
-        #                 first_frame_idxLIST[index], listobjframe) if first_frame_idxLIST[index] != -1 else listobjframe
-        #             last_frame_idxLIST[index] = max(
-        #                 last_frame_idxLIST[index], listobjframe) if last_frame_idxLIST[index] != -1 else listobjframe
-
-        # for i in range(len(idsLIST)):
-        #     self.waitWindow(visible=True)
-        #     if (first_frame_idxLIST[i] >= last_frame_idxLIST[i]):
-        #         idsLIST.pop(i)
-        #         first_frame_idxLIST.pop(i)
-        #         last_frame_idxLIST.pop(i)
-        # if len(idsLIST) == 0:
-        #     self.waitWindow()
-        #     return
         listObj = self.load_objects_from_json__orjson()
-        # listObj = self.fill_empty_listObj_frames(
-        #     listObj, min(first_frame_idxLIST), max(last_frame_idxLIST))
-
-        # for f in listObj:
-        #     if f['frame_idx'] == min(first_frame_idxLIST):
-        #         print(f'first interpolation frame : {f["frame_idx"]}')
-        #         print(f'first interpolation frame : {listObj[min(first_frame_idxLIST) - 1]["frame_idx"]}')
-        #         break
-        first_frame_data = copy.deepcopy(
-            listObj[min(first_frame_idxLIST) - 1]['frame_data'])
+        listObjNEW = copy.deepcopy(listObj)
 
         recordsLIST = [[None for ii in range(
             first_frame_idxLIST[i], last_frame_idxLIST[i] + 1)] for i in range(len(idsLIST))]
-        RECORDSLIST = [[] for i in range(len(idsLIST))]
+        
         for i in range(min(first_frame_idxLIST) - 1, max(last_frame_idxLIST), 1):
             self.waitWindow(visible=True)
             listobjframe = listObj[i]['frame_idx']
@@ -2064,9 +1970,10 @@ class MainWindow(QtWidgets.QMainWindow):
                                        first_frame_idxLIST[index]] = copy.deepcopy(object_)
                     listObj[i]['frame_data'].remove(object_)
 
-        # records_orgLIST = recordsLIST.copy()
-
         for frameIDX in range(min(first_frame_idxLIST), max(last_frame_idxLIST) + 1):
+            QtWidgets.QApplication.processEvents()
+            if self.interrupted:
+                break
             self.waitWindow(
                 visible=True, text=f'Wait a second.\nIDs are being interpolated with SAM...\nFrame {frameIDX}')
 
@@ -2084,15 +1991,12 @@ class MainWindow(QtWidgets.QMainWindow):
                     continue
 
                 records = recordsLIST[ididx]
-                RECORDS = RECORDSLIST[ididx]
                 if (records[i] != None):
-                    current = records[i]
-                    cur_bbox = records[frameIDX -
-                                       first_frame_idxLIST[ididx]]['bbox']
-                    RECORDS.append(current)
+                    current = copy.deepcopy(records[i])
+                    cur_bbox = current['bbox']
                 else:
                     prev_idx = i - 1
-                    current = records[i - 1]
+                    current = copy.deepcopy(records[i - 1])
                     next_idx = i + 1
                     for j in range(i + 1, len(records)):
                         self.waitWindow(visible=True)
@@ -2102,48 +2006,24 @@ class MainWindow(QtWidgets.QMainWindow):
                     cur_bbox = ((next_idx - i) / (next_idx - prev_idx)) * np.array(records[prev_idx]['bbox']) + (
                         (i - prev_idx) / (next_idx - prev_idx)) * np.array(records[next_idx]['bbox'])
                     cur_bbox = [int(cur_bbox[i]) for i in range(len(cur_bbox))]
-                    current['bbox'] = cur_bbox.copy()
-                    records[i] = current.copy()
-                    RECORDS.append(current)
+                    current['bbox'] = copy.deepcopy(cur_bbox)
+                    records[i] = current
 
                 cur_bbox, cur_segment = self.sam_enhanced_bbox_segment(
                     frameIMAGE, cur_bbox, 1.2, max_itr=5, forSHAPE=False)
 
-                current['bbox'] = cur_bbox.copy()
-                current['segment'] = cur_segment.copy()
-
-                recordsLIST[ididx][i]['bbox'] = cur_bbox.copy()
-                RECORDSLIST[ididx][i]['bbox'] = cur_bbox.copy()
-                recordsLIST[ididx][i]['segment'] = cur_segment.copy()
-                RECORDSLIST[ididx][i]['segment'] = cur_segment.copy()
-
-        for i in range(min(first_frame_idxLIST) - 1, max(last_frame_idxLIST), 1):
-            self.waitWindow(
-                visible=True, text=f'Wait a second.\nIDs are being interpolated with SAM...\nAlmost done')
-            listobjframe = listObj[i]['frame_idx']
-
-            # for object_ in listObj[i]['frame_data']:
-            #     if (object_['tracker_id'] in idsLIST):
-            #         listObj[i]['frame_data'].remove(object_)
-
-            for ididx in range(len(idsLIST)):
-                if (listobjframe < first_frame_idxLIST[ididx] or listobjframe > last_frame_idxLIST[ididx]):
-                    continue
-                idx = listobjframe - first_frame_idxLIST[ididx]
-                idx = max(idx, 0)
-                idx = min(idx, len(RECORDSLIST[ididx]) - 1)
-                listObj[i]['frame_data'].append(RECORDSLIST[ididx][idx])
-                self.rec_frame_for_id(idsLIST[ididx], listobjframe)
-
-        # for f in listObj:
-        #     if f['frame_idx'] == min(first_frame_idxLIST):
-        #         print(f'first interpolation frame : {f["frame_idx"]}')
-        #         f['frame_data'] = first_frame_data
-        #         break
-        listObj[min(first_frame_idxLIST) - 1]['frame_data'] = first_frame_data
-
-        self.load_objects_to_json__orjson(listObj)
-        self.calc_trajectory_when_open_video()
+                current['bbox'] = copy.deepcopy(cur_bbox)
+                current['segment'] = copy.deepcopy(cur_segment)
+                
+                # append the shape frame by frame (cause we already removed it in the prev. for loop)
+                listObj[frameIDX - 1]['frame_data'].append(current)
+                self.rec_frame_for_id(idsLIST[ididx], frameIDX)
+                
+            # update frame by frame to the to-be-uploaded listObj
+            listObjNEW[frameIDX - 1] = copy.deepcopy(listObj[frameIDX - 1])
+        
+        self.load_objects_to_json__orjson(listObjNEW)
+        self.calc_trajectory_when_open_video(range(min(first_frame_idxLIST) - 1, max(last_frame_idxLIST), 1))
         self.main_video_frames_slider_changed()
 
     def get_frame_by_idx(self, frameIDX):
@@ -3558,11 +3438,14 @@ class MainWindow(QtWidgets.QMainWindow):
         fps = self.CAP.get(cv2.CAP_PROP_FPS)
         return helpers.mapFrameToTime(frameNumber, fps)
 
-    def calc_trajectory_when_open_video(self, ):
+    def calc_trajectory_when_open_video(self, frames = None):
         listObj = self.load_objects_from_json__orjson()
         if len(listObj) == 0:
             return
-        for i in range(len(listObj)):
+        
+        frames = frames if frames else range(len(listObj))
+        
+        for i in frames:
             listobjframe = listObj[i]['frame_idx']
             for object in listObj[i]['frame_data']:
                 id = object['tracker_id']
@@ -3644,26 +3527,6 @@ class MainWindow(QtWidgets.QMainWindow):
             else:
                 self.actions.menu[i].setVisible(True)
 
-        # NOT WORKING YET
-
-        # self.actions.tool[0].setVisible(True)
-        # self.actions.tool[1].setVisible(True)
-        # self.actions.tool[2].setVisible(True)
-        # self.actions.tool[3].setVisible(image_menu)
-        # self.actions.tool[4].setVisible(True)
-        # self.actions.tool[5].setVisible(image_menu)
-        # # self.actions.tool[6].setVisible(True)
-        # self.actions.tool[7].setVisible(True)
-        # self.actions.tool[8].setVisible(True)
-        # self.actions.tool[9].setVisible(image_menu)
-        # self.actions.tool[10].setVisible(True)
-        # self.actions.tool[11].setVisible(image_menu)
-        # self.actions.tool[12].setVisible(image_menu)
-        # # self.actions.tool[13].setVisible(True)
-        # self.actions.tool[14].setVisible(True)
-        # self.actions.tool[15].setVisible(True)
-        # self.actions.tool[16].setVisible(image_menu)
-        # self.actions.tool[17].setVisible(image_menu)
 
     def openVideo(self):
         length_Value = self.CURRENT_ANNOATAION_TRAJECTORIES['length']
@@ -3749,7 +3612,7 @@ class MainWindow(QtWidgets.QMainWindow):
         shapes = []
         # for i in range(len(listObj)):
         i = target_frame_idx - 1
-        frame_idx = listObj[i]['frame_idx']
+        # frame_idx = listObj[i]['frame_idx']
         # if frame_idx == target_frame_idx:
         # print (listObj[i])
         # print(i)
@@ -3887,7 +3750,7 @@ class MainWindow(QtWidgets.QMainWindow):
             # but we need to call the function every interval of time
             # so we need to call the function every 1/fps seconds
             self.play_timer.timeout.connect(self.move_frame_by_frame)
-            self.play_timer.start(500)
+            self.play_timer.start(40)
             # note that the timer interval is in milliseconds
 
             # while self.timer.isActive():
@@ -3944,6 +3807,14 @@ class MainWindow(QtWidgets.QMainWindow):
             f'track for {zeros}{self.FRAMES_TO_TRACK} frames')
 
     def move_frame_by_frame(self):
+        QtWidgets.QApplication.processEvents()
+        if self.interrupted:
+            self.play_timer.stop()
+            self.playPauseButton.setText("Play")
+            self.playPauseButton.setIcon(
+                self.style().standardIcon(QtWidgets.QStyle.SP_MediaPlay))
+            self.interrupted = False
+            return
         self.main_video_frames_slider.setValue(self.INDEX_OF_CURRENT_FRAME + 1)
 
     def class_name_to_id(self, class_name):
@@ -3993,22 +3864,20 @@ class MainWindow(QtWidgets.QMainWindow):
     def get_boxes_conf_classids_segments(self, shapes):
         return helpers.get_boxes_conf_classids_segments(shapes)
 
-    def track_button_stop_clicked(self):
-        self.stop_tracking = True
+    # def track_stop_button_clicked(self):
+    #     print("STOP TRACKING")
+    #     self.stop_tracking = True
 
     def track_buttonClicked(self):
 
         # Disable Exports & Change button text
         self.export_as_video_button.setEnabled(False)
         self.actions.export.setEnabled(False)
-        self.track_button.setText("STOP")
-        self.track_button.clicked.connect(self.track_button_stop_clicked)
-        self.track_button.setStyleSheet(
-            "QPushButton {font-size: 10pt; margin: 2px 5px; padding: 2px 7px;font-weight: bold; background-color: #FF0000; color: #FFFFFF;} QPushButton:hover {background-color: #FF6468;} QPushButton:disabled {background-color: #7A7A7A;}")
 
         # dt = (Profile(), Profile(), Profile(), Profile())
 
         self.tracking_progress_bar.setVisible(True)
+        self.track_stop_button.setVisible(True)
         frame_shape = self.CURRENT_FRAME_IMAGE.shape
         print(frame_shape)
 
@@ -4040,8 +3909,12 @@ class MainWindow(QtWidgets.QMainWindow):
         else:
             number_of_frames_to_track = self.TOTAL_VIDEO_FRAMES - self.INDEX_OF_CURRENT_FRAME
 
+        self.interrupted = False
         for i in range(number_of_frames_to_track):
             QtWidgets.QApplication.processEvents()
+            if self.interrupted:
+                self.interrupted = False
+                break
             self.tracking_progress_bar.setValue(
                 int((i + 1) / number_of_frames_to_track * 100))
 
@@ -4179,13 +4052,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.tracking_progress_bar.hide()
         self.tracking_progress_bar.setValue(0)
+        self.track_stop_button.hide()
 
         # Enable Exports & Restore button Text and Color
         self.actions.export.setEnabled(True)
         self.export_as_video_button.setEnabled(True)
-        self.track_button.setText("Track")
-        self.track_button.clicked.connect(self.track_buttonClicked)
-        self.track_button.setStyleSheet(self.buttons_text_style_sheet)
 
     def convert_qt_shapes_to_shapes(self, qt_shapes):
         return helpers.convert_qt_shapes_to_shapes(qt_shapes)
@@ -4564,7 +4435,14 @@ class MainWindow(QtWidgets.QMainWindow):
         self.tracking_progress_bar.setMaximum(100)
         self.tracking_progress_bar.setValue(0)
         self.videoControls_2.addWidget(self.tracking_progress_bar)
-
+        
+        self.track_stop_button = QtWidgets.QPushButton()
+        self.track_stop_button.setStyleSheet(
+            self.buttons_text_style_sheet)
+        self.track_stop_button.setText("STOP")
+        self.track_stop_button.clicked.connect(
+            self.SETinterrupted)
+        self.videoControls_2.addWidget(self.track_stop_button)
         # self.tracking_progress_bar_signal = pyqtSignal(int)
         # self.tracking_progress_bar_signal.connect(self.tracking_progress_bar.setValue)
 
@@ -5188,7 +5066,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def load_objects_from_json__json(self):
         if self.global_listObj != []:
-            return self.global_listObj
+            return copy.deepcopy(self.global_listObj)
         json_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}_tracking_results.json'
         return helpers.load_objects_from_json__json(json_file_name, self.TOTAL_VIDEO_FRAMES)
 
@@ -5199,7 +5077,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def load_objects_from_json__orjson(self):
         if self.global_listObj != []:
-            return self.global_listObj
+            return copy.deepcopy(self.global_listObj)
         json_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}_tracking_results.json'
         return helpers.load_objects_from_json__orjson(json_file_name, self.TOTAL_VIDEO_FRAMES)
 
