@@ -90,7 +90,7 @@ def convert_shapes_to_qt_shapes(shapes):
         # flags = shape["flags"]
         content = shape["content"]
         group_id = shape["group_id"]
-        #other_data = shape["other_data"]
+        # other_data = shape["other_data"]
 
         if not points:
             # skip point-empty shape
@@ -400,21 +400,21 @@ class Intelligence():
 
     # get the thresold as input from the user
 
-    def setConfThreshold(self):
+    def setConfThreshold(self, prev_threshold=0.3):
         text, ok = QtWidgets.QInputDialog.getText(
-            self.parent, 'Threshold Selector', 'Enter Confidence threshold:')
+            self.parent, 'Threshold Selector', 'Enter Confidence threshold:', QtWidgets.QLineEdit.Normal, str(prev_threshold))
         if ok:
             return text
         else:
-            return 0.3
+            return prev_threshold
 
-    def setIOUThreshold(self):
+    def setIOUThreshold(self, prev_threshold=0.5):
         text, ok = QtWidgets.QInputDialog.getText(
-            self.parent, 'Threshold Selector', 'Enter IOU threshold:')
+            self.parent, 'Threshold Selector', 'Enter IOU threshold:', QtWidgets.QLineEdit.Normal, str(prev_threshold))
         if ok:
             return text
         else:
-            return 0.5
+            return prev_threshold
 
     # add a resizable and scrollable dialog that contains all coco classes and allow the user to select among them using checkboxes
 
