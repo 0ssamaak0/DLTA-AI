@@ -11,6 +11,7 @@ from labelme import PY2
 import os
 import json
 import orjson
+import copy
 
 
 
@@ -218,6 +219,29 @@ def handlePoints(polygon, n):
     # if n < len(polygon), then we need to remove points
     else:
         return reducePoints(polygon, n)
+
+
+def handleTwoSegments(segment1, segment2):
+    
+    """
+    Summary:
+        Add or remove points from two polygons to make them have the same number of points.
+        
+    Args:
+        segment1: a list of points
+        segment2: a list of points
+        
+    Returns:
+        segment1: a list of points
+        segment2: a list of points
+    """
+    
+    if len(segment1) != len(segment2):
+        biglen = max(len(segment1), len(segment2))
+        segment1 = handlePoints(segment1, biglen)
+        segment2 = handlePoints(segment2, biglen)
+    (segment1, segment2) = allign(segment1, segment2)
+    return (segment1, segment2)
 
 
 def allign(shape1, shape2):
@@ -1000,6 +1024,43 @@ def checkKeyFrames(ids, keyFrames):
     return allAccepted, allRejected, idsToTrack
 
 
+def getInterpolated(baseObject, baseObjectFrame, nextObject, nextObjectFrame, curFrame):
+    
+    """
+    Summary:
+        Interpolate a shape between two frames using linear interpolation.
+        
+    Args:
+        baseObject: the base object
+        baseObjectFrame: the base object frame
+        nextObject: the next object
+        nextObjectFrame: the next object frame
+        curFrame: the frame to interpolate
+        
+    Returns:
+        cur: the interpolated shape
+    """
+    
+    prvR = (nextObjectFrame - curFrame) / (nextObjectFrame - baseObjectFrame)
+    nxtR = (curFrame - baseObjectFrame) / (nextObjectFrame - baseObjectFrame)
+    
+    cur_bbox = prvR * np.array(baseObject['bbox']) + nxtR * np.array(nextObject['bbox'])
+    cur_bbox = [int(cur_bbox[i]) for i in range(len(cur_bbox))]
+
+    (baseObject['segment'], nextObject['segment']) = handleTwoSegments(
+                                                        baseObject['segment'], nextObject['segment'])
+    
+    cur_segment = prvR * np.array(baseObject['segment']) + nxtR * np.array(nextObject['segment'])
+    cur_segment = [[int(sublist[0]), int(sublist[1])] for sublist in cur_segment]
+
+    cur = copy.deepcopy(baseObject)
+    cur['bbox'] = cur_bbox
+    cur['segment'] = cur_segment
+    
+    return cur
+
+
+
 
 
 # GUI functions
@@ -1150,11 +1211,10 @@ def exportData_GUI():
         
     Returns:
         result: the result of the dialog
-        vido_radio.isChecked(): a flag to indicate if the Video Format is checked
         coco_radio.isChecked(): a flag to indicate if the COCO Format is checked
         mot_radio.isChecked(): a flag to indicate if the MOT Format is checked
-        # traj_radio.isChecked(): a flag to indicate if the Customized Trajectory Format is checked
-        # compressed_traj_radio.isChecked(): a flag to indicate if the Compressed Customized Trajectory Format is checked
+        traj_radio.isChecked(): a flag to indicate if the Customized Trajectory Format is checked
+        compressed_traj_radio.isChecked(): a flag to indicate if the Compressed Customized Trajectory Format is checked
     """
     
     dialog = QtWidgets.QDialog()
@@ -1225,7 +1285,6 @@ def exportData_GUI():
 
     result = dialog.exec_()
     
-    # return result, coco_radio.isChecked(), mot_radio.isChecked(), traj_radio.isChecked(), compressed_traj_radio.isChecked(), video_radio.isChecked()
     return result, coco_radio.isChecked(), mot_radio.isChecked(), video_radio.isChecked()
 
 

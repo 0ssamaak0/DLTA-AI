@@ -1810,7 +1810,6 @@ class MainWindow(QtWidgets.QMainWindow):
             except:
                 pass
         
-
     def interpolate(self, id, only_edited=False, with_sam=False):
 
         self.waitWindow(
@@ -1824,94 +1823,82 @@ class MainWindow(QtWidgets.QMainWindow):
 
         if only_edited:
             try:
-                key_frames = self.key_frames['id_' + str(id)]
+                FRAMES = self.key_frames['id_' + str(id)]
+                first_frame_idx = np.min(FRAMES)
+                last_frame_idx = np.max(FRAMES)
             except:
                 return
-            first_frame_idx = np.min(key_frames)
-            last_frame_idx = np.max(key_frames)
         else:
-            first_frame_idx = min(self.id_frames_rec['id_' + str(id)])
-            last_frame_idx = max(self.id_frames_rec['id_' + str(id)])
+            FRAMES = list(self.id_frames_rec['id_' + str(id)]) if len(self.id_frames_rec['id_' + str(id)]) > 1 else [-1]
+            first_frame_idx = min(FRAMES)
+            last_frame_idx = max(FRAMES)
 
         if (first_frame_idx >= last_frame_idx):
             return
 
-        records = [None for i in range(first_frame_idx, last_frame_idx + 1)]
-        RECORDS = []
-        for i in range(first_frame_idx - 1, last_frame_idx, 1):
-            listobjframe = listObj[i]['frame_idx']
-            frameobjects = listObj[i]['frame_data']
+        records = [None for i in range(first_frame_idx - 1, last_frame_idx, 1)]
+        for frame in range(first_frame_idx, last_frame_idx + 1, 1):
+            listobjframe = listObj[frame - 1]['frame_idx']
+            frameobjects = listObj[frame - 1]['frame_data']
             for object_ in frameobjects:
                 if (object_['tracker_id'] == id):
-                    if (only_edited and not (listobjframe in key_frames)):
-                        listObj[i]['frame_data'].remove(object_)
-                    else:
-                        records[listobjframe -
-                                first_frame_idx] = copy.deepcopy(object_)
-                        listObj[i]['frame_data'].remove(object_)
+                    if ((not only_edited) or (listobjframe in FRAMES)):
+                        records[frame - first_frame_idx] = copy.deepcopy(object_)
                     break
-
-        first_iter_flag = True
-        for i in range(len(records)):
+        
+        baseObject = None
+        baseObjectFrame = None
+        nextObject = None
+        nextObjectFrame = None
+            
+        for frame in range(first_frame_idx, last_frame_idx, 1):
             
             QtWidgets.QApplication.processEvents()
             if self.interrupted:
-                self.interrupted = False
-                self.main_video_frames_slider_changed()
-                return
+                break
             
-            if (records[i] != None):
-                RECORDS.append(records[i])
+            listobjframe = listObj[frame - 1]['frame_idx']
+            frameobjects = listObj[frame - 1]['frame_data']
+            
+            # if object is present in this frame, then it is base object and we calculate next object
+            if(records[frame -first_frame_idx] is not None):
+                
+                # assign it as base object
+                baseObject = copy.deepcopy(records[frame -first_frame_idx])
+                baseObjectFrame = frame
+                
+                # find next object
+                for j in range(frame + 1, last_frame_idx + 1, 1):
+                    if (records[j - first_frame_idx] != None):
+                        nextObject = copy.deepcopy(records[j - first_frame_idx])
+                        nextObjectFrame = j
+                        break
+                
+                # job done, go to next frame
                 continue
-            if first_iter_flag:
-                first_iter_flag = False
-            prev_idx = i - 1
-            prev = records[i - 1]
-            current = copy.deepcopy(prev)
-
-            next = records[i + 1]
-            next_idx = i + 1
-            for j in range(i + 1, len(records)):
-                if (records[j] != None):
-                    next = records[j]
-                    next_idx = j
-                    break
-            cur_bbox = ((next_idx - i) / (next_idx - prev_idx)) * np.array(records[prev_idx]['bbox']) + (
-                (i - prev_idx) / (next_idx - prev_idx)) * np.array(records[next_idx]['bbox'])
-            cur_bbox = [int(cur_bbox[i]) for i in range(len(cur_bbox))]
-
-            prev_segment = prev['segment']
-            next_segment = next['segment']
-            if len(prev_segment) != len(next_segment):
-                biglen = max(len(prev_segment), len(next_segment))
-                prev_segment = self.handlePoints(prev_segment, biglen)
-                next_segment = self.handlePoints(next_segment, biglen)
-            (prev_segment, next_segment) = self.allign(
-                prev_segment, next_segment)
-            records[prev_idx]['segment'] = prev['segment'] = prev_segment
-            records[next_idx]['segment'] = next['segment'] = next_segment
-
-            cur_segment = ((next_idx - i) / (next_idx - prev_idx)) * np.array(records[prev_idx]['segment']) + (
-                (i - prev_idx) / (next_idx - prev_idx)) * np.array(records[next_idx]['segment'])
-            cur_segment = [[int(sublist[0]), int(sublist[1])]
-                           for sublist in cur_segment]
-            current['bbox'] = cur_bbox
-            current['segment'] = cur_segment
-
-            records[i] = current.copy()
-            RECORDS.append(records[i])
-
-        frames = range(first_frame_idx - 1, last_frame_idx, 1)
-        for i in frames:
-            listobjframe = listObj[i]['frame_idx']
-            listObj[i]['frame_data'].append(
-                RECORDS[max(listobjframe - first_frame_idx - 1, 0)])
-            self.rec_frame_for_id(id, listobjframe)
+            
+            # if only_edited is true and the frame is not key, then we remove the object from the frame to be interpolated
+            if (only_edited and (frame not in FRAMES)):
+                for object_ in frameobjects:
+                    if (object_['tracker_id'] == id):
+                        listObj[frame - 1]['frame_data'].remove(object_)
+                        break
+            
+            # if object is not present in this frame, then we calculate the object for this frame
+            cur = helpers.getInterpolated(baseObject=baseObject, 
+                                          baseObjectFrame=baseObjectFrame,
+                                          nextObject=nextObject,
+                                          nextObjectFrame=nextObjectFrame,
+                                          curFrame=frame,)
+            listObj[frame - 1]['frame_data'].append(cur)
+            self.rec_frame_for_id(id, frame)
+            
         
         self.load_objects_to_json__orjson(listObj)
+        frames = range(first_frame_idx - 1, last_frame_idx, 1)
         self.calc_trajectory_when_open_video(frames)
         self.main_video_frames_slider_changed()
-
+        
     def interpolate_with_sam(self):
 
         self.waitWindow(
@@ -2918,7 +2905,6 @@ class MainWindow(QtWidgets.QMainWindow):
         try:
             if self.current_annotation_mode == "video":
 
-                # result, coco_radio, mot_radio, traj_radio, compressed_traj_radio, video_radio = helpers.exportData_GUI()
                 result, coco_radio, mot_radio, video_radio = helpers.exportData_GUI()
                 if not result:
                     return
@@ -2948,21 +2934,6 @@ class MainWindow(QtWidgets.QMainWindow):
                     else:
                         raise Exception("No folder selected")
                 
-                # if traj_radio:
-                #     folderDialog = utils.FolderDialog("traj.csv", "csv")
-                #     if folderDialog.exec_():
-                #         pth = utils.exportTraj(
-                #             json_file_name, self.CURRENT_VIDEO_WIDTH, self.CURRENT_VIDEO_HEIGHT, folderDialog.selectedFiles()[0])
-                #     else:
-                #         raise Exception("No folder selected")
-                    
-                # if compressed_traj_radio:
-                #     folderDialog = utils.FolderDialog("traj.csv", "csv")
-                #     if folderDialog.exec_():
-                #         pth = utils.exportTraj(
-                #             json_file_name, self.CURRENT_VIDEO_WIDTH, self.CURRENT_VIDEO_HEIGHT, folderDialog.selectedFiles()[0], rle = True)
-                #     else:
-                #         raise Exception("No folder selected")
 
             elif self.current_annotation_mode == "img" or self.current_annotation_mode == "dir":
                 folderDialog = utils.FolderDialog("coco.json", "json")
@@ -3919,8 +3890,8 @@ class MainWindow(QtWidgets.QMainWindow):
         # dt = (Profile(), Profile(), Profile(), Profile())
     
         self.tracking_progress_bar.setVisible(True)
-        self.track_stop_button.setVisible(True)
-        self.track_stop_button.setEnabled(True)
+        # self.track_stop_button.setVisible(True)
+        # self.track_stop_button.setEnabled(True)
         frame_shape = self.CURRENT_FRAME_IMAGE.shape
         print(frame_shape)
 
@@ -4096,8 +4067,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.tracking_progress_bar.hide()
         self.tracking_progress_bar.setValue(0)
-        self.track_stop_button.hide()
-        self.track_stop_button.setEnabled(False)
+        # self.track_stop_button.hide()
+        # self.track_stop_button.setEnabled(False)
 
         # Enable Exports & Restore button Text and Color
         self.actions.export.setEnabled(True)
@@ -4132,7 +4103,7 @@ class MainWindow(QtWidgets.QMainWindow):
             except:
                 pass
         # Disable Stop tracking button by default
-        self.track_stop_button.setEnabled(False) 
+        # self.track_stop_button.setEnabled(False) 
 
     def window_wait(self, seconds):
         loop = QtCore.QEventLoop()
@@ -4518,10 +4489,10 @@ class MainWindow(QtWidgets.QMainWindow):
         
         self.track_stop_button = QtWidgets.QPushButton()
         self.track_stop_button.setStyleSheet(
-            "QPushButton {font-size: 10pt; margin: 2px 5px; padding: 2px 7px;font-weight: bold; background-color: #FF2E2E; color: #FFFFFF;} QPushButton:hover {background-color: #FF0000;} QPushButton:disabled {background-color: #7A7A7A;}")
+            "QPushButton {font-size: 10pt; margin: 2px 5px; padding: 2px 7px;font-weight: bold; background-color: #FF9090; color: #FFFFFF;} QPushButton:hover {background-color: #FF0000;} QPushButton:disabled {background-color: #7A7A7A;}")
         self.track_stop_button.setStyleSheet("QPushButton {font-size: 10pt; margin: 2px 5px; padding: 2px 7px;font-weight: bold; background-color: #FF0000; color: #FFFFFF;} QPushButton:hover {background-color: #FE4242;} QPushButton:disabled {background-color: #7A7A7A;}")
             
-        self.track_stop_button.setText("Stop Tracking")
+        self.track_stop_button.setText("Stop")
         self.track_stop_button.setShortcut(self._config['shortcuts']['stop'])
         self.track_stop_button.setToolTip(
                 f'shortcut ({self._config["shortcuts"]["stop"]})')
@@ -5171,7 +5142,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def load_objects_from_json__json(self):
         if self.global_listObj != []:
-            return copy.deepcopy(self.global_listObj)
+            return self.global_listObj
         json_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}_tracking_results.json'
         return helpers.load_objects_from_json__json(json_file_name, self.TOTAL_VIDEO_FRAMES)
 
@@ -5182,7 +5153,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def load_objects_from_json__orjson(self):
         if self.global_listObj != []:
-            return copy.deepcopy(self.global_listObj)
+            return self.global_listObj
         json_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}_tracking_results.json'
         return helpers.load_objects_from_json__orjson(json_file_name, self.TOTAL_VIDEO_FRAMES)
 
@@ -5203,7 +5174,9 @@ class MainWindow(QtWidgets.QMainWindow):
                                                             'interpolate', 
                                                             'mark_as_key', 
                                                             'scale',
-                                                            'ignore_updates']]
+                                                            'ignore_updates',
+                                                            'copy',
+                                                            'paste',]]
         
         self.VideoShortcuts = [QtWidgets.QShortcut(QtGui.QKeySequence(shortcuts[i]), self) for i in range(len(shortcuts))]
         
@@ -5212,6 +5185,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.VideoShortcuts[2].activated.connect(self.mark_as_key)
         self.VideoShortcuts[3].activated.connect(self.scaleMENU)
         self.VideoShortcuts[4].activated.connect(self.main_video_frames_slider_changed)
+        self.VideoShortcuts[5].activated.connect(self.copyShapesSelected)
+        self.VideoShortcuts[6].activated.connect(self.pasteShapesSelected)
         
     def disconnectVideoShortcuts(self):
         
