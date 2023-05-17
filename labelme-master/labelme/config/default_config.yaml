@@ -103,13 +103,32 @@ shortcuts:
   undo_last_point: [Ctrl+Z, Backspace]
   add_point_to_edge: Ctrl+Shift+P
   edit_label: null
-  enhance : null
-  interpolate: Ctrl+I
-  mark_as_key: Ctrl+M
-  scale: Ctrl+T
   toggle_keep_prev_mode: Ctrl+P
 
-  SAM_finish_annotation: Return
+  enhance : shift+E
+  interpolate: shift+I
+  mark_as_key: shift+M
+  scale: shift+S
+  ignore_updates: shift+Z
+
+  track: shift+T
+  track_assigned: shift+A
+  track_full: shift+F
+  stop: Escape
+  update_frame: shift+U
+  clear_annotations: shift+D
+  export_video: shift+V
+
+  prev_x: Down
+  prev_1: Left
+  next_x: Up
+  next_1: Right
+  play: Space
+
+  SAM_finish_annotation: F          # Return also works but implemented in canvas.py 
   SAM_add_point: A
   SAM_remove_point: R
   SAM_select_rect: B
+  SAM_clear: C
+  SAM_RESET: X                      # Escape also works but implemented inside stop (cause of duplicate key)
+  SAM_enhance : E

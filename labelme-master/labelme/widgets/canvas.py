@@ -30,8 +30,9 @@ class Canvas(QtWidgets.QWidget):
     vertexSelected = QtCore.Signal(bool)
     # SAM signals
     pointAdded = QtCore.Signal()
-    reset = QtCore.Signal()
-    interrupted = QtCore.Signal()
+    samFinish = QtCore.Signal()
+    # reset = QtCore.Signal()
+    # interrupted = QtCore.Signal()
 
     CREATE, EDIT = 0, 1
     CREATE, EDIT = 0, 1
@@ -939,16 +940,21 @@ class Canvas(QtWidgets.QWidget):
 
     def keyPressEvent(self, ev):
         key = ev.key()
-        if key == QtCore.Qt.Key_Escape:
-            self.interrupted.emit()
+        # if key == QtCore.Qt.Key_Escape:
+        #     self.interrupted.emit()
+        #     if self.SAM_mode != "":
+        #         self.reset.emit()
+        #     if self.current:
+        #         self.current = None
+        #         self.drawingPolygon.emit(False)
+        #         self.update()
+        # if key == QtCore.Qt.Key_Return and self.canCloseShape():
+        #     self.finalise()
+        if key == QtCore.Qt.Key_Return:
             if self.SAM_mode != "":
-                self.reset.emit()
-            if self.current:
-                self.current = None
-                self.drawingPolygon.emit(False)
-                self.update()
-        elif key == QtCore.Qt.Key_Return and self.canCloseShape():
-            self.finalise()
+                self.samFinish.emit()
+            elif self.canCloseShape():
+                self.finalise()
             
     def cancelManualDrawing(self):
         self.current = None
