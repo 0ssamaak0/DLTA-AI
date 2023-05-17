@@ -1150,8 +1150,11 @@ def exportData_GUI():
         
     Returns:
         result: the result of the dialog
+        vido_radio.isChecked(): a flag to indicate if the Video Format is checked
         coco_radio.isChecked(): a flag to indicate if the COCO Format is checked
         mot_radio.isChecked(): a flag to indicate if the MOT Format is checked
+        # traj_radio.isChecked(): a flag to indicate if the Customized Trajectory Format is checked
+        # compressed_traj_radio.isChecked(): a flag to indicate if the Compressed Customized Trajectory Format is checked
     """
     
     dialog = QtWidgets.QDialog()
@@ -1161,22 +1164,55 @@ def exportData_GUI():
 
     layout = QtWidgets.QVBoxLayout()
 
-    label = QtWidgets.QLabel("Choose Export Options")
-    layout.addWidget(label)
+    font = QtGui.QFont()
+    font.setBold(True)
+    font.setPointSize(10)
 
+    vid_label = QtWidgets.QLabel("Export Video")
+    vid_label.setFont(font)
+    vid_label.setMargin(10)
+
+    std_label = QtWidgets.QLabel("Export Annotations (Standard Formats)")
+    std_label.setFont(font)
+    std_label.setMargin(10)
+
+    custom_label = QtWidgets.QLabel("Export Annotations (Customized Formats)")
+    custom_label.setFont(font)
+    custom_label.setMargin(10)
+    
     # Create a button group to hold the radio buttons
     button_group = QtWidgets.QButtonGroup()
 
     # Create the radio buttons and add them to the button group
+    video_radio = QtWidgets.QRadioButton("Export Video with current visualization settings")
     coco_radio = QtWidgets.QRadioButton(
         "COCO Format (Detection / Segmentation)")
     mot_radio = QtWidgets.QRadioButton("MOT Format (Tracking)")
+    traj_radio = QtWidgets.QRadioButton("Customized Trajectory Format (Tracking)")
+    compressed_traj_radio = QtWidgets.QRadioButton("Compressed Customized Trajectory Format (Tracking)")
+
+    
+    button_group.addButton(video_radio)
     button_group.addButton(coco_radio)
     button_group.addButton(mot_radio)
+    button_group.addButton(traj_radio)
+    button_group.addButton(compressed_traj_radio)
 
-    # Add the radio buttons to the layout
+    # Add to the layout
+
+    # video label and radio buttons
+    layout.addWidget(vid_label)
+    layout.addWidget(video_radio)
+
+    # standard label and radio buttons
+    layout.addWidget(std_label)
     layout.addWidget(coco_radio)
     layout.addWidget(mot_radio)
+
+    # # custom label and radio buttons
+    # layout.addWidget(custom_label)
+    # layout.addWidget(traj_radio)
+    # layout.addWidget(compressed_traj_radio)
 
     buttonBox = QtWidgets.QDialogButtonBox(
         QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel)
@@ -1189,7 +1225,8 @@ def exportData_GUI():
 
     result = dialog.exec_()
     
-    return result, coco_radio.isChecked(), mot_radio.isChecked()
+    # return result, coco_radio.isChecked(), mot_radio.isChecked(), traj_radio.isChecked(), compressed_traj_radio.isChecked(), video_radio.isChecked()
+    return result, coco_radio.isChecked(), mot_radio.isChecked(), video_radio.isChecked()
 
 
 def deleteSelectedShape_GUI(TOTAL_VIDEO_FRAMES, INDEX_OF_CURRENT_FRAME, config):
