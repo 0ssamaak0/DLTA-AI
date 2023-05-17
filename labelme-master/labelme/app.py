@@ -733,7 +733,7 @@ class MainWindow(QtWidgets.QMainWindow):
         update_curr_frame = action(
             self.tr("&Update current frame"),
             self.update_current_frame_annotation_button_clicked,
-            shortcuts["save"],
+            shortcuts["update_frame"],
             "done",
             self.tr("Update frame"),
             enabled=False,
@@ -741,7 +741,7 @@ class MainWindow(QtWidgets.QMainWindow):
         ignore_changes = action(
             self.tr("&Ignore changes"),
             self.main_video_frames_slider_changed,
-            shortcuts["undo"],
+            shortcuts["ignore_updates"],
             "delete",
             self.tr("Ignore unsaved changes"),
             enabled=False,
@@ -962,8 +962,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.canvas.edgeSelected.connect(self.canvasShapeEdgeSelected)
         self.canvas.vertexSelected.connect(self.actions.removePoint.setEnabled)
-        self.canvas.reset.connect(self.sam_reset_button_clicked)
-        self.canvas.interrupted.connect(self.SETinterrupted)
+        self.canvas.samFinish.connect(self.sam_finish_annotation_button_clicked)
+        # self.canvas.reset.connect(self.sam_reset_button_clicked)
+        # self.canvas.interrupted.connect(self.SETinterrupted)
 
         self.menus = utils.struct(
             file=self.menu(self.tr("&File")),
@@ -1331,8 +1332,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
     # Callbacks
     
-    def SETinterrupted(self):
+    def Escape_clicked(self):
         self.interrupted = True
+        self.sam_reset_button_clicked()
 
     def undoShapeEdit(self):
         self.canvas.restoreShape()
@@ -1976,6 +1978,7 @@ class MainWindow(QtWidgets.QMainWindow):
         for frameIDX in range(min(first_frame_idxLIST), max(last_frame_idxLIST) + 1):
             QtWidgets.QApplication.processEvents()
             if self.interrupted:
+                self.interrupted = False
                 break
             self.waitWindow(
                 visible=True, text=f'Wait a second.\nIDs are being interpolated with SAM...\nFrame {frameIDX}')
@@ -2827,6 +2830,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def openFile(self, _value=False):
         self.config['toolMode'] = 'image'
         self.right_click_menu()
+        self.disconnectVideoShortcuts()
 
         self.current_annotation_mode = "img"
         self.actions.export.setEnabled(False)
@@ -3221,6 +3225,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def openDirDialog(self, _value=False, dirpath=None):
         self.config['toolMode'] = 'image'
         self.right_click_menu()
+        self.disconnectVideoShortcuts()
 
         self.current_annotation_mode = "dir"
         if not self.mayContinue():
@@ -3553,6 +3558,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.config['toolMode'] = "video"
         self.right_click_menu()
+        self.assignVideShortcuts()
 
         for shape in self.canvas.shapes:
             self.canvas.deleteShape(shape)
@@ -3756,6 +3762,9 @@ class MainWindow(QtWidgets.QMainWindow):
         # we can check the state of the button by checking the button text
         if self.playPauseButton.text() == "Play":
             self.playPauseButton.setText("Pause")
+            self.playPauseButton.setShortcut(self._config['shortcuts']['play'])
+            self.playPauseButton.setToolTip(
+                f'shortcut ({self._config["shortcuts"]["play"]})')
             self.playPauseButton.setIcon(
                 self.style().standardIcon(QtWidgets.QStyle.SP_MediaPause))
             # play the video at the current fps untill the user clicks pause
@@ -3773,6 +3782,9 @@ class MainWindow(QtWidgets.QMainWindow):
             self.play_timer.stop()
 
             self.playPauseButton.setText("Play")
+            self.playPauseButton.setShortcut(self._config['shortcuts']['play'])
+            self.playPauseButton.setToolTip(
+                f'shortcut ({self._config["shortcuts"]["play"]})')
             self.playPauseButton.setIcon(
                 self.style().standardIcon(QtWidgets.QStyle.SP_MediaPlay))
         # print(1)
@@ -3822,13 +3834,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def move_frame_by_frame(self):
         QtWidgets.QApplication.processEvents()
-        if self.interrupted:
-            self.play_timer.stop()
-            self.playPauseButton.setText("Play")
-            self.playPauseButton.setIcon(
-                self.style().standardIcon(QtWidgets.QStyle.SP_MediaPlay))
-            self.interrupted = False
-            return
         self.main_video_frames_slider.setValue(self.INDEX_OF_CURRENT_FRAME + 1)
 
     def class_name_to_id(self, class_name):
@@ -4343,26 +4348,41 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.previousFrame_button = QtWidgets.QPushButton()
         self.previousFrame_button.setText("<<")
+        self.previousFrame_button.setShortcut(self._config['shortcuts']['prev_x'])
+        self.previousFrame_button.setToolTip(
+                f'shortcut ({self._config["shortcuts"]["prev_x"]})')
         self.previousFrame_button.clicked.connect(
             self.previousFrame_buttonClicked)
 
         self.previous_1_Frame_button = QtWidgets.QPushButton()
         self.previous_1_Frame_button.setText("<")
+        self.previous_1_Frame_button.setShortcut(self._config['shortcuts']['prev_1'])
+        self.previous_1_Frame_button.setToolTip(
+                f'shortcut ({self._config["shortcuts"]["prev_1"]})')
         self.previous_1_Frame_button.clicked.connect(
             self.previous_1_Frame_buttonclicked)
 
         self.playPauseButton = QtWidgets.QPushButton()
         self.playPauseButton.setText("Play")
+        self.playPauseButton.setShortcut(self._config['shortcuts']['play'])
+        self.playPauseButton.setToolTip(
+                f'shortcut ({self._config["shortcuts"]["play"]})')
         self.playPauseButton.setIcon(
             self.style().standardIcon(QtWidgets.QStyle.SP_MediaPlay))
         self.playPauseButton.clicked.connect(self.playPauseButtonClicked)
 
         self.nextFrame_button = QtWidgets.QPushButton()
         self.nextFrame_button.setText(">>")
+        self.nextFrame_button.setShortcut(self._config['shortcuts']['next_x'])
+        self.nextFrame_button.setToolTip(
+                f'shortcut ({self._config["shortcuts"]["next_x"]})')
         self.nextFrame_button.clicked.connect(self.nextFrame_buttonClicked)
 
         self.next_1_Frame_button = QtWidgets.QPushButton()
         self.next_1_Frame_button.setText(">")
+        self.next_1_Frame_button.setShortcut(self._config['shortcuts']['next_1'])
+        self.next_1_Frame_button.setToolTip(
+                f'shortcut ({self._config["shortcuts"]["next_1"]})')
         self.next_1_Frame_button.clicked.connect(
             self.next_1_Frame_buttonClicked)
 
@@ -4419,6 +4439,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.stop_tracking = False
         self.track_button.setStyleSheet(self.buttons_text_style_sheet)
         self.track_button.setText("Track")
+        self.track_button.setShortcut(self._config['shortcuts']['track'])
+        self.track_button.setToolTip(
+                f'shortcut ({self._config["shortcuts"]["track"]})')
         self.track_button.clicked.connect(self.track_buttonClicked)
         self.videoControls_2.addWidget(self.track_button)
 
@@ -4426,6 +4449,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.track_assigned_objects.setStyleSheet(
             self.buttons_text_style_sheet)
         self.track_assigned_objects.setText("Track Only assigned objects")
+        self.track_assigned_objects.setShortcut(self._config['shortcuts']['track_assigned'])
+        self.track_assigned_objects.setToolTip(
+                f'shortcut ({self._config["shortcuts"]["track_assigned"]})')
         self.track_assigned_objects.clicked.connect(
             self.track_assigned_objects_button_clicked)
         self.videoControls_2.addWidget(self.track_assigned_objects)
@@ -4434,6 +4460,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.track_full_video_button.setStyleSheet(
             self.buttons_text_style_sheet)
         self.track_full_video_button.setText("Track Full Video")
+        self.track_full_video_button.setShortcut(self._config['shortcuts']['track_full'])
+        self.track_full_video_button.setToolTip(
+                f'shortcut ({self._config["shortcuts"]["track_full"]})')
         self.track_full_video_button.clicked.connect(
             self.track_full_video_button_clicked)
         self.videoControls_2.addWidget(self.track_full_video_button)
@@ -4453,10 +4482,13 @@ class MainWindow(QtWidgets.QMainWindow):
         
         self.track_stop_button = QtWidgets.QPushButton()
         self.track_stop_button.setStyleSheet(
-            self.buttons_text_style_sheet)
+            "QPushButton {font-size: 10pt; margin: 2px 5px; padding: 2px 7px;font-weight: bold; background-color: #FF2E2E; color: #FFFFFF;} QPushButton:hover {background-color: #FF0000;} QPushButton:disabled {background-color: #7A7A7A;}")
         self.track_stop_button.setText("STOP")
+        self.track_stop_button.setShortcut(self._config['shortcuts']['stop'])
+        self.track_stop_button.setToolTip(
+                f'shortcut ({self._config["shortcuts"]["stop"]})')
         self.track_stop_button.clicked.connect(
-            self.SETinterrupted)
+            self.Escape_clicked)
         self.videoControls_2.addWidget(self.track_stop_button)
         # self.tracking_progress_bar_signal = pyqtSignal(int)
         # self.tracking_progress_bar_signal.connect(self.tracking_progress_bar.setValue)
@@ -4522,6 +4554,9 @@ class MainWindow(QtWidgets.QMainWindow):
             self.buttons_text_style_sheet)
         self.update_current_frame_annotation_button.setText(
             "Update current frame")
+        self.update_current_frame_annotation_button.setShortcut(self._config['shortcuts']['update_frame'])
+        self.update_current_frame_annotation_button.setToolTip(
+                f'shortcut ({self._config["shortcuts"]["update_frame"]})')
         self.update_current_frame_annotation_button.clicked.connect(
             self.update_current_frame_annotation_button_clicked)
         self.videoControls_3.addWidget(
@@ -4532,6 +4567,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.clear_video_annotations_button.setStyleSheet(
             self.buttons_text_style_sheet)
         self.clear_video_annotations_button.setText("Clear Video Annotations")
+        self.clear_video_annotations_button.setShortcut(self._config['shortcuts']['clear_annotations'])
+        self.clear_video_annotations_button.setToolTip(
+                f'shortcut ({self._config["shortcuts"]["clear_annotations"]})')
         self.clear_video_annotations_button.clicked.connect(
             self.clear_video_annotations_button_clicked)
         self.videoControls_3.addWidget(self.clear_video_annotations_button)
@@ -4541,6 +4579,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.export_as_video_button.setStyleSheet(
             self.buttons_text_style_sheet)
         self.export_as_video_button.setText("Export as video")
+        self.export_as_video_button.setShortcut(self._config['shortcuts']['export_video'])
+        self.export_as_video_button.setToolTip(
+                f'shortcut ({self._config["shortcuts"]["export_video"]})')
         self.export_as_video_button.clicked.connect(
             self.export_as_video_button_clicked)
         self.videoControls_3.addWidget(self.export_as_video_button)
@@ -4684,6 +4725,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.sam_clear_annotation_button.setStyleSheet(
             "QPushButton { font-size: 10pt; font-weight: bold; }")
         self.sam_clear_annotation_button.setText("Clear Annotation")
+        self.sam_clear_annotation_button.setShortcut(self._config["shortcuts"]["SAM_clear"])
+        self.sam_clear_annotation_button.setToolTip(
+            f'shortcut ({self._config["shortcuts"]["SAM_clear"]})')
         self.sam_clear_annotation_button.clicked.connect(
             self.sam_clear_annotation_button_clicked)
         self.sam_toolbar.addWidget(self.sam_clear_annotation_button)
@@ -4697,7 +4741,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.sam_finish_annotation_button_clicked)
         # set hover text
         self.sam_finish_annotation_button.setToolTip(
-            self._config["shortcuts"]["SAM_finish_annotation"])
+            f'shortcut ({self._config["shortcuts"]["SAM_finish_annotation"]} or ENTER)')
         # set shortcut
         self.sam_finish_annotation_button.setShortcut(
             self._config["shortcuts"]["SAM_finish_annotation"])
@@ -4708,6 +4752,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.sam_close_button.setStyleSheet(
             "QPushButton { font-size: 10pt; font-weight: bold; }")
         self.sam_close_button.setText("RESET")
+        self.sam_close_button.setShortcut(self._config["shortcuts"]["SAM_RESET"])
+        self.sam_close_button.setToolTip(
+            f'shortcut ({self._config["shortcuts"]["SAM_RESET"]} or ESC)')
         self.sam_close_button.clicked.connect(
             self.sam_reset_button_clicked)
         self.sam_toolbar.addWidget(self.sam_close_button)
@@ -4719,6 +4766,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.sam_enhance_annotation_button.setStyleSheet(
             "QPushButton { font-size: 10pt; font-weight: bold; }")
         self.sam_enhance_annotation_button.setText("Enhance selected with SAM")
+        self.sam_enhance_annotation_button.setShortcut(self._config["shortcuts"]["SAM_enhance"])
+        self.sam_enhance_annotation_button.setToolTip(
+            f'shortcut ({self._config["shortcuts"]["SAM_enhance"]})')
         self.sam_enhance_annotation_button.clicked.connect(
             self.sam_enhance_annotation_button_clicked)
         self.sam_toolbar.addWidget(self.sam_enhance_annotation_button)
@@ -5102,6 +5152,40 @@ class MainWindow(QtWidgets.QMainWindow):
         helpers.load_objects_to_json__orjson(json_file_name, listObj)
 
 
+    def assignVideShortcuts(self):
+        
+        """
+        Summary:
+            Assigns the shortcuts for the video mode.
+        """
+        
+        shortcuts = [self._config["shortcuts"][x] for x in ['enhance', 
+                                                            'interpolate', 
+                                                            'mark_as_key', 
+                                                            'scale',
+                                                            'ignore_updates']]
+        
+        self.VideoShortcuts = [QtWidgets.QShortcut(QtGui.QKeySequence(shortcuts[i]), self) for i in range(len(shortcuts))]
+        
+        self.VideoShortcuts[0].activated.connect(self.sam_enhance_annotation_button_clicked)
+        self.VideoShortcuts[1].activated.connect(self.interpolateMENU)
+        self.VideoShortcuts[2].activated.connect(self.mark_as_key)
+        self.VideoShortcuts[3].activated.connect(self.scaleMENU)
+        self.VideoShortcuts[4].activated.connect(self.main_video_frames_slider_changed)
+        
+    def disconnectVideoShortcuts(self):
+        
+        """
+        Summary:
+            Disconnects the shortcuts for the video mode in case of image or directory mode.
+        """
+        
+        try:
+            for shortcut in self.VideoShortcuts:
+                shortcut.activated.disconnect()
+        except:
+            pass
+        
 # important parameters across the gui
 
 # INDEX_OF_CURRENT_FRAME
