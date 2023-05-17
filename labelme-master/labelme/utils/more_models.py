@@ -38,18 +38,21 @@ class ModelExplorerDialog(QDialog):
             # Set up the model type dropdown menu
             self.model_type_dropdown = QComboBox()
             self.model_type_dropdown.addItems(["All"] + self.model_keys)
+            self.model_type_dropdown.currentIndexChanged.connect(self.search)
             toolbar.addWidget(self.model_type_dropdown)
 
             # Set up the checkboxes
             self.available_checkbox = QCheckBox("Downloaded")
+            self.available_checkbox.clicked.connect(self.search)
             toolbar.addWidget(self.available_checkbox)
             self.not_available_checkbox = QCheckBox("Not Downloaded")
+            self.not_available_checkbox.clicked.connect(self.search)
             toolbar.addWidget(self.not_available_checkbox)
 
             # Set up the search button
-            search_button = QPushButton("Search")
-            search_button.clicked.connect(self.search)
-            toolbar.addWidget(search_button)
+            # search_button = QPushButton("Search")
+            # search_button.clicked.connect(self.search)
+            # toolbar.addWidget(search_button)
 
             open_checkpoints_dir_button = QPushButton("Open Checkpoints Dir")
             # add icon to the button

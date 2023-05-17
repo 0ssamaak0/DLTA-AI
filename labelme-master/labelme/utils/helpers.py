@@ -960,12 +960,6 @@ def is_id_repeated(self, group_id, frameIdex=-1):
     if frameIdex == -1:
         frameIdex = self.INDEX_OF_CURRENT_FRAME
         
-    if frameIdex == self.INDEX_OF_CURRENT_FRAME:
-        for shape in self.canvas.shapes:
-            if shape.group_id == group_id:
-                return True
-        return False
-        
     listObj = self.load_objects_from_json__orjson()
     
     for object_ in listObj[frameIdex - 1]['frame_data']:
@@ -975,10 +969,35 @@ def is_id_repeated(self, group_id, frameIdex=-1):
     return False
 
 
-
-
-
-
+def checkKeyFrames(ids, keyFrames):
+    
+    """
+    Summary:
+        Check if all the ids have at least two key frames.
+        
+    Args:
+        ids: a list of ids
+        keyFrames: a dictionary of key frames
+        
+    Returns:
+        allAccepted: True if all the ids have at least two key frames, False otherwise
+        idsToTrack: a list of ids that have at least two key frames
+    """
+    
+    idsToTrack = []
+    allAccepted = True
+    for id in ids:
+        try:
+            if len(keyFrames['id_' + str(id)]) == 1:
+                allAccepted = False
+            else:
+                idsToTrack.append(id)
+        except:
+            allAccepted = False
+    
+    allRejected = len(idsToTrack) == 0
+    
+    return allAccepted, allRejected, idsToTrack
 
 
 
