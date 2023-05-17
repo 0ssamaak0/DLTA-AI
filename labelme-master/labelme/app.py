@@ -64,6 +64,8 @@ from pathlib import Path
 import warnings
 from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
 
+from .utils.custom_exports import custom_exports_list
+
 
 warnings.filterwarnings("ignore")
 
@@ -2905,7 +2907,7 @@ class MainWindow(QtWidgets.QMainWindow):
         try:
             if self.current_annotation_mode == "video":
 
-                result, coco_radio, mot_radio, video_radio = helpers.exportData_GUI()
+                result, coco_radio, mot_radio, video_radio, custom_exports_radio_checked_list = helpers.exportData_GUI()
                 if not result:
                     return
 
@@ -2918,22 +2920,32 @@ class MainWindow(QtWidgets.QMainWindow):
                     if folderDialog.exec_():
                         pth = self.export_as_video_button_clicked(folderDialog.selectedFiles()[0])
                     else:
-                        raise Exception("No folder selected")
+                        return
                 if coco_radio:
                     folderDialog = utils.FolderDialog("coco.json", "json")
                     if folderDialog.exec_():
                         pth = utils.exportCOCOvid(
                             json_file_name, self.CURRENT_VIDEO_WIDTH, self.CURRENT_VIDEO_HEIGHT, folderDialog.selectedFiles()[0])
                     else:
-                        raise Exception("No folder selected")
+                        return
                 if mot_radio:
                     folderDialog = utils.FolderDialog("mot.txt", "txt")
                     if folderDialog.exec_():
                         pth = utils.exportMOT(
                             json_file_name, folderDialog.selectedFiles()[0])
                     else:
-                        raise Exception("No folder selected")
-                
+                        return
+                # custom exports
+                if len(custom_exports_radio_checked_list) != 0:
+                    for i in range(len(custom_exports_radio_checked_list)):
+                        if custom_exports_radio_checked_list[i]:
+                            folderDialog = utils.FolderDialog(
+                                f"{custom_exports_list[i].file_name}.{custom_exports_list[i].format}", custom_exports_list[i].format)
+                            if folderDialog.exec_():
+                                pth = custom_exports_list[i](json_file_name, self.CURRENT_VIDEO_WIDTH, self.CURRENT_VIDEO_HEIGHT, folderDialog.selectedFiles()[0])
+                            else:
+                                return
+
 
             elif self.current_annotation_mode == "img" or self.current_annotation_mode == "dir":
                 folderDialog = utils.FolderDialog("coco.json", "json")
@@ -2941,7 +2953,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     pth = utils.exportCOCO(
                         self.target_directory, self.save_path, folderDialog.selectedFiles()[0])
                 else:
-                    raise Exception("No folder selected")
+                    return
         except Exception as e:
             # Error QMessageBox
             msg = QtWidgets.QMessageBox()
@@ -3542,6 +3554,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
 
     def openVideo(self):
+        # enable export if json file exists
+
+
         length_Value = self.CURRENT_ANNOATAION_TRAJECTORIES['length']
         alpha_Value = self.CURRENT_ANNOATAION_TRAJECTORIES['alpha']
         self.CURRENT_ANNOATAION_TRAJECTORIES.clear()
@@ -3577,6 +3592,12 @@ class MainWindow(QtWidgets.QMainWindow):
                 ".")[-2].split("/")[-1]
             self.CURRENT_VIDEO_PATH = "/".join(
                 videoFile[0].split(".")[-2].split("/")[:-1])
+            
+            json_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}_tracking_results.json'
+            if os.path.exists(json_file_name):
+                self.actions.export.setEnabled(True)
+            else:
+                self.actions.export.setEnabled(False)
 
             # print('video file name : ' , self.CURRENT_VIDEO_NAME)
             # print("video file path : " , self.CURRENT_VIDEO_PATH)

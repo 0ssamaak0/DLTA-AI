@@ -12,9 +12,13 @@ import os
 import json
 import orjson
 import copy
+import sys
 
-
-
+try:
+    from .custom_exports import custom_exports_list
+except:
+    custom_exports_list = []
+    print("custom_exports file not found")
 
 
 coco_classes = ['person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', 'truck', 'boat', 'traffic light',
@@ -1211,10 +1215,10 @@ def exportData_GUI():
         
     Returns:
         result: the result of the dialog
+        vid_radio.isChecked(): a flag to indicate if the Video Format is checked
         coco_radio.isChecked(): a flag to indicate if the COCO Format is checked
         mot_radio.isChecked(): a flag to indicate if the MOT Format is checked
-        traj_radio.isChecked(): a flag to indicate if the Customized Trajectory Format is checked
-        compressed_traj_radio.isChecked(): a flag to indicate if the Compressed Customized Trajectory Format is checked
+        custom_exports: a list of the custom exports that are checked
     """
     
     dialog = QtWidgets.QDialog()
@@ -1248,15 +1252,22 @@ def exportData_GUI():
     coco_radio = QtWidgets.QRadioButton(
         "COCO Format (Detection / Segmentation)")
     mot_radio = QtWidgets.QRadioButton("MOT Format (Tracking)")
-    traj_radio = QtWidgets.QRadioButton("Customized Trajectory Format (Tracking)")
-    compressed_traj_radio = QtWidgets.QRadioButton("Compressed Customized Trajectory Format (Tracking)")
 
-    
+    # make the custom exports radio buttons
+    custom_exports_radio_list = []
+    if len(custom_exports_list) != 0:
+        for custom_exp in custom_exports_list:
+            custom_radio = QtWidgets.QRadioButton(custom_exp.button_name)
+            button_group.addButton(custom_radio)
+            custom_exports_radio_list.append(custom_radio)
+
     button_group.addButton(video_radio)
     button_group.addButton(coco_radio)
     button_group.addButton(mot_radio)
-    button_group.addButton(traj_radio)
-    button_group.addButton(compressed_traj_radio)
+    # Add custom radio buttons to the button group
+    if len(custom_exports_list) != 0:
+        for custom_radio in custom_exports_radio_list:
+            button_group.addButton(custom_radio)
 
     # Add to the layout
 
@@ -1269,10 +1280,13 @@ def exportData_GUI():
     layout.addWidget(coco_radio)
     layout.addWidget(mot_radio)
 
-    # # custom label and radio buttons
-    # layout.addWidget(custom_label)
-    # layout.addWidget(traj_radio)
-    # layout.addWidget(compressed_traj_radio)
+    # custom label and radio buttons
+    layout.addWidget(custom_label)
+    if len(custom_exports_list) != 0:
+        for custom_radio in custom_exports_radio_list:
+            layout.addWidget(custom_radio)
+    else:
+        layout.addWidget(QtWidgets.QLabel("No Custom Exports Available, you can them in utils.custom_exports.py"))
 
     buttonBox = QtWidgets.QDialogButtonBox(
         QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel)
@@ -1284,8 +1298,14 @@ def exportData_GUI():
     dialog.setLayout(layout)
 
     result = dialog.exec_()
+
+    # prepare the checked list of custom exports
+    custom_exports_radio_checked_list = []
+    if len(custom_exports_list) != 0:
+        for custom_radio in custom_exports_radio_list:
+            custom_exports_radio_checked_list.append(custom_radio.isChecked())
     
-    return result, coco_radio.isChecked(), mot_radio.isChecked(), video_radio.isChecked()
+    return result, coco_radio.isChecked(), mot_radio.isChecked(), video_radio.isChecked(), custom_exports_radio_checked_list
 
 
 def deleteSelectedShape_GUI(TOTAL_VIDEO_FRAMES, INDEX_OF_CURRENT_FRAME, config):
