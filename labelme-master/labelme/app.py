@@ -17,8 +17,7 @@ import copy
 import imgviz
 from matplotlib import pyplot as plt
 from qtpy import QtCore
-from qtpy.QtCore import Qt
-from qtpy.QtCore import QThread
+from qtpy.QtCore import Qt, QThread
 # from qtpy.QtCore import Signal as pyqtSignal
 
 from qtpy import QtGui
@@ -2722,6 +2721,8 @@ class MainWindow(QtWidgets.QMainWindow):
     def closeEvent(self, event):
         if not self.mayContinue():
             event.ignore()
+        else:
+            self.Escape_clicked()
         self.settings.setValue(
             "filename", self.filename if self.filename else ""
         )
@@ -2917,15 +2918,21 @@ class MainWindow(QtWidgets.QMainWindow):
         try:
             if self.current_annotation_mode == "video":
 
-                result, coco_radio, mot_radio = helpers.exportData_GUI()
+                # result, coco_radio, mot_radio, traj_radio, compressed_traj_radio, video_radio = helpers.exportData_GUI()
+                result, coco_radio, mot_radio, video_radio = helpers.exportData_GUI()
                 if not result:
                     return
 
                 json_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}_tracking_results.json'
-                target_path = f'{self.CURRENT_VIDEO_PATH}'
 
-                pth = self.CURRENT_VIDEO_PATH
+                pth = ""
                 # Check which radio button is checked and export accordingly
+                if video_radio:
+                    folderDialog = utils.FolderDialog("tracking_results.mp4", "mp4")
+                    if folderDialog.exec_():
+                        pth = self.export_as_video_button_clicked(folderDialog.selectedFiles()[0])
+                    else:
+                        raise Exception("No folder selected")
                 if coco_radio:
                     folderDialog = utils.FolderDialog("coco.json", "json")
                     if folderDialog.exec_():
@@ -2940,6 +2947,22 @@ class MainWindow(QtWidgets.QMainWindow):
                             json_file_name, folderDialog.selectedFiles()[0])
                     else:
                         raise Exception("No folder selected")
+                
+                # if traj_radio:
+                #     folderDialog = utils.FolderDialog("traj.csv", "csv")
+                #     if folderDialog.exec_():
+                #         pth = utils.exportTraj(
+                #             json_file_name, self.CURRENT_VIDEO_WIDTH, self.CURRENT_VIDEO_HEIGHT, folderDialog.selectedFiles()[0])
+                #     else:
+                #         raise Exception("No folder selected")
+                    
+                # if compressed_traj_radio:
+                #     folderDialog = utils.FolderDialog("traj.csv", "csv")
+                #     if folderDialog.exec_():
+                #         pth = utils.exportTraj(
+                #             json_file_name, self.CURRENT_VIDEO_WIDTH, self.CURRENT_VIDEO_HEIGHT, folderDialog.selectedFiles()[0], rle = True)
+                #     else:
+                #         raise Exception("No folder selected")
 
             elif self.current_annotation_mode == "img" or self.current_annotation_mode == "dir":
                 folderDialog = utils.FolderDialog("coco.json", "json")
@@ -3603,7 +3626,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self.main_video_frames_slider.setValue(self.INDEX_OF_CURRENT_FRAME)
 
             # self.addToolBarBreak
-
             self.set_video_controls_visibility(True)
 
             self.update_tracking_method()
@@ -3760,6 +3782,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def playPauseButtonClicked(self):
         # we can check the state of the button by checking the button text
+        
         if self.playPauseButton.text() == "Play":
             self.playPauseButton.setText("Pause")
             self.playPauseButton.setShortcut(self._config['shortcuts']['play'])
@@ -3894,9 +3917,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.actions.export.setEnabled(False)
 
         # dt = (Profile(), Profile(), Profile(), Profile())
-
+    
         self.tracking_progress_bar.setVisible(True)
         self.track_stop_button.setVisible(True)
+        self.track_stop_button.setEnabled(True)
         frame_shape = self.CURRENT_FRAME_IMAGE.shape
         print(frame_shape)
 
@@ -4038,7 +4062,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 json_tracked_object['confidence'] = shape["content"]
                 json_tracked_object['class_name'] = shape["label"]
                 json_tracked_object['class_id'] = coco_classes.index(
-                    shape["label"])
+                    shape["label"]) if shape["label"] in coco_classes else -1
                 points = shape["points"]
                 segment = [[int(points[z]), int(points[z + 1])]
                            for z in range(0, len(points), 2)]
@@ -4073,6 +4097,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.tracking_progress_bar.hide()
         self.tracking_progress_bar.setValue(0)
         self.track_stop_button.hide()
+        self.track_stop_button.setEnabled(False)
 
         # Enable Exports & Restore button Text and Color
         self.actions.export.setEnabled(True)
@@ -4083,12 +4108,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def track_full_video_button_clicked(self):
         self.FRAMES_TO_TRACK = int(
-            self.TOTAL_VIDEO_FRAMES - self.INDEX_OF_CURRENT_FRAME + 1)
+            self.TOTAL_VIDEO_FRAMES - self.INDEX_OF_CURRENT_FRAME)
         self.track_buttonClicked()
 
     def set_video_controls_visibility(self, visible=False):
         # make it invisible by default
-
         self.videoControls.setVisible(visible)
         for widget in self.videoControls.children():
             try:
@@ -4107,6 +4131,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 widget.setVisible(visible)
             except:
                 pass
+        # Disable Stop tracking button by default
+        self.track_stop_button.setEnabled(False) 
 
     def window_wait(self, seconds):
         loop = QtCore.QEventLoop()
@@ -4147,11 +4173,15 @@ class MainWindow(QtWidgets.QMainWindow):
             self.canvas.setShapeVisible(
                 shape, self.CURRENT_ANNOATAION_FLAGS["polygons"])
 
-    def export_as_video_button_clicked(self):
+    def export_as_video_button_clicked(self, output_filename = None):
+        print (f"output filename is {output_filename}")
         self.update_current_frame_annotation()
         json_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}_tracking_results.json'
         input_video_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}.mp4'
         output_video_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}_tracking_results.mp4'
+        if output_filename is not False:
+            output_video_file_name = output_filename
+        print (f"output video file name is {output_video_file_name}")
         input_cap = cv2.VideoCapture(input_video_file_name)
         output_cap = cv2.VideoWriter(output_video_file_name, cv2.VideoWriter_fourcc(
             *'mp4v'), int(self.CURRENT_VIDEO_FPS), (int(self.CURRENT_VIDEO_WIDTH), int(self.CURRENT_VIDEO_HEIGHT)))
@@ -4197,7 +4227,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.INDEX_OF_CURRENT_FRAME = self.main_video_frames_slider.value()
         # show message saying that the video is exported
-        helpers.OKmsgBox("Export Video", "Done Exporting Video")
+        if output_filename is False:
+            helpers.OKmsgBox("Export Video", "Done Exporting Video")
+
+        if output_filename is not False:
+            return output_filename
 
     def clear_video_annotations_button_clicked(self):
         self.global_listObj = []
@@ -4369,7 +4403,9 @@ class MainWindow(QtWidgets.QMainWindow):
                 f'shortcut ({self._config["shortcuts"]["play"]})')
         self.playPauseButton.setIcon(
             self.style().standardIcon(QtWidgets.QStyle.SP_MediaPlay))
-        self.playPauseButton.clicked.connect(self.playPauseButtonClicked)
+        # when the button is clicked, print "Pressed!" in the terminal
+        self.playPauseButton.pressed.connect(self.playPauseButtonClicked)
+        # self.playPauseButton.clicked.connect(self.playPauseButtonClicked)
 
         self.nextFrame_button = QtWidgets.QPushButton()
         self.nextFrame_button.setText(">>")
@@ -4483,13 +4519,17 @@ class MainWindow(QtWidgets.QMainWindow):
         self.track_stop_button = QtWidgets.QPushButton()
         self.track_stop_button.setStyleSheet(
             "QPushButton {font-size: 10pt; margin: 2px 5px; padding: 2px 7px;font-weight: bold; background-color: #FF2E2E; color: #FFFFFF;} QPushButton:hover {background-color: #FF0000;} QPushButton:disabled {background-color: #7A7A7A;}")
-        self.track_stop_button.setText("STOP")
+        self.track_stop_button.setStyleSheet("QPushButton {font-size: 10pt; margin: 2px 5px; padding: 2px 7px;font-weight: bold; background-color: #FF0000; color: #FFFFFF;} QPushButton:hover {background-color: #FE4242;} QPushButton:disabled {background-color: #7A7A7A;}")
+            
+        self.track_stop_button.setText("Stop Tracking")
         self.track_stop_button.setShortcut(self._config['shortcuts']['stop'])
         self.track_stop_button.setToolTip(
                 f'shortcut ({self._config["shortcuts"]["stop"]})')
-        self.track_stop_button.clicked.connect(
+        self.track_stop_button.pressed.connect(
             self.Escape_clicked)
         self.videoControls_2.addWidget(self.track_stop_button)
+        
+
         # self.tracking_progress_bar_signal = pyqtSignal(int)
         # self.tracking_progress_bar_signal.connect(self.tracking_progress_bar.setValue)
 

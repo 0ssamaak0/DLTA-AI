@@ -2,9 +2,44 @@ import datetime
 import glob
 import json
 import os
+import csv
 import numpy as np
 from PyQt5.QtWidgets import QFileDialog
 
+def center_of_polygon(polygon):
+    """
+    Calculates the center of a polygon defined by a list of consecutive pairs of vertices.
+
+    Args:
+        polygon (list): A list of consecutive pairs of vertices.
+
+    Returns:
+        tuple: The center point of the polygon as a tuple of two integers.
+    """
+    # Extract x and y coordinates from the list of polygon vertices
+    x_coords = polygon[::2]
+    y_coords = polygon[1::2]
+
+    # Calculate the center point of the polygon
+    center_x = sum(x_coords) / len(x_coords)
+    center_y = sum(y_coords) / len(y_coords)
+    center = [center_x, center_y]
+
+    # Find the center of the bounding box of the polygon
+    xmin = min(x_coords)
+    xmax = max(x_coords)
+    ymin = min(y_coords)
+    ymax = max(y_coords)
+    centers_rec = [(xmin + xmax) / 2, (ymin + ymax) / 2]
+
+    # Calculate the final center point as a weighted average of the polygon center and the bounding box center
+    (xp, yp) = centers_rec
+    (xn, yn) = center
+    r = 0.5
+    x = r * xn + (1 - r) * xp
+    y = r * yn + (1 - r) * yp
+    center = (int(x), int(y))
+    return center
 
 def get_bbox(segmentation):
     try:
@@ -142,7 +177,7 @@ def exportCOCO(target_directory, save_path, annotation_path):
     with open(annotation_path, 'w') as outfile:
         json.dump(file, outfile, indent=4)
 
-    return (annotation_path)
+    return annotation_path
 
 
 def exportCOCOvid(results_file, vid_width, vid_height, annotation_path):
@@ -180,6 +215,9 @@ def exportCOCOvid(results_file, vid_width, vid_height, annotation_path):
                     "category_id": object["class_id"] + 1,
                     "iscrowd": 0
                 })
+                if annotations[-1]["category_id"] == 0:
+                    coco_classes.append(object["class_name"].lower())
+                    annotations[-1]["category_id"] = coco_classes.index(object["class_name"].lower()) + 1
                 try:
                     annotations[-1]["bbox"] = get_bbox(object["segment"])
                 except:
@@ -197,10 +235,10 @@ def exportCOCOvid(results_file, vid_width, vid_height, annotation_path):
                     annotations[-1]["score"] = float(object["confidence"])
                 except:
                     pass
-                used_classes.add(object["class_id"])
+                used_classes.add(annotations[-1]["category_id"])
 
     used_classes = sorted(list(used_classes))
-    file["categories"] = [{"id": i + 1, "name": coco_classes[i]}
+    file["categories"] = [{"id": i, "name": coco_classes[i - 1]}
                           for i in used_classes]
     file["images"] = images
     file["annotations"] = annotations
@@ -209,7 +247,7 @@ def exportCOCOvid(results_file, vid_width, vid_height, annotation_path):
     with open(annotation_path, 'w') as outfile:
         json.dump(file, outfile, indent=4)
 
-    return (annotation_path)
+    return annotation_path
 
 
 def exportMOT(results_file, annotation_path):
@@ -226,7 +264,9 @@ def exportMOT(results_file, annotation_path):
         # write each row in the file as a new line
         outfile.write("\n".join(rows))
 
-    return (annotation_path)
+    return annotation_path
+
+
 
 
 # Define a class that inherits from QFileDialog
