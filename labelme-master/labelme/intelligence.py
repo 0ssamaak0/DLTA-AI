@@ -48,11 +48,12 @@ color_palette = [(75, 25, 230),
 class IntelligenceWorker(QThread):
     sinOut = pyqtSignal(int, int)
 
-    def __init__(self, parent, images, source):
+    def __init__(self, parent, images, source,multi_model_flag=False):
         super(IntelligenceWorker, self).__init__(parent)
         self.parent = parent
         self.source = source
         self.images = images
+        self.multi_model_flag = multi_model_flag
 
     def run(self):
         index = 0
@@ -72,7 +73,10 @@ class IntelligenceWorker(QThread):
 
             try:
                 print("Decoding "+filename)
-                s = self.source.get_shapes_of_one(filename)
+                if self.multi_model_flag:
+                    s = self.source.get_shapes_of_one(filename, multi_model_flag=True)
+                else:
+                    s = self.source.get_shapes_of_one(filename)
                 s = convert_shapes_to_qt_shapes(s)
                 self.source.saveLabelFile(filename, s)
             except Exception as e:
@@ -392,9 +396,9 @@ class Intelligence():
     #         mainwindow = self.parent
     #         mainwindow.addLabel(shape)
 
-    def get_shapes_of_batch(self, images):
+    def get_shapes_of_batch(self, images, multi_model_flag=False):
         self.pd = self.startOperationDialog()
-        self.thread = IntelligenceWorker(self.parent, images, self)
+        self.thread = IntelligenceWorker(self.parent, images, self, multi_model_flag)
         self.thread.sinOut.connect(self.updateDialog)
         self.thread.start()
 
