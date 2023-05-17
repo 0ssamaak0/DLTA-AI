@@ -130,7 +130,7 @@ class MainWindow(QtWidgets.QMainWindow):
         output_file=None,
         output_dir=None,
     ):
-        self.buttons_text_style_sheet = "QPushButton {font-size: 10pt; margin: 2px 5px; padding: 2px 7px;font-weight: bold; background-color: #0d69f5; color: #FFFFFF;} QPushButton:hover {background-color: #4990ED;}"
+        self.buttons_text_style_sheet = "QPushButton {font-size: 10pt; margin: 2px 5px; padding: 2px 7px;font-weight: bold; background-color: #0d69f5; color: #FFFFFF;} QPushButton:hover {background-color: #4990ED;} QPushButton:disabled {background-color: #7A7A7A;}"
 
         if output is not None:
             logger.warning(
@@ -388,6 +388,13 @@ class MainWindow(QtWidgets.QMainWindow):
             self.tr(u"Export annotations to COCO format"),
             enabled=False,
         )
+        modelExplorer = action(
+            self.tr("&Model Explorer"),
+            self.model_explorer,
+            None,
+            "checklist",
+            self.tr(u"Model Explorer"),
+        )
         saveAs = action(
             self.tr("&Save As"),
             self.saveFileAs,
@@ -571,13 +578,6 @@ class MainWindow(QtWidgets.QMainWindow):
             enabled=False,
         )
 
-        # help = action(
-        #     self.tr("&Tutorial"),
-        #     self.tutorial,
-        #     icon="help",
-        #     tip=self.tr("Show tutorial page"),
-        # )
-
         zoom = QtWidgets.QWidgetAction(self)
         zoom.setDefaultWidget(self.zoomWidget)
         self.zoomWidget.setWhatsThis(
@@ -755,61 +755,96 @@ class MainWindow(QtWidgets.QMainWindow):
         fill_drawing.trigger()
         # intelligence actions
         annotate_one_action = action(
-            self.tr("Run the model for the Current File "),
+            self.tr("Run Model on Current Image"),
             self.annotate_one,
             None,
-            None,
-            self.tr("Run the model for the Current File")
+            "open",
+            self.tr("Run Model on Current Image")
         )
 
         annotate_batch_action = action(
-            self.tr("Run the model for All Files"),
+            self.tr("Run Model on All Images"),
             self.annotate_batch,
             None,
-            None,
-            self.tr("Run the model for All Files")
+            "file",
+            self.tr("Run Model on All Images")
         )
         set_conf_threshold = action(
-            self.tr("Set Confidence threshold for the model"),
+            self.tr("Confidence Threshold"),
             self.setConfThreshold,
             None,
-            None,
-            self.tr("Set Confidence threshold for the model")
+            "tune",
+            self.tr("Confidence Threshold")
         )
         set_iou_threshold = action(
-            self.tr("Set IOU threshold for the model NMS"),
+            self.tr("IOU Threshold (NMS)"),
             self.setIOUThreshold,
             None,
-            None,
-            self.tr("Set IOU threshold for the model NMS")
+            "iou",
+            self.tr("IOU Threshold (Non Maximum Suppression)")
         )
         select_classes = action(
-            self.tr("select the classes to be annotated"),
+            self.tr("Select Classes"),
             self.selectClasses,
             None,
-            None,
-            self.tr("select the classes to be annotated")
+            "checklist",
+            self.tr("Select Classes to be Annotated")
         )
         merge_segmentation_models = action(
-            self.tr("merge segmentation models"),
+            self.tr("Merge Segmentation Models"),
             self.mergeSegModels,
             None,
-            None,
-            self.tr("merge segmentation models")
+            "merge",
+            self.tr("Merge Segmentation Models")
         )
         runtime_data = action(
-            self.tr("show the runtime data"),
+            self.tr("Show Runtime Data"),
             self.showRuntimeData,
             None,
+            "runtime",
+            self.tr("Show Runtime Data")
+        )
+        license = action(
+            self.tr("LICENSE"),
+            self.showRuntimeData,
             None,
-            self.tr("show the runtime data")
+            "runtime",
+            self.tr("LICENSE")
+        )
+        feedback = action(
+            self.tr("Feedback"),
+            self.showRuntimeData,
+            None,
+            "runtime",
+            self.tr("Feedback")
+        )
+        acks = action(
+            self.tr("Acknowledgements"),
+            self.showRuntimeData,
+            None,
+            "runtime",
+            self.tr("Acknowledgements")
+        )
+        contact_us = action(
+            self.tr("contact_us"),
+            self.showRuntimeData,
+            None,
+            "runtime",
+            self.tr("contact_us")
+        )
+        tutorials = action(
+            self.tr("Tutorials"),
+            self.showRuntimeData,
+            None,
+            "runtime",
+            self.tr("Tutorials")
         )
         sam = action(
-            self.tr("show/hide toolbar"),
+            self.tr("Toggle SAM Toolbar"),
             self.Segment_anything,
             None,
-            None,
-            self.tr("show/hide toolbar")
+            "SAM",
+            self.tr("Toggle SAM Toolbar")
         )
         openVideo = action(
             self.tr("Open &Video"),
@@ -866,6 +901,8 @@ class MainWindow(QtWidgets.QMainWindow):
             export=export,
             openVideo=openVideo,
             fileMenuActions=(open_, opendir, save, saveAs, close, quit),
+            modelExplorer=modelExplorer,
+            runtime_data = runtime_data,
             tool=(),
             # XXX: need to add some actions here to activate the shortcut
             editMenu=(
@@ -928,29 +965,26 @@ class MainWindow(QtWidgets.QMainWindow):
             edit=self.menu(self.tr("&Edit")),
             view=self.menu(self.tr("&View")),
             intelligence=self.menu(self.tr("&Auto Annotation")),
-            sam=self.menu(self.tr("&Segment Anything")),
+            model_selection=self.menu(self.tr("&Model Selection")),
+            options=self.menu(self.tr("&Options")),
+            help=self.menu(self.tr("&Help")),
 
-            # help=self.menu(self.tr("&Help")),
             recentFiles=QtWidgets.QMenu(self.tr("Open &Recent")),
             saved_models=QtWidgets.QMenu(self.tr("Select Segmentation model")),
             tracking_models=QtWidgets.QMenu(self.tr("Select Tracking model")),
             labelList=labelMenu,
 
+            ui_elements=QtWidgets.QMenu(self.tr("&Show UI Elements")),
+            zoom_options=QtWidgets.QMenu(self.tr("&Zoom Options")),
 
-        )
-        utils.addActions(
-            self.menus.sam,
-            (
-                sam,
-            ),
+
         )
         utils.addActions(
             self.menus.file,
             (
                 open_,
-                openNextImg,
-                openPrevImg,
                 opendir,
+                openVideo,
                 self.menus.recentFiles,
                 save,
                 saveAs,
@@ -963,44 +997,90 @@ class MainWindow(QtWidgets.QMainWindow):
                 quit,
             ),
         )
-        # utils.addActions(self.menus.help, (help,))
         utils.addActions(self.menus.intelligence,
                          (annotate_one_action,
                           annotate_batch_action,
-                          set_conf_threshold,
-                          set_iou_threshold,
-                          self.menus.saved_models,
-                          self.menus.tracking_models,
-                          select_classes,
-                          merge_segmentation_models,
-                          runtime_data
                           )
                          )
-
+        # View menu and its submenus
+        self.menus.ui_elements.setIcon(QtGui.QIcon("labelme/icons/UI.png"))
+        utils.addActions(self.menus.ui_elements,
+                         (
+                             self.flag_dock.toggleViewAction(),
+                             self.label_dock.toggleViewAction(),
+                             self.shape_dock.toggleViewAction(),
+                             self.file_dock.toggleViewAction(),
+                         )
+                         )
+        self.menus.zoom_options.setIcon(QtGui.QIcon("labelme/icons/zoom.png"))
+        utils.addActions(self.menus.zoom_options,
+                         (
+                             zoomIn,
+                             zoomOut,
+                             zoomOrg,
+                             None,
+                             fitWindow,
+                             fitWidth,
+                         )
+                         )
         utils.addActions(
             self.menus.view,
-            (
-                self.flag_dock.toggleViewAction(),
-                self.label_dock.toggleViewAction(),
-                self.shape_dock.toggleViewAction(),
-                self.file_dock.toggleViewAction(),
-                None,
-                fill_drawing,
+            (sam,
+                self.menus.ui_elements,
                 None,
                 hideAll,
                 showAll,
                 None,
-                zoomIn,
-                zoomOut,
-                zoomOrg,
+                self.menus.zoom_options,
                 None,
-                fitWindow,
-                fitWidth,
-                None,
-                brightnessContrast,
                 show_cross_line,
+             ),
+        )
+
+        # Model selection menu
+        self.menus.saved_models.setIcon(
+            QtGui.QIcon("labelme/icons/labels.png"))
+        self.menus.tracking_models.setIcon(
+            QtGui.QIcon("labelme/icons/tracking.png"))
+
+        utils.addActions(
+            self.menus.model_selection,
+            (
+                self.menus.saved_models,
+                merge_segmentation_models,
+                None,
+                self.menus.tracking_models,
+                None,
+                modelExplorer,
+
             ),
         )
+
+        # Options menu
+        utils.addActions(
+            self.menus.options,
+            (
+                set_conf_threshold,
+                set_iou_threshold,
+                None,
+                select_classes,
+
+            ),
+        )
+        # Help menu
+        utils.addActions(
+            self.menus.help,
+            (
+                runtime_data,
+                license,
+                feedback,
+                acks,
+                contact_us,
+                tutorials
+
+            ),
+        )
+
 
         self.menus.file.aboutToShow.connect(self.updateFileMenu)
         self.menus.file.aboutToShow.connect(self.update_models_menu)
@@ -1030,10 +1110,7 @@ class MainWindow(QtWidgets.QMainWindow):
             copy,
             delete,
             undo,
-            brightnessContrast,
             None,
-            zoom,
-            fitWidth,
             openNextImg,
             openPrevImg,
 
@@ -1327,7 +1404,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.actions.editMode.setEnabled(not edit)
 
     def setEditMode(self):
-        if self.sam_model_comboBox.currentText() != "Select Model (SAM disable)":
+        if self.sam_model_comboBox.currentText() != "Select Model (SAM disabled)":
             self.sam_clear_annotation_button_clicked()
         self.sam_buttons_colors('x')
         self.set_sam_toolbar_enable(False)
@@ -1380,48 +1457,40 @@ class MainWindow(QtWidgets.QMainWindow):
                     self.change_curr_model, model_name))
                 menu.addAction(action)
                 i += 1
-
-            icon = utils.newIcon("labels")
-            action = QtWidgets.QAction(
-                icon, "Model Explorer", self)
-            # when the action is triggered, preview an Qmessagebox with ERROR
-            action.triggered.connect(self.model_explorer)
-            menu.addAction(action)
-
         self.add_tracking_models_menu()
 
     def add_tracking_models_menu(self):
         menu2 = self.menus.tracking_models
         menu2.clear()
 
-        icon = utils.newIcon("labels")
+        icon = utils.newIcon("tracking")
         action = QtWidgets.QAction(
             icon, "1 Byte track (DEFAULT)", self)
         action.triggered.connect(
             lambda: self.update_tracking_method('bytetrack'))
         menu2.addAction(action)
 
-        icon = utils.newIcon("labels")
+        icon = utils.newIcon("tracking")
         action = QtWidgets.QAction(
             icon, "2 Strong SORT  (lowest id switch)", self)
         action.triggered.connect(
             lambda: self.update_tracking_method('strongsort'))
         menu2.addAction(action)
 
-        icon = utils.newIcon("labels")
+        icon = utils.newIcon("tracking")
         action = QtWidgets.QAction(
             icon, "3 Deep SORT", self)
         action.triggered.connect(
             lambda: self.update_tracking_method('deepocsort'))
         menu2.addAction(action)
 
-        icon = utils.newIcon("labels")
+        icon = utils.newIcon("tracking")
         action = QtWidgets.QAction(
             icon, "4 OC SORT", self)
         action.triggered.connect(lambda: self.update_tracking_method('ocsort'))
         menu2.addAction(action)
 
-        icon = utils.newIcon("labels")
+        icon = utils.newIcon("tracking")
         action = QtWidgets.QAction(
             icon, "5 BoT SORT", self)
         action.triggered.connect(
@@ -1474,7 +1543,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.canvas.SAM_rects = []
         self.canvas.SAM_current = None
         return
-
 
     def editLabel(self, item=None):
         if self.current_annotation_mode == 'video':
@@ -1529,20 +1597,22 @@ class MainWindow(QtWidgets.QMainWindow):
                     item.setData(Qt.UserRole, shape.label)
                     self.uniqLabelList.addItem(item)
                 return
-            
+
             idChanged = old_group_id != new_group_id
             only_this_frame = False
             if idChanged:
-                result, self.config = helpers.editLabel_idChanged_GUI(self.config)
+                result, self.config = helpers.editLabel_idChanged_GUI(
+                    self.config)
                 if result == QtWidgets.QDialog.Accepted:
                     only_this_frame = True if self.config['EditDefault'] == 'Edit only this frame' else False
                 else:
                     return
 
             listObj = self.load_objects_from_json__orjson()
-            
-            old_id_frame_record = copy.deepcopy(self.id_frames_rec['id_' + str(old_group_id)])
-            
+
+            old_id_frame_record = copy.deepcopy(
+                self.id_frames_rec['id_' + str(old_group_id)])
+
             if not idChanged:
                 for frame in old_id_frame_record:
                     for object_ in listObj[frame - 1]['frame_data']:
@@ -1554,21 +1624,24 @@ class MainWindow(QtWidgets.QMainWindow):
                             break
             else:
                 if only_this_frame:
-                    
+
                     try:
-                        new_id_frame_record = copy.deepcopy(self.id_frames_rec['id_' + str(new_group_id)])
+                        new_id_frame_record = copy.deepcopy(
+                            self.id_frames_rec['id_' + str(new_group_id)])
                         # check duplicates
                         if self.is_id_repeated(new_group_id):
                             shape.group_id = old_group_id
-                            helpers.OKmsgBox("Warning", 
+                            helpers.OKmsgBox("Warning",
                                              f"Two shapes with the same ID exists.\nApparantly, a shape with ID ({new_group_id}) already exists with another shape with ID ({old_group_id}) in the CURRENT FRAME and the edit will result in two shapes with the same ID in the same frame.\n\n The edit is NOT performed.")
                             return
                     except:
                         new_id_frame_record = set()
                         pass
-                        
-                    self.rec_frame_for_id(old_group_id, self.INDEX_OF_CURRENT_FRAME, type_='remove')
-                    self.rec_frame_for_id(new_group_id, self.INDEX_OF_CURRENT_FRAME, type_='add')
+
+                    self.rec_frame_for_id(
+                        old_group_id, self.INDEX_OF_CURRENT_FRAME, type_='remove')
+                    self.rec_frame_for_id(
+                        new_group_id, self.INDEX_OF_CURRENT_FRAME, type_='add')
                     for object_ in listObj[self.INDEX_OF_CURRENT_FRAME - 1]['frame_data']:
                         if object_['tracker_id'] == old_group_id:
                             object_['class_name'] = shape.label
@@ -1577,7 +1650,7 @@ class MainWindow(QtWidgets.QMainWindow):
                                 shape.label) if shape.label in coco_classes else -1
                             object_['tracker_id'] = new_group_id
                             break
-                    
+
                     for frame in new_id_frame_record:
                         for object_ in listObj[frame - 1]['frame_data']:
                             if object_['tracker_id'] == new_group_id:
@@ -1587,15 +1660,16 @@ class MainWindow(QtWidgets.QMainWindow):
                                     shape.label) if shape.label in coco_classes else -1
                                 # object_['tracker_id'] = new_group_id
                                 break
-                            
-                            
+
                 else:       # edit all frames with this ID
-                    
+
                     try:
-                        new_id_frame_record = copy.deepcopy(self.id_frames_rec['id_' + str(new_group_id)])
+                        new_id_frame_record = copy.deepcopy(
+                            self.id_frames_rec['id_' + str(new_group_id)])
                         # check duplicates
                         union = old_id_frame_record.union(new_id_frame_record)
-                        Intersection = old_id_frame_record.intersection(new_id_frame_record)
+                        Intersection = old_id_frame_record.intersection(
+                            new_id_frame_record)
                         if len(Intersection) != 0:
                             shape.group_id = old_group_id
                             helpers.OKmsgBox("ID already exists",
@@ -1605,10 +1679,10 @@ class MainWindow(QtWidgets.QMainWindow):
                         new_id_frame_record = set()
                         union = old_id_frame_record
                         pass
-                    
+
                     self.id_frames_rec['id_' + str(new_group_id)] = union
                     self.id_frames_rec['id_' + str(old_group_id)] = set()
-                    
+
                     for frame in old_id_frame_record:
                         for object_ in listObj[frame - 1]['frame_data']:
                             if object_['tracker_id'] == old_group_id:
@@ -1627,11 +1701,6 @@ class MainWindow(QtWidgets.QMainWindow):
                                     shape.label) if shape.label in coco_classes else -1
                                 # object_['tracker_id'] = new_group_id
                                 break
-                    
-                    
-
-
-
 
             # for i in range(len(listObj)):
             #     listObjframe = listObj[i]['frame_idx']
@@ -1674,12 +1743,8 @@ class MainWindow(QtWidgets.QMainWindow):
             self.load_objects_to_json__orjson(listObj)
             self.calc_trajectory_when_open_video()
             self.main_video_frames_slider_changed()
-           
 
     def interpolateMENU(self, item=None):
-
-        
-            
 
         # if len(self.canvas.selectedShapes) > 1:
         #     mb = QtWidgets.QMessageBox
@@ -1712,34 +1777,34 @@ class MainWindow(QtWidgets.QMainWindow):
             id = self.canvas.selectedShapes[0].group_id
 
         result, self.config = helpers.interpolationOptions_GUI(self.config)
-        
+
         if result != QtWidgets.QDialog.Accepted:
             return
-        
+
         only_edited = True if self.config[
             'interpolationDefault'] == 'interpolate all frames between your KEY frames' else False
         with_sam = True if self.config[
             'interpolationDefault'] == 'interpolate ALL frames with SAM (more precision, more time)' else False
-        
+
         if only_edited:
-                try:
-                    id = self.canvas.selectedShapes[0].group_id
-                    if len(self.key_frames['id_' + str(id)]) == 1:
-                        x = 1/0
-                except:
-                    helpers.OKmsgBox("No KEY frames found", 
-                                        f"No KEY frames found for this shape ID.\n    ie. less than 2 key frames\n The interpolation is NOT performed.")
-                    return
-        
+            try:
+                id = self.canvas.selectedShapes[0].group_id
+                if len(self.key_frames['id_' + str(id)]) == 1:
+                    x = 1/0
+            except:
+                helpers.OKmsgBox("No KEY frames found",
+                                 f"No KEY frames found for this shape ID.\n    ie. less than 2 key frames\n The interpolation is NOT performed.")
+                return
+
         if with_sam:
             self.interpolate(id=ids,
-                            only_edited=False, 
-                            with_sam=True)
+                             only_edited=False,
+                             with_sam=True)
         else:
             for id in ids:
                 self.interpolate(id=id,
-                                only_edited=only_edited, 
-                                with_sam=False)
+                                 only_edited=only_edited,
+                                 with_sam=False)
         self.waitWindow()
 
     def mark_as_key(self):
@@ -1754,7 +1819,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.main_video_frames_slider_changed()
 
     def rec_frame_for_id(self, id, frame, type_='add'):
-        
+
         if type_ == 'add':
             try:
                 self.id_frames_rec['id_' + str(id)].add(frame)
@@ -1782,9 +1847,9 @@ class MainWindow(QtWidgets.QMainWindow):
         if with_sam:
             self.interpolate_with_sam()
             return
-        
+
         listObj = self.load_objects_from_json__orjson()
-        
+
         if only_edited:
             try:
                 key_frames = self.key_frames['id_' + str(id)]
@@ -1795,7 +1860,7 @@ class MainWindow(QtWidgets.QMainWindow):
         else:
             first_frame_idx = min(self.id_frames_rec['id_' + str(id)])
             last_frame_idx = max(self.id_frames_rec['id_' + str(id)])
-            
+
         if (first_frame_idx >= last_frame_idx):
             return
 
@@ -1812,14 +1877,12 @@ class MainWindow(QtWidgets.QMainWindow):
                     if (only_edited and not (listobjframe in key_frames)):
                         listObj[i]['frame_data'].remove(object_)
                     else:
-                        records[listobjframe - first_frame_idx] = copy.deepcopy(object_)
+                        records[listobjframe -
+                                first_frame_idx] = copy.deepcopy(object_)
                         listObj[i]['frame_data'].remove(object_)
                     break
-                    
-                    
-        # records_org = records.copy()
 
-        
+        # records_org = records.copy()
 
         first_iter_flag = True
         for i in range(len(records)):
@@ -1874,7 +1937,8 @@ class MainWindow(QtWidgets.QMainWindow):
             #         if (object_['tracker_id'] == id):
             #             listObj[i]['frame_data'].remove(object_)
             #             break
-            listObj[i]['frame_data'].append(RECORDS[max(listobjframe - first_frame_idx - 1, 0)])
+            listObj[i]['frame_data'].append(
+                RECORDS[max(listobjframe - first_frame_idx - 1, 0)])
             self.rec_frame_for_id(id, listobjframe)
             # appended = records_org[listobjframe - first_frame_idx]
             # if appended == None:
@@ -1911,10 +1975,10 @@ class MainWindow(QtWidgets.QMainWindow):
             visible=True, text=f'Wait a second.\nIDs are being interpolated with SAM...')
 
         if self.sam_model_comboBox.currentText() == "Select Model (SAM disable)":
-            helpers.OKmsgBox("SAM is disabled", 
+            helpers.OKmsgBox("SAM is disabled",
                              f"SAM is disabled.\nPlease enable SAM.")
             return
-        
+
         if len(self.canvas.selectedShapes) == 0:
             keys = list(self.id_frames_rec.keys())
             idsLIST = [int(keys[i][3:]) for i in range(len(keys))]
@@ -1922,30 +1986,32 @@ class MainWindow(QtWidgets.QMainWindow):
             last_frame_idxLIST = []
             for id in idsLIST:
                 try:
-                    [minf, maxf] = [min(self.id_frames_rec['id_' + str(id)]), max(self.id_frames_rec['id_' + str(id)])]
+                    [minf, maxf] = [min(
+                        self.id_frames_rec['id_' + str(id)]), max(self.id_frames_rec['id_' + str(id)])]
                 except:
                     continue
                 if minf == maxf:
                     continue
                 first_frame_idxLIST.append(minf)
                 last_frame_idxLIST.append(maxf)
-            
+
         else:
             idsLIST = []
             first_frame_idxLIST = []
             last_frame_idxLIST = []
             for shape in self.canvas.selectedShapes:
                 id = shape.group_id
-                [minf, maxf] = [min(self.id_frames_rec['id_' + str(id)]), max(self.id_frames_rec['id_' + str(id)])]
+                [minf, maxf] = [min(self.id_frames_rec['id_' + str(id)]),
+                                max(self.id_frames_rec['id_' + str(id)])]
                 if minf == maxf:
                     continue
                 idsLIST.append(id)
                 first_frame_idxLIST.append(minf)
                 last_frame_idxLIST.append(maxf)
-        
+
         if len(idsLIST) == 0:
             return
-        
+
         # idsLIST = [shape.group_id for shape in self.canvas.selectedShapes]
         # first_frame_idxLIST = [-1 for i in range(len(idsLIST))]
         # last_frame_idxLIST = [-1 for i in range(len(idsLIST))]
@@ -1962,7 +2028,7 @@ class MainWindow(QtWidgets.QMainWindow):
         #                 first_frame_idxLIST[index], listobjframe) if first_frame_idxLIST[index] != -1 else listobjframe
         #             last_frame_idxLIST[index] = max(
         #                 last_frame_idxLIST[index], listobjframe) if last_frame_idxLIST[index] != -1 else listobjframe
-                    
+
         # for i in range(len(idsLIST)):
         #     self.waitWindow(visible=True)
         #     if (first_frame_idxLIST[i] >= last_frame_idxLIST[i]):
@@ -1981,7 +2047,8 @@ class MainWindow(QtWidgets.QMainWindow):
         #         print(f'first interpolation frame : {f["frame_idx"]}')
         #         print(f'first interpolation frame : {listObj[min(first_frame_idxLIST) - 1]["frame_idx"]}')
         #         break
-        first_frame_data = copy.deepcopy(listObj[min(first_frame_idxLIST) - 1]['frame_data'])
+        first_frame_data = copy.deepcopy(
+            listObj[min(first_frame_idxLIST) - 1]['frame_data'])
 
         recordsLIST = [[None for ii in range(
             first_frame_idxLIST[i], last_frame_idxLIST[i] + 1)] for i in range(len(idsLIST))]
@@ -2054,9 +2121,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.waitWindow(
                 visible=True, text=f'Wait a second.\nIDs are being interpolated with SAM...\nAlmost done')
             listobjframe = listObj[i]['frame_idx']
-            
-            
-            
+
             # for object_ in listObj[i]['frame_data']:
             #     if (object_['tracker_id'] in idsLIST):
             #         listObj[i]['frame_data'].remove(object_)
@@ -2069,7 +2134,6 @@ class MainWindow(QtWidgets.QMainWindow):
                 idx = min(idx, len(RECORDSLIST[ididx]) - 1)
                 listObj[i]['frame_data'].append(RECORDSLIST[ididx][idx])
                 self.rec_frame_for_id(idsLIST[ididx], listobjframe)
-
 
         # for f in listObj:
         #     if f['frame_idx'] == min(first_frame_idxLIST):
@@ -2087,7 +2151,7 @@ class MainWindow(QtWidgets.QMainWindow):
         success, img = self.CAP.read()
         return img
 
-    def sam_enhanced_bbox_segment(self, frameIMAGE, cur_bbox, thresh, max_itr = 5, forSHAPE=False):
+    def sam_enhanced_bbox_segment(self, frameIMAGE, cur_bbox, thresh, max_itr=5, forSHAPE=False):
         oldAREA = abs(cur_bbox[2] - cur_bbox[0]) * \
             abs(cur_bbox[3] - cur_bbox[1])
         [x1, y1, x2, y2] = [cur_bbox[0], cur_bbox[1],
@@ -2130,20 +2194,19 @@ class MainWindow(QtWidgets.QMainWindow):
             self.main_video_frames_slider_changed()
             return
 
-
     def copyShapesSelected(self):
         if len(self.canvas.selectedShapes) == 0:
             return
         self.copiedShapes = self.canvas.selectedShapes
 
     def pasteShapesSelected(self):
-        
+
         if len(self.copiedShapes) == 0:
             return
-        
+
         ids = [shape.group_id for shape in self.canvas.shapes]
         flag = False
-        
+
         for shape in self.copiedShapes:
             if shape.group_id in ids:
                 flag = True
@@ -2151,11 +2214,11 @@ class MainWindow(QtWidgets.QMainWindow):
             self.canvas.shapes.append(shape)
             self.addLabel(shape)
             self.rec_frame_for_id(shape.group_id, self.INDEX_OF_CURRENT_FRAME)
-            
+
         if flag:
-            helpers.OKmsgBox("IDs already exist", 
+            helpers.OKmsgBox("IDs already exist",
                              "A Shape(s) with the same ID(s) already exist(s) in this frame.\n\nShapes with no duplicate IDs are Copied Successfully.")
-            
+
         if self.current_annotation_mode == "video":
             self.update_current_frame_annotation_button_clicked()
 
@@ -2965,7 +3028,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def exportData(self):
         try:
             if self.current_annotation_mode == "video":
-                
+
                 result, coco_radio, mot_radio = helpers.exportData_GUI()
                 if not result:
                     return
@@ -3187,7 +3250,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     action.setEnabled(False)
             if self.config['toolMode'] == 'image':
                 return
-            
+
             # if video mode
             result, self.config, fromFrameVAL, toFrameVAL = helpers.deleteSelectedShape_GUI(
                 self.TOTAL_VIDEO_FRAMES,
@@ -3199,7 +3262,6 @@ class MainWindow(QtWidgets.QMainWindow):
                         [deleted_id], from_frame=fromFrameVAL, to_frame=toFrameVAL)
 
             self.main_video_frames_slider_changed()
-            
 
     def delete_ids_from_all_frames(self, deleted_ids, from_frame, to_frame):
         from_frame, to_frame = np.min(
@@ -3219,7 +3281,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.load_objects_to_json__orjson(listObj)
 
     def copyShape(self):
-        
+
         if len(self.canvas.selectedShapes) > 1 and self.config['toolMode'] == 'video':
             org = copy.deepcopy(self.canvas.shapes)
             self.canvas.endMove(copy=True)
@@ -3228,7 +3290,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.canvas.shapes = org
             self.update_current_frame_annotation_button_clicked()
             return
-        
+
         elif self.config['toolMode'] == 'video':
             self.canvas.endMove(copy=True)
             shape = self.canvas.selectedShapes[0]
@@ -3246,7 +3308,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 shape = self.canvas.setLastLabel(text, flags)
                 shape.group_id = group_id
                 self.addLabel(shape)
-                self.rec_frame_for_id(shape.group_id, self.INDEX_OF_CURRENT_FRAME)
+                self.rec_frame_for_id(
+                    shape.group_id, self.INDEX_OF_CURRENT_FRAME)
                 self.actions.editMode.setEnabled(True)
                 self.actions.undoLastPoint.setEnabled(False)
                 self.actions.undo.setEnabled(True)
@@ -3254,7 +3317,7 @@ class MainWindow(QtWidgets.QMainWindow):
             else:
                 self.canvas.undoLastLine()
                 self.canvas.shapesBackups.pop()
-                
+
             self.update_current_frame_annotation_button_clicked()
 
             return
@@ -3435,10 +3498,18 @@ class MainWindow(QtWidgets.QMainWindow):
         self.intelligenceHelper.get_shapes_of_batch(images)
 
     def setConfThreshold(self):
-        self.intelligenceHelper.conf_threshold = self.intelligenceHelper.setConfThreshold()
+        if self.intelligenceHelper.conf_threshold:
+            self.intelligenceHelper.conf_threshold = self.intelligenceHelper.setConfThreshold(
+                self.intelligenceHelper.conf_threshold)
+        else:
+            self.intelligenceHelper.conf_threshold = self.intelligenceHelper.setConfThreshold()
 
     def setIOUThreshold(self):
-        self.intelligenceHelper.iou_threshold = self.intelligenceHelper.setIOUThreshold()
+        if self.intelligenceHelper.iou_threshold:
+            self.intelligenceHelper.iou_threshold = self.intelligenceHelper.setIOUThreshold(
+                self.intelligenceHelper.iou_threshold)
+        else:
+            self.intelligenceHelper.iou_threshold = self.intelligenceHelper.setIOUThreshold()
 
     def selectClasses(self):
         self.intelligenceHelper.selectedclasses = self.intelligenceHelper.selectClasses()
@@ -3640,7 +3711,7 @@ class MainWindow(QtWidgets.QMainWindow):
             # self.TOTAL_VIDEO_FRAMES = int(
             #     self.CAP.get(cv2.CAP_PROP_FRAME_COUNT - 1) )
             self.TOTAL_VIDEO_FRAMES = int(
-                self.CAP.get(cv2.CAP_PROP_FRAME_COUNT ) )
+                self.CAP.get(cv2.CAP_PROP_FRAME_COUNT))
             self.CURRENT_VIDEO_FPS = self.CAP.get(cv2.CAP_PROP_FPS)
             print("Total Frames : ", self.TOTAL_VIDEO_FRAMES)
             self.main_video_frames_slider.setMaximum(self.TOTAL_VIDEO_FRAMES)
@@ -3680,8 +3751,8 @@ class MainWindow(QtWidgets.QMainWindow):
         i = target_frame_idx - 1
         frame_idx = listObj[i]['frame_idx']
         # if frame_idx == target_frame_idx:
-            # print (listObj[i])
-            # print(i)
+        # print (listObj[i])
+        # print(i)
         frame_objects = listObj[i]['frame_data']
         for object_ in frame_objects:
             shape = {}
@@ -3895,7 +3966,7 @@ class MainWindow(QtWidgets.QMainWindow):
         return helpers.compute_iou(box1, box2)
 
     def match_detections_with_tracks(self, detections, tracks, iou_threshold=0.5):
-       return helpers.match_detections_with_tracks(detections, tracks, iou_threshold)
+        return helpers.match_detections_with_tracks(detections, tracks, iou_threshold)
 
     def update_gui_after_tracking(self, index):
         # self.loadFramefromVideo(self.CURRENT_FRAME_IMAGE, self.INDEX_OF_CURRENT_FRAME)
@@ -3922,12 +3993,22 @@ class MainWindow(QtWidgets.QMainWindow):
     def get_boxes_conf_classids_segments(self, shapes):
         return helpers.get_boxes_conf_classids_segments(shapes)
 
+    def track_button_stop_clicked(self):
+        self.stop_tracking = True
+
     def track_buttonClicked(self):
+
+        # Disable Exports & Change button text
+        self.export_as_video_button.setEnabled(False)
+        self.actions.export.setEnabled(False)
+        self.track_button.setText("STOP")
+        self.track_button.clicked.connect(self.track_button_stop_clicked)
+        self.track_button.setStyleSheet(
+            "QPushButton {font-size: 10pt; margin: 2px 5px; padding: 2px 7px;font-weight: bold; background-color: #FF0000; color: #FFFFFF;} QPushButton:hover {background-color: #FF6468;} QPushButton:disabled {background-color: #7A7A7A;}")
 
         # dt = (Profile(), Profile(), Profile(), Profile())
 
         self.tracking_progress_bar.setVisible(True)
-        self.actions.export.setEnabled(True)
         frame_shape = self.CURRENT_FRAME_IMAGE.shape
         print(frame_shape)
 
@@ -3955,10 +4036,10 @@ class MainWindow(QtWidgets.QMainWindow):
         curr_frame, prev_frame = None, None
 
         if self.FRAMES_TO_TRACK + self.INDEX_OF_CURRENT_FRAME <= self.TOTAL_VIDEO_FRAMES:
-            number_of_frames_to_track  = self.FRAMES_TO_TRACK
-        else: 
-            number_of_frames_to_track  = self.TOTAL_VIDEO_FRAMES - self.INDEX_OF_CURRENT_FRAME
-            
+            number_of_frames_to_track = self.FRAMES_TO_TRACK
+        else:
+            number_of_frames_to_track = self.TOTAL_VIDEO_FRAMES - self.INDEX_OF_CURRENT_FRAME
+
         for i in range(number_of_frames_to_track):
             QtWidgets.QApplication.processEvents()
             self.tracking_progress_bar.setValue(
@@ -4056,7 +4137,8 @@ class MainWindow(QtWidgets.QMainWindow):
             json_frame.update({'frame_idx': self.INDEX_OF_CURRENT_FRAME})
             json_frame_object_list = []
             for shape in self.CURRENT_SHAPES_IN_IMG:
-                self.rec_frame_for_id(int(shape["group_id"]), self.INDEX_OF_CURRENT_FRAME, type_='add')
+                self.rec_frame_for_id(
+                    int(shape["group_id"]), self.INDEX_OF_CURRENT_FRAME, type_='add')
                 json_tracked_object = {}
                 json_tracked_object['tracker_id'] = int(shape["group_id"])
                 json_tracked_object['bbox'] = [int(i) for i in shape['bbox']]
@@ -4078,8 +4160,7 @@ class MainWindow(QtWidgets.QMainWindow):
             #         listObj.pop(h)
             #         break
             # listObj.pop(self.INDEX_OF_CURRENT_FRAME - 1)
-                
-                
+
             # sort the list of frames by the frame index
             # listObj.append(json_frame)
             listObj[self.INDEX_OF_CURRENT_FRAME - 1] = json_frame
@@ -4087,7 +4168,6 @@ class MainWindow(QtWidgets.QMainWindow):
             QtWidgets.QApplication.processEvents()
             self.update_gui_after_tracking(i)
             print('finished tracking for frame ', self.INDEX_OF_CURRENT_FRAME)
-            
 
         # listObj = sorted(listObj, key=lambda k: k['frame_idx'])
         self.load_objects_to_json__orjson(listObj)
@@ -4099,6 +4179,13 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.tracking_progress_bar.hide()
         self.tracking_progress_bar.setValue(0)
+
+        # Enable Exports & Restore button Text and Color
+        self.actions.export.setEnabled(True)
+        self.export_as_video_button.setEnabled(True)
+        self.track_button.setText("Track")
+        self.track_button.clicked.connect(self.track_buttonClicked)
+        self.track_button.setStyleSheet(self.buttons_text_style_sheet)
 
     def convert_qt_shapes_to_shapes(self, qt_shapes):
         return helpers.convert_qt_shapes_to_shapes(qt_shapes)
@@ -4181,7 +4268,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # make a progress bar for exporting video (with percentage of progress)   TO DO LATER
 
-        for target_frame_idx in range(self.TOTAL_VIDEO_FRAMES ):
+        for target_frame_idx in range(self.TOTAL_VIDEO_FRAMES):
             self.INDEX_OF_CURRENT_FRAME = target_frame_idx + 1
             ret, image = input_cap.read()
             shapes = []
@@ -4203,12 +4290,12 @@ class MainWindow(QtWidgets.QMainWindow):
                 shape["other_data"] = {}
                 shape["flags"] = {}
                 shapes.append(shape)
-                
+
             if len(shapes) == 0:
                 # output_cap.write(image)
                 continue
             self.waitWindow(
-                    visible=True, text=f'Wait a second.\nFrame {target_frame_idx} is being exported...')
+                visible=True, text=f'Wait a second.\nFrame {target_frame_idx} is being exported...')
             image = self.draw_bb_on_image(image, shapes, image_qt_flag=False)
             output_cap.write(image)
 
@@ -4242,7 +4329,8 @@ class MainWindow(QtWidgets.QMainWindow):
         # now delete the json file if it exists
         if os.path.exists(json_file_name):
             os.remove(json_file_name)
-        helpers.OKmsgBox("clear annotations", "All video frames annotations are cleared")
+        helpers.OKmsgBox("clear annotations",
+                         "All video frames annotations are cleared")
         self.main_video_frames_slider.setValue(2)
         self.main_video_frames_slider.setValue(1)
 
@@ -4259,7 +4347,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.main_video_frames_slider_changed()
 
     def update_current_frame_annotation(self):
-        
+
         listObj = self.load_objects_from_json__orjson()
 
         json_frame = {}
@@ -4442,6 +4530,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.frames_to_track_slider.setValue(10)
 
         self.track_button = QtWidgets.QPushButton()
+        self.stop_tracking = False
         self.track_button.setStyleSheet(self.buttons_text_style_sheet)
         self.track_button.setText("Track")
         self.track_button.clicked.connect(self.track_buttonClicked)
@@ -4534,7 +4623,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.polygons_visable_checkBox_changed)
         self.videoControls_3.addWidget(self.polygons_visable_checkBox)
 
-       # save current frame
+        # save current frame
         self.update_current_frame_annotation_button = QtWidgets.QPushButton()
         self.update_current_frame_annotation_button.setStyleSheet(
             self.buttons_text_style_sheet)
@@ -4579,13 +4668,13 @@ class MainWindow(QtWidgets.QMainWindow):
     def draw_trajectories(self, img, shapes):
         return helpers.draw_trajectories(self.CURRENT_ANNOATAION_TRAJECTORIES,
                                          self.INDEX_OF_CURRENT_FRAME,
-                                         self.CURRENT_ANNOATAION_FLAGS, 
+                                         self.CURRENT_ANNOATAION_FLAGS,
                                          img, shapes)
 
     def draw_bb_on_image(self, image, shapes, image_qt_flag=True):
         return helpers.draw_bb_on_image(self.CURRENT_ANNOATAION_TRAJECTORIES,
                                         self.INDEX_OF_CURRENT_FRAME,
-                                         self.CURRENT_ANNOATAION_FLAGS, 
+                                        self.CURRENT_ANNOATAION_FLAGS,
                                         self.TOTAL_VIDEO_FRAMES,
                                         image, shapes, image_qt_flag)
 
@@ -4758,7 +4847,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def sam_enhance_annotation_button_clicked(self):
         if self.sam_model_comboBox.currentText() == "Select Model (SAM disable)" or len(self.canvas.selectedShapes) == 0:
-            helpers.OKmsgBox("No shape selected or SAM is disabled", "No shape selected or SAM is disabled.\nPlease select a shape and enable SAM.")
+            helpers.OKmsgBox("No shape selected or SAM is disabled",
+                             "No shape selected or SAM is disabled.\nPlease select a shape and enable SAM.")
             return
         try:
             same_image = self.sam_predictor.check_image(
@@ -4776,7 +4866,7 @@ class MainWindow(QtWidgets.QMainWindow):
             shapeX = self.convert_qt_shapes_to_shapes([shape])[0]
             x1, y1, x2, y2 = shapeX["bbox"]
             cur_bbox, cur_segment = self.sam_enhanced_bbox_segment(
-                self.CURRENT_FRAME_IMAGE, [x1, y1, x2, y2], 1.2, max_itr = 5, forSHAPE=True)
+                self.CURRENT_FRAME_IMAGE, [x1, y1, x2, y2], 1.2, max_itr=5, forSHAPE=True)
             shapeX["points"] = cur_segment
             shapeX = convert_shapes_to_qt_shapes([shapeX])[0]
             self.canvas.shapes.append(shapeX)
@@ -4999,9 +5089,10 @@ class MainWindow(QtWidgets.QMainWindow):
         try:
             if self.current_sam_shape["group_id"] != -1:
                 self.CURRENT_SHAPES_IN_IMG.append(self.current_sam_shape)
-                
-            self.rec_frame_for_id(self.current_sam_shape["group_id"], self.INDEX_OF_CURRENT_FRAME)
-            
+
+            self.rec_frame_for_id(
+                self.current_sam_shape["group_id"], self.INDEX_OF_CURRENT_FRAME)
+
         except:
             pass
         self.loadLabels(self.CURRENT_SHAPES_IN_IMG)
@@ -5096,28 +5187,28 @@ class MainWindow(QtWidgets.QMainWindow):
         print("done running sam model")
 
     def load_objects_from_json__json(self):
-        if self.global_listObj != [] : 
+        if self.global_listObj != []:
             return self.global_listObj
         json_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}_tracking_results.json'
         return helpers.load_objects_from_json__json(json_file_name, self.TOTAL_VIDEO_FRAMES)
-    
+
     def load_objects_to_json__json(self, listObj):
         self.global_listObj = listObj
         json_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}_tracking_results.json'
         helpers.load_objects_to_json__json(json_file_name, listObj)
 
     def load_objects_from_json__orjson(self):
-        if self.global_listObj != [] : 
+        if self.global_listObj != []:
             return self.global_listObj
         json_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}_tracking_results.json'
         return helpers.load_objects_from_json__orjson(json_file_name, self.TOTAL_VIDEO_FRAMES)
-    
+
     def load_objects_to_json__orjson(self, listObj):
         self.global_listObj = listObj
         json_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}_tracking_results.json'
         helpers.load_objects_to_json__orjson(json_file_name, listObj)
 
-    
+
 # important parameters across the gui
 
 # INDEX_OF_CURRENT_FRAME
