@@ -282,6 +282,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.save_path = ""
         self.global_listObj = []
 
+        # for merge 
+        self.multi_model_flag = False
+
         # for video annotation
         self.frame_time = 0
         self.FRAMES_TO_SKIP = 30
@@ -2752,6 +2755,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.loadFile(filename)
 
     def change_curr_model(self, model_name):
+        self.multi_model_flag = False
         self.waitWindow(
             visible=True, text=f'Wait a second.\n{model_name} is being Loaded...')
         self.intelligenceHelper.current_model_name, self.intelligenceHelper.current_mm_model = self.intelligenceHelper.make_mm_model(
@@ -3327,16 +3331,22 @@ class MainWindow(QtWidgets.QMainWindow):
         images.sort(key=lambda x: x.lower())
         return images
 
-    def annotate_one(self):
+    def annotate_one(self,called_from_tracking=False):
         # self.waitWindow(visible=True, text="Wait a second.\nModel is Working...")
         # self.CURRENT_ANNOATAION_FLAGS['id'] = False
         if self.current_annotation_mode == "video":
-            shapes = self.intelligenceHelper.get_shapes_of_one(
-                self.CURRENT_FRAME_IMAGE, img_array_flag=True)
+            if self.multi_model_flag:
+                shapes = self.intelligenceHelper.get_shapes_of_one(
+                    self.CURRENT_FRAME_IMAGE, img_array_flag=True, multi_model_flag=True)
+            else:
+                shapes = self.intelligenceHelper.get_shapes_of_one(
+                    self.CURRENT_FRAME_IMAGE, img_array_flag=True)
+            if called_from_tracking:
+                return shapes
 
-        elif self.current_annotation_mode == "multimodel":
-            shapes = self.intelligenceHelper.get_shapes_of_one(
-                self.CURRENT_FRAME_IMAGE, img_array_flag=True, multi_model_flag=True)
+        # elif self.current_annotation_mode == "multimodel":
+        #     shapes = self.intelligenceHelper.get_shapes_of_one(
+        #         self.CURRENT_FRAME_IMAGE, img_array_flag=True, multi_model_flag=True)
             # to handle the bug of the user selecting no models
             # if len(shapes) == 0:
             #     self.waitWindow()
@@ -3348,8 +3358,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
             if os.path.exists(self.filename):
                 self.labelList.clearSelection()
-            shapes = self.intelligenceHelper.get_shapes_of_one(
-                self.CURRENT_FRAME_IMAGE, img_array_flag=True)
+            if self.multi_model_flag:
+                shapes = self.intelligenceHelper.get_shapes_of_one(self.CURRENT_FRAME_IMAGE, img_array_flag=True, multi_model_flag=True)
+            else:
+                shapes = self.intelligenceHelper.get_shapes_of_one(
+                    self.CURRENT_FRAME_IMAGE, img_array_flag=True)
 
         # for shape in shapes:
         #     print(shape["group_id"])
@@ -3375,7 +3388,10 @@ class MainWindow(QtWidgets.QMainWindow):
         images = []
         for filename in self.imageList:
             images.append(filename)
-        self.intelligenceHelper.get_shapes_of_batch(images)
+        if self.multi_model_flag:
+            self.intelligenceHelper.get_shapes_of_batch(images, multi_model_flag=True)
+        else:
+            self.intelligenceHelper.get_shapes_of_batch(images)
 
     def setConfThreshold(self):
         if self.intelligenceHelper.conf_threshold:
@@ -3396,13 +3412,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def mergeSegModels(self):
         self.intelligenceHelper.selectedmodels = self.intelligenceHelper.mergeSegModels()
-        self.prev_annotation_mode = self.current_annotation_mode
-        self.current_annotation_mode = "multimodel"
-        try:
-            self.annotate_one()
-        except:
-            print("No models selected or no image is loaded, please try again")
-        self.current_annotation_mode = self.prev_annotation_mode
+        # check if the user selected any models
+        if len(self.intelligenceHelper.selectedmodels) == 0:
+            print("No models selected")
+        else:
+            self.multi_model_flag = True
 
     def Segment_anything(self):
         print('Segment anything')
@@ -3929,8 +3943,9 @@ class MainWindow(QtWidgets.QMainWindow):
                 shapes = self.convert_qt_shapes_to_shapes(shapes)
             else:
                 with torch.no_grad():
-                    shapes = self.intelligenceHelper.get_shapes_of_one(
-                        self.CURRENT_FRAME_IMAGE, img_array_flag=True)
+                    # shapes = self.intelligenceHelper.get_shapes_of_one(
+                    #     self.CURRENT_FRAME_IMAGE, img_array_flag=True)
+                    shapes = self.annotate_one(called_from_tracking=True)
 
             curr_frame = self.CURRENT_FRAME_IMAGE
             # current_objects_ids = []
