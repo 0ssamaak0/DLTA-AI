@@ -1286,7 +1286,7 @@ def exportData_GUI():
         for custom_radio in custom_exports_radio_list:
             layout.addWidget(custom_radio)
     else:
-        layout.addWidget(QtWidgets.QLabel("No Custom Exports Available, you can them in utils.custom_exports.py"))
+        layout.addWidget(QtWidgets.QLabel("No Custom Exports Available, you can add them in utils.custom_exports.py"))
 
     buttonBox = QtWidgets.QDialogButtonBox(
         QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel)
