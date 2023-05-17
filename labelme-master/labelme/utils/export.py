@@ -124,6 +124,10 @@ def exportCOCO(target_directory, save_path, annotation_path):
     json_paths = glob.glob(f"{file_path}/*.json")
     annotations = []
     images = []
+
+    if len(json_paths) == 0:
+        raise ValueError("No json files found in the directory")
+    
     for i in range(len(json_paths)):
         try:
             with open(json_paths[i]) as f:
