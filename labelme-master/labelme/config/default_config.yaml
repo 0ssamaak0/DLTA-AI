@@ -78,8 +78,6 @@ shortcuts:
   save_to: null
   delete_file: Ctrl+Delete
   export: Ctrl+E
-  copy: Ctrl+C
-  paste: Ctrl+V
 
   open_next: null
   open_prev: null
@@ -110,6 +108,8 @@ shortcuts:
   mark_as_key: shift+M
   scale: shift+S
   ignore_updates: shift+Z
+  copy: Ctrl+C
+  paste: Ctrl+V
 
   track: shift+T
   track_assigned: shift+A
