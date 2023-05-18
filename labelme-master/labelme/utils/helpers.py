@@ -1065,11 +1065,10 @@ def getInterpolated(baseObject, baseObjectFrame, nextObject, nextObjectFrame, cu
 
 
 
-
-
 # GUI functions
+# ---------------------------------------------------------------
 
-def OKmsgBox(title, text):
+def OKmsgBox(title, text, type = "info"):
     
     """
     Summary:
@@ -1084,7 +1083,12 @@ def OKmsgBox(title, text):
     """
     
     msgBox = QtWidgets.QMessageBox()
-    msgBox.setIcon(QtWidgets.QMessageBox.Information)
+    if type == "info":
+        msgBox.setIcon(QtWidgets.QMessageBox.Information)
+    elif type == "warning":
+        msgBox.setIcon(QtWidgets.QMessageBox.Warning)
+    elif type == "critical":
+        msgBox.setIcon(QtWidgets.QMessageBox.Critical)
     msgBox.setText(text)
     msgBox.setWindowTitle(title)
     msgBox.setStandardButtons(QtWidgets.QMessageBox.Ok)
