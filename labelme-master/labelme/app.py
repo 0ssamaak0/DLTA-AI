@@ -1570,7 +1570,7 @@ class MainWindow(QtWidgets.QMainWindow):
         shape = item.shape()
         if shape is None:
             return
-        text, flags, old_group_id, content = self.labelDialog.popUp(
+        old_text, old_flags, old_group_id, old_content = self.labelDialog.popUp(
             text=shape.label,
             flags=shape.flags,
             group_id=shape.group_id,
@@ -1622,113 +1622,24 @@ class MainWindow(QtWidgets.QMainWindow):
 
             listObj = self.load_objects_from_json__orjson()
 
-            old_id_frame_record = copy.deepcopy(
-                self.id_frames_rec['id_' + str(old_group_id)])
+            if helpers.check_duplicates_editLabel(self.id_frames_rec, old_group_id, new_group_id, only_this_frame, idChanged, self.INDEX_OF_CURRENT_FRAME):
+                shape.label = old_text
+                shape.flags = old_flags
+                shape.content = old_content
+                shape.group_id = old_group_id
+                return
 
-            if not idChanged:
-                for frame in old_id_frame_record:
-                    for object_ in listObj[frame - 1]['frame_data']:
-                        if object_['tracker_id'] == old_group_id:
-                            object_['class_name'] = shape.label
-                            object_['confidence'] = str(1.0)
-                            object_['class_id'] = coco_classes.index(
-                                shape.label) if shape.label in coco_classes else -1
-                            break
-            else:
-                if only_this_frame:
-
-                    try:
-                        new_id_frame_record = copy.deepcopy(
-                            self.id_frames_rec['id_' + str(new_group_id)])
-                        # check duplicates
-                        if self.is_id_repeated(new_group_id):
-                            shape.group_id = old_group_id
-                            helpers.OKmsgBox("Warning",
-                                             f"Two shapes with the same ID exists.\nApparantly, a shape with ID ({new_group_id}) already exists with another shape with ID ({old_group_id}) in the CURRENT FRAME and the edit will result in two shapes with the same ID in the same frame.\n\n The edit is NOT performed.")
-                            return
-                    except:
-                        new_id_frame_record = set()
-                        pass
-
-                    self.rec_frame_for_id(
-                        old_group_id, self.INDEX_OF_CURRENT_FRAME, type_='remove')
-                    self.rec_frame_for_id(
-                        new_group_id, self.INDEX_OF_CURRENT_FRAME, type_='add')
-                    for object_ in listObj[self.INDEX_OF_CURRENT_FRAME - 1]['frame_data']:
-                        if object_['tracker_id'] == old_group_id:
-                            object_['class_name'] = shape.label
-                            object_['confidence'] = str(1.0)
-                            object_['class_id'] = coco_classes.index(
-                                shape.label) if shape.label in coco_classes else -1
-                            object_['tracker_id'] = new_group_id
-                            break
-
-                    for frame in new_id_frame_record:
-                        for object_ in listObj[frame - 1]['frame_data']:
-                            if object_['tracker_id'] == new_group_id:
-                                object_['class_name'] = shape.label
-                                object_['confidence'] = str(1.0)
-                                object_['class_id'] = coco_classes.index(
-                                    shape.label) if shape.label in coco_classes else -1
-                                break
-                    frame = self.INDEX_OF_CURRENT_FRAME 
-                    center = self.CURRENT_ANNOATAION_TRAJECTORIES['id_' + str(old_group_id)][frame - 1]
-                    self.CURRENT_ANNOATAION_TRAJECTORIES['id_' + str(old_group_id)][frame - 1] = (-1, -1)
-                    try:
-                        self.CURRENT_ANNOATAION_TRAJECTORIES['id_' + str(new_group_id)][frame - 1] = center
-                    except:
-                        self.CURRENT_ANNOATAION_TRAJECTORIES['id_' + str(new_group_id)] = [(-1, -1)] * self.TOTAL_VIDEO_FRAMES
-                        self.CURRENT_ANNOATAION_TRAJECTORIES['id_' + str(new_group_id)][frame - 1] = center
-                            
-
-                else:       # edit all frames with this ID
-
-                    try:
-                        new_id_frame_record = copy.deepcopy(
-                            self.id_frames_rec['id_' + str(new_group_id)])
-                        # check duplicates
-                        union = old_id_frame_record.union(new_id_frame_record)
-                        Intersection = old_id_frame_record.intersection(
-                            new_id_frame_record)
-                        if len(Intersection) != 0:
-                            shape.group_id = old_group_id
-                            helpers.OKmsgBox("ID already exists",
-                                             f'Two shapes with the same ID exists in at least one frame.\nApparantly, a shape with ID ({new_group_id}) already exists with another shape with ID ({old_group_id}).\nLike in frames ({Intersection}) and the edit will result in two shapes with the same ID ({new_group_id}).\n\n The edit is NOT performed.')
-                            return
-                    except:
-                        new_id_frame_record = set()
-                        union = old_id_frame_record
-                        pass
-
-                    self.id_frames_rec['id_' + str(new_group_id)] = union
-                    self.id_frames_rec['id_' + str(old_group_id)] = set()
-
-                    for frame in old_id_frame_record:
-                        for object_ in listObj[frame - 1]['frame_data']:
-                            if object_['tracker_id'] == old_group_id:
-                                center = self.CURRENT_ANNOATAION_TRAJECTORIES['id_' + str(old_group_id)][frame - 1]
-                                self.CURRENT_ANNOATAION_TRAJECTORIES['id_' + str(old_group_id)][frame - 1] = (-1, -1)
-                                try:
-                                    self.CURRENT_ANNOATAION_TRAJECTORIES['id_' + str(new_group_id)][frame - 1] = center
-                                except:
-                                    self.CURRENT_ANNOATAION_TRAJECTORIES['id_' + str(new_group_id)] = [(-1, -1)] * self.TOTAL_VIDEO_FRAMES
-                                    self.CURRENT_ANNOATAION_TRAJECTORIES['id_' + str(new_group_id)][frame - 1] = center
-                                object_['class_name'] = shape.label
-                                object_['confidence'] = str(1.0)
-                                object_['class_id'] = coco_classes.index(
-                                    shape.label) if shape.label in coco_classes else -1
-                                object_['tracker_id'] = new_group_id
-                                break
-                    for frame in new_id_frame_record:
-                        for object_ in listObj[frame - 1]['frame_data']:
-                            if object_['tracker_id'] == new_group_id:
-                                object_['class_name'] = shape.label
-                                object_['confidence'] = str(1.0)
-                                object_['class_id'] = coco_classes.index(
-                                    shape.label) if shape.label in coco_classes else -1
-                                # object_['tracker_id'] = new_group_id
-                                break
-
+            self.id_frames_rec, self.CURRENT_ANNOATAION_TRAJECTORIES, listObj = helpers.handle_id_editLabel(
+                                        currFrame = self.INDEX_OF_CURRENT_FRAME,
+                                        listObj = listObj,
+                                        trajectories = self.CURRENT_ANNOATAION_TRAJECTORIES,
+                                        id_frames_rec = self.id_frames_rec,
+                                        idChanged = idChanged,
+                                        only_this_frame = only_this_frame,
+                                        shape = shape,
+                                        old_group_id = old_group_id,
+                                        new_group_id = new_group_id,)
+            
             self.load_objects_to_json__orjson(listObj)
             self.main_video_frames_slider_changed()
 
