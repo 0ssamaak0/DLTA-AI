@@ -804,45 +804,38 @@ class MainWindow(QtWidgets.QMainWindow):
         )
         runtime_data = action(
             self.tr("Show Runtime Data"),
-            self.showRuntimeData,
+            utils.showRuntimeData,
             None,
             "runtime",
             self.tr("Show Runtime Data")
         )
-        license = action(
-            self.tr("LICENSE"),
-            self.showRuntimeData,
+        git_hub = action(
+            self.tr("GitHub Repository"),
+            utils.git_hub_link,
             None,
-            "runtime",
-            self.tr("LICENSE")
+            "github",
+            self.tr("GitHub Repository")
         )
         feedback = action(
             self.tr("Feedback"),
-            self.showRuntimeData,
+            utils.feedback,
             None,
-            "runtime",
+            "feedback",
             self.tr("Feedback")
         )
-        acks = action(
-            self.tr("Acknowledgements"),
-            self.showRuntimeData,
+        license = action(
+            self.tr("license"),
+            utils.open_license,
             None,
-            "runtime",
-            self.tr("Acknowledgements")
+            "license",
+            self.tr("license")
         )
-        contact_us = action(
-            self.tr("contact_us"),
-            self.showRuntimeData,
+        version = action(
+            self.tr("Version"),
+            utils.version,
             None,
-            "runtime",
-            self.tr("contact_us")
-        )
-        tutorials = action(
-            self.tr("Tutorials"),
-            self.showRuntimeData,
-            None,
-            "runtime",
-            self.tr("Tutorials")
+            "info",
+            self.tr("Version")
         )
         sam = action(
             self.tr("Toggle SAM Toolbar"),
@@ -1079,11 +1072,12 @@ class MainWindow(QtWidgets.QMainWindow):
             self.menus.help,
             (
                 runtime_data,
-                license,
+                None,
+                git_hub,
                 feedback,
-                acks,
-                contact_us,
-                tutorials
+                None,
+                license,
+                version
 
             ),
         )
@@ -3437,24 +3431,7 @@ class MainWindow(QtWidgets.QMainWindow):
         else:
             self.set_sam_toolbar_visibility(True)
 
-    def showRuntimeData(self):
-        runtime = ""
-        # if cuda is available, print cuda name
-        if torch.cuda.is_available():
-            runtime = ("Labelmm is Using GPU\n")
-            runtime += ("GPU Name: " + torch.cuda.get_device_name(0))
-            runtime += "\n" + "Total GPU VRAM: " + \
-                str(round(torch.cuda.get_device_properties(
-                    0).total_memory/(1024 ** 3), 2)) + " GB"
-            runtime += "\n" + "Used: " + \
-                str(round(torch.cuda.memory_allocated(0)/(1024 ** 3), 2)) + " GB"
 
-        else:
-            # runtime = (f'Labelmm is Using CPU: {platform.processor()}')
-            runtime = ('Labelmm is Using CPU')
-
-        # show runtime in QMessageBox
-        helpers.OKmsgBox("Runtime Data", runtime)
 
     # VIDEO PROCESSING FUNCTIONS (ALL CONNECTED TO THE VIDEO PROCESSING TOOLBAR)
 
