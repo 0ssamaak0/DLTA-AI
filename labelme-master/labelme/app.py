@@ -361,14 +361,14 @@ class MainWindow(QtWidgets.QMainWindow):
             self.openFile,
             shortcuts["open"],
             "open",
-            self.tr("Open image or label file"),
+            self.tr("Open image or label file (Ctrl+O)"),
         )
         opendir = action(
             self.tr("&Open Dir"),
             self.openDirDialog,
             shortcuts["open_dir"],
             "opendir",
-            self.tr(u"Open Dir"),
+            self.tr(u"Open Dir (Ctrl+U)"),
         )
         openNextImg = action(
             self.tr("&Next Image"),
@@ -391,7 +391,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.saveFile,
             shortcuts["save"],
             "save",
-            self.tr("Save labels to file"),
+            self.tr("Save labels to file (Ctrl+S)"),
             enabled=False,
         )
         export = action(
@@ -399,7 +399,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.exportData,
             shortcuts["export"],
             "export",
-            self.tr(u"Export annotations to COCO format"),
+            self.tr(u"Export annotations to COCO format (Ctrl+E)"),
             enabled=False,
         )
         modelExplorer = action(
@@ -856,9 +856,9 @@ class MainWindow(QtWidgets.QMainWindow):
         openVideo = action(
             self.tr("Open &Video"),
             self.openVideo,
-            None,
+            shortcuts["open_video"],
             "video",
-            self.tr("Open a video file"),
+            self.tr("Open a video file (Ctrl+M)"),
         )
 
         # Lavel list context menu.
@@ -3579,7 +3579,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if not self.mayContinue():
             return
         videoFile = QtWidgets.QFileDialog.getOpenFileName(
-            self, self.tr("%s - Choose Video") % __appname__, ".",
+            self, self.tr("%s - Open Video") % __appname__, ".",
             self.tr("Video files (*.mp4 *.avi *.mov)")
         )
 
