@@ -85,12 +85,11 @@ class TrackingThread(QThread):
 
 
 FILE = Path(__file__).resolve()
-ROOT = FILE.parents[0]  # inside labelme package
+ROOT = FILE.parents[0]
 print(f'\n\n ROOT: {ROOT}\n\n')
 # now get go up one more level to the root of the repo
 ROOT = ROOT.parents[0]
 print(f'\n\n ROOT: {ROOT}\n\n')
-
 # WEIGHTS = ROOT / 'weights'
 
 # if str(ROOT) not in sys.path:
@@ -353,7 +352,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.tr("&Quit"),
             self.close,
             shortcuts["quit"],
-            "quit",
+            "close",
             self.tr("Quit application"),
         )
         open_ = action(
@@ -4137,12 +4136,12 @@ class MainWindow(QtWidgets.QMainWindow):
                 widget.setVisible(visible)
             except:
                 pass
-        self.videoControls_3.setVisible(visible)
-        for widget in self.videoControls_3.children():
-            try:
-                widget.setVisible(visible)
-            except:
-                pass
+        # self.videoControls_3.setVisible(visible)
+        # for widget in self.videoControls_3.children():
+        #     try:
+        #         widget.setVisible(visible)
+        #     except:
+        #         pass
         # Disable Stop tracking button by default
         # self.track_stop_button.setEnabled(False) 
 
@@ -4354,13 +4353,13 @@ class MainWindow(QtWidgets.QMainWindow):
             "QToolBar#videoControls_2 { border: 50px }")
         self.addToolBar(Qt.TopToolBarArea, self.videoControls_2)
 
-        self.videoControls_3 = QtWidgets.QToolBar()
-        self.videoControls_3.setMovable(True)
-        self.videoControls_3.setFloatable(True)
-        self.videoControls_3.setObjectName("videoControls_2")
-        self.videoControls_3.setStyleSheet(
-            "QToolBar#videoControls_3 { border: 50px }")
-        self.addToolBar(Qt.TopToolBarArea, self.videoControls_3)
+        # self.videoControls_3 = QtWidgets.QToolBar()
+        # self.videoControls_3.setMovable(True)
+        # self.videoControls_3.setFloatable(True)
+        # self.videoControls_3.setObjectName("videoControls_2")
+        # self.videoControls_3.setStyleSheet(
+        #     "QToolBar#videoControls_3 { border: 50px }")
+        # self.addToolBar(Qt.TopToolBarArea, self.videoControls_3)
 
         self.frames_to_skip_slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
         self.frames_to_skip_slider.setMinimum(1)
@@ -4468,6 +4467,9 @@ class MainWindow(QtWidgets.QMainWindow):
         # add text input to control the slider
         self.frames_to_track_input = QtWidgets.QLineEdit()
         self.frames_to_track_input.setText("4")
+        # make the font bigger
+        self.frames_to_track_input.setStyleSheet(
+            "QLineEdit { font-size: 10pt; }")
         self.frames_to_track_input.setMaximumWidth(50)
         self.frames_to_track_input.textChanged.connect(self.frames_to_track_input_changed)
 
@@ -4490,7 +4492,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.track_dropdown.currentIndexChanged.connect(self.track_dropdown_changed)
         self.videoControls_2.addWidget(self.track_dropdown)
 
-        self.start_button = QtWidgets.QPushButton("Track")
+        self.start_button = QtWidgets.QPushButton("Start Tracking")
+        self.start_button.setIcon(
+            QtGui.QIcon("labelme/icons/start.png"))
+        # make the icon bigger
+        self.start_button.setIconSize(QtCore.QSize(24, 24))
         self.start_button.setStyleSheet(self.buttons_text_style_sheet)
         self.start_button.clicked.connect(self.start_tracking_button_clicked)
         self.videoControls_2.addWidget(self.start_button)
@@ -4513,10 +4519,14 @@ class MainWindow(QtWidgets.QMainWindow):
             "QPushButton {font-size: 10pt; margin: 2px 5px; padding: 2px 7px;font-weight: bold; background-color: #FF9090; color: #FFFFFF;} QPushButton:hover {background-color: #FF0000;} QPushButton:disabled {background-color: #7A7A7A;}")
         self.track_stop_button.setStyleSheet("QPushButton {font-size: 10pt; margin: 2px 5px; padding: 2px 7px;font-weight: bold; background-color: #FF0000; color: #FFFFFF;} QPushButton:hover {background-color: #FE4242;} QPushButton:disabled {background-color: #7A7A7A;}")
             
-        self.track_stop_button.setText("Stop")
+        self.track_stop_button.setText("Stop Tracking")
+        self.track_stop_button.setIcon(
+            QtGui.QIcon("labelme/icons/stop.png"))
+        # make the icon bigger
+        self.track_stop_button.setIconSize(QtCore.QSize(24, 24))
         self.track_stop_button.setShortcut(self._config['shortcuts']['stop'])
         self.track_stop_button.setToolTip(
-                f'shortcut ({self._config["shortcuts"]["stop"]})')
+                f'Stop Tracking ({self._config["shortcuts"]["stop"]})')
         self.track_stop_button.pressed.connect(
             self.Escape_clicked)
         self.videoControls_2.addWidget(self.track_stop_button)
@@ -4580,38 +4590,46 @@ class MainWindow(QtWidgets.QMainWindow):
         self.update_current_frame_annotation_button.setStyleSheet(
             self.buttons_text_style_sheet)
         self.update_current_frame_annotation_button.setText(
-            "Update current frame")
+            "Apply Changes")
+        self.update_current_frame_annotation_button.setIcon(
+            QtGui.QIcon("labelme/icons/done.png"))
+        # make the icon bigger
+        self.update_current_frame_annotation_button.setIconSize(QtCore.QSize(24, 24))
         self.update_current_frame_annotation_button.setShortcut(self._config['shortcuts']['update_frame'])
         self.update_current_frame_annotation_button.setToolTip(
-                f'shortcut ({self._config["shortcuts"]["update_frame"]})')
+                f'Apply changes on current frame ({self._config["shortcuts"]["update_frame"]})')
         self.update_current_frame_annotation_button.clicked.connect(
             self.update_current_frame_annotation_button_clicked)
-        self.videoControls_3.addWidget(
+        self.videoControls_2.addWidget(
             self.update_current_frame_annotation_button)
 
         # add a button to clear all video annotations
         self.clear_video_annotations_button = QtWidgets.QPushButton()
         self.clear_video_annotations_button.setStyleSheet(
             self.buttons_text_style_sheet)
-        self.clear_video_annotations_button.setText("Clear Video Annotations")
+        self.clear_video_annotations_button.setText("Clear All")
+        self.clear_video_annotations_button.setIcon(
+            QtGui.QIcon("labelme/icons/clear.png"))
+        # make the icon bigger
+        self.clear_video_annotations_button.setIconSize(QtCore.QSize(24, 24))
         self.clear_video_annotations_button.setShortcut(self._config['shortcuts']['clear_annotations'])
         self.clear_video_annotations_button.setToolTip(
-                f'shortcut ({self._config["shortcuts"]["clear_annotations"]})')
+                f'Clears Annotations from all frames ({self._config["shortcuts"]["clear_annotations"]})')
         self.clear_video_annotations_button.clicked.connect(
             self.clear_video_annotations_button_clicked)
-        self.videoControls_3.addWidget(self.clear_video_annotations_button)
+        self.videoControls_2.addWidget(self.clear_video_annotations_button)
 
-        # add export as video button
-        self.export_as_video_button = QtWidgets.QPushButton()
-        self.export_as_video_button.setStyleSheet(
-            self.buttons_text_style_sheet)
-        self.export_as_video_button.setText("Export as video")
-        self.export_as_video_button.setShortcut(self._config['shortcuts']['export_video'])
-        self.export_as_video_button.setToolTip(
-                f'shortcut ({self._config["shortcuts"]["export_video"]})')
-        self.export_as_video_button.clicked.connect(
-            self.export_as_video_button_clicked)
-        self.videoControls_3.addWidget(self.export_as_video_button)
+        # # add export as video button (currently Disabled)
+        # self.export_as_video_button = QtWidgets.QPushButton()
+        # self.export_as_video_button.setStyleSheet(
+        #     self.buttons_text_style_sheet)
+        # self.export_as_video_button.setText("Export as video")
+        # self.export_as_video_button.setShortcut(self._config['shortcuts']['export_video'])
+        # self.export_as_video_button.setToolTip(
+        #         f'shortcut ({self._config["shortcuts"]["export_video"]})')
+        # self.export_as_video_button.clicked.connect(
+        #     self.export_as_video_button_clicked)
+        # self.videoControls_3.addWidget(self.export_as_video_button)
 
         # add a button to clear all video annotations
 
@@ -4704,10 +4722,14 @@ class MainWindow(QtWidgets.QMainWindow):
         self.sam_add_point_button = QtWidgets.QPushButton()
         self.sam_add_point_button.setStyleSheet(
             "QPushButton { font-size: 10pt; font-weight: bold; }")
-        self.sam_add_point_button.setText("Add Point")
-        # set hover text
+        self.sam_add_point_button.setText("Add")
+        # add icon to button
+        self.sam_add_point_button.setIcon(
+            QtGui.QIcon("labelme/icons/add.png"))
+        # make the icon bigger
+        self.sam_add_point_button.setIconSize(QtCore.QSize(24, 24))
         self.sam_add_point_button.setToolTip(
-            f'shortcut ({self._config["shortcuts"]["SAM_add_point"]})')
+            f'Add point ({self._config["shortcuts"]["SAM_add_point"]})')
         # set shortcut
         self.sam_add_point_button.setShortcut(
             self._config["shortcuts"]["SAM_add_point"])
@@ -4719,10 +4741,15 @@ class MainWindow(QtWidgets.QMainWindow):
         self.sam_remove_point_button = QtWidgets.QPushButton()
         self.sam_remove_point_button.setStyleSheet(
             "QPushButton { font-size: 10pt; font-weight: bold; }")
-        self.sam_remove_point_button.setText("Remove Point")
+        self.sam_remove_point_button.setText("Remove")
+        # add icon to button
+        self.sam_remove_point_button.setIcon(
+            QtGui.QIcon("labelme/icons/remove.png"))
+        # make the icon bigger
+        self.sam_remove_point_button.setIconSize(QtCore.QSize(24, 24))
         # set hover text
         self.sam_remove_point_button.setToolTip(
-            f'shortcut ({self._config["shortcuts"]["SAM_remove_point"]})')
+            f'Remove Point ({self._config["shortcuts"]["SAM_remove_point"]})')
         # set shortcut
         self.sam_remove_point_button.setShortcut(
             self._config["shortcuts"]["SAM_remove_point"])
@@ -4734,10 +4761,16 @@ class MainWindow(QtWidgets.QMainWindow):
         self.sam_select_rect_button = QtWidgets.QPushButton()
         self.sam_select_rect_button.setStyleSheet(
             "QPushButton { font-size: 10pt; font-weight: bold; }")
-        self.sam_select_rect_button.setText("Select Box")
+        self.sam_select_rect_button.setText("Box")
+        # add icon to button
+        self.sam_select_rect_button.setIcon(
+            QtGui.QIcon("labelme/icons/bbox.png"))
+        # make the icon bigger
+        self.sam_select_rect_button.setIconSize(QtCore.QSize(24, 24))
+
         # set hover text
         self.sam_select_rect_button.setToolTip(
-            f'shortcut ({self._config["shortcuts"]["SAM_select_rect"]}')
+            f'Add Box ({self._config["shortcuts"]["SAM_select_rect"]})')
         # set shortcut
         self.sam_select_rect_button.setShortcut(
             self._config["shortcuts"]["SAM_select_rect"])
@@ -4749,10 +4782,15 @@ class MainWindow(QtWidgets.QMainWindow):
         self.sam_clear_annotation_button = QtWidgets.QPushButton()
         self.sam_clear_annotation_button.setStyleSheet(
             "QPushButton { font-size: 10pt; font-weight: bold; }")
-        self.sam_clear_annotation_button.setText("Clear Annotation")
+        self.sam_clear_annotation_button.setText("Clear")
+        # add icon to button
+        self.sam_clear_annotation_button.setIcon(
+            QtGui.QIcon("labelme/icons/clear.png"))
+        # make the icon bigger
+        self.sam_clear_annotation_button.setIconSize(QtCore.QSize(24, 24))
         self.sam_clear_annotation_button.setShortcut(self._config["shortcuts"]["SAM_clear"])
         self.sam_clear_annotation_button.setToolTip(
-            f'shortcut ({self._config["shortcuts"]["SAM_clear"]})')
+            f'Clear points and boxes ({self._config["shortcuts"]["SAM_clear"]})')
         self.sam_clear_annotation_button.clicked.connect(
             self.sam_clear_annotation_button_clicked)
         self.sam_toolbar.addWidget(self.sam_clear_annotation_button)
@@ -4761,12 +4799,18 @@ class MainWindow(QtWidgets.QMainWindow):
         self.sam_finish_annotation_button = QtWidgets.QPushButton()
         self.sam_finish_annotation_button.setStyleSheet(
             "QPushButton { font-size: 10pt; font-weight: bold; }")
-        self.sam_finish_annotation_button.setText("Finish Annotation")
+        self.sam_finish_annotation_button.setText("Finish")
+        # add icon to button
+        self.sam_finish_annotation_button.setIcon(
+            QtGui.QIcon("labelme/icons/done.png"))
+        # make the icon bigger
+        self.sam_finish_annotation_button.setIconSize(QtCore.QSize(24, 24))
+
         self.sam_finish_annotation_button.clicked.connect(
             self.sam_finish_annotation_button_clicked)
         # set hover text
         self.sam_finish_annotation_button.setToolTip(
-            f'shortcut ({self._config["shortcuts"]["SAM_finish_annotation"]} or ENTER)')
+            f'Finish Annotation ({self._config["shortcuts"]["SAM_finish_annotation"]} or ENTER)')
         # set shortcut
         self.sam_finish_annotation_button.setShortcut(
             self._config["shortcuts"]["SAM_finish_annotation"])
@@ -4776,10 +4820,16 @@ class MainWindow(QtWidgets.QMainWindow):
         self.sam_close_button = QtWidgets.QPushButton()
         self.sam_close_button.setStyleSheet(
             "QPushButton { font-size: 10pt; font-weight: bold; }")
-        self.sam_close_button.setText("RESET")
+        self.sam_close_button.setText("Manual")
+        # add icon to button
+        self.sam_close_button.setIcon(
+            QtGui.QIcon("labelme/icons/objects.png"))
+        # make the icon bigger
+        self.sam_close_button.setIconSize(QtCore.QSize(24, 24))
+
         self.sam_close_button.setShortcut(self._config["shortcuts"]["SAM_RESET"])
         self.sam_close_button.setToolTip(
-            f'shortcut ({self._config["shortcuts"]["SAM_RESET"]} or ESC)')
+            f'Return to Manual Mode ({self._config["shortcuts"]["SAM_RESET"]} or ESC)')
         self.sam_close_button.clicked.connect(
             self.sam_reset_button_clicked)
         self.sam_toolbar.addWidget(self.sam_close_button)
@@ -4790,10 +4840,15 @@ class MainWindow(QtWidgets.QMainWindow):
             "sam_enhance_annotation_button")
         self.sam_enhance_annotation_button.setStyleSheet(
             "QPushButton { font-size: 10pt; font-weight: bold; }")
-        self.sam_enhance_annotation_button.setText("Enhance selected with SAM")
+        self.sam_enhance_annotation_button.setText("Enhance Selected")
+        # add icon to button
+        self.sam_enhance_annotation_button.setIcon(
+            QtGui.QIcon("labelme/icons/SAM.png"))
+        # make the icon bigger  
+        self.sam_enhance_annotation_button.setIconSize(QtCore.QSize(24, 24))
         self.sam_enhance_annotation_button.setShortcut(self._config["shortcuts"]["SAM_enhance"])
         self.sam_enhance_annotation_button.setToolTip(
-            f'shortcut ({self._config["shortcuts"]["SAM_enhance"]})')
+            f'Enhance Selected Polygons ({self._config["shortcuts"]["SAM_enhance"]})')
         self.sam_enhance_annotation_button.clicked.connect(
             self.sam_enhance_annotation_button_clicked)
         self.sam_toolbar.addWidget(self.sam_enhance_annotation_button)
@@ -4903,7 +4958,7 @@ class MainWindow(QtWidgets.QMainWindow):
         #    padding: 4px 8px;
         #    border: 1px solid #999999;
         # """
-        red, green, blue, trans = "#FF0000;", "#19EB25;", "#2D7CFA;", "#4B515A;"
+        red, green, blue, trans = "#2D7CFA;", "#2D7CFA;", "#2D7CFA;", "#4B515A;"
         hover_const = "QPushButton::hover { background-color : "
         disabled_const = "QPushButton:disabled { color : #7A7A7A} "
         style_sheet_const = "QPushButton { font-size: 10pt; font-weight: bold; color: #ffffff; background-color: "
