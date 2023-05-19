@@ -195,6 +195,10 @@ def main():
     QCheckBox{
         margin: 0 7px;
     }
+    QComboBox{
+        font-size: 10pt;
+        font-weight: bold;
+    }
     """
     try:
         qdarktheme.setup_theme("auto", additional_qss=qss)

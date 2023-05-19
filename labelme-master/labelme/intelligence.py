@@ -438,8 +438,8 @@ class Intelligence():
         scrollAreaWidgetContents = QtWidgets.QWidget()
         scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 478, 478))
         scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
-        verticalLayout_2 = QtWidgets.QVBoxLayout(scrollAreaWidgetContents)
-        verticalLayout_2.setObjectName("verticalLayout_2")
+        gridLayout = QtWidgets.QGridLayout(scrollAreaWidgetContents)
+        gridLayout.setObjectName("gridLayout")
         self.scrollAreaWidgetContents = scrollAreaWidgetContents
         scrollArea.setWidget(scrollAreaWidgetContents)
         verticalLayout.addWidget(scrollArea)
@@ -454,7 +454,9 @@ class Intelligence():
         self.classes = []
         for i in range(len(coco_classes)):
             self.classes.append(QtWidgets.QCheckBox(coco_classes[i], dialog))
-            verticalLayout_2.addWidget(self.classes[i])
+            row = i // 3
+            col = i % 3
+            gridLayout.addWidget(self.classes[i], row, col)
         # if the class is in self.selectedclasses then check the checkbox by default
         for value in self.selectedclasses.values():
             if value != None:

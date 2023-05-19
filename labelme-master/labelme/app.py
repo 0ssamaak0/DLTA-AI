@@ -3590,6 +3590,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.CURRENT_VIDEO_FPS = self.CAP.get(cv2.CAP_PROP_FPS)
             print("Total Frames : ", self.TOTAL_VIDEO_FRAMES)
             self.main_video_frames_slider.setMaximum(self.TOTAL_VIDEO_FRAMES)
+            self.frames_to_track_slider.setMaximum(self.TOTAL_VIDEO_FRAMES - self.INDEX_OF_CURRENT_FRAME)
             self.main_video_frames_slider.setValue(2)
             self.INDEX_OF_CURRENT_FRAME = 1
             self.main_video_frames_slider.setValue(self.INDEX_OF_CURRENT_FRAME)
@@ -3817,12 +3818,24 @@ class MainWindow(QtWidgets.QMainWindow):
             self.loadFramefromVideo(frame_array, frame_idx)
         else:
             pass
+        self.frames_to_track_slider.setMaximum(self.TOTAL_VIDEO_FRAMES - self.INDEX_OF_CURRENT_FRAME)
 
-    def frames_to_track_slider_changed(self):
+    def frames_to_track_input_changed(self, text):
+        try:
+            value = int(text)
+            if 2 <= value <= self.frames_to_track_slider.maximum():
+                self.frames_to_track_slider.setValue(value)
+            else:
+                self.frames_to_track_slider.setValue(
+                    self.frames_to_track_slider.maximum())
+        except ValueError:
+            pass
+
+    def frames_to_track_slider_changed(self, value):
+        self.frames_to_track_input.setText(str(value))
         self.FRAMES_TO_TRACK = self.frames_to_track_slider.value()
         zeros = (2 - int(np.log10(self.FRAMES_TO_TRACK + 0.9))) * '0'
-        self.frames_to_track_label.setText(
-            f'track for {zeros}{self.FRAMES_TO_TRACK} frames')
+
 
     def move_frame_by_frame(self):
         QtWidgets.QApplication.processEvents()
@@ -3875,10 +3888,21 @@ class MainWindow(QtWidgets.QMainWindow):
     def get_boxes_conf_classids_segments(self, shapes):
         return helpers.get_boxes_conf_classids_segments(shapes)
 
-    # def track_stop_button_clicked(self):
-    #     print("STOP TRACKING")
-    #     self.stop_tracking = True
 
+    def track_dropdown_changed(self, index):
+        self.selected_option = index
+
+    def start_tracking_button_clicked(self):
+        try:
+            if self.selected_option == 0:
+                self.track_buttonClicked()
+            elif self.selected_option == 1:
+                self.track_assigned_objects_button_clicked()
+            elif self.selected_option == 2:
+                self.track_full_video_button_clicked()
+        except Exception as e:
+            self.track_buttonClicked()
+            
     def track_buttonClicked(self):
 
         # Disable Exports & Change button text
@@ -3930,9 +3954,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self.tracking_progress_bar.setValue(
                 int((i + 1) / number_of_frames_to_track * 100))
 
-            # if self.stop_tracking:
-            #     print('\n\n\nstopped tracking\n\n\n')
-            #     break
 
             if existing_annotation:
                 existing_annotation = False
@@ -4293,19 +4314,6 @@ class MainWindow(QtWidgets.QMainWindow):
             text) if text != '' else 1
         self.main_video_frames_slider_changed()
 
-    # @PyQt5.QtCore.pyqtSlot()
-    # async def stop_tracking_button_clicked(self):
-    #     self.stop_tracking = True
-
-    # def track_buttonClicked_sync(self):
-    #     self.loop = asyncio.get_event_loop()
-    #     self.loop.run_until_complete(asyncio.gather(self.track_buttonClicked(),
-    #                                  self.stop_tracking_button_clicked()))
-
-    # @pyqtSlot(int)
-    # def update_tracking_progress_bar(self, value):
-    #     self.tracking_progress_bar.setValue(value)
-
     def addVideoControls(self):
         # add video controls toolbar with custom style (background color , spacing , hover color)
         self.videoControls = QtWidgets.QToolBar()
@@ -4421,6 +4429,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # now we start the videocontrols_2 toolbar widgets
 
+        
+
         # add the slider to control the video frame
         self.frames_to_track_slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
         self.frames_to_track_slider.setMinimum(2)
@@ -4429,48 +4439,39 @@ class MainWindow(QtWidgets.QMainWindow):
         self.frames_to_track_slider.setTickPosition(
             QtWidgets.QSlider.TicksBelow)
         self.frames_to_track_slider.setTickInterval(1)
-        self.frames_to_track_slider.setMaximumWidth(400)
+        self.frames_to_track_slider.setMaximumWidth(200)
         self.frames_to_track_slider.valueChanged.connect(
             self.frames_to_track_slider_changed)
+        
+        # add text input to control the slider
+        self.frames_to_track_input = QtWidgets.QLineEdit()
+        self.frames_to_track_input.setText("4")
+        self.frames_to_track_input.setMaximumWidth(50)
+        self.frames_to_track_input.textChanged.connect(self.frames_to_track_input_changed)
 
-        self.frames_to_track_label = QtWidgets.QLabel()
-        self.frames_to_track_label.setStyleSheet(
-            "QLabel { font-size: 10pt; font-weight: bold; }")  # make the button text red
-        self.videoControls_2.addWidget(self.frames_to_track_label)
+
+        self.frames_to_track_label_before = QtWidgets.QLabel("Track for")
+        self.frames_to_track_label_before.setStyleSheet(
+            "QLabel { font-size: 10pt; font-weight: bold; }")
+        self.frames_to_track_label_after = QtWidgets.QLabel("frames")
+        self.frames_to_track_label_after.setStyleSheet(
+            "QLabel { font-size: 10pt; font-weight: bold; }")
+        self.videoControls_2.addWidget(self.frames_to_track_label_before)
+        self.videoControls_2.addWidget(self.frames_to_track_input)
+        self.videoControls_2.addWidget(self.frames_to_track_label_after)
         self.videoControls_2.addWidget(self.frames_to_track_slider)
         self.frames_to_track_slider.setValue(10)
 
-        self.track_button = QtWidgets.QPushButton()
-        self.stop_tracking = False
-        self.track_button.setStyleSheet(self.buttons_text_style_sheet)
-        self.track_button.setText("Track")
-        self.track_button.setShortcut(self._config['shortcuts']['track'])
-        self.track_button.setToolTip(
-                f'shortcut ({self._config["shortcuts"]["track"]})')
-        self.track_button.clicked.connect(self.track_buttonClicked)
-        self.videoControls_2.addWidget(self.track_button)
+        self.track_dropdown = QtWidgets.QComboBox()
+        self.track_dropdown.addItems([f"Track for selected frames", "Track Only assigned objects", "Track Full Video"])        
+        self.track_dropdown.setCurrentIndex(0)
+        self.track_dropdown.currentIndexChanged.connect(self.track_dropdown_changed)
+        self.videoControls_2.addWidget(self.track_dropdown)
 
-        self.track_assigned_objects = QtWidgets.QPushButton()
-        self.track_assigned_objects.setStyleSheet(
-            self.buttons_text_style_sheet)
-        self.track_assigned_objects.setText("Track Only assigned objects")
-        self.track_assigned_objects.setShortcut(self._config['shortcuts']['track_assigned'])
-        self.track_assigned_objects.setToolTip(
-                f'shortcut ({self._config["shortcuts"]["track_assigned"]})')
-        self.track_assigned_objects.clicked.connect(
-            self.track_assigned_objects_button_clicked)
-        self.videoControls_2.addWidget(self.track_assigned_objects)
-        # make a tracking progress bar with a label to show the progress of the tracking (in percentage )
-        self.track_full_video_button = QtWidgets.QPushButton()
-        self.track_full_video_button.setStyleSheet(
-            self.buttons_text_style_sheet)
-        self.track_full_video_button.setText("Track Full Video")
-        self.track_full_video_button.setShortcut(self._config['shortcuts']['track_full'])
-        self.track_full_video_button.setToolTip(
-                f'shortcut ({self._config["shortcuts"]["track_full"]})')
-        self.track_full_video_button.clicked.connect(
-            self.track_full_video_button_clicked)
-        self.videoControls_2.addWidget(self.track_full_video_button)
+        self.start_button = QtWidgets.QPushButton("Track")
+        self.start_button.setStyleSheet(self.buttons_text_style_sheet)
+        self.start_button.clicked.connect(self.start_tracking_button_clicked)
+        self.videoControls_2.addWidget(self.start_button)
 
         self.tracking_progress_bar_label = QtWidgets.QLabel()
         self.tracking_progress_bar_label.setStyleSheet(
@@ -4497,18 +4498,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.track_stop_button.pressed.connect(
             self.Escape_clicked)
         self.videoControls_2.addWidget(self.track_stop_button)
-        
-
-        # self.tracking_progress_bar_signal = pyqtSignal(int)
-        # self.tracking_progress_bar_signal.connect(self.tracking_progress_bar.setValue)
-
-        # self.stop_tracking_button = QtWidgets.QPushButton()
-        # self.stop_tracking_button.setStyleSheet(
-        #     self.buttons_text_style_sheet)
-        # self.stop_tracking_button.setText("Stop Tracking")
-        # self.stop_tracking_button.clicked.connect(
-        #     self.stop_tracking_button_clicked)
-        # self.videoControls_2.addWidget(self.stop_tracking_button)
+    
 
         # add 5 checkboxes to control the CURRENT ANNOATAION FLAGS including (bbox , id , class , mask , traj)
         self.bbox_checkBox = QtWidgets.QCheckBox()
@@ -4676,10 +4666,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.sam_model_comboBox = QtWidgets.QComboBox()
         self.sam_model_comboBox.setAccessibleName("sam_model_comboBox")
         # add a label inside the combobox that says "Select Model (SAM disable)" and make it unselectable
-        self.sam_model_comboBox.addItem("Select Model (SAM disable)")
+        self.sam_model_comboBox.addItem("Select Model (SAM disabled)")
         self.sam_model_comboBox.addItems(self.sam_models())
-        self.sam_model_comboBox.setStyleSheet(
-            "QComboBox { font-size: 10pt; font-weight: bold; }")
         self.sam_model_comboBox.currentIndexChanged.connect(
             self.sam_model_comboBox_changed)
         self.sam_toolbar.addWidget(self.sam_model_comboBox)
