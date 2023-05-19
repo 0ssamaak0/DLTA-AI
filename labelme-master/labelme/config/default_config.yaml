@@ -84,6 +84,7 @@ shortcuts:
   save_to: null
   delete_file: Ctrl+Delete
   export: Ctrl+E
+  open_video: Ctrl+M
 
   open_next: null
   open_prev: null
