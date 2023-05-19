@@ -20,11 +20,10 @@ Labelmm is the next generation of annotation tools, harnessing the power of Comp
 [![GitHub release (latest by date including pre-releases)](https://img.shields.io/github/v/release/0ssamaak0/labelmm?include_prereleases)](https://github.com/0ssamaak0/labelmm/releases)
 [![GitHub issues](https://img.shields.io/github/issues/0ssamaak0/labelmm)](https://github.com/0ssamaak0/labelmm/issues)
 [![GitHub last commit](https://img.shields.io/github/last-commit/0ssamaak0/labelmm)](https://github.com/0ssamaak0/labelmm/commits)
-
 ![gif_main](assets/gif_main2.gif)
 
 <!-- make p with larger font size -->
-[Installation](#installation-%EF%B8%8F)  🛠️ | [Segment Anything](#Segment-Anything-) 🪄 |[Input Modes](#input-modes-%EF%B8%8F) 🎞️ | [Model Selection](#model-selection-) 🤖 | [Object Tracking](#object-tracking-) 🚗 | [Export](#export-) 📤 | [Other Features](#other-features-) 🌟| [Contributing](#contributing-) 🤝| [Acknowledgements](#)🙏| [Resources](#resources-) 🌐 | [License](#license-) 📜
+[Installation](#installation-%EF%B8%8F)  🛠️ | [Segment Anything](#Segment-Anything-) 🪄 |[Input Modes](#input-modes-%EF%B8%8F) 🎞️ | [Model Selection](#model-selection-) 🤖 | [Object Tracking](#object-tracking-) 🚗 | [Export](#export-) 📤 | [Other Features](#other-features-) 🌟| [Contributing](#contributing-) 🤝| [Acknowledgements](#acknowledgements-)🙏| [Resources](#resources-) 🌐 | [License](#license-) 📜
 
 </div>
 

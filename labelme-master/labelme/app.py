@@ -241,6 +241,13 @@ class MainWindow(QtWidgets.QMainWindow):
         fileListWidget.setLayout(fileListLayout)
         self.file_dock.setWidget(fileListWidget)
 
+
+        self.vid_dock = QtWidgets.QDockWidget(self.tr(u"Visualization Options"), self)
+        self.vid_dock.setObjectName(u"Visualization Options")
+        self.vid_widget = QtWidgets.QWidget()
+        self.vid_dock.setWidget(self.vid_widget)
+
+
         self.zoomWidget = ZoomWidget()
         self.setAcceptDrops(True)
 
@@ -321,7 +328,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.interrupted = False
 
         features = QtWidgets.QDockWidget.DockWidgetFeatures()
-        for dock in ["flag_dock", "label_dock", "shape_dock", "file_dock"]:
+        for dock in ["flag_dock", "label_dock", "shape_dock", "file_dock", "vid_dock"]:
             if self._config[dock]["closable"]:
                 features = features | QtWidgets.QDockWidget.DockWidgetClosable
             if self._config[dock]["floatable"]:
@@ -336,6 +343,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.addDockWidget(Qt.RightDockWidgetArea, self.label_dock)
         self.addDockWidget(Qt.RightDockWidgetArea, self.shape_dock)
         self.addDockWidget(Qt.RightDockWidgetArea, self.file_dock)
+        self.addDockWidget(Qt.RightDockWidgetArea, self.vid_dock)
+
 
         # Actions
         action = functools.partial(utils.newAction, self)
@@ -1006,7 +1015,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.menus.ui_elements.setIcon(QtGui.QIcon("labelme/icons/UI.png"))
         utils.addActions(self.menus.ui_elements,
                          (
-                             self.flag_dock.toggleViewAction(),
+                             self.vid_dock.toggleViewAction(),
                              self.label_dock.toggleViewAction(),
                              self.shape_dock.toggleViewAction(),
                              self.file_dock.toggleViewAction(),
@@ -2813,7 +2822,10 @@ class MainWindow(QtWidgets.QMainWindow):
         if filename:
             self.loadFile(filename)
             self.set_video_controls_visibility(False)
-
+        self.vid_dock.setVisible(False)
+        for option in self.vid_options:
+            option.setEnabled(False)
+        
     def changeOutputDirDialog(self, _value=False):
         default_output_dir = self.output_dir
         if default_output_dir is None and self.filename:
@@ -3243,6 +3255,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.target_directory = targetDirPath
         self.importDirImages(targetDirPath)
         self.set_video_controls_visibility(False)
+        self.vid_dock.setVisible(False)
+        for option in self.vid_options:
+            option.setEnabled(False)
 
     @property
     def imageList(self):
@@ -3538,8 +3553,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def openVideo(self):
         # enable export if json file exists
-
-
         length_Value = self.CURRENT_ANNOATAION_TRAJECTORIES['length']
         alpha_Value = self.CURRENT_ANNOATAION_TRAJECTORIES['alpha']
         self.CURRENT_ANNOATAION_TRAJECTORIES.clear()
@@ -3616,6 +3629,9 @@ class MainWindow(QtWidgets.QMainWindow):
         # content = shape["content"]
         # group_id = shape["group_id"]
         # other_data = shape["other_data"]
+        self.vid_dock.setVisible(True)
+        for option in self.vid_options:
+            option.setEnabled(True)
 
     def load_shapes_for_video_frame(self, json_file_name, index):
         # this function loads the shapes for the video frame from the json file
@@ -4511,31 +4527,26 @@ class MainWindow(QtWidgets.QMainWindow):
         self.bbox_checkBox.setText("bbox")
         self.bbox_checkBox.setChecked(True)
         self.bbox_checkBox.stateChanged.connect(self.bbox_checkBox_changed)
-        self.videoControls_3.addWidget(self.bbox_checkBox)
 
         self.id_checkBox = QtWidgets.QCheckBox()
         self.id_checkBox.setText("id")
         self.id_checkBox.setChecked(True)
         self.id_checkBox.stateChanged.connect(self.id_checkBox_changed)
-        self.videoControls_3.addWidget(self.id_checkBox)
 
         self.class_checkBox = QtWidgets.QCheckBox()
         self.class_checkBox.setText("class")
         self.class_checkBox.setChecked(True)
         self.class_checkBox.stateChanged.connect(self.class_checkBox_changed)
-        self.videoControls_3.addWidget(self.class_checkBox)
 
         self.mask_checkBox = QtWidgets.QCheckBox()
         self.mask_checkBox.setText("mask")
         self.mask_checkBox.setChecked(True)
         self.mask_checkBox.stateChanged.connect(self.mask_checkBox_changed)
-        self.videoControls_3.addWidget(self.mask_checkBox)
 
         self.traj_checkBox = QtWidgets.QCheckBox()
         self.traj_checkBox.setText("trajectories")
         self.traj_checkBox.setChecked(False)
         self.traj_checkBox.stateChanged.connect(self.traj_checkBox_changed)
-        self.videoControls_3.addWidget(self.traj_checkBox)
 
         # make qlineedit to alter the  self.CURRENT_ANNOATAION_TRAJECTORIES['length']  value
         self.trajectory_length_lineEdit = QtWidgets.QLineEdit()
@@ -4544,14 +4555,25 @@ class MainWindow(QtWidgets.QMainWindow):
         self.trajectory_length_lineEdit.editingFinished.connect(
             self.trajectory_length_lineEdit_changed)
 
-        self.videoControls_3.addWidget(self.trajectory_length_lineEdit)
 
         self.polygons_visable_checkBox = QtWidgets.QCheckBox()
         self.polygons_visable_checkBox.setText("show polygons")
         self.polygons_visable_checkBox.setChecked(True)
         self.polygons_visable_checkBox.stateChanged.connect(
             self.polygons_visable_checkBox_changed)
-        self.videoControls_3.addWidget(self.polygons_visable_checkBox)
+
+        self.vid_options = [self.id_checkBox, self.class_checkBox, self.bbox_checkBox, self.mask_checkBox, self.polygons_visable_checkBox, self.traj_checkBox, self.trajectory_length_lineEdit]
+        # add to self.vid_dock
+        self.vid_widget.setLayout(QtWidgets.QGridLayout())
+        self.vid_widget.layout().setContentsMargins(10, 10, 25, 10)  # set padding
+        self.vid_widget.layout().addWidget(self.id_checkBox, 0, 0)
+        self.vid_widget.layout().addWidget(self.class_checkBox, 0, 1)
+        self.vid_widget.layout().addWidget(self.bbox_checkBox, 1, 0)
+        self.vid_widget.layout().addWidget(self.mask_checkBox, 1, 1)
+        self.vid_widget.layout().addWidget(self.traj_checkBox, 2, 0)
+        self.vid_widget.layout().addWidget(self.trajectory_length_lineEdit, 2, 1)
+        self.vid_widget.layout().addWidget(self.polygons_visable_checkBox, 3, 0)
+
 
         # save current frame
         self.update_current_frame_annotation_button = QtWidgets.QPushButton()
