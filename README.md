@@ -1,4 +1,3 @@
-
 <div align = "center">
 <h1>
     <img src = "assets/icon.png" width = 200 height = 200>
@@ -25,7 +24,7 @@ Labelmm is the next generation of annotation tools, harnessing the power of Comp
 ![gif_main](assets/gif_main2.gif)
 
 <!-- make p with larger font size -->
-[Installation](#installation-%EF%B8%8F)  🛠️ | [Segment Anything](#segment-anything-) 🪄|[Input Modes](#input-modes-%EF%B8%8F) 🎞️ | [Model Selection](#model-selection-) 🤖 | [Object Tracking](#object-tracking-) 🚗 | [Export](#export-) 📤 | [Other Features](#other-features-) 🌟| [Contributing](#contributing-) 🤝| [Resources](#resources-) 🌐 |  [License](#license-) 📜
+[Installation](#installation-%EF%B8%8F)  🛠️ | [Segment Anything](#Segment-Anything-) 🪄 |[Input Modes](#input-modes-%EF%B8%8F) 🎞️ | [Model Selection](#model-selection-) 🤖 | [Object Tracking](#object-tracking-) 🚗 | [Export](#export-) 📤 | [Other Features](#other-features-) 🌟| [Contributing](#contributing-) 🤝| [Acknowledgements](#)🙏| [Resources](#resources-) 🌐 | [License](#license-) 📜
 
 </div>
 
@@ -145,12 +144,39 @@ you can contribute by:
 
 - Spread the word about Labelmm and help us grow the community 🌎, by sharing the project on social media, or just by telling your friends about it
 
+# Acknowledgements 🙏
+This tool is part of a Graduation Project at [Faculty of Engineering, Ain Shams University](https://eng.asu.edu.eg/) under the supervision of:
+
+- [Dr. Karim Ismail](karim.ismail@carleton.ca)
+
+- [Dr. Ahmed Osama](ahmed.osama@eng.asu.edu.eg)
+
+- Dr. Watheq El-Kharashy
+
+- [Eng. Yousra El-Qattan](https://www.linkedin.com/in/youssra-elqattan/)
+
+
+we want also to thank our friends who helped us with testing, feedback and suggestions:
+
+- Eng. Houssam Siyoufi
+
+- [Amin Mohamed](https://github.com/AminMohamed-3)
+
+- [Badr Mohamed](https://github.com/Badr-1)
+
+- [Ahmed Mahmoud](https://github.com/ahmedd-mahmoudd)
+
+- [Youssef Ashraf](https://github.com/0xNine9)
+
+
+
 # Resources 🌐
 - [Labelme](https://github.com/wkentaro/labelme)
 - [Segment Anything (SAM)](https://github.com/facebookresearch/segment-anything)
 - [MMDetection](https://github.com/open-mmlab/mmdetection/tree/2.x)
 - [ultralytics YOLOv8](https://github.com/ultralytics/ultralytics)
 - [mikelbrostrom yolov8_tracking](https://github.com/mikel-brostrom/yolov8_tracking)
+- [icons8](https://icons8.com/)
 
 # License 📜
 Labelmm is released under the [GPLv3 license](https://github.com/0ssamaak0/labelmm/blob/master/LICENSE). 
