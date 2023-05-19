@@ -1186,21 +1186,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def update_saved_models_json(self):
         cwd = os.getcwd()
-        checkpoints_dir = cwd + "/mmdetection/checkpoints/"
-        # list all the files in the checkpoints directory
-        files = os.listdir(checkpoints_dir)
-        with open(cwd + '/models_menu/models_json.json') as f:
-            models_json = json.load(f)
-        saved_models = {}
-        # saved_models["YOLOv8x"] = {"checkpoint": "yolov8x-seg.pt", "config": "none"}
-        for model in models_json:
-            if model["Model"] != "SAM":
-                if model["Checkpoint"].split("/")[-1] in os.listdir(checkpoints_dir):
-                    saved_models[model["Model Name"]] = {
-                        "id": model["id"], "checkpoint": model["Checkpoint"], "config": model["Config"]}
-
-        with open(cwd + "/saved_models.json", "w") as f:
-            json.dump(saved_models, f, indent=4)
+        helpers.update_saved_models_json(cwd)
 
     def menu(self, title, actions=None):
         menu = self.menuBar().addMenu(title)
@@ -1328,6 +1314,14 @@ class MainWindow(QtWidgets.QMainWindow):
     # Callbacks
     
     def Escape_clicked(self):
+        
+        """
+        Summary:
+            This function is called when the user presses the escape key.
+            It resets the SAM toolbar and the canvas.
+            It also interrupts the current annotation process like (tracking, interpolation, etc.)
+        """
+        
         self.interrupted = True
         self.sam_reset_button_clicked()
 
@@ -1407,7 +1401,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 raise ValueError("Unsupported createMode: %s" % createMode)
         self.actions.editMode.setEnabled(not edit)
 
-    def setEditMode(self):
+    def turnOFF_SAM(self):
         if self.sam_model_comboBox.currentText() != "Select Model (SAM disabled)":
             self.sam_clear_annotation_button_clicked()
         self.sam_buttons_colors('x')
@@ -1417,6 +1411,20 @@ class MainWindow(QtWidgets.QMainWindow):
         self.canvas.SAM_rect = []
         self.canvas.SAM_rects = []
         self.canvas.SAM_current = None
+        
+    def turnON_SAM(self):
+        self.sam_buttons_colors("X")
+        self.set_sam_toolbar_enable(True)
+        self.canvas.SAM_mode = ""
+        self.canvas.SAM_coordinates = []
+        self.canvas.SAM_rect = []
+        self.canvas.SAM_rects = []
+        self.canvas.SAM_current = None
+
+    def setEditMode(self):
+        
+        self.turnOFF_SAM()
+        
         try:
             x = self.CURRENT_VIDEO_PATH
         except:
@@ -1538,14 +1546,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def createMode_options(self):
 
-        self.sam_buttons_colors("X")
+        self.turnON_SAM()
         self.toggleDrawMode(False, createMode="polygon")
-        self.set_sam_toolbar_enable(True)
-        self.canvas.SAM_mode = ""
-        self.canvas.SAM_coordinates = []
-        self.canvas.SAM_rect = []
-        self.canvas.SAM_rects = []
-        self.canvas.SAM_current = None
         return
 
     def editLabel(self, item=None):
@@ -1562,7 +1564,7 @@ class MainWindow(QtWidgets.QMainWindow):
         shape = item.shape()
         if shape is None:
             return
-        text, flags, old_group_id, content = self.labelDialog.popUp(
+        old_text, old_flags, old_group_id, old_content = self.labelDialog.popUp(
             text=shape.label,
             flags=shape.flags,
             group_id=shape.group_id,
@@ -1614,113 +1616,24 @@ class MainWindow(QtWidgets.QMainWindow):
 
             listObj = self.load_objects_from_json__orjson()
 
-            old_id_frame_record = copy.deepcopy(
-                self.id_frames_rec['id_' + str(old_group_id)])
+            if helpers.check_duplicates_editLabel(self.id_frames_rec, old_group_id, new_group_id, only_this_frame, idChanged, self.INDEX_OF_CURRENT_FRAME):
+                shape.label = old_text
+                shape.flags = old_flags
+                shape.content = old_content
+                shape.group_id = old_group_id
+                return
 
-            if not idChanged:
-                for frame in old_id_frame_record:
-                    for object_ in listObj[frame - 1]['frame_data']:
-                        if object_['tracker_id'] == old_group_id:
-                            object_['class_name'] = shape.label
-                            object_['confidence'] = str(1.0)
-                            object_['class_id'] = coco_classes.index(
-                                shape.label) if shape.label in coco_classes else -1
-                            break
-            else:
-                if only_this_frame:
-
-                    try:
-                        new_id_frame_record = copy.deepcopy(
-                            self.id_frames_rec['id_' + str(new_group_id)])
-                        # check duplicates
-                        if self.is_id_repeated(new_group_id):
-                            shape.group_id = old_group_id
-                            helpers.OKmsgBox("Warning",
-                                             f"Two shapes with the same ID exists.\nApparantly, a shape with ID ({new_group_id}) already exists with another shape with ID ({old_group_id}) in the CURRENT FRAME and the edit will result in two shapes with the same ID in the same frame.\n\n The edit is NOT performed.")
-                            return
-                    except:
-                        new_id_frame_record = set()
-                        pass
-
-                    self.rec_frame_for_id(
-                        old_group_id, self.INDEX_OF_CURRENT_FRAME, type_='remove')
-                    self.rec_frame_for_id(
-                        new_group_id, self.INDEX_OF_CURRENT_FRAME, type_='add')
-                    for object_ in listObj[self.INDEX_OF_CURRENT_FRAME - 1]['frame_data']:
-                        if object_['tracker_id'] == old_group_id:
-                            object_['class_name'] = shape.label
-                            object_['confidence'] = str(1.0)
-                            object_['class_id'] = coco_classes.index(
-                                shape.label) if shape.label in coco_classes else -1
-                            object_['tracker_id'] = new_group_id
-                            break
-
-                    for frame in new_id_frame_record:
-                        for object_ in listObj[frame - 1]['frame_data']:
-                            if object_['tracker_id'] == new_group_id:
-                                object_['class_name'] = shape.label
-                                object_['confidence'] = str(1.0)
-                                object_['class_id'] = coco_classes.index(
-                                    shape.label) if shape.label in coco_classes else -1
-                                break
-                    frame = self.INDEX_OF_CURRENT_FRAME 
-                    center = self.CURRENT_ANNOATAION_TRAJECTORIES['id_' + str(old_group_id)][frame - 1]
-                    self.CURRENT_ANNOATAION_TRAJECTORIES['id_' + str(old_group_id)][frame - 1] = (-1, -1)
-                    try:
-                        self.CURRENT_ANNOATAION_TRAJECTORIES['id_' + str(new_group_id)][frame - 1] = center
-                    except:
-                        self.CURRENT_ANNOATAION_TRAJECTORIES['id_' + str(new_group_id)] = [(-1, -1)] * self.TOTAL_VIDEO_FRAMES
-                        self.CURRENT_ANNOATAION_TRAJECTORIES['id_' + str(new_group_id)][frame - 1] = center
-                            
-
-                else:       # edit all frames with this ID
-
-                    try:
-                        new_id_frame_record = copy.deepcopy(
-                            self.id_frames_rec['id_' + str(new_group_id)])
-                        # check duplicates
-                        union = old_id_frame_record.union(new_id_frame_record)
-                        Intersection = old_id_frame_record.intersection(
-                            new_id_frame_record)
-                        if len(Intersection) != 0:
-                            shape.group_id = old_group_id
-                            helpers.OKmsgBox("ID already exists",
-                                             f'Two shapes with the same ID exists in at least one frame.\nApparantly, a shape with ID ({new_group_id}) already exists with another shape with ID ({old_group_id}).\nLike in frames ({Intersection}) and the edit will result in two shapes with the same ID ({new_group_id}).\n\n The edit is NOT performed.')
-                            return
-                    except:
-                        new_id_frame_record = set()
-                        union = old_id_frame_record
-                        pass
-
-                    self.id_frames_rec['id_' + str(new_group_id)] = union
-                    self.id_frames_rec['id_' + str(old_group_id)] = set()
-
-                    for frame in old_id_frame_record:
-                        for object_ in listObj[frame - 1]['frame_data']:
-                            if object_['tracker_id'] == old_group_id:
-                                center = self.CURRENT_ANNOATAION_TRAJECTORIES['id_' + str(old_group_id)][frame - 1]
-                                self.CURRENT_ANNOATAION_TRAJECTORIES['id_' + str(old_group_id)][frame - 1] = (-1, -1)
-                                try:
-                                    self.CURRENT_ANNOATAION_TRAJECTORIES['id_' + str(new_group_id)][frame - 1] = center
-                                except:
-                                    self.CURRENT_ANNOATAION_TRAJECTORIES['id_' + str(new_group_id)] = [(-1, -1)] * self.TOTAL_VIDEO_FRAMES
-                                    self.CURRENT_ANNOATAION_TRAJECTORIES['id_' + str(new_group_id)][frame - 1] = center
-                                object_['class_name'] = shape.label
-                                object_['confidence'] = str(1.0)
-                                object_['class_id'] = coco_classes.index(
-                                    shape.label) if shape.label in coco_classes else -1
-                                object_['tracker_id'] = new_group_id
-                                break
-                    for frame in new_id_frame_record:
-                        for object_ in listObj[frame - 1]['frame_data']:
-                            if object_['tracker_id'] == new_group_id:
-                                object_['class_name'] = shape.label
-                                object_['confidence'] = str(1.0)
-                                object_['class_id'] = coco_classes.index(
-                                    shape.label) if shape.label in coco_classes else -1
-                                # object_['tracker_id'] = new_group_id
-                                break
-
+            self.id_frames_rec, self.CURRENT_ANNOATAION_TRAJECTORIES, listObj = helpers.handle_id_editLabel(
+                                        currFrame = self.INDEX_OF_CURRENT_FRAME,
+                                        listObj = listObj,
+                                        trajectories = self.CURRENT_ANNOATAION_TRAJECTORIES,
+                                        id_frames_rec = self.id_frames_rec,
+                                        idChanged = idChanged,
+                                        only_this_frame = only_this_frame,
+                                        shape = shape,
+                                        old_group_id = old_group_id,
+                                        new_group_id = new_group_id,)
+            
             self.load_objects_to_json__orjson(listObj)
             self.main_video_frames_slider_changed()
 
@@ -1736,10 +1649,10 @@ class MainWindow(QtWidgets.QMainWindow):
             else:
                 self.update_current_frame_annotation()
                 keys = list(self.id_frames_rec.keys())
-                ids = [int(keys[i][3:]) for i in range(len(keys))]
+                idsORG = [int(keys[i][3:]) for i in range(len(keys))]
         else:
             self.update_current_frame_annotation()
-            ids = [shape.group_id for shape in self.canvas.selectedShapes]
+            idsORG = [shape.group_id for shape in self.canvas.selectedShapes]
             id = self.canvas.selectedShapes[0].group_id
 
         result, self.config = helpers.interpolationOptions_GUI(self.config)
@@ -1753,7 +1666,7 @@ class MainWindow(QtWidgets.QMainWindow):
             'interpolationDefault'] == 'interpolate ALL frames with SAM (more precision, more time)' else False
 
         if only_edited:
-            allAccepted, allRejected, ids = helpers.checkKeyFrames(ids, self.key_frames)
+            allAccepted, allRejected, ids = helpers.checkKeyFrames(idsORG, self.key_frames)
             if not allAccepted:
                 if allRejected:
                     helpers.OKmsgBox("Key Frames Error",
@@ -1767,9 +1680,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.interrupted = False
         if with_sam:
-            self.interpolate(id=ids,
-                             only_edited=False,
-                             with_sam=True)
+            self.interpolate_with_sam(idsORG)
         else:
             for id in ids:
                 QtWidgets.QApplication.processEvents()
@@ -1782,17 +1693,41 @@ class MainWindow(QtWidgets.QMainWindow):
         self.waitWindow()
 
     def mark_as_key(self):
+        
+        """
+        Summary:
+            This function is called when the user presses the "Mark as Key" button.
+            It marks the selected shape as a key frame.
+        """
+        
         self.update_current_frame_annotation()
         id = self.canvas.selectedShapes[0].group_id
         try:
             self.key_frames['id_' +
-                            str(id)].append(self.INDEX_OF_CURRENT_FRAME)
+                            str(id)].add(self.INDEX_OF_CURRENT_FRAME)
         except:
             self.key_frames['id_' +
-                            str(id)] = [self.INDEX_OF_CURRENT_FRAME]
+                            str(id)] = set()
+            self.key_frames['id_' +
+                            str(id)].add(self.INDEX_OF_CURRENT_FRAME)
         self.main_video_frames_slider_changed()
 
     def rec_frame_for_id(self, id, frame, type_='add'):
+        
+        """
+        Summary:
+            To store the frames in which the object with the given id is present.
+            
+        Args:
+            id (int): The id of the object.
+            frame (int): The frame number.
+            type_ (str, optional): 'add' or 'remove'. Defaults to 'add'.
+                                    'add' to add the frame to the list of frames in which the object is present.
+                                    'remove' to remove the frame from the list of frames in which the object is present.
+                                    
+        Returns:
+            None
+        """
 
         if type_ == 'add':
             try:
@@ -1806,14 +1741,20 @@ class MainWindow(QtWidgets.QMainWindow):
             except:
                 pass
         
-    def interpolate(self, id, only_edited=False, with_sam=False):
+    def interpolate(self, id, only_edited=False):
+        
+        """
+        Summary:
+            This function is called when the user presses the "Interpolate" button.
+            It interpolates the object with the given id.
+            
+        Args:
+            id (int): The id of the object.
+            only_edited (bool, optional): True to interpolate using only the key frames. Defaults to False.
+        """
 
         self.waitWindow(
             visible=True, text=f'Wait a second.\nID {id} is being interpolated...')
-
-        if with_sam:
-            self.interpolate_with_sam()
-            return
 
         listObj = self.load_objects_from_json__orjson()
 
@@ -1892,10 +1833,19 @@ class MainWindow(QtWidgets.QMainWindow):
         
         self.load_objects_to_json__orjson(listObj)
         frames = range(first_frame_idx - 1, last_frame_idx, 1)
-        self.calc_trajectory_when_open_video(frames)
+        self.calculate_trajectories(frames)
         self.main_video_frames_slider_changed()
         
-    def interpolate_with_sam(self):
+    def interpolate_with_sam(self, idsLISTX):
+        
+        """
+        Summary:
+            This function is called when the user chooses the "Interpolate with SAM".
+            It interpolates and inhance the objects with the given ids using SAM.
+            
+        Args:
+            idsLISTX (list): The list of ids of the objects.
+        """
 
         self.waitWindow(
             visible=True, text=f'Wait a second.\nIDs are being interpolated with SAM...')
@@ -1905,37 +1855,21 @@ class MainWindow(QtWidgets.QMainWindow):
                              f"SAM is disabled.\nPlease enable SAM.")
             return
 
-        if len(self.canvas.selectedShapes) == 0:
-            keys = list(self.id_frames_rec.keys())
-            idsLISTX = [int(keys[i][3:]) for i in range(len(keys))]
-            idsLIST = []
-            first_frame_idxLIST = []
-            last_frame_idxLIST = []
-            for id in idsLISTX:
-                try:
-                    [minf, maxf] = [min(
-                        self.id_frames_rec['id_' + str(id)]), max(self.id_frames_rec['id_' + str(id)])]
-                except:
-                    continue
-                if minf == maxf:
-                    continue
-                first_frame_idxLIST.append(minf)
-                last_frame_idxLIST.append(maxf)
-                idsLIST.append(id)
-
-        else:
-            idsLIST = []
-            first_frame_idxLIST = []
-            last_frame_idxLIST = []
-            for shape in self.canvas.selectedShapes:
-                id = shape.group_id
-                [minf, maxf] = [min(self.id_frames_rec['id_' + str(id)]),
-                                max(self.id_frames_rec['id_' + str(id)])]
-                if minf == maxf:
-                    continue
-                idsLIST.append(id)
-                first_frame_idxLIST.append(minf)
-                last_frame_idxLIST.append(maxf)
+        
+        idsLIST = []
+        first_frame_idxLIST = []
+        last_frame_idxLIST = []
+        for id in idsLISTX:
+            try:
+                [minf, maxf] = [min(
+                    self.id_frames_rec['id_' + str(id)]), max(self.id_frames_rec['id_' + str(id)])]
+            except:
+                continue
+            if minf == maxf:
+                continue
+            first_frame_idxLIST.append(minf)
+            last_frame_idxLIST.append(maxf)
+            idsLIST.append(id)
 
         if len(idsLIST) == 0:
             return
@@ -2011,7 +1945,7 @@ class MainWindow(QtWidgets.QMainWindow):
             listObjNEW[frameIDX - 1] = copy.deepcopy(listObj[frameIDX - 1])
         
         self.load_objects_to_json__orjson(listObjNEW)
-        self.calc_trajectory_when_open_video(range(min(first_frame_idxLIST) - 1, max(last_frame_idxLIST), 1))
+        self.calculate_trajectories(range(min(first_frame_idxLIST) - 1, max(last_frame_idxLIST), 1))
         self.main_video_frames_slider_changed()
 
     def get_frame_by_idx(self, frameIDX):
@@ -2054,6 +1988,13 @@ class MainWindow(QtWidgets.QMainWindow):
             return self.sam_enhanced_bbox_segment(frameIMAGE, cur_bbox, thresh, max_itr-1, forSHAPE)
 
     def scaleMENU(self):
+        
+        """
+        Summary:
+            This function is called when the user presses the "Scale" button.
+            It scales the selected shape.
+        """
+        
         result = helpers.scaleMENU_GUI(self)
         if result == QtWidgets.QDialog.Accepted:
             self.update_current_frame_annotation_button_clicked()
@@ -2063,11 +2004,24 @@ class MainWindow(QtWidgets.QMainWindow):
             return
 
     def copyShapesSelected(self):
+        
+        """
+        Summary:
+            This function is called when the user presses the "Copy" button.
+            It copies the selected shape(s).
+        """
+        
         if len(self.canvas.selectedShapes) == 0:
             return
         self.copiedShapes = self.canvas.selectedShapes
 
     def pasteShapesSelected(self):
+        
+        """
+        Summary:
+            This function is called when the user presses the "Paste" button.
+            It pastes the copied shape(s).
+        """
 
         if len(self.copiedShapes) == 0:
             return
@@ -2742,6 +2696,15 @@ class MainWindow(QtWidgets.QMainWindow):
             self.loadFile(filename)
 
     def change_curr_model(self, model_name):
+        
+        """
+        Summary:
+            Change current model to the model_name
+            
+        Args:
+            model_name (str): name of the model to be changed to
+        """
+        
         self.multi_model_flag = False
         self.waitWindow(
             visible=True, text=f'Wait a second.\n{model_name} is being Loaded...')
@@ -2750,6 +2713,12 @@ class MainWindow(QtWidgets.QMainWindow):
         self.waitWindow()
 
     def model_explorer(self):
+        
+        """
+        Summary:
+            Open model explorer dialog to select or download models
+        """
+        
         model_explorer_dialog = utils.ModelExplorerDialog()
         # make it fit its contents
         model_explorer_dialog.adjustSize()
@@ -2898,6 +2867,12 @@ class MainWindow(QtWidgets.QMainWindow):
             self._saveFile(self.save_path)
 
     def exportData(self):
+        
+        """
+        Summary:
+            Export data to COCO, MOT, video, and custom exports
+        """
+        
         try:
             if self.current_annotation_mode == "video":
 
@@ -3152,6 +3127,17 @@ class MainWindow(QtWidgets.QMainWindow):
             self.main_video_frames_slider_changed()
 
     def delete_ids_from_all_frames(self, deleted_ids, from_frame, to_frame):
+        
+        """
+        Summary:
+            Delete ids from a range of frames
+            
+        Args:
+            deleted_ids (list): list of ids to be deleted
+            from_frame (int): starting frame
+            to_frame (int): ending frame
+        """
+        
         from_frame, to_frame = np.min(
             [from_frame, to_frame]), np.max([from_frame, to_frame])
         listObj = self.load_objects_from_json__orjson()
@@ -3169,6 +3155,12 @@ class MainWindow(QtWidgets.QMainWindow):
         self.load_objects_to_json__orjson(listObj)
 
     def copyShape(self):
+        
+        """
+        Summary:
+            Copy selected shape in right click menu.
+            is NOT saved in the clipboard
+        """
 
         if len(self.canvas.selectedShapes) > 1 and self.config['toolMode'] == 'video':
             org = copy.deepcopy(self.canvas.shapes)
@@ -3440,7 +3432,16 @@ class MainWindow(QtWidgets.QMainWindow):
         fps = self.CAP.get(cv2.CAP_PROP_FPS)
         return helpers.mapFrameToTime(frameNumber, fps)
 
-    def calc_trajectory_when_open_video(self, frames = None):
+    def calculate_trajectories(self, frames = None):
+        
+        """
+        Summary:
+            Calculate trajectories for all objects in the video
+            
+        Args:
+            frames (list): list of frames to calculate trajectories for (default: None -> all frames)
+        """
+        
         listObj = self.load_objects_from_json__orjson()
         if len(listObj) == 0:
             return
@@ -3488,6 +3489,12 @@ class MainWindow(QtWidgets.QMainWindow):
                         id)] = color
 
     def right_click_menu(self):
+        
+        """
+        Summary:
+            Set the right click menu according to the current annotation mode
+        """
+        
         self.set_sam_toolbar_enable(False)
         self.sam_model_comboBox.setCurrentIndex(0)
         self.sam_buttons_colors("x")
@@ -3528,7 +3535,6 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.actions.menu[i].setVisible(image_menu)
             else:
                 self.actions.menu[i].setVisible(True)
-
 
     def openVideo(self):
         # enable export if json file exists
@@ -3600,7 +3606,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
             self.update_tracking_method()
 
-            self.calc_trajectory_when_open_video()
+            self.calculate_trajectories()
 
         # label = shape["label"]
         # points = shape["points"]
