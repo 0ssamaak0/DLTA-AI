@@ -64,10 +64,7 @@ python __main__.py
 ```
 ### Solutions to possible problems
 <details>
-### Solutions to possible problems
-<details>
 
-<summary>click to expand </summary>
 <summary>click to expand </summary>
 
 #### 1. (linux devices 🐧) 
