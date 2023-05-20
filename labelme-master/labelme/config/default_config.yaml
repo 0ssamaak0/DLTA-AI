@@ -139,3 +139,7 @@ shortcuts:
   SAM_clear: C
   SAM_RESET: X                      # Escape also works but implemented inside stop (cause of duplicate key)
   SAM_enhance : E
+
+
+# user settings
+mute: false

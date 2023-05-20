@@ -353,7 +353,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.tr("&Quit"),
             self.close,
             shortcuts["quit"],
-            "close",
+            "quit",
             self.tr("Quit application"),
         )
         open_ = action(
@@ -370,6 +370,7 @@ class MainWindow(QtWidgets.QMainWindow):
             "opendir",
             self.tr(u"Open Dir (Ctrl+U)"),
         )
+        # tunred off for now as it is not working properly
         openNextImg = action(
             self.tr("&Next Image"),
             self.openNextImg,
@@ -378,6 +379,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.tr(u"Open next (hold Ctl+Shift to copy labels)"),
             enabled=False,
         )
+        # tunred off for now as it is not working properly
         openPrevImg = action(
             self.tr("&Prev Image"),
             self.openPrevImg,
@@ -479,6 +481,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.tr("Start drawing polygons"),
             enabled=False,
         )
+        # tunred off for now (removed from menus) as it is not working properly
         createRectangleMode = action(
             self.tr("Create Rectangle"),
             lambda: self.toggleDrawMode(False, createMode="rectangle"),
@@ -487,6 +490,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.tr("Start drawing rectangles"),
             enabled=False,
         )
+        # tunred off for now (removed from menus) as it is not working properly
         createCircleMode = action(
             self.tr("Create Circle"),
             lambda: self.toggleDrawMode(False, createMode="circle"),
@@ -495,6 +499,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.tr("Start drawing circles"),
             enabled=False,
         )
+        # tunred off for now (removed from menus) as it is not working properly
         createLineMode = action(
             self.tr("Create Line"),
             lambda: self.toggleDrawMode(False, createMode="line"),
@@ -503,6 +508,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.tr("Start drawing lines"),
             enabled=False,
         )
+        # tunred off for now (removed from menus) as it is not working properly
         createPointMode = action(
             self.tr("Create Point"),
             lambda: self.toggleDrawMode(False, createMode="point"),
@@ -511,6 +517,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.tr("Start drawing points"),
             enabled=False,
         )
+        # tunred off for now (removed from menus) as it is not working properly
         createLineStripMode = action(
             self.tr("Create LineStrip"),
             lambda: self.toggleDrawMode(False, createMode="linestrip"),
@@ -532,7 +539,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.tr("Delete Polygons"),
             self.deleteSelectedShape,
             shortcuts["delete_polygon"],
-            "cancel",
+            "close",
             self.tr("Delete the selected polygons"),
             enabled=False,
         )
@@ -921,17 +928,10 @@ class MainWindow(QtWidgets.QMainWindow):
                 undoLastPoint,
                 None,
                 addPointToEdge,
-                None,
-                toggle_keep_prev_mode,
             ),
             # menu shown at right click
             menu=(
                 createMode,
-                createRectangleMode,
-                createCircleMode,
-                createLineMode,
-                createPointMode,
-                createLineStripMode,
                 editMode,
                 edit,
                 enhance,
@@ -994,15 +994,12 @@ class MainWindow(QtWidgets.QMainWindow):
                 open_,
                 opendir,
                 openVideo,
-                self.menus.recentFiles,
+                None,
                 save,
                 saveAs,
-                saveAuto,
-                changeOutputDir,
-                saveWithImageData,
-                close,
-                deleteFile,
+                export,
                 None,
+                close,
                 quit,
             ),
         )
@@ -1112,7 +1109,6 @@ class MainWindow(QtWidgets.QMainWindow):
             openVideo,
             save,
             export,
-            deleteFile,
             None,
             createMode,
             editMode,
@@ -1120,8 +1116,6 @@ class MainWindow(QtWidgets.QMainWindow):
             delete,
             undo,
             None,
-            openNextImg,
-            openPrevImg,
 
         )
         self.statusBar().showMessage(self.tr("%s started.") % __appname__)
@@ -1188,6 +1182,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.zoomWidget.valueChanged.connect(self.paintCanvas)
 
         self.populateModeActions()
+        self.right_click_menu()
+        
 
         # self.firstStart = True
         # if self.firstStart:
@@ -1226,12 +1222,6 @@ class MainWindow(QtWidgets.QMainWindow):
         utils.addActions(self.canvas.menus[0], menu)
         self.menus.edit.clear()
         actions = (
-            self.actions.createMode,
-            self.actions.createRectangleMode,
-            self.actions.createCircleMode,
-            self.actions.createLineMode,
-            self.actions.createPointMode,
-            self.actions.createLineStripMode,
             self.actions.editMode,
         )
         utils.addActions(self.menus.edit, actions + self.actions.editMenu)
@@ -1241,7 +1231,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.actions.undo.setEnabled(self.canvas.isShapeRestorable)
 
         if self._config["auto_save"] or self.actions.saveAuto.isChecked():
-            label_file = osp.splitext(self.imagePath)[0] + ".json"
             if self.output_dir:
                 label_file_without_path = osp.basename(label_file)
                 label_file = osp.join(self.output_dir, label_file_without_path)
@@ -1604,7 +1593,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if shape.group_id is None:
             item.setText(shape.label)
         else:
-            if self.config['toolMode'] == 'image':
+            if self.current_annotation_mode == 'image':
                 item.setText(f' ID {shape.group_id}: {shape.label}')
                 self.setDirty()
                 if not self.uniqLabelList.findItemsByLabel(shape.label):
@@ -1958,6 +1947,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.load_objects_to_json__orjson(listObjNEW)
         self.calculate_trajectories(range(min(first_frame_idxLIST) - 1, max(last_frame_idxLIST), 1))
         self.main_video_frames_slider_changed()
+
+        # Notify the user that the interpolation is finished
+        if not self._config["mute"]:
+            if not self.isActiveWindow():
+                helpers.notification("SAM Interpolation Completed")
 
     def get_frame_by_idx(self, frameIDX):
         self.CAP.set(cv2.CAP_PROP_POS_FRAMES, frameIDX - 1)
@@ -2356,7 +2350,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if text == "SAM instance":
             text = "SAM instance - confirmed"
 
-        if self.config["toolMode"] == "video":
+        if self.current_annotation_mode == "video":
             group_id, text = self.get_id_from_user(group_id, text)
         if text:
             if self.canvas.SAM_mode == "finished":
@@ -2389,7 +2383,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.canvas.undoLastLine()
                 self.canvas.shapesBackups.pop()
 
-        if self.config["toolMode"] == "video":
+        if self.current_annotation_mode == "video":
             self.update_current_frame_annotation_button_clicked()
             self.update_current_frame_annotation_button_clicked()
 
@@ -2746,6 +2740,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 selected_model_name, config, checkpoint)
         self.updateSamControls()
 
+    # tunred off for now (removed from menus) as it is not working properly
     def openPrevImg(self, _value=False):
         keep_prev = self._config["keep_prev"]
         if Qt.KeyboardModifiers() == (Qt.ControlModifier | Qt.ShiftModifier):
@@ -2768,6 +2763,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self._config["keep_prev"] = keep_prev
 
+    # tunred off for now as it is not working properly
     def openNextImg(self, _value=False, load=True):
         keep_prev = self._config["keep_prev"]
         if Qt.KeyboardModifiers() == (Qt.ControlModifier | Qt.ShiftModifier):
@@ -2796,11 +2792,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self._config["keep_prev"] = keep_prev
 
     def openFile(self, _value=False):
-        self.config['toolMode'] = 'image'
-        self.right_click_menu()
+        self.current_annotation_mode = 'img'
         self.disconnectVideoShortcuts()
-
-        self.current_annotation_mode = "img"
+        self.right_click_menu()
         self.actions.export.setEnabled(False)
         try:
             cv2.destroyWindow('video processing')
@@ -3025,6 +3019,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.canvas.setEnabled(False)
         self.actions.saveAs.setEnabled(False)
 
+        self.current_annotation_mode = ""
+        self.right_click_menu()
+
     def getLabelFile(self):
         if self.filename.lower().endswith(".json"):
             label_file = self.filename
@@ -3129,7 +3126,7 @@ class MainWindow(QtWidgets.QMainWindow):
             if self.noShapes():
                 for action in self.actions.onShapesPresent:
                     action.setEnabled(False)
-            if self.config['toolMode'] == 'image':
+            if self.current_annotation_mode == 'img':
                 return
 
             # if video mode
@@ -3180,7 +3177,7 @@ class MainWindow(QtWidgets.QMainWindow):
             is NOT saved in the clipboard
         """
 
-        if len(self.canvas.selectedShapes) > 1 and self.config['toolMode'] == 'video':
+        if len(self.canvas.selectedShapes) > 1 and self.current_annotation_mode == 'video':
             org = copy.deepcopy(self.canvas.shapes)
             self.canvas.endMove(copy=True)
             self.canvas.undoLastLine()
@@ -3189,7 +3186,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.update_current_frame_annotation_button_clicked()
             return
 
-        elif self.config['toolMode'] == 'video':
+        elif self.current_annotation_mode == 'video':
             self.canvas.endMove(copy=True)
             shape = self.canvas.selectedShapes[0]
             text = shape.label
@@ -3229,15 +3226,15 @@ class MainWindow(QtWidgets.QMainWindow):
     def moveShape(self):
         self.canvas.endMove(copy=False)
         self.setDirty()
-        if self.config['toolMode'] == 'video':
+        if self.current_annotation_mode == 'video':
             self.update_current_frame_annotation_button_clicked()
+        self.right_click_menu()
 
     def openDirDialog(self, _value=False, dirpath=None):
-        self.config['toolMode'] = 'image'
-        self.right_click_menu()
         self.disconnectVideoShortcuts()
 
         self.current_annotation_mode = "dir"
+        self.right_click_menu()
         if not self.mayContinue():
             return
 
@@ -3410,6 +3407,11 @@ class MainWindow(QtWidgets.QMainWindow):
             self.intelligenceHelper.get_shapes_of_batch(images, multi_model_flag=True)
         else:
             self.intelligenceHelper.get_shapes_of_batch(images)
+        
+        # Notify the user that the Annotation is finished
+        if not self._config["mute"]:
+            if not self.isActiveWindow():
+                helpers.notification("Batch Annotation Completed")
 
     def setConfThreshold(self):
         if self.intelligenceHelper.conf_threshold:
@@ -3520,45 +3522,45 @@ class MainWindow(QtWidgets.QMainWindow):
         self.set_sam_toolbar_enable(False)
         self.sam_model_comboBox.setCurrentIndex(0)
         self.sam_buttons_colors("x")
-        # # right click menu
+         # # right click menu
+         
         #         0  createMode,
-        #         1  createRectangleMode,
-        #         2  createCircleMode,
-        #         3  createLineMode,
-        #         4  createPointMode,
-        #         5  createLineStripMode,
-        #         6  editMode,
-        #         7  edit,
-        #         8  enhance,
-        #         9  interpolate,
-        #         10  mark_as_key,
-        #         11 scale,
-        #         12 copyShapes,
-        #         13 pasteShapes,
-        #         14 copy,
-        #         15 delete,
-        #         16 undo,
-        #         17 undoLastPoint,
-        #         18 addPointToEdge,
-        #         19 removePoint,
-        #         20 update_curr_frame,
-        #         21 ignore_changes
+        #         1  editMode,
+        #         2  edit,
+        #         3  enhance,
+        #         4  interpolate,
+        #         5  mark_as_key,
+        #         6 scale,
+        #         7 copyShapes,
+        #         8 pasteShapes,
+        #         9 copy,
+        #         10 delete,
+        #         11 undo,
+        #         12 undoLastPoint,
+        #         13 addPointToEdge,
+        #         14 removePoint,
+        #         15 update_curr_frame,
+        #         16 ignore_changes
 
-        mode = self.config['toolMode']
-        video_menu = True if mode == "video" else False
-        image_menu = True if mode == "image" else False
-        video_menu_list = [8, 9, 10, 11, 12, 13, 20, 21]
-        image_menu_list = [1, 2, 3, 4, 5, 14, 16, 17]
-        for i in range(len(self.actions.menu)):
-            if i in video_menu_list:
-                self.actions.menu[i].setVisible(video_menu)
-                self.actions.menu[i].setEnabled(video_menu)
-            elif i in image_menu_list:
-                self.actions.menu[i].setVisible(image_menu)
-            else:
-                self.actions.menu[i].setVisible(True)
+
+        mode = self.current_annotation_mode
+        video_menu_list = [0, 1, 2, 3, 4, 5, 6, 7, 8, 11, 12]
+        image_menu_list = [0, 1, 2, 9, 11, 13]
+        if self.current_annotation_mode == "video":
+            self.canvas.menus[0].clear()
+            utils.addActions(self.canvas.menus[0], (self.actions.menu[i] for i in video_menu_list))
+
+            self.menus.edit.clear()
+            utils.addActions(self.menus.edit, (self.actions.menu[i] for i in video_menu_list))
+        else:
+            self.canvas.menus[0].clear()
+            utils.addActions(self.canvas.menus[0], (self.actions.menu[i] for i in image_menu_list))
+
+            self.menus.edit.clear()
+            utils.addActions(self.menus.edit, (self.actions.menu[i] for i in image_menu_list))
 
     def openVideo(self):
+
         # enable export if json file exists
         length_Value = self.CURRENT_ANNOATAION_TRAJECTORIES['length']
         alpha_Value = self.CURRENT_ANNOATAION_TRAJECTORIES['alpha']
@@ -3568,8 +3570,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.key_frames.clear()
         self.id_frames_rec.clear()
 
-        self.config['toolMode'] = "video"
-        self.right_click_menu()
+        self.current_annotation_mode = "video"
         self.assignVideShortcuts()
 
         for shape in self.canvas.shapes:
@@ -3579,6 +3580,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # self.videoControls.show()
         self.current_annotation_mode = "video"
+        self.right_click_menu()
         try:
             cv2.destroyWindow('video processing')
         except:
@@ -3630,6 +3632,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
             self.calculate_trajectories()
 
+
+            self.vid_dock.setVisible(True)
+            for option in self.vid_options:
+                option.setEnabled(True)
+
         # label = shape["label"]
         # points = shape["points"]
         # bbox = shape["bbox"]
@@ -3638,9 +3645,11 @@ class MainWindow(QtWidgets.QMainWindow):
         # content = shape["content"]
         # group_id = shape["group_id"]
         # other_data = shape["other_data"]
-        self.vid_dock.setVisible(True)
-        for option in self.vid_options:
-            option.setEnabled(True)
+
+
+        # disable save and save as
+        self.actions.save.setEnabled(False)
+        self.actions.saveAs.setEnabled(False)
 
     def load_shapes_for_video_frame(self, json_file_name, index):
         # this function loads the shapes for the video frame from the json file
@@ -3856,9 +3865,11 @@ class MainWindow(QtWidgets.QMainWindow):
             value = int(text)
             if 2 <= value <= self.frames_to_track_slider.maximum():
                 self.frames_to_track_slider.setValue(value)
-            else:
+            elif value > self.frames_to_track_slider.maximum():
                 self.frames_to_track_slider.setValue(
                     self.frames_to_track_slider.maximum())
+            elif value < 2:
+                self.frames_to_track_slider.setValue(2)
         except ValueError:
             pass
 
@@ -4110,6 +4121,12 @@ class MainWindow(QtWidgets.QMainWindow):
         # listObj = sorted(listObj, key=lambda k: k['frame_idx'])
         self.load_objects_to_json__orjson(listObj)
 
+        # Notify the user that the tracking is finished
+        print(self._config["mute"])
+        if not self._config["mute"]:
+            if not self.isActiveWindow():
+                helpers.notification("Tracking Completed")
+
         self.TrackingMode = False
         self.labelFile = None
         self.main_video_frames_slider.setValue(self.INDEX_OF_CURRENT_FRAME - 1)
@@ -4161,38 +4178,57 @@ class MainWindow(QtWidgets.QMainWindow):
         loop.exec_()
 
     def traj_checkBox_changed(self):
-        self.update_current_frame_annotation()
-        self.CURRENT_ANNOATAION_FLAGS["traj"] = self.traj_checkBox.isChecked()
-        self.main_video_frames_slider_changed()
+        try:
+            self.update_current_frame_annotation()
+            self.CURRENT_ANNOATAION_FLAGS["traj"] = self.traj_checkBox.isChecked()
+            self.main_video_frames_slider_changed()
+        except:
+            pass
 
     def mask_checkBox_changed(self):
-        self.update_current_frame_annotation()
-        self.CURRENT_ANNOATAION_FLAGS["mask"] = self.mask_checkBox.isChecked()
-        self.main_video_frames_slider_changed()
+        try:
+            self.update_current_frame_annotation()
+            self.CURRENT_ANNOATAION_FLAGS["mask"] = self.mask_checkBox.isChecked()
+            self.main_video_frames_slider_changed()
+        except:
+            pass
 
     def class_checkBox_changed(self):
-        self.update_current_frame_annotation()
-        self.CURRENT_ANNOATAION_FLAGS["class"] = self.class_checkBox.isChecked(
-        )
-        self.main_video_frames_slider_changed()
+        try:
+            self.update_current_frame_annotation()
+            self.CURRENT_ANNOATAION_FLAGS["class"] = self.class_checkBox.isChecked(
+            )
+            self.main_video_frames_slider_changed()
+        except:
+            pass
 
     def id_checkBox_changed(self):
-        self.update_current_frame_annotation()
-        self.CURRENT_ANNOATAION_FLAGS["id"] = self.id_checkBox.isChecked()
-        self.main_video_frames_slider_changed()
+        try:
+            self.update_current_frame_annotation()
+            self.CURRENT_ANNOATAION_FLAGS["id"] = self.id_checkBox.isChecked()
+            self.main_video_frames_slider_changed()
+        except:
+            pass        
 
     def bbox_checkBox_changed(self):
-        self.update_current_frame_annotation()
-        self.CURRENT_ANNOATAION_FLAGS["bbox"] = self.bbox_checkBox.isChecked()
-        self.main_video_frames_slider_changed()
+        try:
+            self.update_current_frame_annotation()
+            self.CURRENT_ANNOATAION_FLAGS["bbox"] = self.bbox_checkBox.isChecked()
+            self.main_video_frames_slider_changed()
+        except:
+            pass
+            
 
     def polygons_visable_checkBox_changed(self):
-        self.update_current_frame_annotation()
-        self.CURRENT_ANNOATAION_FLAGS["polygons"] = self.polygons_visable_checkBox.isChecked(
-        )
-        for shape in self.canvas.shapes:
-            self.canvas.setShapeVisible(
-                shape, self.CURRENT_ANNOATAION_FLAGS["polygons"])
+        try:
+            self.update_current_frame_annotation()
+            self.CURRENT_ANNOATAION_FLAGS["polygons"] = self.polygons_visable_checkBox.isChecked(
+            )
+            for shape in self.canvas.shapes:
+                self.canvas.setShapeVisible(
+                    shape, self.CURRENT_ANNOATAION_FLAGS["polygons"])
+        except:
+            pass
 
     def export_as_video_button_clicked(self, output_filename = None):
         print (f"output filename is {output_filename}")
@@ -4343,10 +4379,13 @@ class MainWindow(QtWidgets.QMainWindow):
         print("saved frame annotation")
 
     def trajectory_length_lineEdit_changed(self):
-        text = self.trajectory_length_lineEdit.text()
-        self.CURRENT_ANNOATAION_TRAJECTORIES['length'] = int(
-            text) if text != '' else 1
-        self.main_video_frames_slider_changed()
+        try:
+            text = self.trajectory_length_lineEdit.text()
+            self.CURRENT_ANNOATAION_TRAJECTORIES['length'] = int(
+                text) if text != '' else 1
+            self.main_video_frames_slider_changed()
+        except:
+            pass
 
     def addVideoControls(self):
         # add video controls toolbar with custom style (background color , spacing , hover color)
