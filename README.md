@@ -11,6 +11,9 @@ Data Labeling, Tracking and Annotation with AI
 
 DLTA-AI is the next generation of annotation tools, integrating the power of Computer Vision SOTA models to <a href = "https://github.com/wkentaro/labelme">Labelme</a> in a seamless expirence and intuitive workflow to make creating image datasets easier than ever before
 
+<h3>
+Auto Annotation Tool for Computer Vision Tasks
+</h3>
 
 [![python](https://img.shields.io/static/v1?label=python&message=3.8&color=blue&logo=python)](https://pytorch.org/)
 [![pytorch](https://img.shields.io/static/v1?label=pytorch&message=1.13.1&color=violet&logo=pytorch)](https://pytorch.org/)
@@ -43,10 +46,13 @@ conda create --name DLTA-AI python=3.8 -y
 conda activate DLTA-AI
 
 conda install pytorch==1.13.1 torchvision==0.14.1 torchaudio==0.13.1 pytorch-cuda=11.7 -c pytorch -c nvidia
+conda install pytorch==1.13.1 torchvision==0.14.1 torchaudio==0.13.1 pytorch-cuda=11.7 -c pytorch -c nvidia
 ```
 ### 2. install requirements
 
 ```
+pip install -r requirements.txt
+mim install mmcv-full==1.7.0
 pip install -r requirements.txt
 mim install mmcv-full==1.7.0
 ```
@@ -58,7 +64,10 @@ python __main__.py
 ```
 ### Solutions to possible problems
 <details>
+### Solutions to possible problems
+<details>
 
+<summary>click to expand </summary>
 <summary>click to expand </summary>
 
 #### 1. (linux devices 🐧) 
