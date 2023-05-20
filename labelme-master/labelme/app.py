@@ -325,6 +325,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # # for image annotation
         # self.last_file_opened = ""
         self.interrupted = False
+        self.minID = -1
 
         features = QtWidgets.QDockWidget.DockWidgetFeatures()
         for dock in ["flag_dock", "label_dock", "shape_dock", "file_dock", "vid_dock"]:
@@ -1630,6 +1631,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 shape.content = old_content
                 shape.group_id = old_group_id
                 return
+            
+            self.minID = min(self.minID, new_group_id - 1)
 
             self.id_frames_rec, self.CURRENT_ANNOATAION_TRAJECTORIES, listObj = helpers.handle_id_editLabel(
                                         currFrame = self.INDEX_OF_CURRENT_FRAME,
@@ -2363,6 +2366,10 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.labelList.clearSelection()
                 # shape below is of type qt shape
                 shape = self.canvas.setLastLabel(text, flags)
+                if group_id is None:
+                    group_id = self.minID
+                    self.minID -= 1
+                self.minID = min(self.minID, group_id - 1)
                 shape.group_id = group_id
                 shape.content = content
                 self.addLabel(shape)
@@ -3466,6 +3473,7 @@ class MainWindow(QtWidgets.QMainWindow):
             listobjframe = listObj[i]['frame_idx']
             for object in listObj[i]['frame_data']:
                 id = object['tracker_id']
+                self.minID = min(self.minID, id - 1)
                 self.rec_frame_for_id(id, listobjframe)
                 label = object['class_name']
                 # color calculation
@@ -3583,6 +3591,8 @@ class MainWindow(QtWidgets.QMainWindow):
         )
 
         if videoFile[0]:
+            self.global_listObj = []
+            self.minID = -1
             self.CURRENT_VIDEO_NAME = videoFile[0].split(
                 ".")[-2].split("/")[-1]
             self.CURRENT_VIDEO_PATH = "/".join(
@@ -4293,8 +4303,11 @@ class MainWindow(QtWidgets.QMainWindow):
         shapes = self.convert_qt_shapes_to_shapes(self.canvas.shapes)
         for shape in shapes:
             json_tracked_object = {}
-            json_tracked_object['tracker_id'] = int(
-                shape["group_id"]) if shape["group_id"] != None else -1
+            if shape["group_id"] != None :
+                json_tracked_object['tracker_id'] = int(shape["group_id"]) 
+            else:
+                json_tracked_object['tracker_id'] = self.minID
+                self.minID -= 1
             bbox = shape["bbox"]
             bbox = [int(bbox[0]), int(bbox[1]), int(bbox[2]), int(bbox[3])]
             json_tracked_object['bbox'] = bbox
