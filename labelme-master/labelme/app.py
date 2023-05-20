@@ -3927,7 +3927,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def track_buttonClicked(self):
 
         # Disable Exports & Change button text
-        self.export_as_video_button.setEnabled(False)
+        # self.export_as_video_button.setEnabled(False)
         self.actions.export.setEnabled(False)
 
         # dt = (Profile(), Profile(), Profile(), Profile())
@@ -4112,7 +4112,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Enable Exports & Restore button Text and Color
         self.actions.export.setEnabled(True)
-        self.export_as_video_button.setEnabled(True)
+        # self.export_as_video_button.setEnabled(True)
 
     def convert_qt_shapes_to_shapes(self, qt_shapes):
         return helpers.convert_qt_shapes_to_shapes(qt_shapes)
