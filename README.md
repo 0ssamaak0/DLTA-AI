@@ -3,23 +3,23 @@
     <img src = "assets/icon.png" width = 200 height = 200>
 <br>
 
-Labelmm 
+DLTA-AI 
 </h1>
 
 <h3>
 Auto Annotation Tool for Computer Vision Tasks
 </h3>
 
-Labelmm is the next generation of annotation tools, harnessing the power of Computer Vision SOTA models from <a href = "https://github.com/open-mmlab/mmdetection/tree/2.x">mmdetection</a> to <a href = "https://github.com/wkentaro/labelme">Labelme</a> in a seamless expirence with modern user interface and intuitive workflow
+DLTA-AI is the next generation of annotation tools, harnessing the power of Computer Vision SOTA models from <a href = "https://github.com/open-mmlab/mmdetection/tree/2.x">mmdetection</a> to <a href = "https://github.com/wkentaro/labelme">Labelme</a> in a seamless expirence with modern user interface and intuitive workflow
 
 
 [![python](https://img.shields.io/static/v1?label=python&message=3.8&color=blue&logo=python)](https://pytorch.org/)
 [![pytorch](https://img.shields.io/static/v1?label=pytorch&message=1.13.1&color=violet&logo=pytorch)](https://pytorch.org/)
 [![mmdetection](https://img.shields.io/static/v1?label=mmdetection&message=v2&color=blue)](https://github.com/open-mmlab/mmdetection/tree/2.x)
-[![GitHub License](https://img.shields.io/github/license/0ssamaak0/labelmm)](https://github.com/0ssamaak0/labelmm/blob/master/LICENSE)
-[![GitHub release (latest by date including pre-releases)](https://img.shields.io/github/v/release/0ssamaak0/labelmm?include_prereleases)](https://github.com/0ssamaak0/labelmm/releases)
-[![GitHub issues](https://img.shields.io/github/issues/0ssamaak0/labelmm)](https://github.com/0ssamaak0/labelmm/issues)
-[![GitHub last commit](https://img.shields.io/github/last-commit/0ssamaak0/labelmm)](https://github.com/0ssamaak0/labelmm/commits)
+[![GitHub License](https://img.shields.io/github/license/0ssamaak0/DLTA-AI)](https://github.com/0ssamaak0/DLTA-AI/blob/master/LICENSE)
+[![GitHub release (latest by date including pre-releases)](https://img.shields.io/github/v/release/0ssamaak0/DLTA-AI?include_prereleases)](https://github.com/0ssamaak0/DLTA-AI/releases)
+[![GitHub issues](https://img.shields.io/github/issues/0ssamaak0/DLTA-AI)](https://github.com/0ssamaak0/DLTA-AI/issues)
+[![GitHub last commit](https://img.shields.io/github/last-commit/0ssamaak0/DLTA-AI)](https://github.com/0ssamaak0/DLTA-AI/commits)
 ![gif_main](assets/gif_main2.gif)
 
 <!-- make p with larger font size -->
@@ -33,8 +33,8 @@ Labelmm is the next generation of annotation tools, harnessing the power of Comp
 preferably using anaconda
 
 ```
-conda create --name labelmm python=3.8 -y
-conda activate labelmm
+conda create --name DLTA-AI python=3.8 -y
+conda activate DLTA-AI
 
 conda install pytorch==1.13.1 torchvision==0.14.1 torchaudio==0.13.1 pytorch-cuda=11.7 -c pytorch -c nvidia
 ```
@@ -45,7 +45,7 @@ pip install -r requirements.txt
 mim install mmcv-full==1.7.0
 ```
 # 3. Running
-Run the tool from `labelmm-master` directory
+Run the tool from `DLTA-AI-master` directory
 ```
 cd labelme-master
 python __main__.py
@@ -83,13 +83,13 @@ or just use Visual Studio installer to Install `MSVC v143 - VS 2022 C++ x64/x86 
 </details>
 
 # Segment Anything 🪄
-Labelmm provides a seamless expirence to use lastest Meta models [Segment Anything (SAM)](https://github.com/facebookresearch/segment-anything) and options to modify the results and export them
+DLTA-AI provides a seamless expirence to use lastest Meta models [Segment Anything (SAM)](https://github.com/facebookresearch/segment-anything) and options to modify the results and export them
 
 ![Segment Anything](assets/SAM.gif)
 
 # Input Modes 🎞️
 
-labelmm provides 3 Input modes:
+DLTA-AI provides 3 Input modes:
 
 - **Image** : for image annotation
 - **Directory** : for annotating images in a directory
@@ -99,22 +99,22 @@ labelmm provides 3 Input modes:
 
 
 # Model Selection 🤖
-For model selection, Labelmm provides the **Model Explorer** to utilize the power of the numerous models in [mmdetection](https://github.com/open-mmlab/mmdetection/tree/2.x) and [ultralytics YOLOv8](https://github.com/ultralytics/ultralytics) the to give the user the ability to compare, download and select his library of models
+For model selection, DLTA-AI provides the **Model Explorer** to utilize the power of the numerous models in [mmdetection](https://github.com/open-mmlab/mmdetection/tree/2.x) and [ultralytics YOLOv8](https://github.com/ultralytics/ultralytics) the to give the user the ability to compare, download and select his library of models
 
 ![Model Explorer](assets/model_explorer.gif)
-for Object Tracking, Labelmm offers 5 different tracking models with the ability to select between them
+for Object Tracking, DLTA-AI offers 5 different tracking models with the ability to select between them
 
 
 # Object Tracking 🚗
-In Object Detection, Labelmm provides a seamless expirence for video navigation, tracking settings and different visualization options with the ability to export the tracking results to a video file
+In Object Detection, DLTA-AI provides a seamless expirence for video navigation, tracking settings and different visualization options with the ability to export the tracking results to a video file
 
-Beside this, Labelmm provides a completely new way to modify the tracking results, including edit and delete propagation across frames and different interpolation methods
+Beside this, DLTA-AI provides a completely new way to modify the tracking results, including edit and delete propagation across frames and different interpolation methods
 
 ![Object Tracking](assets/tracking.gif)
 
 # Export 📤
-For Instance Segmentation, Labelmm provides to option to export all input modes to COCO format
-while for Object Detection on videos, Labelmm provides the ability to export the tracking results to MOT format
+For Instance Segmentation, DLTA-AI provides to option to export all input modes to COCO format
+while for Object Detection on videos, DLTA-AI provides the ability to export the tracking results to MOT format
 
 
 ![Export](assets/Export.png)
@@ -132,16 +132,16 @@ while for Object Detection on videos, Labelmm provides the ability to export the
 - Customizable UI Elements (Hide/Show and Change Position)
 
 # Contributing 🤝
-Labelmm is an open source project and contributions are very welcome, specially in this early stage of development.
+DLTA-AI is an open source project and contributions are very welcome, specially in this early stage of development.
 
 you can contribute by:
-- Create an [issue](https://github.com/0ssamaak0/labelmm/issues) Reporting bugs 🐞 or suggesting new features 🌟 or just give your feedback 📝
+- Create an [issue](https://github.com/0ssamaak0/DLTA-AI/issues) Reporting bugs 🐞 or suggesting new features 🌟 or just give your feedback 📝
 
-- Create a [pull request](https://github.com/0ssamaak0/labelmm/pulls) to fix bugs or add new features, or just to improve the code quality, optimize performance, documentation, or even just to fix typos
+- Create a [pull request](https://github.com/0ssamaak0/DLTA-AI/pulls) to fix bugs or add new features, or just to improve the code quality, optimize performance, documentation, or even just to fix typos
 
-- Review [pull requests](https://github.com/0ssamaak0/labelmm/pulls) and help with the code review process
+- Review [pull requests](https://github.com/0ssamaak0/DLTA-AI/pulls) and help with the code review process
 
-- Spread the word about Labelmm and help us grow the community 🌎, by sharing the project on social media, or just by telling your friends about it
+- Spread the word about DLTA-AI and help us grow the community 🌎, by sharing the project on social media, or just by telling your friends about it
 
 # Acknowledgements 🙏
 This tool is part of a Graduation Project at [Faculty of Engineering, Ain Shams University](https://eng.asu.edu.eg/) under the supervision of:
@@ -179,4 +179,4 @@ we want also to thank our friends who helped us with testing, feedback and sugge
 - [icons8](https://icons8.com/)
 
 # License 📜
-Labelmm is released under the [GPLv3 license](https://github.com/0ssamaak0/labelmm/blob/master/LICENSE). 
+DLTA-AI is released under the [GPLv3 license](https://github.com/0ssamaak0/DLTA-AI/blob/master/LICENSE). 
