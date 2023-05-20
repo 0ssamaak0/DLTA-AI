@@ -1384,17 +1384,16 @@ def reducing_Intersection(Intersection):
 # ---------------------------------------------------------------
 
 def OKmsgBox(title, text, type = "info"):
-    
     """
-    Summary:
-        Show an OK message box.
-        
+    Show a message box.
+
     Args:
-        title: the title of the message box
-        text: the text of the message box
-        
+        title (str): The title of the message box.
+        text (str): The text of the message box.
+        type (str, optional): The type of the message box. Can be "info", "warning", or "critical". Defaults to "info".
+
     Returns:
-        msgBox.exec_(): the result of the message box
+        int: The result of the message box. This will be the value of the button clicked by the user.
     """
     
     msgBox = QtWidgets.QMessageBox()

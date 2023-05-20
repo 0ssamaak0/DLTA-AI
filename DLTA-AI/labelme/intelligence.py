@@ -21,6 +21,8 @@ import torch
 from mmdet.apis import inference_detector, init_detector
 warnings.filterwarnings("ignore")
 
+from .utils import helpers
+
 
 coco_classes = ['person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', 'truck', 'boat', 'traffic light', 'fire hydrant', 'stop sign', 'parking meter', 'bench', 'bird', 'cat', 'dog', 'horse', 'sheep', 'cow', 'elephant', 'bear', 'zebra', 'giraffe', 'backpack', 'umbrella', 'handbag', 'tie', 'suitcase', 'frisbee', 'skis', 'snowboard', 'sports ball', 'kite', 'baseball bat', 'baseball glove', 'skateboard', 'surfboard',
                 'tennis racket', 'bottle', 'wine glass', 'cup', 'fork', 'knife', 'spoon', 'bowl', 'banana', 'apple', 'sandwich', 'orange', 'broccoli', 'carrot', 'hot dog', 'pizza', 'donut', 'cake', 'chair', 'couch', 'potted plant', 'bed', 'dining table', 'toilet', 'tv', 'laptop', 'mouse', 'remote', 'keyboard', 'cell phone', 'microwave', 'oven', 'toaster', 'sink', 'refrigerator', 'book', 'clock', 'vase', 'scissors', 'teddy bear', 'hair drier', 'toothbrush']
@@ -127,18 +129,23 @@ class Intelligence():
 
     @torch.no_grad()
     def make_mm_model(self, selected_model_name):
-        with open("saved_models.json") as json_file:
-            data = json.load(json_file)
-            if selected_model_name == "":
-                # read the saved_models.json file and import the config and checkpoint files from the first model
-                selected_model_name = list(data.keys())[0]
-                config = data[selected_model_name]["config"]
-                checkpoint = data[selected_model_name]["checkpoint"]
-            else:
-                config = data[selected_model_name]["config"]
-                checkpoint = data[selected_model_name]["checkpoint"]
-            print(
-                f'selected model : {selected_model_name} \nconfig : {config}\ncheckpoint : {checkpoint} \n')
+        try:
+            with open("saved_models.json") as json_file:
+                data = json.load(json_file)
+                if selected_model_name == "":
+                    # read the saved_models.json file and import the config and checkpoint files from the first model
+                    selected_model_name = list(data.keys())[0]
+                    config = data[selected_model_name]["config"]
+                    checkpoint = data[selected_model_name]["checkpoint"]
+                else:
+                    config = data[selected_model_name]["config"]
+                    checkpoint = data[selected_model_name]["checkpoint"]
+                print(
+                    f'selected model : {selected_model_name} \nconfig : {config}\ncheckpoint : {checkpoint} \n')
+        except Exception as e:
+            helpers.OKmsgBox("Error", f"Error in loading the model\n{e}", "critical")
+            return
+
 
         torch.cuda.empty_cache()
         if "YOLOv8" in selected_model_name:
@@ -175,8 +182,8 @@ class Intelligence():
                 model.fuse()
                 return selected_model_name, model
             except Exception as e:
-                print("ERROR **" * 5)
-                print(e)
+                helpers.OKmsgBox("Error", f"Error in loading the model\n{e}", "critical")
+                return
 
         # It's a MMDetection model
         else:
@@ -185,8 +192,9 @@ class Intelligence():
                 model = init_detector(config, checkpoint, device=torch.device(
                     "cuda" if torch.cuda.is_available() else "cpu"))
             except Exception as e:
-                print("ERROR **" * 5)
-                print(e)
+                helpers.OKmsgBox
+                helpers.OKmsgBox("Error", f"Error in loading the model\n{e}", "critical")
+                return
             return selected_model_name, model
 
     def get_bbox(self, segmentation):

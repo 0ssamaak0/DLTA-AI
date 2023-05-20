@@ -164,7 +164,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.update_saved_models_json()
 
         super(MainWindow, self).__init__()
-        self.intelligenceHelper = Intelligence(self)
+        try:
+            self.intelligenceHelper = Intelligence(self)
+        except:
+            print("it seems you have a problem with initializing model\ncheck you have at least one model")
         self.setWindowTitle(__appname__)
 
         # Whether we need to save or not.
@@ -2353,6 +2356,9 @@ class MainWindow(QtWidgets.QMainWindow):
         if self.current_annotation_mode == "video":
             group_id, text = self.get_id_from_user(group_id, text)
         if text:
+            if group_id is None:
+                group_id = self.minID
+                self.minID -= 1
             if self.canvas.SAM_mode == "finished":
                 self.current_sam_shape["label"] = text
                 self.current_sam_shape["group_id"] = group_id
@@ -2360,9 +2366,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.labelList.clearSelection()
                 # shape below is of type qt shape
                 shape = self.canvas.setLastLabel(text, flags)
-                if group_id is None:
-                    group_id = self.minID
-                    self.minID -= 1
+
                 self.minID = min(self.minID, group_id - 1)
                 shape.group_id = group_id
                 shape.content = content
@@ -2734,6 +2738,8 @@ class MainWindow(QtWidgets.QMainWindow):
         model_explorer_dialog.resize(
             int(model_explorer_dialog.width() * 2), int(model_explorer_dialog.height() * 1.5))
         model_explorer_dialog.exec_()
+        self.update_saved_models_json()
+
         selected_model_name, config, checkpoint = model_explorer_dialog.selected_model
         if selected_model_name != -1:
             self.intelligenceHelper.current_model_name, self.intelligenceHelper.current_mm_model = self.intelligenceHelper.make_mm_model_more(
@@ -3370,14 +3376,17 @@ class MainWindow(QtWidgets.QMainWindow):
             # if self.filename != self.last_file_opened:
             #     self.last_file_opened = self.filename
             #     self.intelligenceHelper.clear_annotating_models()
-
-            if os.path.exists(self.filename):
-                self.labelList.clearSelection()
-            if self.multi_model_flag:
-                shapes = self.intelligenceHelper.get_shapes_of_one(self.CURRENT_FRAME_IMAGE, img_array_flag=True, multi_model_flag=True)
-            else:
-                shapes = self.intelligenceHelper.get_shapes_of_one(
-                    self.CURRENT_FRAME_IMAGE, img_array_flag=True)
+            try:
+                if os.path.exists(self.filename):
+                    self.labelList.clearSelection()
+                if self.multi_model_flag:
+                    shapes = self.intelligenceHelper.get_shapes_of_one(self.CURRENT_FRAME_IMAGE, img_array_flag=True, multi_model_flag=True)
+                else:
+                    shapes = self.intelligenceHelper.get_shapes_of_one(
+                        self.CURRENT_FRAME_IMAGE, img_array_flag=True)
+            except Exception as e:
+                helpers.OKmsgBox("Error", f"{e}", "critical")
+                return
 
         # for shape in shapes:
         #     print(shape["group_id"])
