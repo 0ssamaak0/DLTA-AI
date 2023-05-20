@@ -167,6 +167,7 @@ we want also to thank our friends who helped us with testing, feedback and sugge
 
 - [Youssef Ashraf](https://github.com/0xNine9)
 
+- [Chadi Ashraf](https://github.com/Chady00)
 
 
 # Resources 🌐
