@@ -86,10 +86,10 @@ class TrackingThread(QThread):
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]
-print(f'\n\n ROOT: {ROOT}\n\n')
+# print(f'\n\n ROOT: {ROOT}\n\n')
 # now get go up one more level to the root of the repo
 ROOT = ROOT.parents[0]
-print(f'\n\n ROOT: {ROOT}\n\n')
+# print(f'\n\n ROOT: {ROOT}\n\n')
 # WEIGHTS = ROOT / 'weights'
 
 # if str(ROOT) not in sys.path:
@@ -97,7 +97,7 @@ print(f'\n\n ROOT: {ROOT}\n\n')
 # if str(ROOT / 'trackers' / 'strongsort') not in sys.path:
 #     sys.path.append(str(ROOT / 'trackers' / 'strongsort'))  # add strong_sort ROOT to PATH
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
-print(f'\n\n ROOT: {ROOT}\n\n')
+# print(f'\n\n ROOT: {ROOT}\n\n')
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 # reid_weights = Path('osnet_x0_25_msmt17.pt')
 reid_weights = Path('osnet_x1_0_msmt17.pt')
@@ -2378,8 +2378,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.setDirty()
         else:
             if self.canvas.SAM_mode == "finished":
-                print(
-                    f'---------- SAM_mode is finished ----------- group_id: {group_id}, text: {text}')
+                # print(f'---------- SAM_mode is finished ----------- group_id: {group_id}, text: {text}')
                 self.current_sam_shape["label"] = text
                 self.current_sam_shape["group_id"] = -1
                 self.canvas.SAM_mode = ""
@@ -2950,14 +2949,12 @@ class MainWindow(QtWidgets.QMainWindow):
                 "Export Error")
             # print exception and error line to terminal
             print(e)
-            print(traceback.format_exc())
             msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
             msg.exec_()
         else:
             # display QMessageBox with ok button and label "Exporting COCO"
             msg = QtWidgets.QMessageBox()
             try:
-                print(pth)
                 msg.setIcon(QtWidgets.QMessageBox.Information)
                 msg.setText(f"Annotations exported successfully to {pth}")
                 msg.setWindowTitle("Export Success")
@@ -3448,7 +3445,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self.multi_model_flag = True
 
     def Segment_anything(self):
-        print('Segment anything')
     # check the visibility of the sam toolbar
         if self.sam_toolbar.isVisible():
             self.set_sam_toolbar_visibility(False)
@@ -3966,7 +3962,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # self.track_stop_button.setVisible(True)
         # self.track_stop_button.setEnabled(True)
         frame_shape = self.CURRENT_FRAME_IMAGE.shape
-        print(frame_shape)
+        # print(frame_shape)
 
         json_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}_tracking_results.json'
 
@@ -3978,14 +3974,14 @@ class MainWindow(QtWidgets.QMainWindow):
         tracks_to_follow = None
         if len(shapes) > 0:
             existing_annotation = True
-            print(f'FRAME{self.INDEX_OF_CURRENT_FRAME}', len(shapes))
+            # print(f'FRAME{self.INDEX_OF_CURRENT_FRAME}', len(shapes))
             tracks_to_follow = []
             for shape in shapes:
-                print(shape.label)
+                # print(shape.label)
                 if shape.group_id != None:
                     tracks_to_follow.append(int(shape.group_id))
 
-        print(f'track_ids_to_follow = {tracks_to_follow}')
+        # print(f'track_ids_to_follow = {tracks_to_follow}')
 
         self.TrackingMode = True
         bs = 1
@@ -4008,7 +4004,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
             if existing_annotation:
                 existing_annotation = False
-                print('\nloading existing annotation\n')
+                # print('\nloading existing annotation\n')
                 shapes = self.canvas.shapes
                 shapes = self.convert_qt_shapes_to_shapes(shapes)
             else:
@@ -4020,7 +4016,7 @@ class MainWindow(QtWidgets.QMainWindow):
             curr_frame = self.CURRENT_FRAME_IMAGE
             # current_objects_ids = []
             if len(shapes) == 0:
-                print("no detection in this frame")
+                # print("no detection in this frame")
                 self.update_gui_after_tracking(i)
                 continue
 
@@ -4078,7 +4074,7 @@ class MainWindow(QtWidgets.QMainWindow):
                         for item in self.labelList.selectedItems():
                             x = item.text()
                             i1, i2 = x.find('D'), x.find(':')
-                            print(x, x[i1 + 2:i2])
+                            # print(x, x[i1 + 2:i2])
                             tracks_to_follow.append(int(x[i1 + 2:i2]))
                     self.CURRENT_SHAPES_IN_IMG = [
                         shape_ for shape_ in shapes if shape_["group_id"] in tracks_to_follow]
@@ -4131,7 +4127,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.load_objects_to_json__orjson(listObj)
 
         # Notify the user that the tracking is finished
-        print(self._config["mute"])
         if not self._config["mute"]:
             if not self.isActiveWindow():
                 helpers.notification("Tracking Completed")
@@ -4240,7 +4235,7 @@ class MainWindow(QtWidgets.QMainWindow):
             pass
 
     def export_as_video_button_clicked(self, output_filename = None):
-        print (f"output filename is {output_filename}")
+        # print (f"output filename is {output_filename}")
         self.update_current_frame_annotation()
         json_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}_tracking_results.json'
         input_video_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}.mp4'
@@ -4263,7 +4258,7 @@ class MainWindow(QtWidgets.QMainWindow):
             #         visible=True, text=f'Wait a second.\nFrame {target_frame_idx} is being exported...')
             frame_idx = listObj[target_frame_idx]['frame_idx']
             frame_objects = listObj[target_frame_idx]['frame_data']
-            print(frame_idx)
+            # print(frame_idx)
             for object_ in frame_objects:
                 shape = {}
                 shape["label"] = object_['class_name']
@@ -4288,7 +4283,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         input_cap.release()
         output_cap.release()
-        print("done exporting video")
+        # print("done exporting video")
         self.waitWindow()
 
         self.INDEX_OF_CURRENT_FRAME = self.main_video_frames_slider.value()
@@ -4923,7 +4918,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # call the sam_models function to get all the models
         self.sam_model_comboBox.addItem("Select Model (SAM disable)")
         self.sam_model_comboBox.addItems(self.sam_models())
-        print("updated sam models")
+        # print("updated sam models")
 
     def sam_reset_button_clicked(self):
         self.sam_clear_annotation_button_clicked()
@@ -5073,7 +5068,6 @@ class MainWindow(QtWidgets.QMainWindow):
         if not same_image:
             self.sam_clear_annotation_button_clicked()
             self.sam_buttons_colors("add")
-        print("sam add point button clicked")
         self.canvas.setCursor(QtGui.QCursor(QtCore.Qt.CrossCursor))
         self.canvas.SAM_mode = "add point"
 
@@ -5089,7 +5083,6 @@ class MainWindow(QtWidgets.QMainWindow):
         if not same_image:
             self.sam_clear_annotation_button_clicked()
             self.sam_buttons_colors("remove")
-        print("sam remove point button clicked")
         self.canvas.setCursor(QtGui.QCursor(QtCore.Qt.CrossCursor))
         self.canvas.SAM_mode = "remove point"
 
@@ -5106,7 +5099,6 @@ class MainWindow(QtWidgets.QMainWindow):
         if not same_image:
             self.sam_clear_annotation_button_clicked()
             self.sam_buttons_colors("rect")
-        print("sam select rect button clicked")
         self.canvas.setCursor(QtGui.QCursor(QtCore.Qt.CrossCursor))
         self.canvas.SAM_mode = "select rect"
         self.canvas.h_w_of_image = [
@@ -5142,7 +5134,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.sam_buttons_colors("finish")
         # return the cursor to normal
         self.canvas.setCursor(QtGui.QCursor(QtCore.Qt.ArrowCursor))
-        print("sam finish annotation button clicked")
         self.canvas.SAM_coordinates = []
         self.canvas.SAM_rect = []
         self.canvas.SAM_rects = []
@@ -5166,8 +5157,8 @@ class MainWindow(QtWidgets.QMainWindow):
         # self.SAM_SHAPES_IN_IMAGE.append(self.current_sam_shape)
         self.CURRENT_SHAPES_IN_IMG = self.convert_qt_shapes_to_shapes(
             self.canvas.shapes)
-        for shape in self.CURRENT_SHAPES_IN_IMG:
-            print(shape["label"])
+        # for shape in self.CURRENT_SHAPES_IN_IMG:
+        #     print(shape["label"])
         self.CURRENT_SHAPES_IN_IMG = self.check_sam_instance_in_shapes(
             self.CURRENT_SHAPES_IN_IMG)
         try:
@@ -5190,7 +5181,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.canvas.SAM_mode = ""
 
         if self.current_annotation_mode == "video":
-            print("sam finish annotation button clicked")
             self.update_current_frame_annotation_button_clicked()
         else:
             self.canvas.shapes = convert_shapes_to_qt_shapes(
@@ -5214,7 +5204,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def run_sam_model(self):
 
-        print("run sam model")
+        # print("run sam model")
         if self.sam_predictor is None or self.sam_model_comboBox.currentText() == "Select Model (SAM disable)":
             print("please select a model")
             return
@@ -5268,7 +5258,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # self.loadLabels(self.SAM_SHAPES_IN_IMAGE, replace=False)
         # self.loadLabels([self.current_sam_shape], replace=False)
 
-        print("done running sam model")
+        # print("done running sam model")
 
     def load_objects_from_json__json(self):
         if self.global_listObj != []:

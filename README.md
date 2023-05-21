@@ -46,13 +46,10 @@ conda create --name DLTA-AI python=3.8 -y
 conda activate DLTA-AI
 
 conda install pytorch==1.13.1 torchvision==0.14.1 torchaudio==0.13.1 pytorch-cuda=11.7 -c pytorch -c nvidia
-conda install pytorch==1.13.1 torchvision==0.14.1 torchaudio==0.13.1 pytorch-cuda=11.7 -c pytorch -c nvidia
 ```
 ### 2. install requirements
 
 ```
-pip install -r requirements.txt
-mim install mmcv-full==1.7.0
 pip install -r requirements.txt
 mim install mmcv-full==1.7.0
 ```
