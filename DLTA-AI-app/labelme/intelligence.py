@@ -16,6 +16,7 @@ import numpy as np
 import urllib.request
 from .shape import Shape
 from labelme.utils.more_models import ModelExplorerDialog
+import yaml
 
 import torch
 from mmdet.apis import inference_detector, init_detector
@@ -26,6 +27,7 @@ from .utils import helpers
 
 coco_classes = ['person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', 'truck', 'boat', 'traffic light', 'fire hydrant', 'stop sign', 'parking meter', 'bench', 'bird', 'cat', 'dog', 'horse', 'sheep', 'cow', 'elephant', 'bear', 'zebra', 'giraffe', 'backpack', 'umbrella', 'handbag', 'tie', 'suitcase', 'frisbee', 'skis', 'snowboard', 'sports ball', 'kite', 'baseball bat', 'baseball glove', 'skateboard', 'surfboard',
                 'tennis racket', 'bottle', 'wine glass', 'cup', 'fork', 'knife', 'spoon', 'bowl', 'banana', 'apple', 'sandwich', 'orange', 'broccoli', 'carrot', 'hot dog', 'pizza', 'donut', 'cake', 'chair', 'couch', 'potted plant', 'bed', 'dining table', 'toilet', 'tv', 'laptop', 'mouse', 'remote', 'keyboard', 'cell phone', 'microwave', 'oven', 'toaster', 'sink', 'refrigerator', 'book', 'clock', 'vase', 'scissors', 'teddy bear', 'hair drier', 'toothbrush']
+
 # make a list of 12 unique colors as we will use them to draw bounding boxes of different classes in different colors
 # so the calor palette will be used to draw bounding boxes of different classes in different colors
 # the color pallette should have the famous 12 colors as red, green, blue, yellow, cyan, magenta, white, black, gray, brown, pink, and orange in bgr format
@@ -122,10 +124,21 @@ class Intelligence():
         self.parent = parent
         self.conf_threshold = 0.3
         self.iou_threshold = 0.5
-        self.selectedclasses = {i:class_ for i,class_ in enumerate(coco_classes)}
+        with open ("labelme/config/default_config.yaml") as f:
+            self.config = yaml.load(f, Loader=yaml.FullLoader)
+        self.default_classes = self.config["default_classes"]
+        try:
+            self.selectedclasses = {}
+            for class_ in self.default_classes:
+                if class_ in coco_classes:
+                    index = coco_classes.index(class_)
+                    self.selectedclasses[index] = class_
+        except:
+            self.selectedclasses = {i:class_ for i,class_ in enumerate(coco_classes)}
+            print("error in loading the default classes from the config file, so we will use all the coco classes")
+        print(f"selected classes : {self.selectedclasses}")
         self.selectedmodels = []
-        self.current_model_name, self.current_mm_model = self.make_mm_model(
-            "")
+        self.current_model_name, self.current_mm_model = self.make_mm_model("")
 
     @torch.no_grad()
     def make_mm_model(self, selected_model_name):
@@ -441,6 +454,12 @@ class Intelligence():
         dialog.setMinimumSize(QtCore.QSize(500, 500))
         verticalLayout = QtWidgets.QVBoxLayout(dialog)
         verticalLayout.setObjectName("verticalLayout")
+        horizontalLayout = QtWidgets.QHBoxLayout()
+        selectAllButton = QtWidgets.QPushButton("Select All", dialog)
+        deselectAllButton = QtWidgets.QPushButton("Deselect All", dialog)
+        horizontalLayout.addWidget(selectAllButton)
+        horizontalLayout.addWidget(deselectAllButton)
+        verticalLayout.addLayout(horizontalLayout)
         scrollArea = QtWidgets.QScrollArea(dialog)
         scrollArea.setWidgetResizable(True)
         scrollArea.setObjectName("scrollArea")
@@ -457,9 +476,22 @@ class Intelligence():
         buttonBox.setStandardButtons(
             QtWidgets.QDialogButtonBox.Cancel | QtWidgets.QDialogButtonBox.Ok)
         buttonBox.setObjectName("buttonBox")
-        verticalLayout.addWidget(buttonBox)
-        buttonBox.accepted.connect(dialog.accept)
+        buttonBox.button(QtWidgets.QDialogButtonBox.Ok).setText("Select Classes")
+        defaultButton = QtWidgets.QPushButton("Set as Default", dialog)
+        buttonBox.addButton(defaultButton, QtWidgets.QDialogButtonBox.ActionRole)
+
+        # Add the buttons to a QHBoxLayout
+        buttonLayout = QtWidgets.QHBoxLayout()
+        buttonLayout.addWidget(buttonBox.button(QtWidgets.QDialogButtonBox.Ok))
+        buttonLayout.addWidget(defaultButton)
+        buttonLayout.addWidget(buttonBox.button(QtWidgets.QDialogButtonBox.Cancel))
+
+        # Add the QHBoxLayout to the QVBoxLayout
+        verticalLayout.addLayout(buttonLayout)
+
+        buttonBox.accepted.connect(lambda: self.saveClasses(dialog))
         buttonBox.rejected.connect(dialog.reject)
+        defaultButton.clicked.connect(lambda: self.saveClasses(dialog, True))
         self.classes = []
         for i in range(len(coco_classes)):
             self.classes.append(QtWidgets.QCheckBox(coco_classes[i], dialog))
@@ -471,6 +503,8 @@ class Intelligence():
             if value != None:
                 indx = coco_classes.index(value)
                 self.classes[indx].setChecked(True)
+        selectAllButton.clicked.connect(lambda: self.selectAll())
+        deselectAllButton.clicked.connect(lambda: self.deselectAll())
         dialog.show()
         dialog.exec_()
         self.selectedclasses.clear()
@@ -481,6 +515,30 @@ class Intelligence():
         # print(self.selectedclasses)
         # self.updatlabellist()
         return self.selectedclasses
+
+    def saveClasses(self, dialog, is_default=False):
+        self.selectedclasses.clear()
+        for i in range(len(self.classes)):
+            if self.classes[i].isChecked():
+                indx = coco_classes.index(self.classes[i].text())
+                self.selectedclasses[indx] = self.classes[i].text()
+        if is_default:
+            with open("labelme/config/default_config.yaml", 'r') as f:
+                config = yaml.load(f, Loader=yaml.FullLoader)
+            config['default_classes'] = list(self.selectedclasses.values())
+            with open("labelme/config/default_config.yaml", 'w') as f:
+                yaml.dump(config, f)
+        dialog.accept()
+
+
+
+    def selectAll(self):
+        for checkbox in self.classes:
+            checkbox.setChecked(True)
+
+    def deselectAll(self):
+        for checkbox in self.classes:
+            checkbox.setChecked(False)
 
     def mergeSegModels(self):
         # add a resizable and scrollable dialog that contains all the models and allow the user to select among them using checkboxes

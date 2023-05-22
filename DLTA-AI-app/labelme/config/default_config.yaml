@@ -1,145 +1,231 @@
 auto_save: false
+canvas:
+  double_click: close
+  num_backups: 10
+default_classes:
+- person
+- bicycle
+- car
+- motorcycle
+- airplane
+- bus
+- train
+- truck
+- boat
+- traffic light
+- fire hydrant
+- stop sign
+- parking meter
+- bench
+- bird
+- cat
+- dog
+- horse
+- sheep
+- cow
+- elephant
+- bear
+- zebra
+- giraffe
+- backpack
+- umbrella
+- handbag
+- tie
+- suitcase
+- frisbee
+- skis
+- snowboard
+- sports ball
+- kite
+- baseball bat
+- baseball glove
+- skateboard
+- surfboard
+- tennis racket
+- bottle
+- wine glass
+- cup
+- fork
+- knife
+- spoon
+- bowl
+- banana
+- apple
+- sandwich
+- orange
+- broccoli
+- carrot
+- hot dog
+- pizza
+- donut
+- cake
+- chair
+- couch
+- potted plant
+- bed
+- dining table
+- toilet
+- tv
+- laptop
+- mouse
+- remote
+- keyboard
+- cell phone
+- microwave
+- oven
+- toaster
+- sink
+- refrigerator
+- book
+- clock
+- vase
+- scissors
+- teddy bear
+- hair drier
+- toothbrush
+default_shape_color:
+- 0
+- 255
+- 0
 display_label_popup: true
-store_data: true
-keep_prev: false
-keep_prev_scale: false
-keep_prev_brightness: false
-keep_prev_contrast: false
-logger_level: info
-
-flags: null
-label_flags: null
-labels: null
-file_search: null
-sort_labels: true
-validate_label: null
-
-default_shape_color: [0, 255, 0]
-shape_color: auto  # null, 'auto', 'manual'
-shift_auto_shape_color: 0
-label_colors: null
-
-shape:
-  # drawing
-  line_color: [0, 255, 0, 128]
-  fill_color: [0, 255, 0, 0]  # transparent
-  vertex_fill_color: [0, 255, 0, 255]
-  # selecting / hovering
-  select_line_color: [255, 255, 255, 255]
-  select_fill_color: [0, 255, 0, 155]
-  hvertex_fill_color: [255, 255, 255, 255]
-
-# main
-flag_dock:
-  show: true
-  closable: true
-  movable: true
-  floatable: true
-label_dock:
-  show: true
-  closable: true
-  movable: true
-  floatable: true
-shape_dock:
-  show: true
-  closable: true
-  movable: true
-  floatable: true
+epsilon: 10.0
 file_dock:
-  show: true
   closable: true
-  movable: true
   floatable: true
-vid_dock:
+  movable: true
   show: true
-  closable: true
-  movable: true
-  floatable: true
-
-
-# label_dialog
-show_label_text_field: true
-label_completion: startswith
+file_search: null
 fit_to_content:
   column: true
   row: false
-
-# canvas
-show_cross_line: true
-epsilon: 10.0
-canvas:
-  # None: do nothing
-  # close: close polygon
-  double_click: close
-  # The max number of edits we can undo
-  num_backups: 10
-
+flag_dock:
+  closable: true
+  floatable: true
+  movable: true
+  show: true
+flags: null
+keep_prev: false
+keep_prev_brightness: false
+keep_prev_contrast: false
+keep_prev_scale: false
+label_colors: null
+label_completion: startswith
+label_dock:
+  closable: true
+  floatable: true
+  movable: true
+  show: true
+label_flags: null
+labels: null
+logger_level: info
+mute: false
+shape:
+  fill_color:
+  - 0
+  - 255
+  - 0
+  - 0
+  hvertex_fill_color:
+  - 255
+  - 255
+  - 255
+  - 255
+  line_color:
+  - 0
+  - 255
+  - 0
+  - 128
+  select_fill_color:
+  - 0
+  - 255
+  - 0
+  - 155
+  select_line_color:
+  - 255
+  - 255
+  - 255
+  - 255
+  vertex_fill_color:
+  - 0
+  - 255
+  - 0
+  - 255
+shape_color: auto
+shape_dock:
+  closable: true
+  floatable: true
+  movable: true
+  show: true
+shift_auto_shape_color: 0
 shortcuts:
+  SAM_RESET: X
+  SAM_add_point: A
+  SAM_clear: C
+  SAM_enhance: E
+  SAM_finish_annotation: F
+  SAM_remove_point: R
+  SAM_select_rect: B
+  add_point_to_edge: Ctrl+Shift+P
+  clear_annotations: shift+D
   close: Ctrl+W
+  copy: Ctrl+C
+  create_circle: null
+  create_line: null
+  create_linestrip: null
+  create_point: null
+  create_polygon: Ctrl+N
+  create_rectangle: null
+  delete_file: Ctrl+Delete
+  delete_polygon: Delete
+  duplicate_polygon: Ctrl+D
+  edit_label: Ctrl+L
+  edit_polygon: Ctrl+J
+  enhance: shift+E
+  export: Ctrl+E
+  export_video: shift+V
+  fit_width: Ctrl+Shift+F
+  fit_window: Ctrl+F
+  ignore_updates: shift+Z
+  interpolate: shift+I
+  mark_as_key: shift+M
+  next_1: Right
+  next_x: Up
   open: Ctrl+O
   open_dir: Ctrl+U
+  open_next: null
+  open_prev: null
+  open_video: Ctrl+M
+  paste: Ctrl+V
+  play: Space
+  prev_1: Left
+  prev_x: Down
   quit: Ctrl+Q
   save: Ctrl+S
   save_as: Ctrl+Shift+S
   save_to: null
-  delete_file: Ctrl+Delete
-  export: Ctrl+E
-  open_video: Ctrl+M
-
-  open_next: null
-  open_prev: null
-
-  zoom_in: [Ctrl++, Ctrl+=]
-  zoom_out: Ctrl+-
-  zoom_to_original: Ctrl+0
-  fit_window: Ctrl+F
-  fit_width: Ctrl+Shift+F
-
-  create_polygon: Ctrl+N
-  create_rectangle: null
-  create_circle: null
-  create_line: null
-  create_point: null
-  create_linestrip: null
-  edit_polygon: Ctrl+J
-  delete_polygon: Delete
-  duplicate_polygon: Ctrl+D
-  undo: Ctrl+Z
-  undo_last_point: [Ctrl+Z, Backspace]
-  add_point_to_edge: Ctrl+Shift+P
-  edit_label: Ctrl+L
-  toggle_keep_prev_mode: Ctrl+P
-
-  enhance : shift+E
-  interpolate: shift+I
-  mark_as_key: shift+M
   scale: shift+S
-  ignore_updates: shift+Z
-  copy: Ctrl+C
-  paste: Ctrl+V
-
+  stop: Escape
+  toggle_keep_prev_mode: Ctrl+P
   track: shift+T
   track_assigned: shift+A
   track_full: shift+F
-  stop: Escape
+  undo: Ctrl+Z
+  undo_last_point:
+  - Ctrl+Z
+  - Backspace
   update_frame: shift+U
-  clear_annotations: shift+D
-  export_video: shift+V
-
-  prev_x: Down
-  prev_1: Left
-  next_x: Up
-  next_1: Right
-  play: Space
-
-  SAM_finish_annotation: F          # Return also works but implemented in canvas.py 
-  SAM_add_point: A
-  SAM_remove_point: R
-  SAM_select_rect: B
-  SAM_clear: C
-  SAM_RESET: X                      # Escape also works but implemented inside stop (cause of duplicate key)
-  SAM_enhance : E
-
-
-# user settings
-mute: false
+  zoom_in:
+  - Ctrl++
+  - Ctrl+=
+  zoom_out: Ctrl+-
+  zoom_to_original: Ctrl+0
+show_cross_line: true
+show_label_text_field: true
+sort_labels: true
+store_data: true
+validate_label: null
+vid_dock:
+  closable: true
+  floatable: true
+  movable: true
+  show: true
