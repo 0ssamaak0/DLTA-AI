@@ -1641,59 +1641,60 @@ class MainWindow(QtWidgets.QMainWindow):
             self.main_video_frames_slider_changed()
 
     def interpolateMENU(self, item=None):
-
-        if len(self.canvas.selectedShapes) == 0:
-            mb = QtWidgets.QMessageBox
-            msg = self.tr("Interpolate all IDs?\n")
-            answer = mb.warning(self, self.tr(
-                "Attention"), msg, mb.Yes | mb.No)
-            if answer != mb.Yes:
-                return
-            else:
-                self.update_current_frame_annotation()
-                keys = list(self.id_frames_rec.keys())
-                idsORG = [int(keys[i][3:]) for i in range(len(keys))]
-        else:
-            self.update_current_frame_annotation()
-            idsORG = [shape.group_id for shape in self.canvas.selectedShapes]
-            id = self.canvas.selectedShapes[0].group_id
-
-        result, self.config = helpers.interpolationOptions_GUI(self.config)
-
-        if result != QtWidgets.QDialog.Accepted:
-            return
-
-        only_edited = True if self.config[
-            'interpolationDefault'] == 'interpolate all frames between your KEY frames' else False
-        with_sam = True if self.config[
-            'interpolationDefault'] == 'interpolate ALL frames with SAM (more precision, more time)' else False
-
-        if only_edited:
-            allAccepted, allRejected, ids = helpers.checkKeyFrames(idsORG, self.key_frames)
-            if not allAccepted:
-                if allRejected:
-                    helpers.OKmsgBox("Key Frames Error",
-                                     f"All of the selected IDs have no KEY frames.\n    ie. less than 2 key frames\n The interpolation is NOT performed.")
+        try:
+            if len(self.canvas.selectedShapes) == 0:
+                mb = QtWidgets.QMessageBox
+                msg = self.tr("Interpolate all IDs?\n")
+                answer = mb.warning(self, self.tr(
+                    "Attention"), msg, mb.Yes | mb.No)
+                if answer != mb.Yes:
                     return
                 else:
-                    resutl = helpers.OKmsgBox("Key Frames Error", 
-                                     f"Some of the selected IDs have no KEY frames.\n    ie. less than 2 key frames\n The interpolation is performed only for the IDs with KEY frames.\nIDs: {ids}.")
-                    if resutl != QtWidgets.QMessageBox.Ok:
-                        return
+                    self.update_current_frame_annotation()
+                    keys = list(self.id_frames_rec.keys())
+                    idsORG = [int(keys[i][3:]) for i in range(len(keys))]
+            else:
+                self.update_current_frame_annotation()
+                idsORG = [shape.group_id for shape in self.canvas.selectedShapes]
+                id = self.canvas.selectedShapes[0].group_id
 
-        self.interrupted = False
-        if with_sam:
-            self.interpolate_with_sam(idsORG)
-        else:
-            for id in ids:
-                QtWidgets.QApplication.processEvents()
-                if self.interrupted:
-                    self.interrupted = False
-                    break
-                self.interpolate(id=id,
-                                 only_edited=only_edited,
-                                 with_sam=False)
-        self.waitWindow()
+            result, self.config = helpers.interpolationOptions_GUI(self.config)
+
+            if result != QtWidgets.QDialog.Accepted:
+                return
+
+            only_edited = True if self.config[
+                'interpolationDefault'] == 'interpolate all frames between your KEY frames' else False
+            with_sam = True if self.config[
+                'interpolationDefault'] == 'interpolate ALL frames with SAM (more precision, more time)' else False
+
+            if only_edited:
+                allAccepted, allRejected, ids = helpers.checkKeyFrames(idsORG, self.key_frames)
+                if not allAccepted:
+                    if allRejected:
+                        helpers.OKmsgBox("Key Frames Error",
+                                        f"All of the selected IDs have no KEY frames.\n    ie. less than 2 key frames\n The interpolation is NOT performed.")
+                        return
+                    else:
+                        resutl = helpers.OKmsgBox("Key Frames Error", 
+                                        f"Some of the selected IDs have no KEY frames.\n    ie. less than 2 key frames\n The interpolation is performed only for the IDs with KEY frames.\nIDs: {ids}.")
+                        if resutl != QtWidgets.QMessageBox.Ok:
+                            return
+
+            self.interrupted = False
+            if with_sam:
+                self.interpolate_with_sam(idsORG)
+            else:
+                for id in ids:
+                    QtWidgets.QApplication.processEvents()
+                    if self.interrupted:
+                        self.interrupted = False
+                        break
+                    self.interpolate(id=id,
+                                    only_edited=only_edited)
+            self.waitWindow()
+        except Exception as e:
+            helpers.OKmsgBox("Error", f"Error: {e}", "critical")
 
     def mark_as_key(self):
         
@@ -1702,18 +1703,20 @@ class MainWindow(QtWidgets.QMainWindow):
             This function is called when the user presses the "Mark as Key" button.
             It marks the selected shape as a key frame.
         """
-        
-        self.update_current_frame_annotation()
-        id = self.canvas.selectedShapes[0].group_id
         try:
-            self.key_frames['id_' +
-                            str(id)].add(self.INDEX_OF_CURRENT_FRAME)
-        except:
-            self.key_frames['id_' +
-                            str(id)] = set()
-            self.key_frames['id_' +
-                            str(id)].add(self.INDEX_OF_CURRENT_FRAME)
-        self.main_video_frames_slider_changed()
+            self.update_current_frame_annotation()
+            id = self.canvas.selectedShapes[0].group_id
+            try:
+                self.key_frames['id_' +
+                                str(id)].add(self.INDEX_OF_CURRENT_FRAME)
+            except:
+                self.key_frames['id_' +
+                                str(id)] = set()
+                self.key_frames['id_' +
+                                str(id)].add(self.INDEX_OF_CURRENT_FRAME)
+            self.main_video_frames_slider_changed()
+        except Exception as e:
+            helpers.OKmsgBox("Error", f"Error: {e}", "critical")
 
     def rec_frame_for_id(self, id, frame, type_='add'):
         
@@ -2730,8 +2733,7 @@ class MainWindow(QtWidgets.QMainWindow):
         Summary:
             Open model explorer dialog to select or download models
         """
-        
-        model_explorer_dialog = utils.ModelExplorerDialog()
+        model_explorer_dialog = utils.ModelExplorerDialog(self, self._config["mute"], helpers.notification)
         # make it fit its contents
         model_explorer_dialog.adjustSize()
         model_explorer_dialog.resize(

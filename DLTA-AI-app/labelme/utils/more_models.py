@@ -13,9 +13,12 @@ with open(cwd + '/models_menu/models_json.json') as f:
 
 
 class ModelExplorerDialog(QDialog):
-    def __init__(self, merge=False):
+    def __init__(self, main_window = None, mute = None, notification = None, merge=False):
         # print current working directory
         super().__init__()
+        self.main_window = main_window
+        self.mute = mute
+        self.notification = notification
         if not merge:
             self.setWindowTitle("Model Explorer")
         else:
@@ -274,6 +277,14 @@ class ModelExplorerDialog(QDialog):
         self.check_availability()
         self.populate_table()
         print("download finished")
+
+        # notification
+        try:
+            if not self.mute:
+                if not self.main_window.isActiveWindow():
+                    self.notification(f"{model_name} has been Downloaded Successfully")
+        except:
+            pass
 
     def cancel_download(self):
         self.download_canceled = True
