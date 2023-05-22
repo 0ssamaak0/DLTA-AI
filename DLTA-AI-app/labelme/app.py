@@ -3116,35 +3116,38 @@ class MainWindow(QtWidgets.QMainWindow):
                     action.setEnabled(False)
 
     def deleteSelectedShape(self):
-        yes, no = QtWidgets.QMessageBox.Yes, QtWidgets.QMessageBox.No
-        msg = self.tr(
-            "You are about to permanently delete {} polygons, "
-            "proceed anyway?"
-        ).format(len(self.canvas.selectedShapes))
-        if yes == QtWidgets.QMessageBox.warning(
-            self, self.tr("Attention"), msg, yes | no, yes
-        ):
-            deleted_shapes = self.canvas.deleteSelected()
-            deleted_ids = [shape.group_id for shape in deleted_shapes]
-            self.remLabels(deleted_shapes)
-            self.setDirty()
-            if self.noShapes():
-                for action in self.actions.onShapesPresent:
-                    action.setEnabled(False)
-            if self.current_annotation_mode == 'img':
-                return
+        try:
+            yes, no = QtWidgets.QMessageBox.Yes, QtWidgets.QMessageBox.No
+            msg = self.tr(
+                "You are about to permanently delete {} polygons, "
+                "proceed anyway?"
+            ).format(len(self.canvas.selectedShapes))
+            if yes == QtWidgets.QMessageBox.warning(
+                self, self.tr("Attention"), msg, yes | no, yes
+            ):
+                deleted_shapes = self.canvas.deleteSelected()
+                deleted_ids = [shape.group_id for shape in deleted_shapes]
+                self.remLabels(deleted_shapes)
+                self.setDirty()
+                if self.noShapes():
+                    for action in self.actions.onShapesPresent:
+                        action.setEnabled(False)
+                if self.current_annotation_mode == 'img' or self.current_annotation_mode == 'dir':
+                    return
 
-            # if video mode
-            result, self.config, fromFrameVAL, toFrameVAL = helpers.deleteSelectedShape_GUI(
-                self.TOTAL_VIDEO_FRAMES,
-                self.INDEX_OF_CURRENT_FRAME,
-                self.config)
-            if result == QtWidgets.QDialog.Accepted:
-                for deleted_id in deleted_ids:
-                    self.delete_ids_from_all_frames(
-                        [deleted_id], from_frame=fromFrameVAL, to_frame=toFrameVAL)
+                # if video mode
+                result, self.config, fromFrameVAL, toFrameVAL = helpers.deleteSelectedShape_GUI(
+                    self.TOTAL_VIDEO_FRAMES,
+                    self.INDEX_OF_CURRENT_FRAME,
+                    self.config)
+                if result == QtWidgets.QDialog.Accepted:
+                    for deleted_id in deleted_ids:
+                        self.delete_ids_from_all_frames(
+                            [deleted_id], from_frame=fromFrameVAL, to_frame=toFrameVAL)
 
-            self.main_video_frames_slider_changed()
+                self.main_video_frames_slider_changed()
+        except Exception as e:
+            helpers.OKmsgBox(f"Error", "Error: {e}", "critical")
 
     def delete_ids_from_all_frames(self, deleted_ids, from_frame, to_frame):
         
@@ -3409,17 +3412,13 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def annotate_batch(self):
         images = []
+        notif = [self._config["mute"], self, helpers.notification]
         for filename in self.imageList:
             images.append(filename)
         if self.multi_model_flag:
-            self.intelligenceHelper.get_shapes_of_batch(images, multi_model_flag=True)
+            self.intelligenceHelper.get_shapes_of_batch(images, multi_model_flag=True, notif = notif)
         else:
-            self.intelligenceHelper.get_shapes_of_batch(images)
-        
-        # Notify the user that the Annotation is finished
-        if not self._config["mute"]:
-            if not self.isActiveWindow():
-                helpers.notification("Batch Annotation Completed")
+            self.intelligenceHelper.get_shapes_of_batch(images, notif = notif)
 
     def setConfThreshold(self):
         if self.intelligenceHelper.conf_threshold:

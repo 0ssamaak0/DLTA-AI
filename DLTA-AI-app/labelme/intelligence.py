@@ -56,6 +56,7 @@ class IntelligenceWorker(QThread):
         self.source = source
         self.images = images
         self.multi_model_flag = multi_model_flag
+        self.notif = []
 
     def run(self):
         index = 0
@@ -121,8 +122,7 @@ class Intelligence():
         self.parent = parent
         self.conf_threshold = 0.3
         self.iou_threshold = 0.5
-        self.selectedclasses = {0: "person", 2: "car",
-                                3: "motorcycle", 5: "bus", 7: "truck"}
+        self.selectedclasses = {i:class_ for i,class_ in enumerate(coco_classes)}
         self.selectedmodels = []
         self.current_model_name, self.current_mm_model = self.make_mm_model(
             "")
@@ -404,11 +404,12 @@ class Intelligence():
     #         mainwindow = self.parent
     #         mainwindow.addLabel(shape)
 
-    def get_shapes_of_batch(self, images, multi_model_flag=False):
+    def get_shapes_of_batch(self, images, multi_model_flag=False, notif = []):
         self.pd = self.startOperationDialog()
         self.thread = IntelligenceWorker(self.parent, images, self, multi_model_flag)
         self.thread.sinOut.connect(self.updateDialog)
         self.thread.start()
+        self.notif = notif
 
     # get the thresold as input from the user
 
@@ -541,6 +542,7 @@ class Intelligence():
         if completed == total:
             self.onProgressDialogCanceledOrCompleted()
 
+
     def startOperationDialog(self):
         self.operationCanceled = False
         pd1 = QtWidgets.QProgressDialog(
@@ -555,11 +557,17 @@ class Intelligence():
         return pd1
 
     def onProgressDialogCanceledOrCompleted(self):
+        try:
+            if not self.notif[0] and not self.notif[1].isActiveWindow():
+                self.notif[2]("Batch Annotation Completed")
+        except:
+            print("Error in batch mode notification")
         self.operationCanceled = True
         if self.parent.lastOpenDir and osp.exists(self.parent.lastOpenDir):
             self.parent.importDirImages(self.parent.lastOpenDir)
         else:
             self.parent.loadFile(self.parent.filename)
+
 
     def flattener(self, list_2d):
         points = [(p.x(), p.y()) for p in list_2d]
