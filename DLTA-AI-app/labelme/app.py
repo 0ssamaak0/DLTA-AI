@@ -2755,7 +2755,7 @@ class MainWindow(QtWidgets.QMainWindow):
         model_explorer_dialog = utils.ModelExplorerDialog(self, self._config["mute"], helpers.notification)
         # make it fit its contents
         model_explorer_dialog.adjustSize()
-        model_explorer_dialog.setFixedWidth(model_explorer_dialog.table.width() * 1.905)
+        model_explorer_dialog.setMinimumWidth(model_explorer_dialog.table.width() * 1.905)
         model_explorer_dialog.setMinimumHeight(model_explorer_dialog.table.rowHeight(0) * 10)
         model_explorer_dialog.exec_()
         self.update_saved_models_json()
