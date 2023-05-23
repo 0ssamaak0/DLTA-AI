@@ -254,4 +254,4 @@ def feedback():
     msgBox.exec_()
 
 def version():
-    OKmsgBox("Version", "DLTA-AI Version 1.0.0 Pre-Release")
+    OKmsgBox("Version", "DLTA-AI Version 1.0")
