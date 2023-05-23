@@ -140,6 +140,11 @@ def shortcut_selector():
     with open("labelme/config/default_config.yaml", "r") as f:
         config = yaml.load(f, Loader=yaml.FullLoader)
         shortcuts = config.get("shortcuts", {})
+    shortcuts_names_encode = {name: name.lower().capitalize().replace("_", " ").replace("Sam", "SAM").replace("sam", "SAM") for name in shortcuts.keys()}
+    shortcuts_names_decode = {value: key for key, value in shortcuts_names_encode.items()}
+
+    # change shortcuts keys using shortcut_names_encode
+    shortcuts = {shortcuts_names_encode[key]: value for key, value in shortcuts.items()}
 
     shortcut_table = QtWidgets.QTableWidget()
     shortcut_table.setColumnCount(2)
@@ -170,7 +175,9 @@ def shortcut_selector():
         layout.addWidget(key_edit)
         ok_button = QtWidgets.QPushButton("OK")
         ok_button.clicked.connect(dialog.accept)
+        null_hint_label = QtWidgets.QLabel("to remove shortcut, press 'Ctrl' only then click 'OK") 
         layout.addWidget(ok_button)
+        layout.addWidget(null_hint_label)
         dialog.setLayout(layout)
         if dialog.exec_():
             key = key_edit.keySequence().toString(QtGui.QKeySequence.NativeText)
@@ -178,8 +185,9 @@ def shortcut_selector():
                 conflicting_shortcut = list(shortcuts.keys())[list(shortcuts.values()).index(key)]
                 QtWidgets.QMessageBox.warning(None, "Error", f"{key} is already assigned to {conflicting_shortcut}.")
             else:
+                if key == "":
+                    key = None
                 shortcuts[name] = key
-                name_item.setText(name)
                 shortcut_table.item(row, 1).setText(key)
 
     shortcut_table.itemClicked.connect(on_shortcut_table_clicked)
@@ -194,17 +202,15 @@ def shortcut_selector():
     note_label = QtWidgets.QLabel("Tooltips will show the new shortcuts after restarting the app")
     layout.addWidget(note_label)
     dialog.setLayout(layout)
-    dialog.setFixedWidth(shortcut_table.sizeHintForColumn(0) + shortcut_table.sizeHintForColumn(1) + 40)
+    dialog.setFixedWidth(shortcut_table.sizeHintForColumn(0) + shortcut_table.sizeHintForColumn(1) + 50)
     dialog.setMinimumHeight(shortcut_table.rowHeight(0) * 10 + 50)
     
-
+    
     # Set the size policy to allow vertical resizing
     dialog.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Expanding)
-
-    
     
     dialog.exec_()
-
+    shortcuts = {shortcuts_names_decode[key]: value for key, value in shortcuts.items()}
     with open("labelme/config/default_config.yaml", "w") as f:
         config["shortcuts"] = shortcuts
         yaml.dump(config, f)
