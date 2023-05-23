@@ -1095,6 +1095,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.menus.help,
             (
                 runtime_data,
+                None,
                 preferences,
                 shortcut_selector,
                 None,
