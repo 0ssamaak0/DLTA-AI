@@ -25,20 +25,19 @@ Auto Annotation Tool for Computer Vision Tasks
 
 <br>
 
-![gif_main](assets/gif_main2.gif)
+![gif_main](assets/gif_main.gif)
 
 <br>
 
 <!-- make p with larger font size -->
-[Installation](#installation-%EF%B8%8F)  🛠️ | [Segment Anything](#Segment-Anything-) 🪄 | [Input Modes](#input-modes-%EF%B8%8F) 🎞️ | [Model Selection](#model-selection-) 🤖 | [Segmentation](#segmentation-) 🎨 | [Object Tracking](#object-tracking-) 🚗 | [Export](#export-) 📤 | [Other Features](#other-features-) 🌟| [Contributing](#contributing-) 🤝| [Acknowledgements](#acknowledgements-)🙏| [Resources](#resources-) 🌐 | [License](#license-) 📜
+[Installation](#installation-%EF%B8%8F)  🛠️ | [Segment Anything](#Segment-Anything-) 🪄 | [Model Selection](#model-selection-) 🤖 | [Segmentation](#segmentation-) 🎨 | [Object Tracking](#object-tracking-) 🚗 | [Export](#export-) 📤 | [Other Features](#other-features-) 🌟| [Contributing](#contributing-) 🤝| [Acknowledgements](#acknowledgements-)🙏| [Resources](#resources-) 🌐 | [License](#license-) 📜
 
 </div>
 
 
 # Installation 🛠️
-## Full Insallation
 after downloading the lastest [release](https://github.com/0ssamaak0/DLTA-AI/releases) or cloning the repoistory, do the following steps
-### 1. Install [Pytorch](https://pytorch.org/)
+## 1. Install [Pytorch](https://pytorch.org/)
 preferably using anaconda
 
 ```
@@ -47,24 +46,24 @@ conda activate DLTA-AI
 
 conda install pytorch==1.13.1 torchvision==0.14.1 torchaudio==0.13.1 pytorch-cuda=11.7 -c pytorch -c nvidia
 ```
-### 2. install requirements
+## 2. install requirements
 
 ```
 pip install -r requirements.txt
 mim install mmcv-full==1.7.0
 ```
-### 3. Running
+###3. Running
 Run the tool from `DLTA-AI-app` directory
 ```
 cd labelme-master
 python __main__.py
 ```
-### Solutions to possible problems
+## Solutions to possible problems
 <details>
 
 <summary>click to expand </summary>
 
-#### 1. (linux devices 🐧) 
+### 1. (linux devices 🐧) 
 some linux machines may have this problem 
 ```
 Could not load the Qt platform plugin "xcb" in "/home/<username>/miniconda3/envs/test/lib/python3.8/site-packages/cv2/qt/plugins" even though it was found.
@@ -76,7 +75,7 @@ it can be solved simply be installing opencv-headless
 ```
 pip3 install opencv-python-headless
 ```
-#### 2. (windows devices 🪟)
+### 2. (windows devices 🪟)
 some windows machines may have this problem when installing **mmdet**
 ```
 Building wheel for pycocotools (setup.py) ... error
@@ -91,10 +90,6 @@ or just use Visual Studio installer to Install `MSVC v143 - VS 2022 C++ x64/x86 
 
 </details>
 
-## 2. Executable (CPU only)
-you can download the executable from the [releases](https://github.com/0ssamaak0/DLTA-AI/releases) according to your OS and run it directly
-
-however, Executables doesn't support GPU
 # Segment Anything 🪄 (NEW)
 DLTA-AI takes the Annotation to the next level by integrating lastest Meta models [Segment Anything (SAM)](https://github.com/facebookresearch/segment-anything) to support zero-shot segmentation for any class
 
@@ -102,34 +97,29 @@ DLTA-AI takes the Annotation to the next level by integrating lastest Meta model
 
 **SAM** doesn't only work for Segmentation tasks, it's build in the video mode to support **Object Tracking** as well for any class
 
+<div align = "center">
+
 ![Segment Anything](assets/SAM.gif)
-
-# Input Modes 🎞️
-
-DLTA-AI provides 3 Input modes:
-
-- **Image** : for image annotation
-- **Directory** : for annotating images in a directory
-- **Video** : for annotating videos
-
-each mode has its own settings and options, and the user can switch between them easily
-
-![Input Modes](assets/input_modes.png)
-
+</div>
 
 # Model Selection 🤖
 For model selection, DLTA-AI provides the **Model Explorer** to utilize the power of the numerous models in [mmdetection](https://github.com/open-mmlab/mmdetection/tree/2.x) and [ultralytics YOLOv8](https://github.com/ultralytics/ultralytics) as well as the models of [SAM](https://github.com/facebookresearch/segment-anything)
 
 the to give the user the ability to compare, download and select from the library of models
+<div align = "center">
 
-![Model Explorer](assets/model_explorer.gif)
+![Model Explorer](assets/model_explorer.png)
+</div>
 
 
 
 # Segmentation 🎨
 Using the models from the **Model Explorer**, DLTA-AI provides a seamless expirence to annotate single image or batch of images, with options to select classes, modify threshold, and full control to edit the segmentation results.
 
-![Segmentation](assets/segmentation.gif)
+<div align = "center">
+
+![Segmentation](assets/segmentation.png)
+</div>
 and as mentioned before, **SAM** is fully integrated in DLTA-AI to provide zero-shot segmentation for any class, and to improve the quality of segmentation
 
 # Object Tracking 🚗
@@ -139,16 +129,27 @@ To impr DLTA-AI have options for video navigation, tracking settings and differe
 
 Beside this, DLTA-AI provides a completely new way to modify the tracking results, including edit and delete propagation across frames
 
+<div align = "center">
+
 ![Object Tracking](assets/tracking.gif)
+
+</div>
 
 Beside automatic tracking models, DLTA-AI provides different methods of interpolation and filling gaps between frames to fix occlusions and unpredicted behaviors in a semi-automatic way
 
-![Interpolation](assets/interpolation.gif)
+<div align = "center">
+
+![Interpolation](assets/interpolation.png)
+</div>
 
 # Export 📤
 For Instance Segmentation, DLTA-AI provides to option to export the segmentation to standard COCO format, and the results of tracking to MOT format, and a video file for the tracking results with desired visualization options e.g., show id, bbox, class name, etc.
 
+<div align = "center">
+
 ![Export](assets/Export.png)
+
+</div>
 
 DLTA-AI provides also the ability to add user-defined or custom export formats that can be used for any purpose, once the user defines his own format, it will be available in the export menu.
 
