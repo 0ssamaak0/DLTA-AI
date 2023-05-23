@@ -155,7 +155,7 @@ DLTA-AI provides also the ability to add user-defined or custom export formats t
 # Other Features 🌟
 
 - Threshold Selection (Confidence and IoU)
-- Select Classes (from 80 COCO classes)
+- Select Classes (from 80 COCO classes) with option to save default classes
 - Track assigned objects only
 - Merging models (Run both models and merge the results)
 - Show Runtime Type (CPU/GPU)
@@ -167,6 +167,7 @@ DLTA-AI provides also the ability to add user-defined or custom export formats t
 - using orjson for faster json serialization
 - additional script (external) to evaluate the results of segmentation (COCO)
 - additional script (external) to extract frames from a video file for future use
+- User shortcuts and preferences settings
 
 
 # Contributing 🤝
