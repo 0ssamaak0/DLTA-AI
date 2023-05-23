@@ -1420,7 +1420,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.actions.editMode.setEnabled(not edit)
 
     def turnOFF_SAM(self):
-        if self.sam_model_comboBox.currentText() != "Select Model (SAM disabled)":
+        if self.sam_model_comboBox.currentText() != "Select Model (SAM disabledd)":
             self.sam_clear_annotation_button_clicked()
         self.sam_buttons_colors('x')
         self.set_sam_toolbar_enable(False)
@@ -1873,7 +1873,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.waitWindow(
             visible=True, text=f'Wait a second.\nIDs are being interpolated with SAM...')
 
-        if self.sam_model_comboBox.currentText() == "Select Model (SAM disable)":
+        if self.sam_model_comboBox.currentText() == "Select Model (SAM disabled)":
             helpers.OKmsgBox("SAM is disabled",
                              f"SAM is disabled.\nPlease enable SAM.")
             return
@@ -4789,8 +4789,8 @@ class MainWindow(QtWidgets.QMainWindow):
         # add a dropdown menu to select the sam model
         self.sam_model_comboBox = QtWidgets.QComboBox()
         self.sam_model_comboBox.setAccessibleName("sam_model_comboBox")
-        # add a label inside the combobox that says "Select Model (SAM disable)" and make it unselectable
-        self.sam_model_comboBox.addItem("Select Model (SAM disabled)")
+        # add a label inside the combobox that says "Select Model (SAM disabled)" and make it unselectable
+        self.sam_model_comboBox.addItem("Select Model (SAM disabledd)")
         self.sam_model_comboBox.addItems(self.sam_models())
         self.sam_model_comboBox.currentIndexChanged.connect(
             self.sam_model_comboBox_changed)
@@ -4938,7 +4938,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # remove all items from the combobox
         self.sam_model_comboBox.clear()
         # call the sam_models function to get all the models
-        self.sam_model_comboBox.addItem("Select Model (SAM disable)")
+        self.sam_model_comboBox.addItem("Select Model (SAM disabled)")
         self.sam_model_comboBox.addItems(self.sam_models())
         # print("updated sam models")
 
@@ -4947,7 +4947,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.createMode_options()
 
     def sam_enhance_annotation_button_clicked(self):
-        if self.sam_model_comboBox.currentText() == "Select Model (SAM disable)" or len(self.canvas.selectedShapes) == 0:
+        if self.sam_model_comboBox.currentText() == "Select Model (SAM disabled)" or len(self.canvas.selectedShapes) == 0:
             helpers.OKmsgBox("No shape selected or SAM is disabled",
                              "No shape selected or SAM is disabled.\nPlease select a shape and enable SAM.")
             return
@@ -4997,7 +4997,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.canvas.cancelManualDrawing()
         self.sam_clear_annotation_button_clicked()
         self.sam_buttons_colors("X")
-        if self.sam_model_comboBox.currentText() == "Select Model (SAM disable)":
+        if self.sam_model_comboBox.currentText() == "Select Model (SAM disabled)":
             self.createMode_options()
             self.set_sam_toolbar_enable(False)
             return
@@ -5067,7 +5067,7 @@ class MainWindow(QtWidgets.QMainWindow):
             style_sheet_const + replace_style + ";}" + hover_const + replace_hover + ";}" + disabled_const)
 
         setEnabled = False if self.sam_model_comboBox.currentText(
-        ) == "Select Model (SAM disable)" else True
+        ) == "Select Model (SAM disabled)" else True
         if setEnabled:
             return
         self.sam_add_point_button.setEnabled(setEnabled)
@@ -5227,7 +5227,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def run_sam_model(self):
 
         # print("run sam model")
-        if self.sam_predictor is None or self.sam_model_comboBox.currentText() == "Select Model (SAM disable)":
+        if self.sam_predictor is None or self.sam_model_comboBox.currentText() == "Select Model (SAM disabled)":
             print("please select a model")
             return
 
