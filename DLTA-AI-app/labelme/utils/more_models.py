@@ -105,10 +105,6 @@ class ModelExplorerDialog(QDialog):
         # layout spacing
         layout.setSpacing(10)
 
-        # Resize the dialog to fit the table
-        self.resize(int(self.table.width() * 1.75),
-                    int(self.table.height() * 1.5))
-
     def populate_table(self, merge=False):
         # Clear the table (keep the header labels)
         self.table.clearContents()

@@ -136,7 +136,6 @@ class Intelligence():
         except:
             self.selectedclasses = {i:class_ for i,class_ in enumerate(coco_classes)}
             print("error in loading the default classes from the config file, so we will use all the coco classes")
-        print(f"selected classes : {self.selectedclasses}")
         self.selectedmodels = []
         self.current_model_name, self.current_mm_model = self.make_mm_model("")
 

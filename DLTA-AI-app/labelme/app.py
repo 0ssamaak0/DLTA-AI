@@ -856,6 +856,20 @@ class MainWindow(QtWidgets.QMainWindow):
             "info",
             self.tr("Version")
         )
+        preferences = action(
+            self.tr("Preferences"),
+            utils.preferences,
+            None,
+            "settings",
+            self.tr("Preferences")
+        )
+        shortcut_selector = action(
+            self.tr("Shortcuts"),
+            utils.shortcut_selector,
+            None,
+            "shortcuts",
+            self.tr("Shortcuts")
+        )
         sam = action(
             self.tr("Toggle SAM Toolbar"),
             self.Segment_anything,
@@ -1081,6 +1095,8 @@ class MainWindow(QtWidgets.QMainWindow):
             self.menus.help,
             (
                 runtime_data,
+                preferences,
+                shortcut_selector,
                 None,
                 git_hub,
                 feedback,
@@ -1955,6 +1971,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.main_video_frames_slider_changed()
 
         # Notify the user that the interpolation is finished
+        self._config = get_config()
         if not self._config["mute"]:
             if not self.isActiveWindow():
                 helpers.notification("SAM Interpolation Completed")
@@ -2733,11 +2750,12 @@ class MainWindow(QtWidgets.QMainWindow):
         Summary:
             Open model explorer dialog to select or download models
         """
+        self._config = get_config()
         model_explorer_dialog = utils.ModelExplorerDialog(self, self._config["mute"], helpers.notification)
         # make it fit its contents
         model_explorer_dialog.adjustSize()
-        model_explorer_dialog.resize(
-            int(model_explorer_dialog.width() * 2), int(model_explorer_dialog.height() * 1.5))
+        model_explorer_dialog.setFixedWidth(model_explorer_dialog.table.width() * 1.905)
+        model_explorer_dialog.setMinimumHeight(model_explorer_dialog.table.rowHeight(0) * 10)
         model_explorer_dialog.exec_()
         self.update_saved_models_json()
 
@@ -3412,6 +3430,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def annotate_batch(self):
         images = []
+        self._config = get_config()
         notif = [self._config["mute"], self, helpers.notification]
         for filename in self.imageList:
             images.append(filename)
@@ -3550,7 +3569,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
 
         mode = self.current_annotation_mode
-        video_menu_list = [0, 1, 2, 3, 4, 5, 6, 7, 8, 11, 12]
+        video_menu_list = [0, 1, 2, 3, 4, 5, 6, 7, 8, 11]
         image_menu_list = [0, 1, 2, 9, 11, 13]
         if self.current_annotation_mode == "video":
             self.canvas.menus[0].clear()
@@ -4128,6 +4147,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.load_objects_to_json__orjson(listObj)
 
         # Notify the user that the tracking is finished
+        self._config = get_config()
         if not self._config["mute"]:
             if not self.isActiveWindow():
                 helpers.notification("Tracking Completed")

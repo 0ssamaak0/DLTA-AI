@@ -48,7 +48,10 @@ def main():
     }
     """
     try:
-        qdarktheme.setup_theme("auto", additional_qss=qss)
+        import yaml
+        with open ("labelme/config/default_config.yaml", "r") as f:
+            config = yaml.load(f, Loader=yaml.FullLoader)
+        qdarktheme.setup_theme(theme = config["theme"], default_theme = "dark",  additional_qss=qss)
     except Exception as e:
         pass
 

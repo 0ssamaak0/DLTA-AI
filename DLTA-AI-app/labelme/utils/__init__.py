@@ -28,4 +28,4 @@ from .qt import fmtShortcut
 
 from .export import exportCOCO, exportCOCOvid, exportMOT, FolderDialog
 from .more_models import ModelExplorerDialog
-from .help import showRuntimeData, git_hub_link, feedback, open_license, version
+from .help import showRuntimeData, git_hub_link, feedback, open_license, version, preferences, shortcut_selector
