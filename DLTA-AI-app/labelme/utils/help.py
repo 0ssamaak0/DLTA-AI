@@ -199,7 +199,7 @@ def shortcut_selector():
     ok_button = QtWidgets.QPushButton("OK")
     ok_button.clicked.connect(dialog.accept)
     layout.addWidget(ok_button)
-    note_label = QtWidgets.QLabel("Tooltips will show the new shortcuts after restarting the app")
+    note_label = QtWidgets.QLabel("Shortcuts will be updated after restarting the app.")
     layout.addWidget(note_label)
     dialog.setLayout(layout)
     dialog.setFixedWidth(shortcut_table.sizeHintForColumn(0) + shortcut_table.sizeHintForColumn(1) + 50)
