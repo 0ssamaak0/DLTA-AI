@@ -7,7 +7,6 @@ from glob import glob
 block_cipher = None
 
 datas_list = [ 
-    ('saved_models.json', '.'),
     ('models_menu/*.json', 'models_menu'),
     ('models_menu/*.py', 'models_menu'),
     ('ultralytics/ultralytics/' , 'ultralytics'),
@@ -43,7 +42,7 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    name='labelFlow',
+    name='DLTA-AI',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -64,5 +63,5 @@ coll = COLLECT(
     strip=False,
     upx=True,
     upx_exclude=[],
-    name='labelFlow',
+    name='DLTA-AI',
 )
