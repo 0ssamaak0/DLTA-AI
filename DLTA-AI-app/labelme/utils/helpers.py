@@ -106,21 +106,15 @@ def addPoints(shape, n):
     if sub == 0:
         return res
     
-    # if sub < 1, then we need to add points between SOME pairs of points not ALL pairs of points
+    # if sub < 1, then we a point between every pair of points then we handle the points again
     if sub < 1:
         res = []
         res.append(shape[0])
-        flag = True
         for i in range(len(shape) - 1):
-            if flag:
-                newPoint = [(shape[i][0] + shape[i + 1][0]) / 2, (shape[i][1] + shape[i + 1][1]) / 2]
-                res.append(newPoint)
+            newPoint = [(shape[i][0] + shape[i + 1][0]) / 2, (shape[i][1] + shape[i + 1][1]) / 2]
+            res.append(newPoint)
             res.append(shape[i + 1])
-            n -= 1
-            # check if we still need to add extra points
-            if n == 0:
-                flag = False
-        return res
+        return handlePoints(res, n + len(shape))
     
     # if sub > 1, then we add 'toBeAdded' points between every pair of points
     else:

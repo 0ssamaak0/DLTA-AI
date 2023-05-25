@@ -1697,10 +1697,12 @@ class MainWindow(QtWidgets.QMainWindow):
                                         f"Some of the selected IDs have no KEY frames.\n    ie. less than 2 key frames\n The interpolation is performed only for the IDs with KEY frames.\nIDs: {ids}.")
                         if resutl != QtWidgets.QMessageBox.Ok:
                             return
+            else:
+                ids = idsORG
 
             self.interrupted = False
             if with_sam:
-                self.interpolate_with_sam(idsORG)
+                self.interpolate_with_sam(ids)
             else:
                 for id in ids:
                     QtWidgets.QApplication.processEvents()
@@ -1784,14 +1786,13 @@ class MainWindow(QtWidgets.QMainWindow):
         if only_edited:
             try:
                 FRAMES = list(self.key_frames['id_' + str(id)])
-                first_frame_idx = np.min(FRAMES)
-                last_frame_idx = np.max(FRAMES)
             except:
                 return
         else:
             FRAMES = list(self.id_frames_rec['id_' + str(id)]) if len(self.id_frames_rec['id_' + str(id)]) > 1 else [-1]
-            first_frame_idx = min(FRAMES)
-            last_frame_idx = max(FRAMES)
+            
+        first_frame_idx = min(FRAMES)
+        last_frame_idx = max(FRAMES)
 
         if (first_frame_idx >= last_frame_idx):
             return
@@ -2376,10 +2377,15 @@ class MainWindow(QtWidgets.QMainWindow):
 
         if self.current_annotation_mode == "video":
             group_id, text = self.get_id_from_user(group_id, text)
+        
         if text:
+            
             if group_id is None:
                 group_id = self.minID
                 self.minID -= 1
+            else:
+                self.minID = min(self.minID, group_id - 1)
+            
             if self.canvas.SAM_mode == "finished":
                 self.current_sam_shape["label"] = text
                 self.current_sam_shape["group_id"] = group_id
@@ -2387,12 +2393,11 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.labelList.clearSelection()
                 # shape below is of type qt shape
                 shape = self.canvas.setLastLabel(text, flags)
-
-                self.minID = min(self.minID, group_id - 1)
                 shape.group_id = group_id
                 shape.content = content
                 self.addLabel(shape)
                 self.rec_frame_for_id(group_id, self.INDEX_OF_CURRENT_FRAME)
+                
             self.actions.editMode.setEnabled(True)
             self.actions.undoLastPoint.setEnabled(False)
             self.actions.undo.setEnabled(True)
