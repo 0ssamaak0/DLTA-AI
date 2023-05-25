@@ -1,26 +1,58 @@
 from .helpers import OKmsgBox
 
-def showRuntimeData(self):
+
+def show_runtime_data():
+    from PyQt5.QtWidgets import QDialog, QLabel, QVBoxLayout
+    from PyQt5.QtGui import QFont
+    import psutil
     import torch
-    runtime = ""
+
+    dialog = QDialog()
+    dialog.setWindowTitle("DLTA-AI Runtime Data")
+    layout = QVBoxLayout(dialog)
+    layout.setContentsMargins(20, 20, 20, 20)
+    layout.setSpacing(10)
+
+    title_font = QFont()
+    title_font.setPointSize(12)
+    title_font.setBold(True)
+
+    normal_font = QFont()
+    normal_font.setPointSize(10)
+
     # if cuda is available, print cuda name
     if torch.cuda.is_available():
-        runtime = ("DLTA-AI is Using GPU\n")
-        runtime += ("GPU Name: " + torch.cuda.get_device_name(0))
-        runtime += "\n" + "Total GPU VRAM: " + \
-            str(round(torch.cuda.get_device_properties(
-                0).total_memory/(1024 ** 3), 2)) + " GB"
-        runtime += "\n" + "Used: " + \
-            str(round(torch.cuda.memory_allocated(0)/(1024 ** 3), 2)) + " GB"
+        device_name = torch.cuda.get_device_name(0)
+        gpu_title_label = QLabel("Device Stats")
+        gpu_title_label.setFont(title_font)
+        layout.addWidget(gpu_title_label)
+
+        gpu_name_label = QLabel(f"GPU Name: {device_name}")
+        gpu_name_label.setFont(normal_font) 
+        layout.addWidget(gpu_name_label)
+
+        total_vram = round(torch.cuda.get_device_properties(0).total_memory / (1024 ** 3), 2)
+        used_vram = round(torch.cuda.memory_allocated(0) / (1024 ** 3), 2)
+        gpu_vram_label = QLabel(f"Total GPU VRAM: {total_vram} GB\nUsed: {used_vram} GB")
+        gpu_vram_label.setFont(normal_font)
+        layout.addWidget(gpu_vram_label)
 
     else:
-        # runtime = (f'DLTA-AI is Using CPU: {platform.processor()}')
-        runtime = ('DLTA-AI is Using CPU')
-    
+        cpu_label = QLabel("DLTA-AI is Using CPU")
+        cpu_label.setFont(title_font)
+        layout.addWidget(cpu_label)
 
+    ram_title_label = QLabel("RAM Stats")
+    ram_title_label.setFont(title_font)
+    layout.addWidget(ram_title_label)
 
-    # show runtime in QMessageBox
-    OKmsgBox("Runtime Data", runtime)
+    total_ram = round(psutil.virtual_memory().total / (1024 ** 3), 2)
+    used_ram = round(psutil.virtual_memory().used / (1024 ** 3), 2)
+    ram_label = QLabel(f"Total RAM: {total_ram} GB\nUsed: {used_ram} GB")
+    ram_label.setFont(normal_font)
+    layout.addWidget(ram_label)
+
+    dialog.exec_()
              
 def preferences():
     import yaml

@@ -9,7 +9,7 @@ block_cipher = None
 datas_list = [ 
     ('models_menu/*.json', 'models_menu'),
     ('models_menu/*.py', 'models_menu'),
-    ('ultralytics/ultralytics/' , 'ultralytics'),
+    ('ultralytics/' , 'ultralytics'),
     ('labelme/' , 'labelme'),
     ('mmdetection/' , 'mmdetection'),
     ('trackers/' , 'trackers')
@@ -53,6 +53,7 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
+    icon = "C:\Graduation Project\Auto Annotation Tool\DLTA-AI\DLTA-AI-app\labelme\icons\icon.png"
     
 )
 coll = COLLECT(

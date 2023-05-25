@@ -823,7 +823,7 @@ class MainWindow(QtWidgets.QMainWindow):
         )
         runtime_data = action(
             self.tr("Show Runtime Data"),
-            utils.showRuntimeData,
+            utils.show_runtime_data,
             None,
             "runtime",
             self.tr("Show Runtime Data")
@@ -1783,7 +1783,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         if only_edited:
             try:
-                FRAMES = self.key_frames['id_' + str(id)]
+                FRAMES = list(self.key_frames['id_' + str(id)])
                 first_frame_idx = np.min(FRAMES)
                 last_frame_idx = np.max(FRAMES)
             except:
@@ -4143,6 +4143,9 @@ class MainWindow(QtWidgets.QMainWindow):
             QtWidgets.QApplication.processEvents()
             self.update_gui_after_tracking(i)
             print('finished tracking for frame ', self.INDEX_OF_CURRENT_FRAME)
+            import psutil
+            if self.INDEX_OF_CURRENT_FRAME % 10 == 0:
+                print(f"Total Memory: {psutil.virtual_memory().total / 1024 ** 3} GB | Free Memory: {psutil.virtual_memory().free / 1024 ** 3} GB | Percent Used: {psutil.virtual_memory().percent} %")
 
         # listObj = sorted(listObj, key=lambda k: k['frame_idx'])
         self.load_objects_to_json__orjson(listObj)
