@@ -5320,23 +5320,11 @@ class MainWindow(QtWidgets.QMainWindow):
             Assigns the shortcuts for the video mode.
         """
         
-        shortcuts = [self._config["shortcuts"][x] for x in ['enhance', 
-                                                            'interpolate', 
-                                                            'mark_as_key', 
-                                                            'scale',
-                                                            'ignore_updates',
-                                                            'copy',
-                                                            'paste',]]
+        shortcuts = [self._config["shortcuts"][x] for x in ['ignore_updates']]
         
         self.VideoShortcuts = [QtWidgets.QShortcut(QtGui.QKeySequence(shortcuts[i]), self) for i in range(len(shortcuts))]
         
-        self.VideoShortcuts[0].activated.connect(self.sam_enhance_annotation_button_clicked)
-        self.VideoShortcuts[1].activated.connect(self.interpolateMENU)
-        self.VideoShortcuts[2].activated.connect(self.mark_as_key)
-        self.VideoShortcuts[3].activated.connect(self.scaleMENU)
-        self.VideoShortcuts[4].activated.connect(self.main_video_frames_slider_changed)
-        self.VideoShortcuts[5].activated.connect(self.copyShapesSelected)
-        self.VideoShortcuts[6].activated.connect(self.pasteShapesSelected)
+        self.VideoShortcuts[0].activated.connect(self.main_video_frames_slider_changed)
         
     def disconnectVideoShortcuts(self):
         
