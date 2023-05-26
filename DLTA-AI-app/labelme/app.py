@@ -753,10 +753,10 @@ class MainWindow(QtWidgets.QMainWindow):
         update_curr_frame = action(
             self.tr("&Update current frame"),
             self.update_current_frame_annotation_button_clicked,
-            shortcuts["update_frame"],
+            None,
             "done",
             self.tr("Update frame"),
-            enabled=False,
+            enabled=True,
         )
         ignore_changes = action(
             self.tr("&Ignore changes"),
@@ -764,7 +764,7 @@ class MainWindow(QtWidgets.QMainWindow):
             shortcuts["ignore_updates"],
             "delete",
             self.tr("Ignore unsaved changes"),
-            enabled=False,
+            enabled=True,
         )
 
         fill_drawing = action(
@@ -1420,7 +1420,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.actions.editMode.setEnabled(not edit)
 
     def turnOFF_SAM(self):
-        if self.sam_model_comboBox.currentText() != "Select Model (SAM disabledd)":
+        if self.sam_model_comboBox.currentText() != "Select Model (SAM disabled)":
             self.sam_clear_annotation_button_clicked()
         self.sam_buttons_colors('x')
         self.set_sam_toolbar_enable(False)
@@ -1431,6 +1431,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.canvas.SAM_current = None
         
     def turnON_SAM(self):
+        if self.sam_model_comboBox.currentText() == "Select Model (SAM disabled)":
+            return
         self.sam_buttons_colors("X")
         self.set_sam_toolbar_enable(True)
         self.canvas.SAM_mode = ""
@@ -2025,6 +2027,11 @@ class MainWindow(QtWidgets.QMainWindow):
             It scales the selected shape.
         """
         
+        if len(self.canvas.selectedShapes) != 1:
+            helpers.OKmsgBox(f'Scale error',
+                             f'There is {len(self.canvas.selectedShapes)} selected shapes. Please select only one shape to scale.')
+            return
+            
         result = helpers.scaleMENU_GUI(self)
         if result == QtWidgets.QDialog.Accepted:
             self.update_current_frame_annotation_button_clicked()
@@ -2824,8 +2831,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def openFile(self, _value=False):
         self.current_annotation_mode = 'img'
-        self.disconnectVideoShortcuts()
-        self.right_click_menu()
+        # self.disconnectVideoShortcuts()
         self.actions.export.setEnabled(False)
         try:
             cv2.destroyWindow('video processing')
@@ -2853,6 +2859,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if filename:
             self.loadFile(filename)
             self.set_video_controls_visibility(False)
+            self.right_click_menu()
         self.vid_dock.setVisible(False)
         for option in self.vid_options:
             option.setEnabled(False)
@@ -3141,6 +3148,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def deleteSelectedShape(self):
         try:
+            if len(self.canvas.selectedShapes) == 0:
+                return
+            
             yes, no = QtWidgets.QMessageBox.Yes, QtWidgets.QMessageBox.No
             msg = self.tr(
                 "You are about to permanently delete {} polygons, "
@@ -3263,10 +3273,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.right_click_menu()
 
     def openDirDialog(self, _value=False, dirpath=None):
-        self.disconnectVideoShortcuts()
+        # self.disconnectVideoShortcuts()
 
         self.current_annotation_mode = "dir"
-        self.right_click_menu()
         if not self.mayContinue():
             return
 
@@ -3341,7 +3350,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         if not self.mayContinue() or not dirpath:
             return
-
+        self.right_click_menu()
         self.lastOpenDir = dirpath
         self.filename = None
         self.fileListWidget.clear()
@@ -3561,10 +3570,10 @@ class MainWindow(QtWidgets.QMainWindow):
         #         3  enhance,
         #         4  interpolate,
         #         5  mark_as_key,
-        #         6 scale,
-        #         7 copyShapes,
-        #         8 pasteShapes,
-        #         9 copy,
+        #         6  scale,
+        #         7  copyShapes,
+        #         8  pasteShapes,
+        #         9  copy,
         #         10 delete,
         #         11 undo,
         #         12 undoLastPoint,
@@ -3575,8 +3584,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
 
         mode = self.current_annotation_mode
-        video_menu_list = [0, 1, 2, 3, 4, 5, 6, 7, 8, 11]
-        image_menu_list = [0, 1, 2, 9, 11, 13]
+        video_menu_list = [0, 1, 2, 3, 4, 5, 6, 7, 8,    10,         13, 15, 16]
+        image_menu_list = [0, 1, 2, 3,                9, 10, 11, 12, 13        ]
+        
         if self.current_annotation_mode == "video":
             self.canvas.menus[0].clear()
             utils.addActions(self.canvas.menus[0], (self.actions.menu[i] for i in video_menu_list))
@@ -3601,8 +3611,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.key_frames.clear()
         self.id_frames_rec.clear()
 
-        self.current_annotation_mode = "video"
-        self.assignVideShortcuts()
+        # self.current_annotation_mode = "video"
+        # self.assignVideShortcuts()
 
         for shape in self.canvas.shapes:
             self.canvas.deleteShape(shape)
@@ -3610,8 +3620,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.CURRENT_SHAPES_IN_IMG = []
 
         # self.videoControls.show()
-        self.current_annotation_mode = "video"
-        self.right_click_menu()
+        # self.current_annotation_mode = "video"
         try:
             cv2.destroyWindow('video processing')
         except:
@@ -3624,6 +3633,8 @@ class MainWindow(QtWidgets.QMainWindow):
         )
 
         if videoFile[0]:
+            self.current_annotation_mode = "video"
+            self.right_click_menu()
             self.global_listObj = []
             self.minID = -1
             self.CURRENT_VIDEO_NAME = videoFile[0].split(
@@ -3857,6 +3868,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         if self.sam_model_comboBox.currentIndex() != 0 and self.canvas.SAM_mode != "finished" and not self.TrackingMode:
             self.sam_clear_annotation_button_clicked()
+            self.sam_buttons_colors("X")
 
         try:
             x = self.CURRENT_VIDEO_PATH
@@ -4798,7 +4810,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.sam_model_comboBox = QtWidgets.QComboBox()
         self.sam_model_comboBox.setAccessibleName("sam_model_comboBox")
         # add a label inside the combobox that says "Select Model (SAM disabled)" and make it unselectable
-        self.sam_model_comboBox.addItem("Select Model (SAM disabledd)")
+        self.sam_model_comboBox.addItem("Select Model (SAM disabled)")
         self.sam_model_comboBox.addItems(self.sam_models())
         self.sam_model_comboBox.currentIndexChanged.connect(
             self.sam_model_comboBox_changed)
@@ -4955,20 +4967,22 @@ class MainWindow(QtWidgets.QMainWindow):
         self.createMode_options()
 
     def sam_enhance_annotation_button_clicked(self):
-        if self.sam_model_comboBox.currentText() == "Select Model (SAM disabled)" or len(self.canvas.selectedShapes) == 0:
-            helpers.OKmsgBox("No shape selected or SAM is disabled",
-                             "No shape selected or SAM is disabled.\nPlease select a shape and enable SAM.")
+        if self.sam_model_comboBox.currentText() == "Select Model (SAM disabled)":
+            helpers.OKmsgBox("SAM is disabled",
+                             "SAM is disabled.\nPlease enable SAM.")
             return
         try:
             same_image = self.sam_predictor.check_image(
                 self.CURRENT_FRAME_IMAGE)
         except:
             return
+        
+        toBeEnhanced = self.canvas.selectedShapes if len(self.canvas.selectedShapes) > 0 else self.canvas.shapes
 
-        for shape in self.canvas.selectedShapes:
+        for shape in toBeEnhanced:
             try:
                 self.canvas.shapes.remove(shape)
-                self.canvas.selectedShapes.remove(shape)
+                # self.canvas.selectedShapes.remove(shape)
                 self.remLabels([shape])
             except:
                 return
@@ -4979,7 +4993,7 @@ class MainWindow(QtWidgets.QMainWindow):
             shapeX["points"] = cur_segment
             shapeX = convert_shapes_to_qt_shapes([shapeX])[0]
             self.canvas.shapes.append(shapeX)
-            self.canvas.selectedShapes.append(shapeX)
+            # self.canvas.selectedShapes.append(shapeX)
             self.addLabel(shapeX)
 
         if self.current_annotation_mode == "video":
@@ -5002,11 +5016,12 @@ class MainWindow(QtWidgets.QMainWindow):
         return models
 
     def sam_model_comboBox_changed(self):
+        createFlag = self.canvas.mode == 0
         self.canvas.cancelManualDrawing()
         self.sam_clear_annotation_button_clicked()
         self.sam_buttons_colors("X")
         if self.sam_model_comboBox.currentText() == "Select Model (SAM disabled)":
-            self.createMode_options()
+            # self.createMode_options()
             self.set_sam_toolbar_enable(False)
             return
         model_type = self.sam_model_comboBox.currentText()
@@ -5030,20 +5045,35 @@ class MainWindow(QtWidgets.QMainWindow):
             return
         self.waitWindow()
         print("done loading model")
-        self.createMode_options()
-        if self.sam_last_mode == "point":
-            self.sam_add_point_button_clicked()
-        elif self.sam_last_mode == "rectangle":
-            self.sam_select_rect_button_clicked()
+        
+        if createFlag:
+            self.createMode_options()
+            if self.sam_last_mode == "point" :
+                self.sam_add_point_button_clicked()
+            elif self.sam_last_mode == "rectangle":
+                self.sam_select_rect_button_clicked()
+        else:
+            self.setEditMode()
 
     def sam_buttons_colors(self, mode):
-        # style_sheet = """
-        #    text-align: center;
-        #    margin-right: 3px;
-        #    border-radius: 5px;
-        #    padding: 4px 8px;
-        #    border: 1px solid #999999;
-        # """
+        
+        setEnabled = False if self.sam_model_comboBox.currentText(
+        ) == "Select Model (SAM disabled)" else True
+        if not setEnabled:
+            self.set_sam_toolbar_enable(setEnabled)
+            self.set_sam_toolbar_colors("X")
+            return
+
+        self.set_sam_toolbar_colors(mode)
+            
+    def set_sam_toolbar_enable(self, setEnabled):
+        self.sam_add_point_button.setEnabled(setEnabled)
+        self.sam_remove_point_button.setEnabled(setEnabled)
+        self.sam_select_rect_button.setEnabled(setEnabled)
+        self.sam_clear_annotation_button.setEnabled(setEnabled)
+        self.sam_finish_annotation_button.setEnabled(setEnabled)
+        
+    def set_sam_toolbar_colors(self, mode):
         red, green, blue, trans = "#2D7CFA;", "#2D7CFA;", "#2D7CFA;", "#4B515A;"
         hover_const = "QPushButton::hover { background-color : "
         disabled_const = "QPushButton:disabled { color : #7A7A7A} "
@@ -5073,17 +5103,7 @@ class MainWindow(QtWidgets.QMainWindow):
             style_sheet_const + finish_style + ";}" + hover_const + finish_hover + ";}" + disabled_const)
         self.sam_enhance_annotation_button.setStyleSheet(
             style_sheet_const + replace_style + ";}" + hover_const + replace_hover + ";}" + disabled_const)
-
-        setEnabled = False if self.sam_model_comboBox.currentText(
-        ) == "Select Model (SAM disabled)" else True
-        if setEnabled:
-            return
-        self.sam_add_point_button.setEnabled(setEnabled)
-        self.sam_remove_point_button.setEnabled(setEnabled)
-        self.sam_select_rect_button.setEnabled(setEnabled)
-        self.sam_clear_annotation_button.setEnabled(setEnabled)
-        self.sam_finish_annotation_button.setEnabled(setEnabled)
-        self.sam_enhance_annotation_button.setEnabled(setEnabled)
+        
 
     def sam_add_point_button_clicked(self):
         self.canvas.cancelManualDrawing()
@@ -5313,31 +5333,31 @@ class MainWindow(QtWidgets.QMainWindow):
         helpers.load_objects_to_json__orjson(json_file_name, listObj)
 
 
-    def assignVideShortcuts(self):
+    # def assignVideShortcuts(self):
         
-        """
-        Summary:
-            Assigns the shortcuts for the video mode.
-        """
+    #     """
+    #     Summary:
+    #         Assigns the shortcuts for the video mode.
+    #     """
         
-        shortcuts = [self._config["shortcuts"][x] for x in ['ignore_updates']]
+    #     shortcuts = [self._config["shortcuts"][x] for x in []]
         
-        self.VideoShortcuts = [QtWidgets.QShortcut(QtGui.QKeySequence(shortcuts[i]), self) for i in range(len(shortcuts))]
+    #     self.VideoShortcuts = [QtWidgets.QShortcut(QtGui.QKeySequence(shortcuts[i]), self) for i in range(len(shortcuts))]
         
-        self.VideoShortcuts[0].activated.connect(self.main_video_frames_slider_changed)
+    #     # self.VideoShortcuts[0].activated.connect(self.main_video_frames_slider_changed)
         
-    def disconnectVideoShortcuts(self):
+    # def disconnectVideoShortcuts(self):
         
-        """
-        Summary:
-            Disconnects the shortcuts for the video mode in case of image or directory mode.
-        """
+    #     """
+    #     Summary:
+    #         Disconnects the shortcuts for the video mode in case of image or directory mode.
+    #     """
         
-        try:
-            for shortcut in self.VideoShortcuts:
-                shortcut.activated.disconnect()
-        except:
-            pass
+    #     try:
+    #         for shortcut in self.VideoShortcuts:
+    #             shortcut.activated.disconnect()
+    #     except:
+    #         pass
         
 # important parameters across the gui
 
