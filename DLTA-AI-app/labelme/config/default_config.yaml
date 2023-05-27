@@ -118,7 +118,7 @@ label_dock:
 label_flags: null
 labels: null
 logger_level: info
-mute: true
+mute: false
 shape:
   fill_color:
   - 0
