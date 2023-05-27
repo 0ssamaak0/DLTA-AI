@@ -27,7 +27,7 @@ def show_runtime_data():
 
     # Create a dialog box to display the runtime data
     dialog = QDialog()
-    dialog.setWindowTitle("DLTA-AI Runtime Data")
+    dialog.setWindowTitle("Runtime data")
     layout = QVBoxLayout(dialog)
     layout.setContentsMargins(20, 20, 20, 20)
     layout.setSpacing(10)

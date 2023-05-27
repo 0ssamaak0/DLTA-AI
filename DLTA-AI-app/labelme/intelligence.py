@@ -15,7 +15,7 @@ import warnings
 import numpy as np
 import urllib.request
 from .shape import Shape
-from labelme.utils.more_models import ModelExplorerDialog
+from labelme.utils.model_explorer import ModelExplorerDialog
 import yaml
 
 import torch
@@ -444,21 +444,37 @@ class Intelligence():
     # add a resizable and scrollable dialog that contains all coco classes and allow the user to select among them using checkboxes
 
     def selectClasses(self):
-        # self.selectedclasses.clear()
-        # return the selected classes
+        """
+        Display a dialog box that allows the user to select which classes to annotate.
+
+        The function creates a QDialog object and adds various widgets to it, including a QScrollArea that contains QCheckBox
+        widgets for each class. The function sets the state of each QCheckBox based on whether the class is in the
+        self.selectedclasses dictionary. The function also adds "Select All", "Deselect All", "Select Classes", "Set as Default",
+        and "Cancel" buttons to the dialog box. When the user clicks the "Select Classes" button, the function saves the selected
+        classes to the self.selectedclasses dictionary and returns it.
+
+        :return: A dictionary that maps class indices to class names for the selected classes.
+        """
+        # Create a new dialog box
         dialog = QtWidgets.QDialog(self.parent)
         dialog.setWindowTitle('Select Classes')
         dialog.setWindowModality(QtCore.Qt.ApplicationModal)
         dialog.resize(500, 500)
         dialog.setMinimumSize(QtCore.QSize(500, 500))
+
+        # Create a vertical layout for the dialog box
         verticalLayout = QtWidgets.QVBoxLayout(dialog)
         verticalLayout.setObjectName("verticalLayout")
+
+        # Create a horizontal layout for the "Select All" and "Deselect All" buttons
         horizontalLayout = QtWidgets.QHBoxLayout()
         selectAllButton = QtWidgets.QPushButton("Select All", dialog)
         deselectAllButton = QtWidgets.QPushButton("Deselect All", dialog)
         horizontalLayout.addWidget(selectAllButton)
         horizontalLayout.addWidget(deselectAllButton)
         verticalLayout.addLayout(horizontalLayout)
+
+        # Create a scroll area for the class checkboxes
         scrollArea = QtWidgets.QScrollArea(dialog)
         scrollArea.setWidgetResizable(True)
         scrollArea.setObjectName("scrollArea")
@@ -470,6 +486,8 @@ class Intelligence():
         self.scrollAreaWidgetContents = scrollAreaWidgetContents
         scrollArea.setWidget(scrollAreaWidgetContents)
         verticalLayout.addWidget(scrollArea)
+
+        # Create a button box for the "Select Classes", "Set as Default", and "Cancel" buttons
         buttonBox = QtWidgets.QDialogButtonBox(dialog)
         buttonBox.setOrientation(QtCore.Qt.Horizontal)
         buttonBox.setStandardButtons(
@@ -488,54 +506,89 @@ class Intelligence():
         # Add the QHBoxLayout to the QVBoxLayout
         verticalLayout.addLayout(buttonLayout)
 
+        # Connect the button signals to their respective slots
         buttonBox.accepted.connect(lambda: self.saveClasses(dialog))
         buttonBox.rejected.connect(dialog.reject)
         defaultButton.clicked.connect(lambda: self.saveClasses(dialog, True))
+
+        # Create a QCheckBox for each class and add it to the grid layout
         self.classes = []
         for i in range(len(coco_classes)):
             self.classes.append(QtWidgets.QCheckBox(coco_classes[i], dialog))
             row = i // 3
             col = i % 3
             gridLayout.addWidget(self.classes[i], row, col)
-        # if the class is in self.selectedclasses then check the checkbox by default
+
+        # Set the state of each QCheckBox based on whether the class is in the self.selectedclasses dictionary
         for value in self.selectedclasses.values():
             if value != None:
                 indx = coco_classes.index(value)
                 self.classes[indx].setChecked(True)
+
+        # Connect the "Select All" and "Deselect All" buttons to their respective slots
         selectAllButton.clicked.connect(lambda: self.selectAll())
         deselectAllButton.clicked.connect(lambda: self.deselectAll())
+
+        # Show the dialog box and wait for the user to close it
         dialog.show()
         dialog.exec_()
+
+        # Save the selected classes to the self.selectedclasses dictionary and return it
         self.selectedclasses.clear()
         for i in range(len(self.classes)):
             if self.classes[i].isChecked():
                 indx = coco_classes.index(self.classes[i].text())
                 self.selectedclasses[indx] = self.classes[i].text()
-        # print(self.selectedclasses)
-        # self.updatlabellist()
         return self.selectedclasses
 
     def saveClasses(self, dialog, is_default=False):
+        """
+        Save the selected classes to the self.selectedclasses dictionary.
+
+        The function clears the self.selectedclasses dictionary and then iterates over the QCheckBox widgets for each class.
+        If a QCheckBox is checked, the function adds the corresponding class name to the self.selectedclasses dictionary. If the
+        is_default parameter is True, the function also updates the default_config.yaml file with the selected classes.
+
+        :param dialog: The QDialog object that contains the class selection dialog.
+        :param is_default: A boolean that indicates whether to update the default_config.yaml file with the selected classes.
+        """
+        # Clear the self.selectedclasses dictionary
         self.selectedclasses.clear()
+
+        # Iterate over the QCheckBox widgets for each class
         for i in range(len(self.classes)):
             if self.classes[i].isChecked():
                 indx = coco_classes.index(self.classes[i].text())
                 self.selectedclasses[indx] = self.classes[i].text()
+
+        # If is_default is True, update the default_config.yaml file with the selected classes
         if is_default:
             with open("labelme/config/default_config.yaml", 'r') as f:
                 config = yaml.load(f, Loader=yaml.FullLoader)
             config['default_classes'] = list(self.selectedclasses.values())
             with open("labelme/config/default_config.yaml", 'w') as f:
                 yaml.dump(config, f)
+
+        # Accept the dialog box
         dialog.accept()
 
-
-
     def selectAll(self):
+        """
+        Select all classes in the class selection dialog.
+
+        The function iterates over the QCheckBox widgets for each class and sets their checked state to True.
+        """
+        # Iterate over the QCheckBox widgets for each class and set their checked state to True
         for checkbox in self.classes:
             checkbox.setChecked(True)
 
     def deselectAll(self):
+        """
+        Deselect all classes in the class selection dialog.
+
+        The function iterates over the QCheckBox widgets for each class and sets their checked state to False.
+        """
+        # Iterate over the QCheckBox widgets for each class and set their checked state to False
         for checkbox in self.classes:
             checkbox.setChecked(False)
 

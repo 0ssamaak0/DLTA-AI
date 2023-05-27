@@ -27,5 +27,5 @@ from .qt import distancetoline
 from .qt import fmtShortcut
 
 from .export import exportCOCO, exportCOCOvid, exportMOT, FolderDialog
-from .more_models import ModelExplorerDialog
+from .model_explorer import ModelExplorerDialog
 from .help import show_runtime_data, git_hub_link, feedback, open_license, version, preferences, shortcut_selector

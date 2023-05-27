@@ -13,8 +13,25 @@ with open(cwd + '/models_menu/models_json.json') as f:
 
 
 class ModelExplorerDialog(QDialog):
-    def __init__(self, main_window = None, mute = None, notification = None, merge=False):
-        # print current working directory
+    """
+    A dialog window for exploring available models and downloading them.
+
+    Attributes:
+        main_window (QMainWindow): The main window of the application.
+        mute (bool): Whether to mute notifications.
+        notification (function): A function for displaying notifications.
+    """
+
+    def __init__(self, main_window=None, mute=None, notification=None, merge=False):
+        """
+        Initializes the ModelExplorerDialog.
+
+        Args:
+            main_window (QMainWindow): The main window of the application.
+            mute (bool): Whether to mute notifications.
+            notification (function): A function for displaying notifications.
+            merge (bool): Whether to merge models.
+        """
         super().__init__()
         self.main_window = main_window
         self.mute = mute
@@ -24,15 +41,18 @@ class ModelExplorerDialog(QDialog):
         else:
             self.setWindowTitle("Merge Models")
 
+        # Define the columns of the table
         self.cols_labels = ["id", "Model Name", "Backbone", "Lr schd",
                             "Memory (GB)", "Inference Time (fps)", "box AP", "mask AP", "Checkpoint Size (MB)"]
 
+        # Get the unique model names
         self.model_keys = sorted(
             list(set([model['Model'] for model in models_json])))
 
         # Set up the layout
         layout = QVBoxLayout()
         self.setLayout(layout)
+
         if not merge:
             # Set up the toolbar
             toolbar = QToolBar()
@@ -57,31 +77,30 @@ class ModelExplorerDialog(QDialog):
             # search_button.clicked.connect(self.search)
             # toolbar.addWidget(search_button)
 
+            # Set up the button for opening the checkpoints directory
             open_checkpoints_dir_button = QPushButton("Open Checkpoints Dir")
             # add icon to the button
             open_checkpoints_dir_button.setIcon(
                 QtGui.QIcon(cwd + '/labelme/icons/downloads.png'))
             open_checkpoints_dir_button.setIconSize(QtCore.QSize(20, 20))
-
             open_checkpoints_dir_button.clicked.connect(
                 self.open_checkpoints_dir)
-
             toolbar.addWidget(open_checkpoints_dir_button)
 
-        # set spacing
+        # Set spacing
         layout.setSpacing(10)
 
         # Set up the table
         self.table = QTableWidget()
-
         layout.addWidget(self.table)
 
         # Set up the number of rows and columns
         self.num_rows = len(models_json)
         self.num_cols = 9
 
-        # make availability list
+        # Make availability list
         self.check_availability()
+
         # Populate the table with default data
         if not merge:
             self.populate_table()
@@ -106,6 +125,15 @@ class ModelExplorerDialog(QDialog):
         layout.setSpacing(10)
 
     def populate_table(self, merge=False):
+        """
+        Populates the table with data from models_json.
+
+        Args:
+            merge (bool): If True, excludes SAM and YOLOv8 models from the table.
+
+        Returns:
+            None
+        """
         # Clear the table (keep the header labels)
         self.table.clearContents()
         self.table.setRowCount(self.num_rows)
@@ -181,18 +209,27 @@ class ModelExplorerDialog(QDialog):
             row_count += 1
 
     def search(self):
-        # Filter the table based on the selected model type and availability
+        """
+        Filters the table based on the selected model type and availability.
+
+        Returns:
+            None
+        """
+        # Get the selected model type and availability
         model_type = self.model_type_dropdown.currentText()
         available = self.available_checkbox.isChecked()
         not_available = self.not_available_checkbox.isChecked()
 
+        # Iterate over each row in the table
         for row in range(self.num_rows):
             show_row = True
+            # Filter by model type
             if model_type != "All":
                 id = int(self.table.item(row, 0).text())
                 if models_json[id]["Model"] != model_type:
                     show_row = False
 
+            # Filter by availability
             if available or not_available:
                 available_text = self.table.item(row, 9)
                 try:
@@ -204,40 +241,69 @@ class ModelExplorerDialog(QDialog):
                 if not_available and available_text == "Downloaded":
                     show_row = False
 
+            # Hide or show the row based on the filters
             self.table.setRowHidden(row, not show_row)
 
+
     def select_model(self):
-        # Get the sender of the signal, which is the button that was clicked
+        """
+        Gets the selected model from the table and sets it as the selected model.
+
+        Returns:
+            None
+        """
+        # Get the button that was clicked
         sender = self.sender()
-        # Get the model index of the button in the table widget
+        # Get the row index of the button in the table
         index = self.table.indexAt(sender.pos())
-        # Get the row index from the model index
+        # Get the model id from the row index
         row = index.row()
         model_id = int(self.table.item(row, 0).text())
-        # select the model with this id from the models_json
+        # Set the selected model as the model with this id
         self.selected_model = models_json[model_id][
             "Model Name"], models_json[model_id]["Config"], models_json[model_id]["Checkpoint"],
         self.accept()
 
     def download_model(self, id):
-        # get the checkpoints of the model with this id
+        """
+        Downloads the model with the given id and updates the progress dialog.
+
+        Args:
+            id (int): The id of the model to download.
+
+        Returns:
+            None
+        """
+        # Get the checkpoint link and model name for the model with this id
         checkpoint_link = models_json[id]["Checkpoint_link"]
         model_name = models_json[id]["Model Name"]
 
-        # create a progress dialog
+        # Create a progress dialog
         progress_dialog = QProgressDialog(
             f"Downloading {model_name}...", "Cancel", 0, 100, self)
         progress_dialog.setWindowModality(QtCore.Qt.WindowModal)
         progress_dialog.canceled.connect(self.cancel_download)
         progress_dialog.show()
 
+        # Initialize variables for tracking download progress
         self.start_time = time.time()
         self.last_time = self.start_time
         self.last_downloaded = 0
         self.download_canceled = False
 
         def handle_progress(block_num, block_size, total_size):
-            # calculate the progress
+            """
+            Updates the progress dialog with the current download progress.
+
+            Args:
+                block_num (int): The number of blocks downloaded.
+                block_size (int): The size of each block.
+                total_size (int): The total size of the file being downloaded.
+
+            Returns:
+                None
+            """
+            # Calculate the download progress
             read_data = block_num * block_size
             if total_size > 0:
                 download_percentage = read_data * 100 / total_size
@@ -246,12 +312,13 @@ class ModelExplorerDialog(QDialog):
                 QApplication.processEvents()
 
         try:
-            # download the file using requests
+            # Download the file using requests
             response = requests.get(checkpoint_link, stream=True)
             total_size = int(response.headers.get('content-length', 0))
             block_size = 1024
             block_num = 0
 
+            # Save the downloaded file to disk
             file_path = f"{cwd}/mmdetection/checkpoints/{checkpoint_link.split('/')[-1]}"
             with open(file_path, 'wb') as f:
                 for data in response.iter_content(block_size):
@@ -261,34 +328,58 @@ class ModelExplorerDialog(QDialog):
                     block_num += 1
                     handle_progress(block_num, block_size, total_size)
             if self.download_canceled:
-                # delete the file
+                # Delete the file if the download was canceled
                 os.remove(file_path)
                 print("Download canceled by user")
         except Exception as e:
             os.remove(file_path)
             print(f"Download error: {e}")
 
-        # close the progress dialog
+        # Close the progress dialog and update the table
         progress_dialog.close()
         self.check_availability()
         self.populate_table()
-        print("download finished")
+        print("Download finished")
 
-        # notification
+        # Show a notification if the main window is not active
         try:
             if not self.mute:
                 if not self.main_window.isActiveWindow():
-                    self.notification(f"{model_name} has been Downloaded Successfully")
+                    self.notification(f"{model_name} has been downloaded successfully")
         except:
             pass
 
+
     def cancel_download(self):
+        """
+        Sets the download_canceled flag to True to cancel the download.
+
+        Returns:
+            None
+        """
         self.download_canceled = True
 
+
     def create_download_callback(self, model_id):
+        """
+        Returns a lambda function that downloads the model with the given id.
+
+        Args:
+            model_id (int): The id of the model to download.
+
+        Returns:
+            function: A lambda function that downloads the model with the given id.
+        """
         return lambda: self.download_model(model_id)
 
+
     def check_availability(self):
+        """
+        Checks the availability of each model in the table and updates the "Downloaded" column.
+
+        Returns:
+            None
+        """
         checkpoints_dir = cwd + "/mmdetection/checkpoints/"
         for model in models_json:
             if model["Checkpoint"].split("/")[-1] in os.listdir(checkpoints_dir):
@@ -296,15 +387,15 @@ class ModelExplorerDialog(QDialog):
             else:
                 model["Downloaded"] = False
 
+
     def open_checkpoints_dir(self):
+        """
+        Opens the directory containing the downloaded checkpoints in the file explorer.
+
+        Returns:
+            None
+        """
         url = QtCore.QUrl.fromLocalFile(cwd + "/mmdetection/checkpoints/")
         if not QtGui.QDesktopServices.openUrl(url):
-            # print an error message if opening failed
-            print("failed")
-
-
-# if __name__ == "__main__":
-#     app = QtWidgets.QApplication([])
-#     window = ModelExplorerDialog()
-#     window.show()
-#     app.exec_()
+            # Print an error message if opening failed
+            print("Failed to open checkpoints directory")

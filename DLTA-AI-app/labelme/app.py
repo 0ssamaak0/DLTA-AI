@@ -2917,15 +2917,22 @@ class MainWindow(QtWidgets.QMainWindow):
             self._saveFile(self.save_path)
 
     def exportData(self):
-        
         """
-        Summary:
-            Export data to COCO, MOT, video, and custom exports
+        Export data to COCO, MOT, video, and custom exports, depending on the current annotation mode.
+
+        If the current annotation mode is "video", the function prompts the user to select which types of exports to perform
+        (COCO, MOT, video, and/or custom exports), and then prompts the user to select the output file path for each export type
+        that was selected. The function then exports the data to the selected file paths.
+
+        If the current annotation mode is "img" or "dir", the function prompts the user to select the output file path for a COCO
+        export, and then exports the data to the selected file path.
+
+        If an error occurs during the export process, the function displays an error message. Otherwise, the function displays
+        a success message.
         """
-        
         try:
             if self.current_annotation_mode == "video":
-
+                # Get user input for export options
                 result, coco_radio, mot_radio, video_radio, custom_exports_radio_checked_list = helpers.exportData_GUI()
                 if not result:
                     return
@@ -2935,12 +2942,14 @@ class MainWindow(QtWidgets.QMainWindow):
                 pth = ""
                 # Check which radio button is checked and export accordingly
                 if video_radio:
+                    # Get user input for video export path
                     folderDialog = utils.FolderDialog("tracking_results.mp4", "mp4")
                     if folderDialog.exec_():
                         pth = self.export_as_video_button_clicked(folderDialog.selectedFiles()[0])
                     else:
                         return
                 if coco_radio:
+                    # Get user input for COCO export path
                     folderDialog = utils.FolderDialog("coco.json", "json")
                     if folderDialog.exec_():
                         pth = utils.exportCOCOvid(
@@ -2948,6 +2957,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     else:
                         return
                 if mot_radio:
+                    # Get user input for MOT export path
                     folderDialog = utils.FolderDialog("mot.txt", "txt")
                     if folderDialog.exec_():
                         pth = utils.exportMOT(
@@ -2958,6 +2968,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 if len(custom_exports_radio_checked_list) != 0:
                     for i in range(len(custom_exports_radio_checked_list)):
                         if custom_exports_radio_checked_list[i]:
+                            # Get user input for custom export path
                             folderDialog = utils.FolderDialog(
                                 f"{custom_exports_list[i].file_name}.{custom_exports_list[i].format}", custom_exports_list[i].format)
                             if folderDialog.exec_():
@@ -2965,8 +2976,8 @@ class MainWindow(QtWidgets.QMainWindow):
                             else:
                                 return
 
-
             elif self.current_annotation_mode == "img" or self.current_annotation_mode == "dir":
+                # Get user input for COCO export path
                 folderDialog = utils.FolderDialog("coco.json", "json")
                 if folderDialog.exec_():
                     pth = utils.exportCOCO(
