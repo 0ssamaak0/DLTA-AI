@@ -45,7 +45,7 @@ pip install -r requirements.txt
 mim install mmcv-full==1.7.0
 ```
 ###3. Running
-Run the tool from `DLTA-AI-app` directory
+Run the tool from `DLTA_AI_app` directory
 ```
 cd labelme-master
 python __main__.py

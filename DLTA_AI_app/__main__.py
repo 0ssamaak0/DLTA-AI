@@ -1,5 +1,8 @@
-import os.path as osp
+import os
 import sys
+
+sys.path.append(os.path.dirname(os.path.realpath(__file__)))
+os.chdir(os.path.dirname(os.path.realpath(__file__)))
 
 from qtpy import QtCore
 from qtpy import QtWidgets
