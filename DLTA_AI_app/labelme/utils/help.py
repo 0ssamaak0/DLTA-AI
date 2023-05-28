@@ -412,5 +412,6 @@ def version():
     Returns:
     None
     """
+    from labelme import __version__
     # Display the version number in a message box
-    OKmsgBox("Version", "DLTA-AI Version 1.0")
+    OKmsgBox("Version", f"DLTA-AI Version {__version__}")

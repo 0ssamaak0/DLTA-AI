@@ -1,7 +1,13 @@
 from ultralytics import YOLO
 import json
 import time
-from inferencing import models_inference
+try:
+    from inferencing import models_inference
+except ModuleNotFoundError:
+    import subprocess
+    print("The required package 'mmcv-full' is not currently installed. It will now be installed. This process may take some time. Note that this package will only be installed the first time you use DLTA-AI.")
+    subprocess.run(["mim", "install", "mmcv-full==1.7.0"])
+    from inferencing import models_inference
 from labelme.label_file import LabelFile
 from labelme import PY2
 from qtpy import QtCore

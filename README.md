@@ -1,6 +1,6 @@
 <div align = "center">
 <h1>
-    <img src = "assets/icon.png" width = 200 height = 200>
+    <img src = "https://github.com/0ssamaak0/DLTA-AI/blob/master/assets/icon.png?raw=true" width = 200 height = 200>
 <br>
 
 </h1>
@@ -19,7 +19,7 @@ DLTA-AI is the next generation of annotation tools, integrating the power of Com
 [![GitHub issues](https://img.shields.io/github/issues/0ssamaak0/DLTA-AI)](https://github.com/0ssamaak0/DLTA-AI/issues)
 [![GitHub last commit](https://img.shields.io/github/last-commit/0ssamaak0/DLTA-AI)](https://github.com/0ssamaak0/DLTA-AI/commits)
 
-![gif_main](assets/gif_main.gif)
+![gif_main](https://github.com/0ssamaak0/DLTA-AI/blob/master/assets/gif_main.gif?raw=true)
 
 <!-- make p with larger font size -->
 [Installation](#installation-%EF%B8%8F)  🛠️ | [Segment Anything](#Segment-Anything-) 🪄 | [Model Selection](#model-selection-) 🤖 | [Segmentation](#segmentation-) 🎨 | [Object Tracking](#object-tracking-) 🚗 | [Export](#export-) 📤 | [Other Features](#other-features-) 🌟| [Contributing](#contributing-) 🤝| [Acknowledgements](#acknowledgements-)🙏| [Resources](#resources-) 🌐 | [License](#license-) 📜
@@ -28,23 +28,32 @@ DLTA-AI is the next generation of annotation tools, integrating the power of Com
 
 
 # Installation 🛠️
-after downloading the lastest [release](https://github.com/0ssamaak0/DLTA-AI/releases) or cloning the repoistory, do the following steps
-## 1. Install [Pytorch](https://pytorch.org/)
-preferably using anaconda
+## Install Pytorch
+preferably in a conda environment with python 3.8
 
+install pytorch according to your device from [here](https://pytorch.org/get-started/locally/)
 ```
-conda create --name DLTA-AI python=3.8 -y
+conda create -n DLTA-AI python=3.8
 conda activate DLTA-AI
 
 conda install pytorch==1.13.1 torchvision==0.14.1 torchaudio==0.13.1 pytorch-cuda=11.7 -c pytorch -c nvidia
 ```
-## 2. install requirements
+## Option 1: using pip
+```
+pip install DLTA-AI
+```
+note that first time running the tool, it will download a required module, it may take some time
+
+## Option 2: manual installation
+after downloading the lastest [release](https://github.com/0ssamaak0/DLTA-AI/releases)
+
+install requirements
 
 ```
 pip install -r requirements.txt
 mim install mmcv-full==1.7.0
 ```
-###3. Running
+then 
 Run the tool from `DLTA_AI_app` directory
 ```
 cd labelme-master
@@ -91,7 +100,7 @@ DLTA-AI takes the Annotation to the next level by integrating lastest Meta model
 
 <div align = "center">
 
-![Segment Anything](assets/SAM.gif)
+![Segment Anything](https://github.com/0ssamaak0/DLTA-AI/blob/master/assets/SAM.gif?raw=true)
 </div>
 
 # Model Selection 🤖
@@ -100,7 +109,7 @@ For model selection, DLTA-AI provides the **Model Explorer** to utilize the powe
 the to give the user the ability to compare, download and select from the library of models
 <div align = "center">
 
-![Model Explorer](assets/model_explorer.png)
+![Model Explorer](https://github.com/0ssamaak0/DLTA-AI/blob/master/assets/model_explorer.png?raw=true)
 </div>
 
 
@@ -110,7 +119,7 @@ Using the models from the **Model Explorer**, DLTA-AI provides a seamless expire
 
 <div align = "center">
 
-![Segmentation](assets/segmentation.png)
+![Segmentation](https://github.com/0ssamaak0/DLTA-AI/blob/master/assets/segmentation.png?raw=true)
 </div>
 and as mentioned before, **SAM** is fully integrated in DLTA-AI to provide zero-shot segmentation for any class, and to improve the quality of segmentation
 
@@ -123,7 +132,7 @@ Beside this, DLTA-AI provides a completely new way to modify the tracking result
 
 <div align = "center">
 
-![Object Tracking](assets/tracking.gif)
+![Object Tracking](https://github.com/0ssamaak0/DLTA-AI/blob/master/assets/tracking.gif?raw=true)
 
 </div>
 
@@ -131,7 +140,7 @@ Beside automatic tracking models, DLTA-AI provides different methods of interpol
 
 <div align = "center">
 
-![Interpolation](assets/interpolation.png)
+![Interpolation](https://github.com/0ssamaak0/DLTA-AI/blob/master/assets/interpolation.png?raw=true)
 </div>
 
 # Export 📤
@@ -139,7 +148,7 @@ For Instance Segmentation, DLTA-AI provides to option to export the segmentation
 
 <div align = "center">
 
-![Export](assets/Export.png)
+![Export](https://github.com/0ssamaak0/DLTA-AI/blob/master/assets/Export.png?raw=true)
 
 </div>
 
