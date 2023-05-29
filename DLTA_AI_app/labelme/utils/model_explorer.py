@@ -36,7 +36,8 @@ class ModelExplorerDialog(QDialog):
         self.main_window = main_window
         self.mute = mute
         self.notification = notification
-        if not merge:
+        self.merge = merge
+        if not self.merge:
             self.setWindowTitle("Model Explorer")
         else:
             self.setWindowTitle("Merge Models")
@@ -53,7 +54,7 @@ class ModelExplorerDialog(QDialog):
         layout = QVBoxLayout()
         self.setLayout(layout)
 
-        if not merge:
+        if not self.merge:
             # Set up the toolbar
             toolbar = QToolBar()
             layout.addWidget(toolbar)
@@ -102,20 +103,21 @@ class ModelExplorerDialog(QDialog):
         self.check_availability()
 
         # Populate the table with default data
-        if not merge:
+        if not self.merge:
             self.populate_table()
         else:
-            self.populate_table(merge=True)
+            self.populate_table()
 
         # Set up the submit and cancel buttons
         button_layout = QHBoxLayout()
         layout.addLayout(button_layout)
 
-        close_button = QPushButton("Close")
+        close_button = QPushButton("Ok")
         close_button.clicked.connect(self.close)
         # add side padding to the button
         close_button.setFixedWidth(100)
 
+    
         # make the button in the middle of the layout, don't stretch
         button_layout.addStretch()
         button_layout.addWidget(close_button)
@@ -124,12 +126,9 @@ class ModelExplorerDialog(QDialog):
         # layout spacing
         layout.setSpacing(10)
 
-    def populate_table(self, merge=False):
+    def populate_table(self):
         """
         Populates the table with data from models_json.
-
-        Args:
-            merge (bool): If True, excludes SAM and YOLOv8 models from the table.
 
         Returns:
             None
@@ -154,7 +153,7 @@ class ModelExplorerDialog(QDialog):
         # Populate the table with data
         row_count = 0
         for model in models_json:
-            if merge:
+            if self.merge:
                 if model["Model"] == "SAM" or model["Model"] == "YOLOv8":
                     continue
 
@@ -167,8 +166,14 @@ class ModelExplorerDialog(QDialog):
 
             # Select Model column
             self.selected_model = (-1, -1, -1)
+            if self.merge:
+                self.selected_models = []
             select_row_button = QPushButton("Select Model")
-            select_row_button.clicked.connect(self.select_model)
+
+            if not self.merge:
+                select_row_button.clicked.connect(self.select_model)
+            else:
+                select_row_button.clicked.connect(self.select_merge_models)
 
             self.table.setContentsMargins(10, 10, 10, 10)
             self.table.setCellWidget(row_count, 10, select_row_button)
@@ -198,7 +203,7 @@ class ModelExplorerDialog(QDialog):
                 # change text
                 select_row_button.setText("Select from SAM Toolbar")
 
-            if merge:
+            if self.merge:
                 available_text = self.table.item(row_count, 9)
                 try:
                     available_text = available_text.text()
@@ -260,9 +265,27 @@ class ModelExplorerDialog(QDialog):
         row = index.row()
         model_id = int(self.table.item(row, 0).text())
         # Set the selected model as the model with this id
-        self.selected_model = models_json[model_id][
-            "Model Name"], models_json[model_id]["Config"], models_json[model_id]["Checkpoint"],
+        self.selected_model = models_json[model_id]["Model Name"], models_json[model_id]["Config"], models_json[model_id]["Checkpoint"],
         self.accept()
+    
+    def select_merge_models(self):
+        # Get the button that was clicked
+        sender = self.sender()
+        # Get the row index of the button in the table
+        index = self.table.indexAt(sender.pos())
+        # Get the model id from the row index
+        row = index.row()
+        model_id = int(self.table.item(row, 0).text())
+        # Check if the button is already selected
+        if sender.isChecked():
+            # Add the selected model to the list of selected models
+            self.selected_models.append([models_json[model_id]["Model Name"], models_json[model_id]["Config"], models_json[model_id]["Checkpoint"]])
+        else:
+            # Remove the selected model from the list of selected models
+            if [models_json[model_id]["Model Name"], models_json[model_id]["Config"], models_json[model_id]["Checkpoint"]] in self.selected_models:
+                self.selected_models.remove([models_json[model_id]["Model Name"], models_json[model_id]["Config"], models_json[model_id]["Checkpoint"]])
+        print(self.selected_models)
+        return self.selected_models
 
     def download_model(self, id):
         """

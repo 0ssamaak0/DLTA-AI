@@ -2764,10 +2764,10 @@ class MainWindow(QtWidgets.QMainWindow):
             Open model explorer dialog to select or download models
         """
         self._config = get_config()
-        model_explorer_dialog = utils.ModelExplorerDialog(self, self._config["mute"], helpers.notification)
+        model_explorer_dialog = utils.ModelExplorerDialog(self, self._config["mute"], helpers.notification, merge = False)
         # make it fit its contents
         model_explorer_dialog.adjustSize()
-        model_explorer_dialog.setMinimumWidth(model_explorer_dialog.table.width() * 1.905)
+        model_explorer_dialog.setMinimumWidth(model_explorer_dialog.table.width() * 1.5)
         model_explorer_dialog.setMinimumHeight(model_explorer_dialog.table.rowHeight(0) * 10)
         model_explorer_dialog.exec_()
         self.update_saved_models_json()
