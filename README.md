@@ -42,7 +42,11 @@ conda install pytorch==1.13.1 torchvision==0.14.1 torchaudio==0.13.1 pytorch-cud
 ```
 pip install DLTA-AI
 ```
-note that first time running the tool, it will download a required module, it may take some time
+then run it from anywhere using
+```
+DLTA-AI
+```
+note that first time running DLTA-AI, it will download a required module, it may take some time
 
 ## Option 2: manual installation
 after downloading the lastest [release](https://github.com/0ssamaak0/DLTA-AI/releases)

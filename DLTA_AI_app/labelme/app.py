@@ -849,12 +849,12 @@ class MainWindow(QtWidgets.QMainWindow):
             "license",
             self.tr("license")
         )
-        version = action(
-            self.tr("Version"),
-            utils.version,
+        check_updates = action(
+            self.tr("Check for Updates"),
+            utils.check_updates,
             None,
             "info",
-            self.tr("Version")
+            self.tr("Check for Updates")
         )
         preferences = action(
             self.tr("Preferences"),
@@ -1103,7 +1103,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 feedback,
                 None,
                 license,
-                version
+                check_updates
 
             ),
         )
