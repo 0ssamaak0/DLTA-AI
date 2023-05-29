@@ -66,7 +66,7 @@ python __main__.py
 ```
 
 ## Option 3: Using Executable (CPU only)
-you can download the lastest release Executable from [here](https://github.com/0ssamaak0/DLTA-AI/releases/tag/v1.0.1)
+you can download the lastest release Executable from [here](https://github.com/0ssamaak0/DLTA-AI/releases)
 it's currently available for windows and linux only, mac version isn't available yet
 
 The Executable doesn't require any installation, just download and run it, however it runs on CPU only (no GPU support) so it's not recommended for large datasets
