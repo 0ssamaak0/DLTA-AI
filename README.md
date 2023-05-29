@@ -61,7 +61,7 @@ mim install mmcv-full==1.7.0
 then 
 Run the tool from `DLTA_AI_app` directory
 ```
-cd labelme-master
+cd DLTA_AI_app
 python __main__.py
 ```
 
