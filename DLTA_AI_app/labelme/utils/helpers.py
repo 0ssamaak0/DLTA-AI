@@ -1067,7 +1067,11 @@ def update_saved_models_json(cwd):
     
     checkpoints_dir = cwd + "/mmdetection/checkpoints/"
     # list all the files in the checkpoints directory
-    files = os.listdir(checkpoints_dir)
+    try:
+        files = os.listdir(checkpoints_dir)
+    except:
+        # if checkpoints directory does not exist, create it
+        os.mkdir(checkpoints_dir)
     with open(cwd + '/models_menu/models_json.json') as f:
         models_json = json.load(f)
     saved_models = {}

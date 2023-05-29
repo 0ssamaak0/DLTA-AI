@@ -168,6 +168,9 @@ class MainWindow(QtWidgets.QMainWindow):
             self.intelligenceHelper = Intelligence(self)
         except:
             print("it seems you have a problem with initializing model\ncheck you have at least one model")
+            self.helper_first_time_flag = True
+        else:
+            self.helper_first_time_flag = False
         self.setWindowTitle(__appname__)
 
         # Whether we need to save or not.
@@ -2770,6 +2773,15 @@ class MainWindow(QtWidgets.QMainWindow):
         model_explorer_dialog.setMinimumWidth(model_explorer_dialog.table.width() * 1.5)
         model_explorer_dialog.setMinimumHeight(model_explorer_dialog.table.rowHeight(0) * 10)
         model_explorer_dialog.exec_()
+        # init intelligence again if it's the first model
+        if self.helper_first_time_flag:
+            try:
+                self.intelligenceHelper = Intelligence(self)
+            except:
+                print("it seems you have a problem with initializing model\ncheck you have at least one model")
+                self.helper_first_time_flag = True
+            else:
+                self.helper_first_time_flag = False
         self.update_saved_models_json()
 
         selected_model_name, config, checkpoint = model_explorer_dialog.selected_model
