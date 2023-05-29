@@ -28,7 +28,7 @@ DLTA-AI is the next generation of annotation tools, integrating the power of Com
 
 
 # Installation 🛠️
-## Install Pytorch
+## Install Pytorch (for Options 1 and 2)
 preferably in a conda environment with python 3.8
 
 install pytorch according to your device from [here](https://pytorch.org/get-started/locally/)
@@ -36,9 +36,10 @@ install pytorch according to your device from [here](https://pytorch.org/get-sta
 conda create -n DLTA-AI python=3.8
 conda activate DLTA-AI
 
-conda install pytorch==1.13.1 torchvision==0.14.1 torchaudio==0.13.1 pytorch-cuda=11.7 -c pytorch -c nvidia
+<pytorch installation command>
+Ex: conda install pytorch torchvision torchaudio .... -c pytorch>
 ```
-## Option 1: using pip
+## Option 1: Using pip
 ```
 pip install DLTA-AI
 ```
@@ -48,8 +49,8 @@ DLTA-AI
 ```
 note that first time running DLTA-AI, it will download a required module, it may take some time
 
-## Option 2: manual installation
-after downloading the lastest [release](https://github.com/0ssamaak0/DLTA-AI/releases)
+## Option 2: Manual Installation
+Download the lastest release from [here](https://github.com/0ssamaak0/DLTA-AI/releases)
 
 install requirements
 
@@ -63,6 +64,12 @@ Run the tool from `DLTA_AI_app` directory
 cd labelme-master
 python __main__.py
 ```
+
+## Option 3: Using Executable (CPU only)
+you can download the lastest release Executable from [here](https://github.com/0ssamaak0/DLTA-AI/releases/tag/v1.0.1)
+it's currently available for windows and linux only, mac version isn't available yet
+
+The Executable doesn't require any installation, just download and run it, however it runs on CPU only (no GPU support) so it's not recommended for large datasets
 ## Solutions to possible problems
 <details>
 
@@ -92,6 +99,14 @@ You can try
 conda install -c conda-forge pycocotools
 ```
 or just use Visual Studio installer to Install `MSVC v143 - VS 2022 C++ x64/x86 build tools (Latest)**`
+
+### 3. Problem in installing mmcv-full
+you may often stuck in installing `mmcv-full` with this message
+```
+Building wheels for collected packages: mmcv-full
+  Building wheel for mmcv-full (setup.py) ...
+```
+you can try installing [pytorch 1.13.1](https://pytorch.org/get-started/previous-versions/#v1131), instead of the lastest version, you can also refer to [this isse](https://github.com/open-mmlab/mmcv/issues/1386)
 
 </details>
 
