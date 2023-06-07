@@ -575,6 +575,9 @@ def convert_cv_to_qt(cv_img):
 
 
 def draw_bb_id(flags, image, x, y, w, h, id, label, color=(0, 0, 255), thickness=1):
+    if image is None:
+        print("Image is None")
+        return
     
     """
     Summary:
