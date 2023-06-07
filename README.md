@@ -206,14 +206,14 @@ you can contribute by:
 # Acknowledgements 🙏
 This tool is part of a Graduation Project at [Faculty of Engineering, Ain Shams University](https://eng.asu.edu.eg/) under the supervision of:
 
-- [Dr. Karim Ismail](karim.ismail@carleton.ca)
+- [Dr. Karim Ismail](https://carleton.ca/cee/profile/karim-ismail/)
 - [Dr. Ahmed Osama](ahmed.osama@eng.asu.edu.eg)
 - Dr. Watheq El-Kharashy
 - [Eng. Yousra El-Qattan](https://www.linkedin.com/in/youssra-elqattan/)
 
 we want also to thank our friends who helped us with testing, feedback and suggestions:
 
-- Eng. Houssam Siyoufi
+- [Eng. Houssam Siyoufi](https://www.linkedin.com/in/houssam-siyoufi-163627110/)
 - [Amin Mohamed](https://github.com/AminMohamed-3)
 - [Badr Mohamed](https://github.com/Badr-1)
 - [Ahmed Mahmoud](https://github.com/ahmedd-mahmoudd)
