@@ -4,27 +4,26 @@ import sys
 sys.path.append(os.path.dirname(os.path.realpath(__file__)))
 os.chdir(os.path.dirname(os.path.realpath(__file__)))
 
-from qtpy import QtCore
-from qtpy import QtWidgets
+from qtpy import QtCore, QtGui, QtWidgets
 
 from labelme import __appname__
 from labelme import __version__
-from labelme.app import MainWindow
-
 from labelme.utils import newIcon
 
-try:
-    import qdarktheme
-except ImportError:
-    pass
+import qdarktheme
+
 
 
 def main():
     app = QtWidgets.QApplication(sys.argv)
     app.setApplicationName(__appname__)
-
-    # style
     app.setWindowIcon(newIcon("icon"))
+
+    # create and show splash screen
+    splash_pix = QtGui.QPixmap('labelme/icons/splash_screen.png')
+    splash = QtWidgets.QSplashScreen(splash_pix, QtCore.Qt.WindowStaysOnTopHint)
+    splash.show()
+
     qss = """
     QMenuBar::item {
         padding: 10px;
@@ -58,9 +57,14 @@ def main():
     except Exception as e:
         pass
 
+    # create main window
+    from labelme.app import MainWindow
     win = MainWindow()
-
+    splash.finish(win)
     win.show()
+
+    # close splash screen
+
     win.raise_()
     sys.exit(app.exec_())
 
