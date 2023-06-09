@@ -239,7 +239,7 @@ def shortcut_selector():
     # Create a table to display the shortcuts
     shortcut_table = QtWidgets.QTableWidget()
     shortcut_table.setColumnCount(2)
-    shortcut_table.setHorizontalHeaderLabels(['Name', 'Shortcut'])
+    shortcut_table.setHorizontalHeaderLabels(['Function', 'Shortcut'])
     shortcut_table.setRowCount(len(shortcuts))
     shortcut_table.verticalHeader().setVisible(False)
 

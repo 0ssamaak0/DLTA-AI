@@ -11,7 +11,7 @@ branding:
       text: "#ffffff"
       background: "#ff0000"
 
-favicon: icon.png
+favicon: assets/icon.png
 
 links:
 - text: Getting Started

@@ -34,10 +34,10 @@ class Sam_Predictor():
 
     def predict(self, point_coords=None, point_labels=None, box=None, multimask_output=True, image=None):
         # print(point_coords , point_labels)
-        print(f'----------------------- into SAM predict')
-        print(f'point_coords: {point_coords}, point_labels: {point_labels}, box: {box}')
+        # print(f'----------------------- into SAM predict')
+        # print(f'point_coords: {point_coords}, point_labels: {point_labels}, box: {box}')
         if box is None:
-            print(f'----------------------- no boxes')
+            # print(f'----------------------- no boxes')
             if self.mask_logit is None:
                 masks, scores, logits = self.predictor.predict(point_coords=point_coords, 
                                                                point_labels=point_labels, 

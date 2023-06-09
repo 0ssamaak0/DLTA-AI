@@ -1,5 +1,6 @@
 ---
-label: full installation ⚡
+label: full installation
+icon: ":zap:"
 order: 3
 ---
 
@@ -14,14 +15,15 @@ conda activate DLTA-AI
 
 ## Install Pytorch
 
-install [pytorch](https://pytorch.org/get-started/locally/) according to your device and your OS, if you have GPU, choose CUDA version, otherwise choose CPU version
+First, you need to install [pytorch](https://pytorch.org/get-started/locally/) according to your device and your OS, if you have GPU, choose CUDA version, otherwise choose CPU version
 
 Example:
 ```
 conda install pytorch torchvision torchaudio .... -c pytorch>
 ```
 
-## 1. Using pip
+## Option 1: Using pip
+Installation using pip is more easier since it handles all dependencies
 ```
 pip install DLTA-AI
 ```
@@ -31,13 +33,14 @@ DLTA-AI
 ```
 note that first time running DLTA-AI, it will download a required module, it may take some time
 
-### Update
-
+you can also use pip for updating DLTA-AI
 ```
 pip install DLTA-AI -U
 ```
 
-## 2. Manual Installation
+
+
+## Option 2: Manual Installation
 Download the lastest release from [here](https://github.com/0ssamaak0/DLTA-AI/releases)
 
 install requirements

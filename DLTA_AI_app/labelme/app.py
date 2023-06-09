@@ -671,9 +671,9 @@ class MainWindow(QtWidgets.QMainWindow):
             enabled=False,
         )
         show_cross_line = action(
-            self.tr("&Show Cross Line"),
+            self.tr("&Toggle Cross Line"),
             self.enable_show_cross_line,
-            tip=self.tr("Show cross line for mouse position"),
+            tip=self.tr("cross line for mouse position"),
             icon="cartesian",
             checkable=True,
             checked=self._config["show_cross_line"],
@@ -706,19 +706,19 @@ class MainWindow(QtWidgets.QMainWindow):
             enabled=False,
         )
         enhance = action(
-            self.tr("&AI Enhance"),
+            self.tr("&Enhace"),
             self.sam_enhance_annotation_button_clicked,
             shortcuts["enhance"],
-            "edit",
+            "SAM",
             self.tr("Enhance the selected polygon with AI"),
             enabled=True,
         )
         interpolate = action(
-            self.tr("&Interpolate"),
+            self.tr("&Interpolation Tracking"),
             self.interpolateMENU,
             shortcuts["interpolate"],
-            "edit",
-            self.tr("Interpolate the selected polygon"),
+            "tracking",
+            self.tr("Interpolate the selected polygon between to frames to Track it"),
             enabled=True,
         )
         mark_as_key = action(
@@ -2012,8 +2012,7 @@ class MainWindow(QtWidgets.QMainWindow):
         newAREA = abs(cur_bbox[2] - cur_bbox[0]) * \
             abs(cur_bbox[3] - cur_bbox[1])
         bigger, smaller = max(oldAREA, newAREA), min(oldAREA, newAREA)
-        print(
-            f'oldAREA: {oldAREA}, newAREA: {newAREA}, bigger/smaller: {bigger/smaller}')
+        # print(f'oldAREA: {oldAREA}, newAREA: {newAREA}, bigger/smaller: {bigger/smaller}')
         if bigger/smaller < thresh or max_itr == 1:
             if forSHAPE:
                 return cur_bbox, SAMshape['points']
@@ -3853,16 +3852,16 @@ class MainWindow(QtWidgets.QMainWindow):
         self.FRAMES_TO_SKIP = self.frames_to_skip_slider.value()
         zeros = (2 - int(np.log10(self.FRAMES_TO_SKIP + 0.9))) * '0'
         self.frames_to_skip_label.setText(
-            'frames to skip by: ' + zeros + str(self.FRAMES_TO_SKIP))
+            'Jump forward/backward frames: ' + zeros + str(self.FRAMES_TO_SKIP))
 
     def playPauseButtonClicked(self):
         # we can check the state of the button by checking the button text
         
-        if self.playPauseButton.text() == "Play":
-            self.playPauseButton.setText("Pause")
+        if self.playPauseButton_mode == "Play":
+            self.playPauseButton_mode = "Pause"
             self.playPauseButton.setShortcut(self._config['shortcuts']['play'])
             self.playPauseButton.setToolTip(
-                f'shortcut ({self._config["shortcuts"]["play"]})')
+                f'Play ({self._config["shortcuts"]["play"]})')
             self.playPauseButton.setIcon(
                 self.style().standardIcon(QtWidgets.QStyle.SP_MediaPause))
             # play the video at the current fps untill the user clicks pause
@@ -3875,14 +3874,14 @@ class MainWindow(QtWidgets.QMainWindow):
             # note that the timer interval is in milliseconds
 
             # while self.timer.isActive():
-        elif self.playPauseButton.text() == "Pause":
+        elif self.playPauseButton_mode == "Pause":
             # first stop the timer
             self.play_timer.stop()
 
-            self.playPauseButton.setText("Play")
+            self.playPauseButton_mode = "Play"
             self.playPauseButton.setShortcut(self._config['shortcuts']['play'])
             self.playPauseButton.setToolTip(
-                f'shortcut ({self._config["shortcuts"]["play"]})')
+                f'Pause ({self._config["shortcuts"]["play"]})')
             self.playPauseButton.setIcon(
                 self.style().standardIcon(QtWidgets.QStyle.SP_MediaPlay))
         # print(1)
@@ -4503,7 +4502,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.previousFrame_button.setText("<<")
         self.previousFrame_button.setShortcut(self._config['shortcuts']['prev_x'])
         self.previousFrame_button.setToolTip(
-                f'shortcut ({self._config["shortcuts"]["prev_x"]})')
+                f'Jump Backward ({self._config["shortcuts"]["prev_x"]})')
         self.previousFrame_button.clicked.connect(
             self.previousFrame_buttonClicked)
 
@@ -4511,17 +4510,20 @@ class MainWindow(QtWidgets.QMainWindow):
         self.previous_1_Frame_button.setText("<")
         self.previous_1_Frame_button.setShortcut(self._config['shortcuts']['prev_1'])
         self.previous_1_Frame_button.setToolTip(
-                f'shortcut ({self._config["shortcuts"]["prev_1"]})')
+                f'Previous Frame ({self._config["shortcuts"]["prev_1"]})')
         self.previous_1_Frame_button.clicked.connect(
             self.previous_1_Frame_buttonclicked)
 
         self.playPauseButton = QtWidgets.QPushButton()
-        self.playPauseButton.setText("Play")
+        self.playPauseButton_mode = "Play"
         self.playPauseButton.setShortcut(self._config['shortcuts']['play'])
         self.playPauseButton.setToolTip(
-                f'shortcut ({self._config["shortcuts"]["play"]})')
+                f'Play ({self._config["shortcuts"]["play"]})')
         self.playPauseButton.setIcon(
             self.style().standardIcon(QtWidgets.QStyle.SP_MediaPlay))
+        
+        self.playPauseButton.setIconSize(QtCore.QSize(22, 22))
+        self.playPauseButton.setStyleSheet("QPushButton { margin: 5px;}")
         # when the button is clicked, print "Pressed!" in the terminal
         self.playPauseButton.pressed.connect(self.playPauseButtonClicked)
         # self.playPauseButton.clicked.connect(self.playPauseButtonClicked)
@@ -4530,14 +4532,14 @@ class MainWindow(QtWidgets.QMainWindow):
         self.nextFrame_button.setText(">>")
         self.nextFrame_button.setShortcut(self._config['shortcuts']['next_x'])
         self.nextFrame_button.setToolTip(
-                f'shortcut ({self._config["shortcuts"]["next_x"]})')
+                f'Jump forward ({self._config["shortcuts"]["next_x"]})')
         self.nextFrame_button.clicked.connect(self.nextFrame_buttonClicked)
 
         self.next_1_Frame_button = QtWidgets.QPushButton()
         self.next_1_Frame_button.setText(">")
         self.next_1_Frame_button.setShortcut(self._config['shortcuts']['next_1'])
         self.next_1_Frame_button.setToolTip(
-                f'shortcut ({self._config["shortcuts"]["next_1"]})')
+                f'Next Frame ({self._config["shortcuts"]["next_1"]})')
         self.next_1_Frame_button.clicked.connect(
             self.next_1_Frame_buttonClicked)
 
@@ -4961,7 +4963,7 @@ class MainWindow(QtWidgets.QMainWindow):
             "sam_enhance_annotation_button")
         self.sam_enhance_annotation_button.setStyleSheet(
             "QPushButton { font-size: 10pt; font-weight: bold; }")
-        self.sam_enhance_annotation_button.setText("Enhance Selected")
+        self.sam_enhance_annotation_button.setText("Enhance Polygons")
         # add icon to button
         self.sam_enhance_annotation_button.setIcon(
             QtGui.QIcon("labelme/icons/SAM.png"))
@@ -4969,7 +4971,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.sam_enhance_annotation_button.setIconSize(QtCore.QSize(24, 24))
         self.sam_enhance_annotation_button.setShortcut(self._config["shortcuts"]["SAM_enhance"])
         self.sam_enhance_annotation_button.setToolTip(
-            f'Enhance Selected Polygons ({self._config["shortcuts"]["SAM_enhance"]})')
+            f'Enhance Selected Polygons with SAM ({self._config["shortcuts"]["SAM_enhance"]})')
         self.sam_enhance_annotation_button.clicked.connect(
             self.sam_enhance_annotation_button_clicked)
         self.sam_toolbar.addWidget(self.sam_enhance_annotation_button)

@@ -1,6 +1,6 @@
 ---
 label: "What is DLTA-AI?"
-icon: "icon.png"
+icon: "assets/icon.png"
 ---
 
 # DLTA-AI
@@ -25,6 +25,7 @@ Another paragraph with **bold**, _italic_, ~~strikethrough~~, and `code` samples
 2. Second item
 3. Third item
 
+HTML
 <!-- add HTML syntax -->
 <p align = "center">
 <iframe width="100%" height="500"
@@ -32,7 +33,12 @@ src="https://www.youtube.com/embed/C0DPdy98e4c" allowfullscreen=True>
 </iframe>
 </p>
 
+EMBED
 [!embed](https://www.youtube.com/embed/C0DPdy98e4c)
+NO EMBED
+[!embed](https://www.youtube.com/watch?v=C0DPdy98e4c)
+TIME STAMP
+[!embed](https://youtu.be/C0DPdy98e4c?t=10)
 
 > "Cool! This is a quotation."
 
