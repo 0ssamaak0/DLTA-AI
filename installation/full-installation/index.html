@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <meta name="turbo-cache-control" content="no-cache" data-turbo-track="reload" data-track-token="3.0.3.739531723050">
+    <meta name="turbo-cache-control" content="no-cache" data-turbo-track="reload" data-track-token="3.0.3.739625474421">
 
     <!-- See retype.com -->
     <meta name="generator" content="Retype 3.0.3">
@@ -30,12 +30,12 @@
 
     <script>(function () { var el = document.documentElement, m = localStorage.getItem("doc_theme"), wm = window.matchMedia; if (m === "dark" || (!m && wm && wm("(prefers-color-scheme: dark)").matches)) { el.classList.add("dark") } else { el.classList.remove("dark") } })();</script>
 
-    <link href="../../icon.png" rel="icon" />
-    <link href="../../resources/css/retype.css?v=3.0.3.739531723050" rel="stylesheet" />
+    <link href="../../assets/icon.png" rel="icon" />
+    <link href="../../resources/css/retype.css?v=3.0.3.739625474421" rel="stylesheet" />
 
-    <script type="text/javascript" src="../../resources/js/config.js?v=3.0.3.739531723050" data-turbo-eval="false" defer></script>
+    <script type="text/javascript" src="../../resources/js/config.js?v=3.0.3.739625474421" data-turbo-eval="false" defer></script>
     <script type="text/javascript" src="../../resources/js/retype.js?v=3.0.3" data-turbo-eval="false" defer></script>
-    <script id="lunr-js" type="text/javascript" src="../../resources/js/lunr.js?v=3.0.3.739531723050" data-turbo-eval="false" defer></script>
+    <script id="lunr-js" type="text/javascript" src="../../resources/js/lunr.js?v=3.0.3.739625474421" data-turbo-eval="false" defer></script>
 </head>
 <body>
     <div id="docs-app" class="relative text-base antialiased text-gray-700 bg-white font-body dark:bg-dark-850 dark:text-dark-300">
@@ -194,17 +194,18 @@ conda activate DLTA-AI</code></pre>
         <span>Install Pytorch</span>
     </h2>
 </doc-anchor-target>
-<p>install <a href="https://pytorch.org/get-started/locally/">pytorch</a> according to your device and your OS, if you have GPU, choose CUDA version, otherwise choose CPU version</p>
+<p>First, you need to install <a href="https://pytorch.org/get-started/locally/">pytorch</a> according to your device and your OS, if you have GPU, choose CUDA version, otherwise choose CPU version</p>
 <p>Example:</p>
 <div class="codeblock-wrapper"><doc-codeblock>
 <pre class="language-none"><code v-pre class="language-none">conda install pytorch torchvision torchaudio .... -c pytorch&gt;</code></pre>
 </doc-codeblock></div>
-<doc-anchor-target id="1-using-pip">
+<doc-anchor-target id="option-1-using-pip">
     <h2>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#1-using-pip">#</doc-anchor-trigger>
-        <span>1. Using pip</span>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#option-1-using-pip">#</doc-anchor-trigger>
+        <span>Option 1: Using pip</span>
     </h2>
 </doc-anchor-target>
+<p>Installation using pip is more easier since it handles all dependencies</p>
 <div class="codeblock-wrapper"><doc-codeblock>
 <pre class="language-none"><code v-pre class="language-none">pip install DLTA-AI</code></pre>
 </doc-codeblock></div>
@@ -213,19 +214,14 @@ conda activate DLTA-AI</code></pre>
 <pre class="language-none"><code v-pre class="language-none">DLTA-AI</code></pre>
 </doc-codeblock></div>
 <p>note that first time running DLTA-AI, it will download a required module, it may take some time</p>
-<doc-anchor-target id="update">
-    <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#update">#</doc-anchor-trigger>
-        <span>Update</span>
-    </h3>
-</doc-anchor-target>
+<p>you can also use pip for updating DLTA-AI</p>
 <div class="codeblock-wrapper"><doc-codeblock>
 <pre class="language-none"><code v-pre class="language-none">pip install DLTA-AI -U</code></pre>
 </doc-codeblock></div>
-<doc-anchor-target id="2-manual-installation">
+<doc-anchor-target id="option-2-manual-installation">
     <h2>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#2-manual-installation">#</doc-anchor-trigger>
-        <span>2. Manual Installation</span>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#option-2-manual-installation">#</doc-anchor-trigger>
+        <span>Option 2: Manual Installation</span>
     </h2>
 </doc-anchor-target>
 <p>Download the lastest release from <a href="https://github.com/0ssamaak0/DLTA-AI/releases">here</a></p>
@@ -309,6 +305,6 @@ python __main__.py</code></pre>
 
     <div id="docs-overlay-target"></div>
 
-    <script>window.__DOCS__ = { "title": "full installation ⚡", level: 2, icon: "file", hasPrism: false, hasMermaid: false, hasMath: false }</script>
+    <script>window.__DOCS__ = { "title": "full installation", level: 2, icon: "file", hasPrism: false, hasMermaid: false, hasMath: false }</script>
 </body>
 </html>
