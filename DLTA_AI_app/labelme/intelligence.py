@@ -432,18 +432,106 @@ class Intelligence():
     # get the thresold as input from the user
 
     def setConfThreshold(self, prev_threshold=0.3):
-        text, ok = QtWidgets.QInputDialog.getText(
-            self.parent, 'Threshold Selector', 'Enter Confidence threshold:', QtWidgets.QLineEdit.Normal, str(prev_threshold))
-        if ok:
-            return text
+        dialog = QtWidgets.QDialog(self.parent)
+        dialog.setWindowTitle('Threshold Selector')
+
+        layout = QtWidgets.QVBoxLayout(dialog)
+
+        label = QtWidgets.QLabel('Enter Confidence Threshold')
+        layout.addWidget(label)
+
+        slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
+        slider.setMinimum(0)
+        slider.setMaximum(100)
+        slider.setValue(int(prev_threshold * 100))
+
+        text_input = QtWidgets.QLineEdit(str(prev_threshold))
+
+        def on_slider_change(value):
+            text_input.setText(str(value / 100))
+
+        def on_text_change(text):
+            try:
+                value = float(text)
+                slider.setValue(int(value * 100))
+            except ValueError:
+                pass
+
+        slider.valueChanged.connect(on_slider_change)
+        text_input.textChanged.connect(on_text_change)
+
+        layout.addWidget(slider)
+        layout.addWidget(text_input)
+
+        button_box = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel)
+        layout.addWidget(button_box)
+
+        def on_ok():
+            threshold = float(text_input.text())
+            dialog.accept()
+            return threshold
+
+        def on_cancel():
+            dialog.reject()
+            return prev_threshold
+
+        button_box.accepted.connect(on_ok)
+        button_box.rejected.connect(on_cancel)
+
+        if dialog.exec_() == QtWidgets.QDialog.Accepted:
+            return slider.value() / 100
         else:
             return prev_threshold
 
     def setIOUThreshold(self, prev_threshold=0.5):
-        text, ok = QtWidgets.QInputDialog.getText(
-            self.parent, 'Threshold Selector', 'Enter IOU threshold:', QtWidgets.QLineEdit.Normal, str(prev_threshold))
-        if ok:
-            return text
+        dialog = QtWidgets.QDialog(self.parent)
+        dialog.setWindowTitle('Threshold Selector')
+
+        layout = QtWidgets.QVBoxLayout(dialog)
+
+        label = QtWidgets.QLabel('Enter IOU Threshold')
+        layout.addWidget(label)
+
+        slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
+        slider.setMinimum(0)
+        slider.setMaximum(100)
+        slider.setValue(int(prev_threshold * 100))
+
+        text_input = QtWidgets.QLineEdit(str(prev_threshold))
+
+        def on_slider_change(value):
+            text_input.setText(str(value / 100))
+
+        def on_text_change(text):
+            try:
+                value = float(text)
+                slider.setValue(int(value * 100))
+            except ValueError:
+                pass
+
+        slider.valueChanged.connect(on_slider_change)
+        text_input.textChanged.connect(on_text_change)
+
+        layout.addWidget(slider)
+        layout.addWidget(text_input)
+
+        button_box = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel)
+        layout.addWidget(button_box)
+
+        def on_ok():
+            threshold = float(text_input.text())
+            dialog.accept()
+            return threshold
+
+        def on_cancel():
+            dialog.reject()
+            return prev_threshold
+
+        button_box.accepted.connect(on_ok)
+        button_box.rejected.connect(on_cancel)
+
+        if dialog.exec_() == QtWidgets.QDialog.Accepted:
+            return slider.value() / 100
         else:
             return prev_threshold
 
