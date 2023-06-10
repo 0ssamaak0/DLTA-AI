@@ -21,7 +21,7 @@ def main():
 
     # create and show splash screen
     splash_pix = QtGui.QPixmap('labelme/icons/splash_screen.png')
-    splash = QtWidgets.QSplashScreen(splash_pix, QtCore.Qt.WindowStaysOnTopHint)
+    splash = QtWidgets.QSplashScreen(splash_pix)
     splash.show()
 
     qss = """
