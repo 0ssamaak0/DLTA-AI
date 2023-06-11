@@ -706,9 +706,9 @@ class MainWindow(QtWidgets.QMainWindow):
             enabled=False,
         )
         enhance = action(
-            self.tr("&Enhace"),
+            self.tr("&Enhace Polygons"),
             self.sam_enhance_annotation_button_clicked,
-            shortcuts["enhance"],
+            shortcuts["SAM_enhance"],
             "SAM",
             self.tr("Enhance the selected polygon with AI"),
             enabled=True,
