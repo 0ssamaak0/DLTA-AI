@@ -4,7 +4,7 @@ output: .retype
 url: # Add your website address here
 
 branding:
-  title: DLTA-AI
+  title: DLTA-AI User Guide
   logo: assets/icon.png
   colors:
     label:

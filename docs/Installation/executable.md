@@ -8,6 +8,3 @@ DLTA-AI is available as an executable, however it's CPU only, so it's not recomm
 you can download the [lastest release](https://github.com/0ssamaak0/DLTA-AI/releases) Executable under **Assets** 
 
 The Executable doesn't require any installation, just download and run it
-
-![Executable image in file explorer](https://github.com/0ssamaak0/DLTA-AI/raw/master/docs/assets/exe.png?raw=true)
-![Your logo](https://github.com/0ssamaak0/DLTA-AI/raw/master/assets/icon.png?raw=true)

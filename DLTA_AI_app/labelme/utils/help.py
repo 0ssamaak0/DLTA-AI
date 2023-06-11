@@ -368,6 +368,22 @@ def open_license():
     # Open the license file in the default web browser
     webbrowser.open('https://github.com/0ssamaak0/DLTA-AI/blob/master/LICENSE')
 
+def open_guide():
+    """
+    Opens the guide for the DLTA-AI project in the default web browser.
+
+    Parameters:
+    None
+
+    Returns:
+    None
+    """
+    # Import necessary modules
+    import webbrowser
+
+    # Open the guide in the default web browser
+    webbrowser.open('https://0ssamaak0.github.io/DLTA-AI/')
+
 def open_release(link = None):
     """
     Opens the release page for the DLTA-AI project in the default web browser.

@@ -852,6 +852,13 @@ class MainWindow(QtWidgets.QMainWindow):
             "license",
             self.tr("license")
         )
+        user_guide = action(
+            self.tr("User Guide"),
+            utils.open_guide,
+            None,
+            "guide",
+            self.tr("User Guide")
+        )
         check_updates = action(
             self.tr("Check for Updates"),
             utils.check_updates,
@@ -1097,13 +1104,14 @@ class MainWindow(QtWidgets.QMainWindow):
         utils.addActions(
             self.menus.help,
             (
-                runtime_data,
-                None,
+                user_guide,
                 preferences,
                 shortcut_selector,
                 None,
                 git_hub,
                 feedback,
+                None,
+                runtime_data,
                 None,
                 license,
                 check_updates
