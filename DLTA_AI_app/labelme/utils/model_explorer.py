@@ -302,11 +302,13 @@ class ModelExplorerDialog(QDialog):
         model_name = models_json[id]["Model Name"]
 
         # Create a progress dialog
-        progress_dialog = QProgressDialog(
+        self.progress_dialog = QProgressDialog(
             f"Downloading {model_name}...", "Cancel", 0, 100, self)
-        progress_dialog.setWindowModality(QtCore.Qt.WindowModal)
-        progress_dialog.canceled.connect(self.cancel_download)
-        progress_dialog.show()
+        # Set the window title
+        self.progress_dialog.setWindowTitle("Downloading Model")
+        self.progress_dialog.setWindowModality(QtCore.Qt.WindowModal)
+        self.progress_dialog.canceled.connect(self.cancel_download)
+        self.progress_dialog.show()
 
         # Initialize variables for tracking download progress
         self.start_time = time.time()
@@ -326,14 +328,16 @@ class ModelExplorerDialog(QDialog):
             Returns:
                 None
             """
+            # failed flag
             # Calculate the download progress
             read_data = block_num * block_size
             if total_size > 0:
                 download_percentage = read_data * 100 / total_size
-                progress_dialog.setValue(download_percentage)
-                progress_dialog.setLabelText(f"Downloading {model_name}... ")
+                self.progress_dialog.setValue(download_percentage)
+                self.progress_dialog.setLabelText(f"Downloading {model_name}... ")
                 QApplication.processEvents()
 
+        failed = False
         try:
             # Download the file using requests
             response = requests.get(checkpoint_link, stream=True)
@@ -354,12 +358,14 @@ class ModelExplorerDialog(QDialog):
                 # Delete the file if the download was canceled
                 os.remove(file_path)
                 print("Download canceled by user")
+                failed = True
         except Exception as e:
             os.remove(file_path)
             print(f"Download error: {e}")
+            failed = True
 
         # Close the progress dialog and update the table
-        progress_dialog.close()
+        self.progress_dialog.close()
         self.check_availability()
         self.populate_table()
         print("Download finished")
@@ -367,8 +373,11 @@ class ModelExplorerDialog(QDialog):
         # Show a notification if the main window is not active
         try:
             if not self.mute:
-                if not self.main_window.isActiveWindow():
-                    self.notification(f"{model_name} has been downloaded successfully")
+                if not self.isActiveWindow():
+                    if not failed:
+                        self.notification(f"{model_name} has been downloaded successfully")
+                    else:
+                        self.notification(f"Failed to download {model_name}")
         except:
             pass
 

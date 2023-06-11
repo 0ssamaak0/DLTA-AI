@@ -6,7 +6,7 @@ order: 3
 
 # Full Installation
 ## Create a Virtual Environment
-It is highly recommended to install DTLA-AI within a virtual environment using conda. This will ensure a clean and isolated environment for the installation process. use `python=3.8`
+It is highly recommended to install DTLA-AI in virtual environment using conda. This will ensure a clean and isolated environment for the installation process. use `python=3.8` to avoid any compatibility issues
 ```
 conda create -n DLTA-AI python=3.8
 conda activate DLTA-AI

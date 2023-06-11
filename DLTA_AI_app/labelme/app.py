@@ -569,7 +569,7 @@ class MainWindow(QtWidgets.QMainWindow):
             text=self.tr("Add Point to Edge"),
             slot=self.canvas.addPointToEdge,
             shortcut=shortcuts["add_point_to_edge"],
-            icon="edit",
+            icon="add_point",
             tip=self.tr("Add point to the nearest edge"),
             enabled=False,
         )
@@ -701,7 +701,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.tr("Edit &Label"),
             self.editLabel,
             shortcuts["edit_label"],
-            "edit",
+            "label",
             self.tr("Modify the label of the selected polygon"),
             enabled=False,
         )
@@ -725,7 +725,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.tr("&Mark as key"),
             self.mark_as_key,
             shortcuts["mark_as_key"],
-            "edit",
+            "mark",
             self.tr("Mark this frame as KEY for interpolation"),
             enabled=True,
         )
@@ -733,7 +733,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.tr("&Scale"),
             self.scaleMENU,
             shortcuts["scale"],
-            "edit",
+            "resize",
             self.tr("Scale the selected polygon"),
             enabled=True,
         )
@@ -741,7 +741,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.tr("&Copy"),
             self.copyShapesSelected,
             shortcuts["copy"],
-            "edit",
+            "copy",
             self.tr("Copy selected polygons"),
             enabled=True,
         )
@@ -749,7 +749,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.tr("&Paste"),
             self.pasteShapesSelected,
             shortcuts["paste"],
-            "edit",
+            "paste",
             self.tr("paste copied polygons"),
             enabled=True,
         )
@@ -1138,12 +1138,14 @@ class MainWindow(QtWidgets.QMainWindow):
             open_,
             opendir,
             openVideo,
+            None,
             save,
             export,
             None,
             createMode,
             editMode,
-            copy,
+            edit,
+            None,
             delete,
             undo,
             None,
@@ -1474,7 +1476,7 @@ class MainWindow(QtWidgets.QMainWindow):
         menu.clear()
         files = [f for f in self.recentFiles if f != current and exists(f)]
         for i, f in enumerate(files):
-            icon = utils.newIcon("labels")
+            icon = utils.newIcon("brain")
             action = QtWidgets.QAction(
                 icon, "&%d %s" % (i + 1, QtCore.QFileInfo(f).fileName()), self
             )
@@ -1493,7 +1495,7 @@ class MainWindow(QtWidgets.QMainWindow):
             for model_name in list(data.keys()):
                 if i >= 6:
                     break
-                icon = utils.newIcon("labels")
+                icon = utils.newIcon("brain")
                 action = QtWidgets.QAction(
                     icon, "&%d %s" % (i + 1, model_name), self)
                 action.triggered.connect(functools.partial(
@@ -1626,7 +1628,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if shape.group_id is None:
             item.setText(shape.label)
         else:
-            if self.current_annotation_mode == 'image':
+            if self.current_annotation_mode == 'img' or self.current_annotation_mode == 'dir':
                 item.setText(f' ID {shape.group_id}: {shape.label}')
                 self.setDirty()
                 if not self.uniqLabelList.findItemsByLabel(shape.label):

@@ -42,8 +42,9 @@ class LabelDialog(QtWidgets.QDialog):
         if fit_to_content is None:
             fit_to_content = {"row": False, "column": True}
         self._fit_to_content = fit_to_content
-        
         super(LabelDialog, self).__init__(parent)
+        self.setWindowTitle("Edit Label")
+
         self.edit = LabelQLineEdit()
         self.edit.setPlaceholderText(text)
         self.edit.setValidator(labelme.utils.labelValidator())
@@ -51,16 +52,17 @@ class LabelDialog(QtWidgets.QDialog):
         if flags:
             self.edit.textChanged.connect(self.updateFlags)
         self.edit_group_id = QtWidgets.QLineEdit()
-        self.edit_group_id.setPlaceholderText("Group ID")
+        self.edit_group_id.setPlaceholderText("Tracking ID")
         self.edit_group_id.setValidator(
             QtGui.QRegExpValidator(QtCore.QRegExp(r"\d*"), None)
         )
-        layout = QtWidgets.QVBoxLayout()
-        if show_text_field:
-            layout_edit = QtWidgets.QHBoxLayout()
-            layout_edit.addWidget(self.edit, 6)
-            layout_edit.addWidget(self.edit_group_id, 2)
-            layout.addLayout(layout_edit)
+
+        self.edit_group_id_label = QtWidgets.QLabel()
+        self.edit_group_id_label.setText("Tracking ID")
+
+        self.select_class_label = QtWidgets.QLabel()
+        self.select_class_label.setText("Class Name")
+
         # buttons
         self.buttonBox = bb = QtWidgets.QDialogButtonBox(
             QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel,
@@ -69,9 +71,10 @@ class LabelDialog(QtWidgets.QDialog):
         )
         bb.button(bb.Ok).setIcon(labelme.utils.newIcon("done"))
         bb.button(bb.Cancel).setIcon(labelme.utils.newIcon("undo"))
+        bb.setCenterButtons(True)  # center the buttons
         bb.accepted.connect(self.validate)
         bb.rejected.connect(self.reject)
-        layout.addWidget(bb)
+        
         # label_list
         self.labelList = QtWidgets.QListWidget()
         if self._fit_to_content["row"]:
@@ -94,21 +97,63 @@ class LabelDialog(QtWidgets.QDialog):
         self.labelList.currentItemChanged.connect(self.labelSelected)
         self.labelList.itemDoubleClicked.connect(self.labelDoubleClicked)
         self.edit.setListWidget(self.labelList)
-        layout.addWidget(self.labelList)
+
+        self.labelListLabel = QtWidgets.QLabel()
+        self.labelListLabel.setText("Select From Class List")
         # label_flags
         if flags is None:
             flags = {}
         self._flags = flags
         self.flagsLayout = QtWidgets.QVBoxLayout()
         self.resetFlags()
-        layout.addItem(self.flagsLayout)
         self.edit.textChanged.connect(self.updateFlags)
-        #text edit
-        self.textEdit = QtWidgets.QTextEdit()
-        self.textEdit.setPlaceholderText('Label content')
-        layout.addWidget(self.textEdit)
+
+        # confidence
+        self.confidenceEdit = QtWidgets.QLineEdit()
+        self.confidenceEdit.setPlaceholderText('Confidence')
+
+        # Add a validator to accept only floats between 0 and 1
+        validator = QtGui.QDoubleValidator(0, 1, 2, self.confidenceEdit)
+        self.confidenceEdit.setValidator(validator)
+
+        # add title before confidence
+        self.confidenceEditLabel = QtWidgets.QLabel()
+        self.confidenceEditLabel.setText('Confidence')
+        
+
+
+        layout = QtWidgets.QVBoxLayout()
+        layout.addItem(self.flagsLayout)
+
+        layout.addWidget(self.select_class_label)
+        layout.addWidget(self.edit)
+        
+        # Create a vertical layout for the edit group ID label and edit
+        edit_group_id_layout = QtWidgets.QVBoxLayout()
+        edit_group_id_layout.addWidget(self.edit_group_id_label)
+        edit_group_id_layout.addWidget(self.edit_group_id)
+
+        # Create a vertical layout for the confidence label and edit
+        confidence_layout = QtWidgets.QVBoxLayout()
+        confidence_layout.addWidget(self.confidenceEditLabel)
+        confidence_layout.addWidget(self.confidenceEdit)
+        
+        # add both vertical layouts to a horizontal layout
+        horizontal_layout = QtWidgets.QHBoxLayout()
+        horizontal_layout.addItem(edit_group_id_layout)
+        horizontal_layout.addSpacing(10)  # add 10 pixels of space
+        horizontal_layout.addItem(confidence_layout)
+
+        # add the horizontal layout to the main layout
+        layout.addItem(horizontal_layout)
+
+        # add the label list and label list label to the main layout
+        layout.addWidget(self.labelListLabel)
+        layout.addWidget(self.labelList)
+        layout.addWidget(bb)
         self.resize(300,200)
         self.setLayout(layout)
+
 
         # completion
         completer = QtWidgets.QCompleter()
@@ -207,7 +252,7 @@ class LabelDialog(QtWidgets.QDialog):
         return None
         
     def getContent(self):
-        content = self.textEdit.toPlainText()
+        content = self.confidenceEdit.text()
         if content:
             return content
         return None
@@ -215,7 +260,7 @@ class LabelDialog(QtWidgets.QDialog):
     def setContent(self, content):
         if type(content) != str:
             content = str(content)
-        self.textEdit.setPlainText(content)
+        self.confidenceEdit.setText(content)
 
     def popUp(self, text=None, move=True, flags=None, group_id=None, content=None, skip_flag=False):
         if self._fit_to_content["row"]:
@@ -229,7 +274,7 @@ class LabelDialog(QtWidgets.QDialog):
         # if text is None, the previous label in self.edit is kept
         if text is None:
             text = self.edit.text()
-        # if content is None, make the self.textEdit empty
+        # if content is None, make the self.confidenceEdit empty
         if content is None:
             content=""
         self.setContent(content)
