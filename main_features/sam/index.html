@@ -9,24 +9,21 @@
     <meta name="generator" content="Retype 3.0.3">
 
     <!-- Primary Meta Tags -->
-    <title>Solutions to possible problems</title>
-    <meta name="title" content="Solutions to possible problems">
-    <meta name="description" content="some linux machines may have this problem" />
+    <title>Segment Anything (SAM)</title>
+    <meta name="title" content="Segment Anything (SAM)">
 
     <!-- Canonical -->
-    <link rel="canonical" href="/installation/problems/" />
+    <link rel="canonical" href="/main_features/sam/" />
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
-    <meta property="og:url" content="/installation/problems/">
-    <meta property="og:title" content="Solutions to possible problems">
-    <meta property="og:description" content="some linux machines may have this problem">
+    <meta property="og:url" content="/main_features/sam/">
+    <meta property="og:title" content="Segment Anything (SAM)">
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="/installation/problems/">
-    <meta property="twitter:title" content="Solutions to possible problems">
-    <meta property="twitter:description" content="some linux machines may have this problem">
+    <meta property="twitter:url" content="/main_features/sam/">
+    <meta property="twitter:title" content="Segment Anything (SAM)">
 
     <script>(function () { var el = document.documentElement, m = localStorage.getItem("doc_theme"), wm = window.matchMedia; if (m === "dark" || (!m && wm && wm("(prefers-color-scheme: dark)").matches)) { el.classList.add("dark") } else { el.classList.remove("dark") } })();</script>
 
@@ -171,51 +168,12 @@
                                 <div id="docs-sidebar-right-toggle"></div>
                 
                                 <!-- Page content  -->
-<doc-anchor-target id="solutions-to-possible-problems" class="break-words">
+<doc-anchor-target id="segment-anything-sam" class="break-words">
     <h1>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#solutions-to-possible-problems">#</doc-anchor-trigger>
-        <span>Solutions to possible problems</span>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#segment-anything-sam">#</doc-anchor-trigger>
+        <span>Segment Anything (SAM)</span>
     </h1>
 </doc-anchor-target>
-<doc-panels>
-   <doc-panel id="1-linux-devices">
-       <template #title>1. (linux devices <span class="docs-emoji">&#x1F427;</span>)</template>
-<p>some linux machines may have this problem</p>
-<div class="codeblock-wrapper"><doc-codeblock>
-<pre class="language-none"><code v-pre class="language-none">Could not load the Qt platform plugin &quot;xcb&quot; in &quot;/home/&lt;username&gt;/miniconda3/envs/test/lib/python3.8/site-packages/cv2/qt/plugins&quot; even though it was found.
-This application failed to start because no Qt platform plugin could be initialized. Reinstalling the application may fix this problem.
-
-Available platform plugins are: xcb, eglfs, linuxfb, minimal, minimalegl, offscreen, vnc, wayland-egl, wayland, wayland-xcomposite-egl, wayland-xcomposite-glx, webgl.</code></pre>
-</doc-codeblock></div>
-<p>it can be solved simply be installing opencv-headless</p>
-<div class="codeblock-wrapper"><doc-codeblock>
-<pre class="language-none"><code v-pre class="language-none">pip3 install opencv-python-headless</code></pre>
-</doc-codeblock></div>
-   </doc-panel>
-   <doc-panel id="2-windows-devices">
-       <template #title>2. (windows devices 🪟)</template>
-<p>some windows machines may have this problem when installing <strong>mmdet</strong></p>
-<div class="codeblock-wrapper"><doc-codeblock>
-<pre class="language-none"><code v-pre class="language-none">Building wheel for pycocotools (setup.py) ... error
-...
-error: Microsoft Visual C++ 14.0 or greater is required. Get it with &quot;Microsoft C++ Build Tools&quot;: https://visualstudio.microsoft.com/visual-cpp-build-tools/</code></pre>
-</doc-codeblock></div>
-<p>You can try</p>
-<div class="codeblock-wrapper"><doc-codeblock>
-<pre class="language-none"><code v-pre class="language-none">conda install -c conda-forge pycocotools</code></pre>
-</doc-codeblock></div>
-<p>or just use Visual Studio installer to Install <code v-pre>MSVC v143 - VS 2022 C++ x64/x86 build tools (Latest)**</code></p>
-   </doc-panel>
-   <doc-panel id="3-problem-in-installing-mmcv-full">
-       <template #title>3. Problem in installing mmcv-full</template>
-<p>you may often stuck in installing <code v-pre>mmcv-full</code> with this message</p>
-<div class="codeblock-wrapper"><doc-codeblock>
-<pre class="language-none"><code v-pre class="language-none">Building wheels for collected packages: mmcv-full
-  Building wheel for mmcv-full (setup.py) ...</code></pre>
-</doc-codeblock></div>
-<p>you can try installing <a href="https://pytorch.org/get-started/previous-versions/#v1131">pytorch 1.13.1</a>, instead of the lastest version, you can also refer to <a href="https://github.com/open-mmlab/mmcv/issues/1386">this isse</a></p>
-   </doc-panel>
-</doc-panels>
 
                                 
                                 <!-- Required only on API pages -->
@@ -225,20 +183,20 @@ error: Microsoft Visual C++ 14.0 or greater is required. Get it with &quot;Micro
                             
                                 <nav class="flex mt-14">
                                     <div class="w-1/2">
-                                        <a class="px-5 py-4 h-full flex items-center break-normal font-medium text-blue-500 dark:text-blue-400 border border-gray-300 hover:border-gray-400 dark:border-dark-650 dark:hover:border-dark-450 rounded-l-lg transition-colors duration-150 relative hover:z-5" href="../../installation/executable/">
+                                        <a class="px-5 py-4 h-full flex items-center break-normal font-medium text-blue-500 dark:text-blue-400 border border-gray-300 hover:border-gray-400 dark:border-dark-650 dark:hover:border-dark-450 rounded-l-lg transition-colors duration-150 relative hover:z-5" href="../../installation/problems/">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="mr-3" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" overflow="visible"><path d="M19 11H7.41l5.29-5.29a.996.996 0 10-1.41-1.41l-7 7a1 1 0 000 1.42l7 7a1.024 1.024 0 001.42-.01.996.996 0 000-1.41L7.41 13H19c.55 0 1-.45 1-1s-.45-1-1-1z" /><path fill="none" d="M0 0h24v24H0z" /></svg>
                                             <span>
                                                 <span class="block text-xs font-normal text-gray-400 dark:text-dark-400">Previous</span>
-                                                <span class="block mt-1">Executable (CPU Only)</span>
+                                                <span class="block mt-1">possible problems</span>
                                             </span>
                                         </a>
                                     </div>
                             
                                     <div class="w-1/2">
-                                        <a class="px-5 py-4 -mx-px h-full flex items-center justify-end break-normal font-medium text-blue-500 dark:text-blue-400 border border-gray-300 hover:border-gray-400 dark:border-dark-650 dark:hover:border-dark-450 rounded-r-lg transition-colors duration-150 relative hover:z-5" href="../../main_features/sam/">
+                                        <a class="px-5 py-4 -mx-px h-full flex items-center justify-end break-normal font-medium text-blue-500 dark:text-blue-400 border border-gray-300 hover:border-gray-400 dark:border-dark-650 dark:hover:border-dark-450 rounded-r-lg transition-colors duration-150 relative hover:z-5" href="../../main_features/segmentation/">
                                             <span>
                                                 <span class="block text-xs font-normal text-right text-gray-400 dark:text-dark-400">Next</span>
-                                                <span class="block mt-1">Segment Anything (SAM)</span>
+                                                <span class="block mt-1">Segmentation</span>
                                             </span>
                                             <svg xmlns="http://www.w3.org/2000/svg" class="ml-3" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" overflow="visible"><path d="M19.92 12.38a1 1 0 00-.22-1.09l-7-7a.996.996 0 10-1.41 1.41l5.3 5.3H5c-.55 0-1 .45-1 1s.45 1 1 1h11.59l-5.29 5.29a.996.996 0 000 1.41c.19.2.44.3.7.3s.51-.1.71-.29l7-7c.09-.09.16-.21.21-.33z" /><path fill="none" d="M0 0h24v24H0z" /></svg>
                                         </a>
@@ -285,6 +243,6 @@ error: Microsoft Visual C++ 14.0 or greater is required. Get it with &quot;Micro
 
     <div id="docs-overlay-target"></div>
 
-    <script>window.__DOCS__ = { "title": "possible problems", level: 2, icon: "file", hasPrism: false, hasMermaid: false, hasMath: false }</script>
+    <script>window.__DOCS__ = { "title": "Segment Anything (SAM)", level: 2, icon: "file", hasPrism: false, hasMermaid: false, hasMath: false }</script>
 </body>
 </html>
