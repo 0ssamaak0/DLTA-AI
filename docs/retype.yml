@@ -5,13 +5,13 @@ url: # Add your website address here
 
 branding:
   title: DLTA-AI
-  logo: icon.png
+  logo: assets/icon.png
   colors:
     label:
       text: "#ffffff"
       background: "#ff0000"
 
-favicon: assets/icon.png
+favicon: https://github.com/0ssamaak0/DLTA-AI/blob/master/DLTA_AI_app/labelme/icons/icon.png?raw=true
 
 links:
 - text: Getting Started

@@ -9,4 +9,5 @@ you can download the [lastest release](https://github.com/0ssamaak0/DLTA-AI/rele
 
 The Executable doesn't require any installation, just download and run it
 
-![Executable image in file explorer]()
+![Executable image in file explorer](https://github.com/0ssamaak0/DLTA-AI/raw/master/docs/assets/exe.png?raw=true)
+![Your logo](https://github.com/0ssamaak0/DLTA-AI/raw/master/assets/icon.png?raw=true)
