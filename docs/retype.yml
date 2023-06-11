@@ -11,7 +11,7 @@ branding:
       text: "#ffffff"
       background: "#ff0000"
 
-favicon: https://github.com/0ssamaak0/DLTA-AI/blob/master/DLTA_AI_app/labelme/icons/icon.png?raw=true
+favicon: assets/icon.png
 
 links:
 - text: Getting Started

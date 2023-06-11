@@ -1,6 +1,6 @@
 ---
 label: full installation
-icon: ":zap:"
+icon: ":inbox_tray:"
 order: 3
 ---
 
