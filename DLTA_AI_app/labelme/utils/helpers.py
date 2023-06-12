@@ -907,7 +907,7 @@ def draw_bb_label_on_image_MODE(flags, image, x, y, w, h, label, conf, color=(0,
         )
 
     # there is no bbox but there is id or class
-    if (not flags['bbox']) and (flags['id'] or flags['class']):
+    if (not flags['bbox']) and (flags['conf'] or flags['class']):
         image = cv2.line(image, (x + int(w / 2), y + int(h / 2)),
                             (x + 50, y - 5), color, thickness + 1)
 
