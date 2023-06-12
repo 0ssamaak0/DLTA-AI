@@ -309,7 +309,8 @@ class MainWindow(QtWidgets.QMainWindow):
                                          "id": True,
                                          "class": True,
                                          "mask": True,
-                                         "polygons": True}
+                                         "polygons": True,
+                                         "conf": True}
         self.CURRENT_ANNOATAION_TRAJECTORIES = {}
         # keep it like that, don't change it
         self.CURRENT_ANNOATAION_TRAJECTORIES['length'] = 30
@@ -993,6 +994,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.canvas.edgeSelected.connect(self.canvasShapeEdgeSelected)
         self.canvas.vertexSelected.connect(self.actions.removePoint.setEnabled)
         self.canvas.samFinish.connect(self.sam_finish_annotation_button_clicked)
+        self.canvas.APPrefresh.connect(self.refresh_image_MODE)
         # self.canvas.reset.connect(self.sam_reset_button_clicked)
         # self.canvas.interrupted.connect(self.SETinterrupted)
 
@@ -1217,6 +1219,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.populateModeActions()
         self.right_click_menu()
         
+        QtWidgets.QShortcut(QtGui.QKeySequence(self._config['shortcuts']['stop']), self).activated.connect(self.Escape_clicked)
 
         # self.firstStart = True
         # if self.firstStart:
@@ -1635,6 +1638,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     item = QtWidgets.QListWidgetItem()
                     item.setData(Qt.UserRole, shape.label)
                     self.uniqLabelList.addItem(item)
+                self.refresh_image_MODE()
                 return
 
             idChanged = old_group_id != new_group_id
@@ -2421,6 +2425,9 @@ class MainWindow(QtWidgets.QMainWindow):
             self.actions.undoLastPoint.setEnabled(False)
             self.actions.undo.setEnabled(True)
             self.setDirty()
+            
+            self.refresh_image_MODE()
+            
         else:
             if self.canvas.SAM_mode == "finished":
                 # print(f'---------- SAM_mode is finished ----------- group_id: {group_id}, text: {text}')
@@ -2881,8 +2888,9 @@ class MainWindow(QtWidgets.QMainWindow):
             self.loadFile(filename)
             self.set_video_controls_visibility(False)
             self.right_click_menu()
-        self.vid_dock.setVisible(False)
-        for option in self.vid_options:
+        # self.vid_dock.setVisible(False)
+        # for option in self.vid_options:
+        for option in [self.id_checkBox, self.traj_checkBox, self.trajectory_length_lineEdit]:
             option.setEnabled(False)
         
     def changeOutputDirDialog(self, _value=False):
@@ -3199,6 +3207,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     for action in self.actions.onShapesPresent:
                         action.setEnabled(False)
                 if self.current_annotation_mode == 'img' or self.current_annotation_mode == 'dir':
+                    self.refresh_image_MODE()
                     return
 
                 # if video mode
@@ -3331,8 +3340,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.target_directory = targetDirPath
         self.importDirImages(targetDirPath)
         self.set_video_controls_visibility(False)
-        self.vid_dock.setVisible(False)
-        for option in self.vid_options:
+        # self.vid_dock.setVisible(False)
+        # for option in self.vid_options:
+        for option in [self.id_checkBox, self.traj_checkBox, self.trajectory_length_lineEdit]:
             option.setEnabled(False)
 
     @property
@@ -3454,6 +3464,10 @@ class MainWindow(QtWidgets.QMainWindow):
             except Exception as e:
                 helpers.OKmsgBox("Error", f"{e}", "critical")
                 return
+            
+        imageX = helpers.draw_bb_on_image_MODE(self.CURRENT_ANNOATAION_FLAGS,
+                                                    self.image, 
+                                                    shapes)
 
         # for shape in shapes:
         #     print(shape["group_id"])
@@ -3467,13 +3481,30 @@ class MainWindow(QtWidgets.QMainWindow):
         # clear shapes already in lablelist (fixes saving multiple shapes of same object bug)
         self.labelList.clear()
         self.CURRENT_SHAPES_IN_IMG = shapes
-        self.canvas.loadPixmap(QtGui.QPixmap.fromImage(self.image))
+        self.canvas.loadPixmap(QtGui.QPixmap.fromImage(imageX))
         self.loadLabels(self.CURRENT_SHAPES_IN_IMG)
         self.actions.editMode.setEnabled(True)
         self.actions.undoLastPoint.setEnabled(False)
         self.actions.undo.setEnabled(True)
         self.setDirty()
         # self.waitWindow()
+        
+    def refresh_image_MODE(self):
+        try:
+            if self.current_annotation_mode == "video":
+                return
+            self.CURRENT_SHAPES_IN_IMG = self.convert_qt_shapes_to_shapes(self.canvas.shapes)
+            imageX = helpers.draw_bb_on_image_MODE(self.CURRENT_ANNOATAION_FLAGS,
+                                                            self.image, 
+                                                            self.CURRENT_SHAPES_IN_IMG)
+            # self.canvas.setEnabled(False)
+            self.labelList.clear()
+            self.canvas.loadPixmap(QtGui.QPixmap.fromImage(imageX))
+            self.loadLabels(self.CURRENT_SHAPES_IN_IMG)
+            # self.canvas.setEnabled(True)
+            # self.actions.editMode.setEnabled(True)
+        except:
+            pass
 
     def annotate_batch(self):
         images = []
@@ -3632,9 +3663,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.menus.edit.clear()
             utils.addActions(self.menus.edit, (self.actions.menu[i] for i in image_menu_list))
 
-    def openVideo(self):
-
-        # enable export if json file exists
+    def reset_for_new_video(self):
         length_Value = self.CURRENT_ANNOATAION_TRAJECTORIES['length']
         alpha_Value = self.CURRENT_ANNOATAION_TRAJECTORIES['alpha']
         self.CURRENT_ANNOATAION_TRAJECTORIES.clear()
@@ -3643,16 +3672,20 @@ class MainWindow(QtWidgets.QMainWindow):
         self.key_frames.clear()
         self.id_frames_rec.clear()
 
-        # self.current_annotation_mode = "video"
-        # self.assignVideShortcuts()
-
         for shape in self.canvas.shapes:
             self.canvas.deleteShape(shape)
 
         self.CURRENT_SHAPES_IN_IMG = []
+        
+        self.current_annotation_mode = "video"
+        self.right_click_menu()
+        self.global_listObj = []
+        self.minID = -1
 
-        # self.videoControls.show()
-        # self.current_annotation_mode = "video"
+    def openVideo(self):
+
+        # enable export if json file exists
+        
         try:
             cv2.destroyWindow('video processing')
         except:
@@ -3665,10 +3698,9 @@ class MainWindow(QtWidgets.QMainWindow):
         )
 
         if videoFile[0]:
-            self.current_annotation_mode = "video"
-            self.right_click_menu()
-            self.global_listObj = []
-            self.minID = -1
+            
+            self.reset_for_new_video()
+            
             self.CURRENT_VIDEO_NAME = videoFile[0].split(
                 ".")[-2].split("/")[-1]
             self.CURRENT_VIDEO_PATH = "/".join(
@@ -4257,51 +4289,62 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def traj_checkBox_changed(self):
         try:
-            self.update_current_frame_annotation()
             self.CURRENT_ANNOATAION_FLAGS["traj"] = self.traj_checkBox.isChecked()
+            self.update_current_frame_annotation()
             self.main_video_frames_slider_changed()
         except:
             pass
 
     def mask_checkBox_changed(self):
         try:
-            self.update_current_frame_annotation()
             self.CURRENT_ANNOATAION_FLAGS["mask"] = self.mask_checkBox.isChecked()
+            self.update_current_frame_annotation()
             self.main_video_frames_slider_changed()
         except:
             pass
+        self.refresh_image_MODE()
 
     def class_checkBox_changed(self):
         try:
+            self.CURRENT_ANNOATAION_FLAGS["class"] = self.class_checkBox.isChecked()
             self.update_current_frame_annotation()
-            self.CURRENT_ANNOATAION_FLAGS["class"] = self.class_checkBox.isChecked(
-            )
             self.main_video_frames_slider_changed()
         except:
             pass
+        self.refresh_image_MODE()
+        
+    def conf_checkBox_changed(self):
+        try:
+            self.CURRENT_ANNOATAION_FLAGS["conf"] = self.conf_checkBox.isChecked()
+            self.update_current_frame_annotation()
+            self.main_video_frames_slider_changed()
+        except:
+            pass
+        self.refresh_image_MODE()
 
     def id_checkBox_changed(self):
         try:
-            self.update_current_frame_annotation()
             self.CURRENT_ANNOATAION_FLAGS["id"] = self.id_checkBox.isChecked()
+            self.update_current_frame_annotation()
             self.main_video_frames_slider_changed()
         except:
             pass        
 
     def bbox_checkBox_changed(self):
         try:
-            self.update_current_frame_annotation()
             self.CURRENT_ANNOATAION_FLAGS["bbox"] = self.bbox_checkBox.isChecked()
+            self.update_current_frame_annotation()
             self.main_video_frames_slider_changed()
         except:
             pass
+        self.refresh_image_MODE()
             
 
     def polygons_visable_checkBox_changed(self):
         try:
-            self.update_current_frame_annotation()
             self.CURRENT_ANNOATAION_FLAGS["polygons"] = self.polygons_visable_checkBox.isChecked(
             )
+            self.update_current_frame_annotation()
             for shape in self.canvas.shapes:
                 self.canvas.setShapeVisible(
                     shape, self.CURRENT_ANNOATAION_FLAGS["polygons"])
@@ -4657,7 +4700,7 @@ class MainWindow(QtWidgets.QMainWindow):
             QtGui.QIcon("labelme/icons/stop.png"))
         # make the icon bigger
         self.track_stop_button.setIconSize(QtCore.QSize(24, 24))
-        self.track_stop_button.setShortcut(self._config['shortcuts']['stop'])
+        # self.track_stop_button.setShortcut(self._config['shortcuts']['stop'])
         self.track_stop_button.setToolTip(
                 f'Stop Tracking ({self._config["shortcuts"]["stop"]})')
         self.track_stop_button.pressed.connect(
@@ -4680,6 +4723,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.class_checkBox.setText("class")
         self.class_checkBox.setChecked(True)
         self.class_checkBox.stateChanged.connect(self.class_checkBox_changed)
+        
+        self.conf_checkBox = QtWidgets.QCheckBox()
+        self.conf_checkBox.setText("confidence")
+        self.conf_checkBox.setChecked(True)
+        self.conf_checkBox.stateChanged.connect(self.conf_checkBox_changed)
 
         self.mask_checkBox = QtWidgets.QCheckBox()
         self.mask_checkBox.setText("mask")
@@ -4705,7 +4753,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.polygons_visable_checkBox.stateChanged.connect(
             self.polygons_visable_checkBox_changed)
 
-        self.vid_options = [self.id_checkBox, self.class_checkBox, self.bbox_checkBox, self.mask_checkBox, self.polygons_visable_checkBox, self.traj_checkBox, self.trajectory_length_lineEdit]
+        self.vid_options = [self.id_checkBox, self.class_checkBox, self.bbox_checkBox, self.mask_checkBox, self.polygons_visable_checkBox, self.traj_checkBox, self.trajectory_length_lineEdit, self.conf_checkBox]
         # add to self.vid_dock
         self.vid_widget.setLayout(QtWidgets.QGridLayout())
         self.vid_widget.layout().setContentsMargins(10, 10, 25, 10)  # set padding
@@ -4716,6 +4764,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.vid_widget.layout().addWidget(self.traj_checkBox, 2, 0)
         self.vid_widget.layout().addWidget(self.trajectory_length_lineEdit, 2, 1)
         self.vid_widget.layout().addWidget(self.polygons_visable_checkBox, 3, 0)
+        self.vid_widget.layout().addWidget(self.conf_checkBox, 3, 1)
 
 
         # save current frame
@@ -5271,6 +5320,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.canvas.shapes = convert_shapes_to_qt_shapes(
                 self.CURRENT_SHAPES_IN_IMG)
             self.sam_clear_annotation_button_clicked()
+            self.refresh_image_MODE()
 
     def check_sam_instance_in_shapes(self, shapes):
         if len(shapes) == 0:

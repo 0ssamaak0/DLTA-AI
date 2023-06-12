@@ -574,7 +574,7 @@ def convert_cv_to_qt(cv_img):
     return convert_to_Qt_format
 
 
-def draw_bb_id(flags, image, x, y, w, h, id, label, color=(0, 0, 255), thickness=1):
+def draw_bb_id(flags, image, x, y, w, h, id, conf, label, color=(0, 0, 255), thickness=1):
     if image is None:
         print("Image is None")
         return
@@ -603,13 +603,16 @@ def draw_bb_id(flags, image, x, y, w, h, id, label, color=(0, 0, 255), thickness
         image = cv2.rectangle(
             image, (x, y), (x + w, y + h), color, thickness + 1)
 
-    if flags['id'] or flags['class']:
+    if flags['id'] or flags['class'] or flags['conf']:
+        text = ''
         if flags['id'] and flags['class']:
             text = f'#{id} {label}'
         if flags['id'] and not flags['class']:
             text = f'#{id}'
         if not flags['id'] and flags['class']:
             text = f'{label}'
+        if flags['conf']:
+            text = f'{text} {conf}' if len(text) > 0 else f'{conf}'
 
         if image.shape[0] < 1000:
             fontscale = 0.5
@@ -646,7 +649,7 @@ def draw_bb_id(flags, image, x, y, w, h, id, label, color=(0, 0, 255), thickness
         )
 
     # there is no bbox but there is id or class
-    if (not flags['bbox']) and (flags['id'] or flags['class']):
+    if (not flags['bbox']) and (flags['id'] or flags['class'] or flags['conf']):
         image = cv2.line(image, (x + int(w / 2), y + int(h / 2)),
                             (x + 50, y - 5), color, thickness + 1)
 
@@ -735,6 +738,7 @@ def draw_bb_on_image(trajectories, CurrentFrameIndex, flags, nTotalFrames, image
     for shape in shapes:
         id = shape["group_id"]
         label = shape["label"]
+        conf = shape["content"]
 
         # color calculation
         idx = coco_classes.index(label) if label in coco_classes else -1
@@ -743,7 +747,7 @@ def draw_bb_on_image(trajectories, CurrentFrameIndex, flags, nTotalFrames, image
 
         (x1, y1, x2, y2) = shape["bbox"]
         x, y, w, h = int(x1), int(y1), int(x2 - x1), int(y2 - y1)
-        img = draw_bb_id(flags, img, x, y, w, h, id,
+        img = draw_bb_id(flags, img, x, y, w, h, id, conf,
                                 label, color, thickness=1)
         center = (int((x1 + x2) / 2), int((y1 + y2) / 2))
         try:
@@ -780,6 +784,134 @@ def draw_bb_on_image(trajectories, CurrentFrameIndex, flags, nTotalFrames, image
         img = convert_cv_to_qt(img, )
 
     return img
+
+
+def draw_bb_on_image_MODE(flags, image, shapes):
+    
+    """
+    Summary:
+        Draw bounding boxes on an QT image (multiple ids) in MODE image.
+        
+    Args:
+        flags: a dictionary of flags.
+        image: a QT image.
+        shapes: a list of shapes.
+        
+    Returns:
+        img: a QT image.
+    """
+    
+    img = convert_QT_to_cv(image)
+
+    for shape in shapes:
+        
+        label = shape["label"]
+        if label == "SAM instance":
+            continue
+        conf = shape["content"]
+        pts_poly = np.array([[x, y] for x, y in zip(
+            shape["points"][0::2], shape["points"][1::2])])
+
+        # color calculation
+        idx = coco_classes.index(label) if label in coco_classes else -1
+        idx = idx % len(color_palette)
+        color = color_palette[idx] if idx != -1 else (0, 0, 255)
+
+        (x1, y1, x2, y2) = shape["bbox"]
+        x, y, w, h = int(x1), int(y1), int(x2 - x1), int(y2 - y1)
+        
+        img = draw_bb_label_on_image_MODE(flags, img, x, y, w, h,
+                                label, conf, color, thickness=1)
+        
+        if flags['mask']:
+            original_img = img.copy()
+            if pts_poly is not None:
+                cv2.fillPoly(img, pts=[pts_poly], color=color)
+            alpha = 0.70
+            img = cv2.addWeighted(original_img, alpha, img, 1 - alpha, 0)
+    
+    img = convert_cv_to_qt(img, )
+
+    return img
+
+
+def draw_bb_label_on_image_MODE(flags, image, x, y, w, h, label, conf, color=(0, 0, 255), thickness=1):
+    if image is None:
+        print("Image is None")
+        return
+    
+    """
+    Summary:
+        Draw bounding box and id on an image (Single id).
+        
+    Args:
+        flags: a dictionary of flags (bbox, id, class)
+        image: a cv2 image
+        x: x coordinate of the bounding box
+        y: y coordinate of the bounding box
+        w: width of the bounding box
+        h: height of the bounding box
+        label: label of the shape (class name)
+        color: color of the bounding box
+        thickness: thickness of the bounding box
+        
+    Returns:
+        image: a cv2 image
+    """
+    
+    if flags['bbox']:
+        image = cv2.rectangle(
+            image, (x, y), (x + w, y + h), color, thickness + 1)
+
+    if flags['conf'] or flags['class']:
+        
+        if flags['conf'] and flags['class']:
+            text = f'{label} {conf}'
+        if flags['conf'] and not flags['class']:
+            text = f'{conf}'
+        if not flags['conf'] and flags['class']:
+            text = f'{label}'
+
+        if image.shape[0] < 1000:
+            fontscale = 0.5
+        else:
+            fontscale = 0.7
+        text_width, text_height = cv2.getTextSize(
+            text, cv2.FONT_HERSHEY_SIMPLEX, fontscale, thickness)[0]
+        text_x = x + 10
+        text_y = y - 10
+
+        text_background_x1 = x
+        text_background_y1 = y - 2 * 10 - text_height
+
+        text_background_x2 = x + 2 * 10 + text_width
+        text_background_y2 = y
+
+        # fontscale is proportional to the image size
+        cv2.rectangle(
+            img=image,
+            pt1=(text_background_x1, text_background_y1),
+            pt2=(text_background_x2, text_background_y2),
+            color=color,
+            thickness=cv2.FILLED,
+        )
+        cv2.putText(
+            img=image,
+            text=text,
+            org=(text_x, text_y),
+            fontFace=cv2.FONT_HERSHEY_SIMPLEX,
+            fontScale=fontscale,
+            color=(0, 0, 0),
+            thickness=thickness,
+            lineType=cv2.LINE_AA,
+        )
+
+    # there is no bbox but there is id or class
+    if (not flags['bbox']) and (flags['id'] or flags['class']):
+        image = cv2.line(image, (x + int(w / 2), y + int(h / 2)),
+                            (x + 50, y - 5), color, thickness + 1)
+
+    return image
 
 
 def SAM_rects_to_boxes(rects):
