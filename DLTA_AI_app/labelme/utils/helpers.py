@@ -606,11 +606,11 @@ def draw_bb_id(flags, image, x, y, w, h, id, conf, label, color=(0, 0, 255), thi
     if flags['id'] or flags['class'] or flags['conf']:
         text = ''
         if flags['id'] and flags['class']:
-            text = f'#{id} {label}'
+            text = f'#{id} [{label}]'
         if flags['id'] and not flags['class']:
             text = f'#{id}'
         if not flags['id'] and flags['class']:
-            text = f'{label}'
+            text = f'[{label}]'
         if flags['conf']:
             text = f'{text} {conf}' if len(text) > 0 else f'{conf}'
 
@@ -866,11 +866,11 @@ def draw_bb_label_on_image_MODE(flags, image, x, y, w, h, label, conf, color=(0,
     if flags['conf'] or flags['class']:
         
         if flags['conf'] and flags['class']:
-            text = f'{label} {conf}'
+            text = f'[{label}] {conf}'
         if flags['conf'] and not flags['class']:
             text = f'{conf}'
         if not flags['conf'] and flags['class']:
-            text = f'{label}'
+            text = f'[{label}]'
 
         if image.shape[0] < 1000:
             fontscale = 0.5

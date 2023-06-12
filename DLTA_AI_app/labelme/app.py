@@ -3395,7 +3395,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         if not self.mayContinue() or not dirpath:
             return
-        self.reset_for_new_mode()
+        self.reset_for_new_mode("dir")
         # self.right_click_menu()
         self.lastOpenDir = dirpath
         self.filename = None
