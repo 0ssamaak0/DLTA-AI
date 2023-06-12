@@ -71,6 +71,8 @@ class Canvas(QtWidgets.QWidget):
         self.is_loading = False
         self.loading_angle = 0
         self.loading_text = "Loading..."
+        
+        self.current_annotation_mode = ""
 
         self.shapesBackups = []
         self.current = None
@@ -322,7 +324,7 @@ class Canvas(QtWidgets.QWidget):
                 )
                 # conf = shape.content (to two decimal places)
 
-                if shape.group_id != None:
+                if shape.group_id != None and self.current_annotation_mode == 'video':
                     self.setToolTip(
                         self.tr(f'ID {str(shape.group_id)} {shape.label} {shape.content}'))
                 else:

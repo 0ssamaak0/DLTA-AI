@@ -332,7 +332,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # # for image annotation
         # self.last_file_opened = ""
         self.interrupted = False
-        self.minID = -1
+        self.minID = -2
 
         features = QtWidgets.QDockWidget.DockWidgetFeatures()
         for dock in ["flag_dock", "label_dock", "shape_dock", "file_dock", "vid_dock"]:
@@ -1632,7 +1632,8 @@ class MainWindow(QtWidgets.QMainWindow):
             item.setText(shape.label)
         else:
             if self.current_annotation_mode == 'img' or self.current_annotation_mode == 'dir':
-                item.setText(f' ID {shape.group_id}: {shape.label}')
+                # item.setText(f' ID {shape.group_id}: {shape.label}')
+                item.setText(f'{shape.label}')
                 self.setDirty()
                 if not self.uniqLabelList.findItemsByLabel(shape.label):
                     item = QtWidgets.QListWidgetItem()
@@ -2162,7 +2163,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.actions.edit.setEnabled(n_selected == 1)
 
     def addLabel(self, shape):
-        if shape.group_id is None:
+        if shape.group_id is None or self.current_annotation_mode != "video":
             text = shape.label
         else:
             text = f' ID {shape.group_id}: {shape.label}'
@@ -2858,7 +2859,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self._config["keep_prev"] = keep_prev
 
     def openFile(self, _value=False):
-        self.current_annotation_mode = 'img'
+        # self.current_annotation_mode = 'img'
         # self.disconnectVideoShortcuts()
         self.actions.export.setEnabled(False)
         try:
@@ -2885,9 +2886,11 @@ class MainWindow(QtWidgets.QMainWindow):
             filename, _ = filename
         filename = str(filename)
         if filename:
+            self.reset_for_new_mode("img")
             self.loadFile(filename)
+            self.refresh_image_MODE()
             self.set_video_controls_visibility(False)
-            self.right_click_menu()
+            # self.right_click_menu()
         # self.vid_dock.setVisible(False)
         # for option in self.vid_options:
         for option in [self.id_checkBox, self.traj_checkBox, self.trajectory_length_lineEdit]:
@@ -3316,7 +3319,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def openDirDialog(self, _value=False, dirpath=None):
         # self.disconnectVideoShortcuts()
 
-        self.current_annotation_mode = "dir"
+        # self.current_annotation_mode = "dir"
         if not self.mayContinue():
             return
 
@@ -3392,7 +3395,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
         if not self.mayContinue() or not dirpath:
             return
-        self.right_click_menu()
+        self.reset_for_new_mode()
+        # self.right_click_menu()
         self.lastOpenDir = dirpath
         self.filename = None
         self.fileListWidget.clear()
@@ -3663,7 +3667,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.menus.edit.clear()
             utils.addActions(self.menus.edit, (self.actions.menu[i] for i in image_menu_list))
 
-    def reset_for_new_video(self):
+    def reset_for_new_mode(self, mode):
         length_Value = self.CURRENT_ANNOATAION_TRAJECTORIES['length']
         alpha_Value = self.CURRENT_ANNOATAION_TRAJECTORIES['alpha']
         self.CURRENT_ANNOATAION_TRAJECTORIES.clear()
@@ -3675,12 +3679,17 @@ class MainWindow(QtWidgets.QMainWindow):
         for shape in self.canvas.shapes:
             self.canvas.deleteShape(shape)
 
-        self.CURRENT_SHAPES_IN_IMG = []
+        self.resetState()
         
-        self.current_annotation_mode = "video"
+        self.CURRENT_SHAPES_IN_IMG = []
+        self.image = QtGui.QImage()
+        self.CURRENT_FRAME_IMAGE = None
+        
+        self.current_annotation_mode = mode
+        self.canvas.current_annotation_mode = mode
         self.right_click_menu()
         self.global_listObj = []
-        self.minID = -1
+        self.minID = -2
 
     def openVideo(self):
 
@@ -3699,7 +3708,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         if videoFile[0]:
             
-            self.reset_for_new_video()
+            self.reset_for_new_mode("video")
             
             self.CURRENT_VIDEO_NAME = videoFile[0].split(
                 ".")[-2].split("/")[-1]
@@ -3929,6 +3938,9 @@ class MainWindow(QtWidgets.QMainWindow):
         # print(1)
 
     def main_video_frames_slider_changed(self):
+        
+        if self.current_annotation_mode != "video":
+            return
 
         if self.sam_model_comboBox.currentIndex() != 0 and self.canvas.SAM_mode != "finished" and not self.TrackingMode:
             self.sam_clear_annotation_button_clicked()
@@ -4450,6 +4462,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.main_video_frames_slider_changed()
 
     def update_current_frame_annotation(self):
+        
+        if self.current_annotation_mode != "video":
+            return
 
         listObj = self.load_objects_from_json__orjson()
 
