@@ -4112,6 +4112,8 @@ class MainWindow(QtWidgets.QMainWindow):
             if self.interrupted:
                 self.interrupted = False
                 break
+            if i % 100 == 0:
+                self.load_objects_to_json__orjson(listObj)
             self.tracking_progress_bar.setValue(
                 int((i + 1) / number_of_frames_to_track * 100))
 
