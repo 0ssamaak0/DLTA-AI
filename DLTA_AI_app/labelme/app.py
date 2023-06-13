@@ -2891,10 +2891,13 @@ class MainWindow(QtWidgets.QMainWindow):
             self.refresh_image_MODE()
             self.set_video_controls_visibility(False)
             # self.right_click_menu()
-        # self.vid_dock.setVisible(False)
-        # for option in self.vid_options:
-        for option in [self.id_checkBox, self.traj_checkBox, self.trajectory_length_lineEdit]:
-            option.setEnabled(False)
+
+        # enable Visualization Options
+        for option in self.vid_options:
+            if option in [self.id_checkBox, self.traj_checkBox, self.trajectory_length_lineEdit]:
+                option.setEnabled(False)
+            else:
+                option.setEnabled(True)
         
     def changeOutputDirDialog(self, _value=False):
         default_output_dir = self.output_dir
@@ -3100,6 +3103,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.current_annotation_mode = ""
         self.right_click_menu()
+        
+        for option in self.vid_options:
+            option.setEnabled(False)
 
     def getLabelFile(self):
         if self.filename.lower().endswith(".json"):
@@ -3343,10 +3349,16 @@ class MainWindow(QtWidgets.QMainWindow):
         self.target_directory = targetDirPath
         self.importDirImages(targetDirPath)
         self.set_video_controls_visibility(False)
-        # self.vid_dock.setVisible(False)
-        # for option in self.vid_options:
-        for option in [self.id_checkBox, self.traj_checkBox, self.trajectory_length_lineEdit]:
-            option.setEnabled(False)
+
+
+        # enable Visualization Options
+        for option in self.vid_options:
+            if option in [self.id_checkBox, self.traj_checkBox, self.trajectory_length_lineEdit]:
+                option.setEnabled(False)
+            else:
+                option.setEnabled(True)
+
+    
 
     @property
     def imageList(self):
@@ -3748,7 +3760,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self.calculate_trajectories()
 
 
-            self.vid_dock.setVisible(True)
             for option in self.vid_options:
                 option.setEnabled(True)
 
@@ -4780,6 +4791,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.vid_widget.layout().addWidget(self.trajectory_length_lineEdit, 2, 1)
         self.vid_widget.layout().addWidget(self.polygons_visable_checkBox, 3, 0)
         self.vid_widget.layout().addWidget(self.conf_checkBox, 3, 1)
+
+        for option in self.vid_options:
+            option.setEnabled(False)
 
 
         # save current frame
