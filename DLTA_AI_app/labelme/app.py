@@ -318,7 +318,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.CURRENT_ANNOATAION_TRAJECTORIES['alpha'] = 0.70
         self.CURRENT_SHAPES_IN_IMG = []
         self.config = {'deleteDefault': "this frame only",
-                       'interpolationDefault': "interpolate only missed frames between detected frames",
+                       'interpolationDefMethod': "linear",
+                       'interpolationDefType': "all",
                        'creationDefault': "Create new shape (ie. not detected before)",
                        'EditDefault': "Edit only this frame",
                        'toolMode': 'video'}
@@ -1696,16 +1697,14 @@ class MainWindow(QtWidgets.QMainWindow):
                 id = self.canvas.selectedShapes[0].group_id
 
             result, self.config = helpers.interpolationOptions_GUI(self.config)
-
             if result != QtWidgets.QDialog.Accepted:
                 return
-
-            only_edited = True if self.config[
-                'interpolationDefault'] == 'interpolate all frames between your KEY frames' else False
-            with_sam = True if self.config[
-                'interpolationDefault'] == 'interpolate ALL frames with SAM (more precision, more time)' else False
-
-            if only_edited:
+            
+            with_linear = True if self.config['interpolationDefMethod'] == 'linear' else False
+            with_sam = True if self.config['interpolationDefMethod'] == 'SAM' else False
+            with_keyframes = True if self.config['interpolationDefType'] == 'key' else False
+            
+            if with_keyframes:
                 allAccepted, allRejected, ids = helpers.checkKeyFrames(idsORG, self.key_frames)
                 if not allAccepted:
                     if allRejected:
@@ -1722,7 +1721,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
             self.interrupted = False
             if with_sam:
-                self.interpolate_with_sam(ids)
+                self.interpolate_with_sam(ids, with_keyframes)
             else:
                 for id in ids:
                     QtWidgets.QApplication.processEvents()
@@ -1730,7 +1729,7 @@ class MainWindow(QtWidgets.QMainWindow):
                         self.interrupted = False
                         break
                     self.interpolate(id=id,
-                                    only_edited=only_edited)
+                                    only_edited=with_keyframes)
             self.waitWindow()
         except Exception as e:
             helpers.OKmsgBox("Error", f"Error: {e}", "critical")
@@ -1880,7 +1879,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.calculate_trajectories(frames)
         self.main_video_frames_slider_changed()
         
-    def interpolate_with_sam(self, idsLISTX):
+    def interpolate_with_sam(self, idsLISTX, only_edited=False):
         
         """
         Summary:
@@ -1905,7 +1904,11 @@ class MainWindow(QtWidgets.QMainWindow):
         last_frame_idxLIST = []
         for id in idsLISTX:
             try:
-                [minf, maxf] = [min(
+                if only_edited:
+                    [minf, maxf] = [min(
+                    self.key_frames['id_' + str(id)]), max(self.key_frames['id_' + str(id)])]
+                else:
+                    [minf, maxf] = [min(
                     self.id_frames_rec['id_' + str(id)]), max(self.id_frames_rec['id_' + str(id)])]
             except:
                 continue
@@ -4123,6 +4126,8 @@ class MainWindow(QtWidgets.QMainWindow):
             if self.interrupted:
                 self.interrupted = False
                 break
+            if i % 100 == 0:
+                self.load_objects_to_json__orjson(listObj)
             self.tracking_progress_bar.setValue(
                 int((i + 1) / number_of_frames_to_track * 100))
 

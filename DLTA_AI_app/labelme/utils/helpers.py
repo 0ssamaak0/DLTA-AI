@@ -1619,30 +1619,31 @@ def interpolationOptions_GUI(config):
     label = QtWidgets.QLabel("Choose Interpolation Options")
     layout.addWidget(label)
 
-    only_missed = QtWidgets.QRadioButton(
-        "interpolate only missed frames between detected frames")
-    only_edited = QtWidgets.QRadioButton(
-        "interpolate all frames between your KEY frames")
+    with_linear = QtWidgets.QRadioButton(
+        "Linear interpolation")
     with_sam = QtWidgets.QRadioButton(
-        "interpolate ALL frames with SAM (more precision, more time)")
-
-    if config['interpolationDefault'] == 'interpolate only missed frames between detected frames':
-        only_missed.toggle()
-    if config['interpolationDefault'] == 'interpolate all frames between your KEY frames':
-        only_edited.toggle()
-    if config['interpolationDefault'] == 'interpolate ALL frames with SAM (more precision, more time)':
+        "interpolate with SAM (more precision, more time)")
+    
+    # check box for key frames
+    with_keyframes = QtWidgets.QCheckBox("Only KEY frames") 
+    if config['interpolationDefMethod'] == 'linear':
+        with_linear.toggle()
+    if config['interpolationDefMethod'] == 'SAM':
         with_sam.toggle()
-
-    only_missed.toggled.connect(lambda: config.update(
-        {'interpolationDefault': 'interpolate only missed frames between detected frames'}))
-    only_edited.toggled.connect(lambda: config.update(
-        {'interpolationDefault': 'interpolate all frames between your KEY frames'}))
+    if config['interpolationDefType'] == 'key':
+        with_keyframes.setChecked(True)
+    
+    with_linear.toggled.connect(lambda: config.update(
+        {'interpolationDefMethod': 'Linear'}))
     with_sam.toggled.connect(lambda: config.update(
-        {'interpolationDefault': 'interpolate ALL frames with SAM (more precision, more time)'}))
-
-    layout.addWidget(only_missed)
-    layout.addWidget(only_edited)
+        {'interpolationDefMethod': 'SAM'}))
+    with_keyframes.toggled.connect(lambda: config.update(
+        {'interpolationDefType': 'key' * with_keyframes.isChecked() + 'all' * (not with_keyframes.isChecked())}))
+    # with_keyframes.changeEvent = lambda: config.update(
+    #     {'interpolationDefType': 'key' * with_keyframes.isChecked() + 'all' * (not with_keyframes.isChecked())})
+    layout.addWidget(with_linear)
     layout.addWidget(with_sam)
+    layout.addWidget(with_keyframes)
 
     buttonBox = QtWidgets.QDialogButtonBox(
         QtWidgets.QDialogButtonBox.Ok)
@@ -1650,7 +1651,6 @@ def interpolationOptions_GUI(config):
     layout.addWidget(buttonBox)
     dialog.setLayout(layout)
     result = dialog.exec_()
-    
     return result, config
 
 
