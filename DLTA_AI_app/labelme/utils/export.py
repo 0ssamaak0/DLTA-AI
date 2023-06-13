@@ -6,6 +6,8 @@ import csv
 import numpy as np
 from PyQt5.QtWidgets import QFileDialog
 
+coco_classes = ["person", "bicycle", "car", "motorcycle", "airplane", "bus", "train", "truck", "boat", "traffic light", "fire hydrant", "stop sign", "parking meter", "bench", "bird", "cat", "dog", "horse", "sheep", "cow", "elephant", "bear", "zebra", "giraffe", "backpack", "umbrella", "handbag", "tie", "suitcase", "frisbee", "skis", "snowboard", "sports ball", "kite", "baseball bat", "baseball glove", "skateboard", "surfboard", "tennis racket", "bottle", "wine glass", "cup", "fork", "knife", "spoon", "bowl", "banana", "apple", "sandwich", "orange", "broccoli", "carrot", "hot dog", "pizza", "donut", "cake", "chair", "couch", "potted plant", "bed", "dining table", "toilet", "tv", "laptop", "mouse", "remote", "keyboard", "cell phone", "microwave", "oven", "toaster", "sink", "refrigerator", "book", "clock", "vase", "scissors", "teddy bear", "hair drier", "toothbrush"]
+
 def center_of_polygon(polygon):
     """
     Calculates the center of a polygon defined by a list of consecutive pairs of vertices.
@@ -109,13 +111,13 @@ def get_area_from_polygon(polygon, mode="segmentation"):
         raise ValueError("mode must be either 'segmentation' or 'bbox'")
 
 
-def exportCOCO(target_directory, save_path, annotation_path):
+def exportCOCO(target_directory, save_path, annotation_path,):
     """
     Export annotations in COCO format from a directory of JSON files for image and dir modes
 
     Args:
-        target_directory (str): The directory containing the JSON files.
-        save_path (str): The path to save the output file.
+        target_directory (str): The directory containing the JSON files (dir)
+        save_path (str): The path to save the output file (image mode)
         annotation_path (str): The path to the output file.
 
     Returns:
@@ -125,14 +127,12 @@ def exportCOCO(target_directory, save_path, annotation_path):
         ValueError: If no JSON files are found in the directory.
 
     """
-    # Check if the target is a directory
-    file_path = target_directory
-
     # If the target is not a directory, set the file path to the save path
-    if file_path == "":
-        file_path = save_path
-        file_path = file_path.split("/")[:-1]
-        file_path = "/".join(file_path)
+    if target_directory == "":
+        image_mode = True
+    else:
+        image_mode = False
+
 
     # Create a dictionary to store the file info
     file = {}
@@ -148,14 +148,16 @@ def exportCOCO(target_directory, save_path, annotation_path):
     }
 
     # write list of COCO classes
-    coco_classes = ["person", "bicycle", "car", "motorbike", "aeroplane", "bus", "train", "truck", "boat", "traffic light", "fire hydrant", "stop sign", "parking meter", "bench", "bird", "cat", "dog", "horse", "sheep", "cow", "elephant", "bear", "zebra", "giraffe", "backpack", "umbrella", "handbag", "tie", "suitcase", "frisbee", "skis", "snowboard", "sports ball", "kite", "baseball bat", "baseball glove", "skateboard", "surfboard", "tennis racket",
-                    "bottle", "wine glass", "cup", "fork", "knife", "spoon", "bowl", "banana", "apple", "sandwich", "orange", "broccoli", "carrot", "hot dog", "pizza", "donut", "cake", "chair", "sofa", "pottedplant", "bed", "diningtable", "toilet", "tvmonitor", "laptop", "mouse", "remote", "keyboard", "cell phone", "microwave", "oven", "toaster", "sink", "refrigerator", "book", "clock", "vase", "scissors", "teddy bear", "hair drier", "toothbrush"]
+
 
     # Create an empty set to store the used classes
     used_classes = set()
 
     # Get all the JSON files in the specified directory
-    json_paths = glob.glob(f"{file_path}/*.json")
+    json_paths = glob.glob(f"{target_directory}/*.json")
+
+    if image_mode:
+        json_paths = [save_path]
 
     # Create empty lists to store annotations and images
     annotations = []
@@ -188,6 +190,7 @@ def exportCOCO(target_directory, save_path, annotation_path):
 
                     # Add the class to the used_classes set if it hasn't been added yet
                     if data["shapes"][j]["label"].lower() not in coco_classes:
+                        print(f"{data['shapes'][j]['label']} is not a valid COCO class.. Adding it to the list.")
                         coco_classes.append((data["shapes"][j]["label"].lower()))
 
                     # Add annotation data to the annotations list
@@ -268,8 +271,6 @@ def exportCOCOvid(results_file, vid_width, vid_height, annotation_path):
 
     annotations = []
     images = []
-    coco_classes = ["person", "bicycle", "car", "motorbike", "aeroplane", "bus", "train", "truck", "boat", "traffic light", "fire hydrant", "stop sign", "parking meter", "bench", "bird", "cat", "dog", "horse", "sheep", "cow", "elephant", "bear", "zebra", "giraffe", "backpack", "umbrella", "handbag", "tie", "suitcase", "frisbee", "skis", "snowboard", "sports ball", "kite", "baseball bat", "baseball glove", "skateboard", "surfboard", "tennis racket",
-                    "bottle", "wine glass", "cup", "fork", "knife", "spoon", "bowl", "banana", "apple", "sandwich", "orange", "broccoli", "carrot", "hot dog", "pizza", "donut", "cake", "chair", "sofa", "pottedplant", "bed", "diningtable", "toilet", "tvmonitor", "laptop", "mouse", "remote", "keyboard", "cell phone", "microwave", "oven", "toaster", "sink", "refrigerator", "book", "clock", "vase", "scissors", "teddy bear", "hair drier", "toothbrush"]
 
     # Create an empty set to store the used classes
     used_classes = set()

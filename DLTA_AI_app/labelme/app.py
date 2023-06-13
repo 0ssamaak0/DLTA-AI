@@ -2895,6 +2895,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.set_video_controls_visibility(False)
             # self.right_click_menu()
 
+        self.filename = filename
         # enable Visualization Options
         for option in self.vid_options:
             if option in [self.id_checkBox, self.traj_checkBox, self.trajectory_length_lineEdit]:
@@ -3018,8 +3019,10 @@ class MainWindow(QtWidgets.QMainWindow):
                 # Get user input for COCO export path
                 folderDialog = utils.FolderDialog("coco.json", "json")
                 if folderDialog.exec_():
-                    pth = utils.exportCOCO(
-                        self.target_directory, self.save_path, folderDialog.selectedFiles()[0])
+                    if self.current_annotation_mode == "dir":
+                        pth = utils.exportCOCO(self.target_directory, self.save_path, folderDialog.selectedFiles()[0])
+                    else:
+                        pth = utils.exportCOCO(self.target_directory, self.save_path, folderDialog.selectedFiles()[0])
                 else:
                     return
         except Exception as e:
