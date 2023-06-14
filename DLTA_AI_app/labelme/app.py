@@ -1704,6 +1704,10 @@ class MainWindow(QtWidgets.QMainWindow):
             with_sam = True if self.config['interpolationDefMethod'] == 'SAM' else False
             with_keyframes = True if self.config['interpolationDefType'] == 'key' else False
             
+            print(f"with linear: {with_linear}")
+            print(f"with sam: {with_sam}")
+            print(f"with keyframes: {with_keyframes}")
+            print(f"config: {self.config}")
             if with_keyframes:
                 allAccepted, allRejected, ids = helpers.checkKeyFrames(idsORG, self.key_frames)
                 if not allAccepted:
@@ -2787,7 +2791,7 @@ class MainWindow(QtWidgets.QMainWindow):
             Open model explorer dialog to select or download models
         """
         self._config = get_config()
-        model_explorer_dialog = utils.ModelExplorerDialog(self, self._config["mute"], helpers.notification, merge = False)
+        model_explorer_dialog = utils.ModelExplorerDialog(self, self._config["mute"], helpers.notification)
         # make it fit its contents
         model_explorer_dialog.adjustSize()
         model_explorer_dialog.setMinimumWidth(model_explorer_dialog.table.width() * 1.5)

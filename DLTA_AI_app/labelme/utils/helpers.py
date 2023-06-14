@@ -1613,42 +1613,54 @@ def interpolationOptions_GUI(config):
     dialog.setWindowTitle("Choose Interpolation Options")
     dialog.setWindowModality(Qt.ApplicationModal)
     dialog.resize(250, 100)
+    dialog.setWindowFlags(dialog.windowFlags() & ~QtCore.Qt.WindowContextHelpButtonHint)
 
     layout = QtWidgets.QVBoxLayout()
 
     label = QtWidgets.QLabel("Choose Interpolation Options")
+    label.setFont(QtGui.QFont("", 10))
+    method_label = QtWidgets.QLabel("Interpolation Method")
+    between_label = QtWidgets.QLabel("Interpolation Between")
+
     layout.addWidget(label)
-
-    with_linear = QtWidgets.QRadioButton(
-        "Linear interpolation")
-    with_sam = QtWidgets.QRadioButton(
-        "interpolate with SAM (more precision, more time)")
     
-    # check box for key frames
-    with_keyframes = QtWidgets.QCheckBox("Only KEY frames") 
-    if config['interpolationDefMethod'] == 'linear':
-        with_linear.toggle()
-    if config['interpolationDefMethod'] == 'SAM':
-        with_sam.toggle()
-    if config['interpolationDefType'] == 'key':
-        with_keyframes.setChecked(True)
-    
-    with_linear.toggled.connect(lambda: config.update(
-        {'interpolationDefMethod': 'Linear'}))
-    with_sam.toggled.connect(lambda: config.update(
-        {'interpolationDefMethod': 'SAM'}))
-    with_keyframes.toggled.connect(lambda: config.update(
-        {'interpolationDefType': 'key' * with_keyframes.isChecked() + 'all' * (not with_keyframes.isChecked())}))
-    # with_keyframes.changeEvent = lambda: config.update(
-    #     {'interpolationDefType': 'key' * with_keyframes.isChecked() + 'all' * (not with_keyframes.isChecked())})
-    layout.addWidget(with_linear)
-    layout.addWidget(with_sam)
-    layout.addWidget(with_keyframes)
 
-    buttonBox = QtWidgets.QDialogButtonBox(
-        QtWidgets.QDialogButtonBox.Ok)
+    # Interpolation Method button group
+    method_group = QtWidgets.QButtonGroup()
+    with_linear = QtWidgets.QRadioButton("Linear Interpolation")
+    with_sam = QtWidgets.QRadioButton("SAM Interpolation")
+    method_group.addButton(with_linear)
+    method_group.addButton(with_sam)
+
+    with_linear.toggled.connect(lambda: config.update({'interpolationDefMethod': 'Linear'}))
+    with_sam.toggled.connect(lambda: config.update({'interpolationDefMethod': 'SAM'}))
+
+    layout.addWidget(method_label)
+    method_layout = QtWidgets.QHBoxLayout()
+    method_layout.addWidget(with_linear)
+    method_layout.addWidget(with_sam)
+    layout.addLayout(method_layout)
+
+    # Keyframes button group
+    between_group = QtWidgets.QButtonGroup()
+    with_keyframes = QtWidgets.QRadioButton("Selected Keyframes")
+    without_keyframes = QtWidgets.QRadioButton("Detected Frames")
+    between_group.addButton(with_keyframes)
+    between_group.addButton(without_keyframes)
+
+    with_keyframes.toggled.connect(lambda: config.update({'interpolationDefType': 'key' * with_keyframes.isChecked()}))
+    without_keyframes.toggled.connect(lambda: config.update({'interpolationDefType': 'all' * without_keyframes.isChecked()}))
+
+    layout.addWidget(between_label)
+    keyframes_layout = QtWidgets.QHBoxLayout()
+    keyframes_layout.addWidget(with_keyframes)
+    keyframes_layout.addWidget(without_keyframes)
+    layout.addLayout(keyframes_layout)
+
+    buttonBox = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Ok)
     buttonBox.accepted.connect(dialog.accept)
     layout.addWidget(buttonBox)
+
     dialog.setLayout(layout)
     result = dialog.exec_()
     return result, config
@@ -1764,11 +1776,11 @@ def deleteSelectedShape_GUI(TOTAL_VIDEO_FRAMES, INDEX_OF_CURRENT_FRAME, config):
     """
     Summary:
         Show a dialog to choose the deletion options.
-        (   this frame and previous frames,
-            this frame and next frames,
-            across all frames (previous and next),
-            this frame only,
-            in a specific range of frames           )
+        (   This Frame and All Previous Frames,
+            This Frame and All Next Frames,
+            All Frames,
+            This Frame Only,
+            Specific Range of Frames           )
             
     Args:
         TOTAL_VIDEO_FRAMES: the total number of frames
@@ -1784,21 +1796,22 @@ def deleteSelectedShape_GUI(TOTAL_VIDEO_FRAMES, INDEX_OF_CURRENT_FRAME, config):
     dialog = QtWidgets.QDialog()
     dialog.setWindowTitle("Choose Deletion Options")
     dialog.setWindowModality(Qt.ApplicationModal)
-    dialog.resize(250, 100)
+    dialog.resize(500, 100)
+    dialog.setWindowFlags(dialog.windowFlags() & ~QtCore.Qt.WindowContextHelpButtonHint)
 
     layout = QtWidgets.QVBoxLayout()
 
     label = QtWidgets.QLabel("Choose Deletion Options")
     layout.addWidget(label)
 
-    prev = QtWidgets.QRadioButton("this frame and previous frames")
-    next = QtWidgets.QRadioButton("this frame and next frames")
+    prev = QtWidgets.QRadioButton("This Frame and All Previous Frames")
+    next = QtWidgets.QRadioButton("This Frame and All Next Frames")
     all = QtWidgets.QRadioButton(
-        "across all frames (previous and next)")
-    only = QtWidgets.QRadioButton("this frame only")
+        "All Frames")
+    only = QtWidgets.QRadioButton("This Frame Only")
 
     from_to = QtWidgets.QRadioButton(
-        "in a specific range of frames")
+        "Specific Range of Frames")
     from_frame = QtWidgets.QSpinBox()
     to_frame = QtWidgets.QSpinBox()
     from_frame.setRange(1, TOTAL_VIDEO_FRAMES)
@@ -1806,39 +1819,55 @@ def deleteSelectedShape_GUI(TOTAL_VIDEO_FRAMES, INDEX_OF_CURRENT_FRAME, config):
     from_frame.valueChanged.connect(lambda: from_to.toggle())
     to_frame.valueChanged.connect(lambda: from_to.toggle())
 
-    if config['deleteDefault'] == 'this frame and previous frames':
+    from_label = QtWidgets.QLabel("From:")
+    to_label = QtWidgets.QLabel("To:")
+
+    if config['deleteDefault'] == 'This Frame and All Previous Frames':
         prev.toggle()
-    if config['deleteDefault'] == 'this frame and next frames':
+    if config['deleteDefault'] == 'This Frame and All Next Frames':
         next.toggle()
-    if config['deleteDefault'] == 'across all frames (previous and next)':
+    if config['deleteDefault'] == 'All Frames':
         all.toggle()
-    if config['deleteDefault'] == 'this frame only':
+    if config['deleteDefault'] == 'This Frame Only':
         only.toggle()
-    if config['deleteDefault'] == 'in a specific range of frames':
+    if config['deleteDefault'] == 'Specific Range of Frames':
         from_to.toggle()
 
     prev.toggled.connect(lambda: config.update(
-        {'deleteDefault': 'this frame and previous frames'}))
+        {'deleteDefault': 'This Frame and All Previous Frames'}))
     next.toggled.connect(lambda: config.update(
-        {'deleteDefault': 'this frame and next frames'}))
+        {'deleteDefault': 'This Frame and All Next Frames'}))
     all.toggled.connect(lambda: config.update(
-        {'deleteDefault': 'across all frames (previous and next)'}))
+        {'deleteDefault': 'All Frames'}))
     only.toggled.connect(lambda: config.update(
-        {'deleteDefault': 'this frame only'}))
+        {'deleteDefault': 'This Frame Only'}))
     from_to.toggled.connect(lambda: config.update(
-        {'deleteDefault': 'in a specific range of frames'}))
+        {'deleteDefault': 'Specific Range of Frames'}))
 
-    layout.addWidget(only)
-    layout.addWidget(prev)
-    layout.addWidget(next)
-    layout.addWidget(all)
+
+    button_layout = QtWidgets.QHBoxLayout()
+    button_layout.addWidget(only)
+    button_layout.addWidget(all)
+    layout.addLayout(button_layout)
+
+    button_layout = QtWidgets.QHBoxLayout()
+    button_layout.addWidget(prev)
+    button_layout.addWidget(next)
+    layout.addLayout(button_layout)
+
     layout.addWidget(from_to)
-    layout.addWidget(from_frame)
-    layout.addWidget(to_frame)
+
+    button_layout = QtWidgets.QHBoxLayout()
+    button_layout.addWidget(from_label)
+    button_layout.addWidget(from_frame)
+    button_layout.addWidget(to_label)
+    button_layout.addWidget(to_frame)
+    layout.addLayout(button_layout)
 
     buttonBox = QtWidgets.QDialogButtonBox(
         QtWidgets.QDialogButtonBox.Ok)
     buttonBox.accepted.connect(dialog.accept)
+    buttonBox.rejected.connect(dialog.reject)
     layout.addWidget(buttonBox)
     dialog.setLayout(layout)
     result = dialog.exec_()
@@ -1847,16 +1876,16 @@ def deleteSelectedShape_GUI(TOTAL_VIDEO_FRAMES, INDEX_OF_CURRENT_FRAME, config):
     fromFrameVAL = from_frame.value() 
     toFrameVAL  = to_frame.value()
     
-    if mode == 'this frame and previous frames':
+    if mode == 'This Frame and All Previous Frames':
         toFrameVAL = INDEX_OF_CURRENT_FRAME
         fromFrameVAL = 1
-    elif mode == 'this frame and next frames':
+    elif mode == 'This Frame and All Next Frames':
         toFrameVAL = TOTAL_VIDEO_FRAMES
         fromFrameVAL = INDEX_OF_CURRENT_FRAME
-    elif mode == 'this frame only':
+    elif mode == 'This Frame Only':
         toFrameVAL = INDEX_OF_CURRENT_FRAME
         fromFrameVAL = INDEX_OF_CURRENT_FRAME
-    elif mode == 'across all frames (previous and next)':
+    elif mode == 'All Frames':
         toFrameVAL = TOTAL_VIDEO_FRAMES
         fromFrameVAL = 1
     

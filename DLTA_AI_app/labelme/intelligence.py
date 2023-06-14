@@ -433,6 +433,7 @@ class Intelligence():
     def setConfThreshold(self, prev_threshold=0.3):
         dialog = QtWidgets.QDialog(self.parent)
         dialog.setWindowTitle('Threshold Selector')
+        dialog.setWindowFlags(dialog.windowFlags() & ~QtCore.Qt.WindowContextHelpButtonHint)
 
         layout = QtWidgets.QVBoxLayout(dialog)
 
@@ -485,6 +486,7 @@ class Intelligence():
     def setIOUThreshold(self, prev_threshold=0.5):
         dialog = QtWidgets.QDialog(self.parent)
         dialog.setWindowTitle('Threshold Selector')
+        dialog.setWindowFlags(dialog.windowFlags() & ~QtCore.Qt.WindowContextHelpButtonHint)
 
         layout = QtWidgets.QVBoxLayout(dialog)
 
@@ -554,6 +556,7 @@ class Intelligence():
         dialog.setWindowModality(QtCore.Qt.ApplicationModal)
         dialog.resize(500, 500)
         dialog.setMinimumSize(QtCore.QSize(500, 500))
+        dialog.setWindowFlags(dialog.windowFlags() & ~QtCore.Qt.WindowContextHelpButtonHint)
 
         # Create a vertical layout for the dialog box
         verticalLayout = QtWidgets.QVBoxLayout(dialog)
@@ -701,6 +704,7 @@ class Intelligence():
 
         dialog = QtWidgets.QDialog(self.parent)
         dialog.setWindowTitle('Select Models')
+        dialog.setWindowFlags(dialog.windowFlags() & ~QtCore.Qt.WindowContextHelpButtonHint)
         dialog.setWindowModality(QtCore.Qt.ApplicationModal)
         dialog.resize(200, 250)
         dialog.setMinimumSize(QtCore.QSize(200, 200))

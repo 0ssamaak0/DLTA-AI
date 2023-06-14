@@ -18,11 +18,11 @@ class ModelExplorerDialog(QDialog):
 
     Attributes:
         main_window (QMainWindow): The main window of the application.
-        mute (bool): Whether to mute notifications.
+        mute (bool): Whether to mute notifications or not.
         notification (function): A function for displaying notifications.
     """
 
-    def __init__(self, main_window=None, mute=None, notification=None, merge=False):
+    def __init__(self, main_window=None, mute=None, notification=None):
         """
         Initializes the ModelExplorerDialog.
 
@@ -30,17 +30,14 @@ class ModelExplorerDialog(QDialog):
             main_window (QMainWindow): The main window of the application.
             mute (bool): Whether to mute notifications.
             notification (function): A function for displaying notifications.
-            merge (bool): Whether to merge models.
         """
         super().__init__()
         self.main_window = main_window
         self.mute = mute
         self.notification = notification
-        self.merge = merge
-        if not self.merge:
-            self.setWindowTitle("Model Explorer")
-        else:
-            self.setWindowTitle("Merge Models")
+        self.setWindowTitle("Model Explorer")
+        self.setWindowFlags(self.windowFlags() & ~QtCore.Qt.WindowContextHelpButtonHint)
+
 
         # Define the columns of the table
         self.cols_labels = ["id", "Model Name", "Backbone", "Lr schd",
@@ -54,39 +51,38 @@ class ModelExplorerDialog(QDialog):
         layout = QVBoxLayout()
         self.setLayout(layout)
 
-        if not self.merge:
-            # Set up the toolbar
-            toolbar = QToolBar()
-            layout.addWidget(toolbar)
+        # Set up the toolbar
+        toolbar = QToolBar()
+        layout.addWidget(toolbar)
 
-            # Set up the model type dropdown menu
-            self.model_type_dropdown = QComboBox()
-            self.model_type_dropdown.addItems(["All"] + self.model_keys)
-            self.model_type_dropdown.currentIndexChanged.connect(self.search)
-            toolbar.addWidget(self.model_type_dropdown)
+        # Set up the model type dropdown menu
+        self.model_type_dropdown = QComboBox()
+        self.model_type_dropdown.addItems(["All"] + self.model_keys)
+        self.model_type_dropdown.currentIndexChanged.connect(self.search)
+        toolbar.addWidget(self.model_type_dropdown)
 
-            # Set up the checkboxes
-            self.available_checkbox = QCheckBox("Downloaded")
-            self.available_checkbox.clicked.connect(self.search)
-            toolbar.addWidget(self.available_checkbox)
-            self.not_available_checkbox = QCheckBox("Not Downloaded")
-            self.not_available_checkbox.clicked.connect(self.search)
-            toolbar.addWidget(self.not_available_checkbox)
+        # Set up the checkboxes
+        self.available_checkbox = QCheckBox("Downloaded")
+        self.available_checkbox.clicked.connect(self.search)
+        toolbar.addWidget(self.available_checkbox)
+        self.not_available_checkbox = QCheckBox("Not Downloaded")
+        self.not_available_checkbox.clicked.connect(self.search)
+        toolbar.addWidget(self.not_available_checkbox)
 
-            # Set up the search button
-            # search_button = QPushButton("Search")
-            # search_button.clicked.connect(self.search)
-            # toolbar.addWidget(search_button)
+        # Set up the search button
+        # search_button = QPushButton("Search")
+        # search_button.clicked.connect(self.search)
+        # toolbar.addWidget(search_button)
 
-            # Set up the button for opening the checkpoints directory
-            open_checkpoints_dir_button = QPushButton("Open Checkpoints Dir")
-            # add icon to the button
-            open_checkpoints_dir_button.setIcon(
-                QtGui.QIcon(cwd + '/labelme/icons/downloads.png'))
-            open_checkpoints_dir_button.setIconSize(QtCore.QSize(20, 20))
-            open_checkpoints_dir_button.clicked.connect(
-                self.open_checkpoints_dir)
-            toolbar.addWidget(open_checkpoints_dir_button)
+        # Set up the button for opening the checkpoints directory
+        open_checkpoints_dir_button = QPushButton("Open Checkpoints Dir")
+        # add icon to the button
+        open_checkpoints_dir_button.setIcon(
+            QtGui.QIcon(cwd + '/labelme/icons/downloads.png'))
+        open_checkpoints_dir_button.setIconSize(QtCore.QSize(20, 20))
+        open_checkpoints_dir_button.clicked.connect(
+            self.open_checkpoints_dir)
+        toolbar.addWidget(open_checkpoints_dir_button)
 
         # Set spacing
         layout.setSpacing(10)
@@ -103,10 +99,7 @@ class ModelExplorerDialog(QDialog):
         self.check_availability()
 
         # Populate the table with default data
-        if not self.merge:
-            self.populate_table()
-        else:
-            self.populate_table()
+        self.populate_table()
 
         # Set up the submit and cancel buttons
         button_layout = QHBoxLayout()
@@ -153,9 +146,6 @@ class ModelExplorerDialog(QDialog):
         # Populate the table with data
         row_count = 0
         for model in models_json:
-            if self.merge:
-                if model["Model"] == "SAM" or model["Model"] == "YOLOv8":
-                    continue
 
             col_count = 0
             for key in self.cols_labels:
@@ -166,14 +156,11 @@ class ModelExplorerDialog(QDialog):
 
             # Select Model column
             self.selected_model = (-1, -1, -1)
-            if self.merge:
-                self.selected_models = []
             select_row_button = QPushButton("Select Model")
 
-            if not self.merge:
-                select_row_button.clicked.connect(self.select_model)
-            else:
-                select_row_button.clicked.connect(self.select_merge_models)
+
+            select_row_button.clicked.connect(self.select_model)
+
 
             self.table.setContentsMargins(10, 10, 10, 10)
             self.table.setCellWidget(row_count, 10, select_row_button)
@@ -203,14 +190,6 @@ class ModelExplorerDialog(QDialog):
                 # change text
                 select_row_button.setText("Select from SAM Toolbar")
 
-            if self.merge:
-                available_text = self.table.item(row_count, 9)
-                try:
-                    available_text = available_text.text()
-                except AttributeError:
-                    pass
-                if available_text != "Downloaded":
-                    self.table.setRowHidden(row_count, True)
             row_count += 1
 
     def search(self):
@@ -267,25 +246,6 @@ class ModelExplorerDialog(QDialog):
         # Set the selected model as the model with this id
         self.selected_model = models_json[model_id]["Model Name"], models_json[model_id]["Config"], models_json[model_id]["Checkpoint"],
         self.accept()
-    
-    def select_merge_models(self):
-        # Get the button that was clicked
-        sender = self.sender()
-        # Get the row index of the button in the table
-        index = self.table.indexAt(sender.pos())
-        # Get the model id from the row index
-        row = index.row()
-        model_id = int(self.table.item(row, 0).text())
-        # Check if the button is already selected
-        if sender.isChecked():
-            # Add the selected model to the list of selected models
-            self.selected_models.append([models_json[model_id]["Model Name"], models_json[model_id]["Config"], models_json[model_id]["Checkpoint"]])
-        else:
-            # Remove the selected model from the list of selected models
-            if [models_json[model_id]["Model Name"], models_json[model_id]["Config"], models_json[model_id]["Checkpoint"]] in self.selected_models:
-                self.selected_models.remove([models_json[model_id]["Model Name"], models_json[model_id]["Config"], models_json[model_id]["Checkpoint"]])
-        print(self.selected_models)
-        return self.selected_models
 
     def download_model(self, id):
         """

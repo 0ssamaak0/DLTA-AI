@@ -161,6 +161,7 @@ shortcuts:
   SAM_RESET: X
   SAM_add_point: A
   SAM_clear: C
+  SAM_enhance: shift+E
   SAM_finish_annotation: F
   SAM_remove_point: R
   SAM_select_rect: B
@@ -179,7 +180,6 @@ shortcuts:
   duplicate_polygon: Ctrl+D
   edit_label: Ctrl+L
   edit_polygon: Ctrl+J
-  SAM_enhance: shift+E
   export: Ctrl+E
   export_video: shift+V
   fit_width: Ctrl+Shift+F

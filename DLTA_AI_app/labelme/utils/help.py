@@ -22,12 +22,14 @@ def show_runtime_data():
     # Import necessary modules
     from PyQt5.QtWidgets import QDialog, QLabel, QVBoxLayout
     from PyQt5.QtGui import QFont
+    from PyQt5 import QtCore
     import psutil
     import torch
 
     # Create a dialog box to display the runtime data
     dialog = QDialog()
     dialog.setWindowTitle("Runtime data")
+    dialog.setWindowFlags(dialog.windowFlags() & ~QtCore.Qt.WindowContextHelpButtonHint)
     layout = QVBoxLayout(dialog)
     layout.setContentsMargins(20, 20, 20, 20)
     layout.setSpacing(10)
@@ -106,6 +108,7 @@ def preferences():
     # Create the dialog
     dialog = QtWidgets.QDialog()
     dialog.setWindowTitle("Preferences")
+    dialog.setWindowFlags(dialog.windowFlags() & ~QtCore.Qt.WindowContextHelpButtonHint)
 
     # Create the labels
     themeLabel = QtWidgets.QLabel("Theme Settings 🌓")
@@ -262,6 +265,7 @@ def shortcut_selector():
         key_edit.setWindowTitle(f"Edit Shortcut for {name}")
         key_edit_label = QtWidgets.QLabel("Enter new shortcut for " + name)
         dialog = QtWidgets.QDialog()
+        dialog.setWindowFlags(dialog.windowFlags() & ~QtCore.Qt.WindowContextHelpButtonHint)
         dialog.setWindowTitle("Shortcut Selector")
         layout = QtWidgets.QVBoxLayout()
         layout.addWidget(key_edit_label)
@@ -290,6 +294,7 @@ def shortcut_selector():
 
     # Create a dialog box to display the shortcut table
     dialog = QtWidgets.QDialog()
+    dialog.setWindowFlags(dialog.windowFlags() & ~QtCore.Qt.WindowContextHelpButtonHint)
     dialog.setWindowTitle("Shortcuts")
     layout = QtWidgets.QVBoxLayout()
     layout.addWidget(shortcut_table)
