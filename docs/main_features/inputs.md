@@ -7,7 +7,7 @@ order: 8
 DLTA-AI provides different options for inputs
 
 ## Image Mode
-image mode is very simple, just opening an imgae and start annotating
+image mode is very simple, just open an imgae and start annotating
 
 [!embed](https://youtu.be/xqNZA5kfSE8?t=6)
 ## Directory Mode
