@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <meta name="turbo-cache-control" content="no-cache" data-turbo-track="reload" data-track-token="3.0.3.740028599607">
+    <meta name="turbo-cache-control" content="no-cache" data-turbo-track="reload" data-track-token="3.0.3.740319488606">
 
     <!-- See retype.com -->
     <meta name="generator" content="Retype 3.0.3">
@@ -11,6 +11,7 @@
     <!-- Primary Meta Tags -->
     <title>Segment Anything (SAM)</title>
     <meta name="title" content="Segment Anything (SAM)">
+    <meta name="description" content="META AI model Segment Anything or SAM is integrated in DLTA-AI in many ways to increase the accuracy of the Annotation process, in a very native user..." />
 
     <!-- Canonical -->
     <link rel="canonical" href="/main_features/sam/" />
@@ -19,20 +20,22 @@
     <meta property="og:type" content="website">
     <meta property="og:url" content="/main_features/sam/">
     <meta property="og:title" content="Segment Anything (SAM)">
+    <meta property="og:description" content="META AI model Segment Anything or SAM is integrated in DLTA-AI in many ways to increase the accuracy of the Annotation process, in a very native user...">
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
     <meta property="twitter:url" content="/main_features/sam/">
     <meta property="twitter:title" content="Segment Anything (SAM)">
+    <meta property="twitter:description" content="META AI model Segment Anything or SAM is integrated in DLTA-AI in many ways to increase the accuracy of the Annotation process, in a very native user...">
 
     <script>(function () { var el = document.documentElement, m = localStorage.getItem("doc_theme"), wm = window.matchMedia; if (m === "dark" || (!m && wm && wm("(prefers-color-scheme: dark)").matches)) { el.classList.add("dark") } else { el.classList.remove("dark") } })();</script>
 
     <link href="../../assets/icon.png" rel="icon" />
-    <link href="../../resources/css/retype.css?v=3.0.3.740028599607" rel="stylesheet" />
+    <link href="../../resources/css/retype.css?v=3.0.3.740319488606" rel="stylesheet" />
 
-    <script type="text/javascript" src="../../resources/js/config.js?v=3.0.3.740028599607" data-turbo-eval="false" defer></script>
+    <script type="text/javascript" src="../../resources/js/config.js?v=3.0.3.740319488606" data-turbo-eval="false" defer></script>
     <script type="text/javascript" src="../../resources/js/retype.js?v=3.0.3" data-turbo-eval="false" defer></script>
-    <script id="lunr-js" type="text/javascript" src="../../resources/js/lunr.js?v=3.0.3.740028599607" data-turbo-eval="false" defer></script>
+    <script id="lunr-js" type="text/javascript" src="../../resources/js/lunr.js?v=3.0.3.740319488606" data-turbo-eval="false" defer></script>
 </head>
 <body>
     <div id="docs-app" class="relative text-base antialiased text-gray-700 bg-white font-body dark:bg-dark-850 dark:text-dark-300">
@@ -174,6 +177,64 @@
         <span>Segment Anything (SAM)</span>
     </h1>
 </doc-anchor-target>
+<p>META AI model <a href="https://segment-anything.com/">Segment Anything</a> or <code v-pre>SAM</code> is integrated in DLTA-AI in many ways to increase the accuracy of the Annotation process, in a very native user expirience with almost zero effort to install.</p>
+<doc-anchor-target id="installation">
+    <h2>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#installation">#</doc-anchor-trigger>
+        <span>Installation</span>
+    </h2>
+</doc-anchor-target>
+<p>Like all other models, The Model Explorer can be used to install the checkpoints directly with just a single click</p>
+<p>
+<figure>
+    <div class="relative w-full mb-6 overflow-hidden pt-9/16">
+        <iframe class="w-full h-full border-0 absolute inset-0" src="https://www.youtube.com/embed/8g15M9bE1uA?start=5" allowfullscreen></iframe>
+    </div>
+</figure>
+</p>
+<doc-anchor-target id="segmentation">
+    <h2>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#segmentation">#</doc-anchor-trigger>
+        <span>Segmentation</span>
+    </h2>
+</doc-anchor-target>
+<p>Segment Anything can be used to make Zero-Shot Segmentation of any object.
+DLTA-AI provides an expiernce similar to the <a href="https://segment-anything.com/demo#">Original Demo</a> with the simple SAM toolbar that supports user-customized shortcuts, and runs locally on the user machine on any image or video.</p>
+<p>
+<figure>
+    <div class="relative w-full mb-6 overflow-hidden pt-9/16">
+        <iframe class="w-full h-full border-0 absolute inset-0" src="https://www.youtube.com/embed/8g15M9bE1uA?start=41" allowfullscreen></iframe>
+    </div>
+</figure>
+</p>
+<doc-anchor-target id="enhance-polygons">
+    <h2>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#enhance-polygons">#</doc-anchor-trigger>
+        <span>Enhance Polygons</span>
+    </h2>
+</doc-anchor-target>
+<p>Beside the usual functionality of Zero-Shot Segmentation, Segment Anything can be used to enhance the accuracy of any polygon, weather it was created by the user or by any other model, by simply selecting the polygon(s) and enhancing them from the toolbar or the context menu.</p>
+<p>
+<figure>
+    <div class="relative w-full mb-6 overflow-hidden pt-9/16">
+        <iframe class="w-full h-full border-0 absolute inset-0" src="https://www.youtube.com/embed/8g15M9bE1uA?start=84" allowfullscreen></iframe>
+    </div>
+</figure>
+</p>
+<doc-anchor-target id="interpolation-tracking">
+    <h2>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#interpolation-tracking">#</doc-anchor-trigger>
+        <span>Interpolation Tracking</span>
+    </h2>
+</doc-anchor-target>
+<p>DLTA-AI utilizes the power of Segment Anything to provide a very accurate interpolation tracking, that can be used to track any object in a video, and can be used to track multiple objects at the same time.</p>
+<p>
+<figure>
+    <div class="relative w-full mb-6 overflow-hidden pt-9/16">
+        <iframe class="w-full h-full border-0 absolute inset-0" src="https://www.youtube.com/embed/8g15M9bE1uA?start=116" allowfullscreen></iframe>
+    </div>
+</figure>
+</p>
 
                                 
                                 <!-- Required only on API pages -->
