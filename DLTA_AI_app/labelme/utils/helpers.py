@@ -614,10 +614,12 @@ def draw_bb_id(flags, image, x, y, w, h, id, conf, label, color=(0, 0, 255), thi
         if flags['conf']:
             text = f'{text} {conf}' if len(text) > 0 else f'{conf}'
 
-        if image.shape[0] < 1000:
-            fontscale = 0.5
-        else:
-            fontscale = 0.7
+        fontscale = image.shape[0] / 2000
+        if fontscale < 0.3:
+            fontscale = 0.3
+        elif fontscale > 5:
+            fontscale = 5
+
         text_width, text_height = cv2.getTextSize(
             text, cv2.FONT_HERSHEY_SIMPLEX, fontscale, thickness)[0]
         text_x = x + 10
@@ -872,10 +874,11 @@ def draw_bb_label_on_image_MODE(flags, image, x, y, w, h, label, conf, color=(0,
         if not flags['conf'] and flags['class']:
             text = f'[{label}]'
 
-        if image.shape[0] < 1000:
-            fontscale = 0.5
-        else:
-            fontscale = 0.7
+        fontscale = image.shape[0] / 2000
+        if fontscale < 0.3:
+            fontscale = 0.3
+        elif fontscale > 5:
+            fontscale = 5
         text_width, text_height = cv2.getTextSize(
             text, cv2.FONT_HERSHEY_SIMPLEX, fontscale, thickness)[0]
         text_x = x + 10

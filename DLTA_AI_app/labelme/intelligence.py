@@ -441,7 +441,7 @@ class Intelligence():
         layout.addWidget(label)
 
         slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
-        slider.setMinimum(0)
+        slider.setMinimum(1)
         slider.setMaximum(100)
         slider.setValue(int(prev_threshold * 100))
 
@@ -494,7 +494,7 @@ class Intelligence():
         layout.addWidget(label)
 
         slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
-        slider.setMinimum(0)
+        slider.setMinimum(1)
         slider.setMaximum(100)
         slider.setValue(int(prev_threshold * 100))
 

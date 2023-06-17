@@ -1075,7 +1075,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Model selection menu
         self.menus.saved_models.setIcon(
-            QtGui.QIcon("labelme/icons/labels.png"))
+            QtGui.QIcon("labelme/icons/brain.png"))
         self.menus.tracking_models.setIcon(
             QtGui.QIcon("labelme/icons/tracking.png"))
 
@@ -2869,8 +2869,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # self.current_annotation_mode = 'img'
         # self.disconnectVideoShortcuts()
 
-        # clear the file list widget
-        self.fileListWidget.clear()
+
 
         self.actions.export.setEnabled(False)
         try:
@@ -2904,6 +2903,9 @@ class MainWindow(QtWidgets.QMainWindow):
             # self.right_click_menu()
 
         self.filename = filename
+        # clear the file list widget
+        self.fileListWidget.clear()
+        self.uniqLabelList.clear()
         # enable Visualization Options
         for option in self.vid_options:
             if option in [self.id_checkBox, self.traj_checkBox, self.trajectory_length_lineEdit]:
@@ -3117,6 +3119,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # clear the file list widget
         self.fileListWidget.clear()
+        self.uniqLabelList.clear()
 
         self.current_annotation_mode = ""
         self.right_click_menu()
@@ -3429,6 +3432,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.lastOpenDir = dirpath
         self.filename = None
         self.fileListWidget.clear()
+        self.uniqLabelList.clear()
         for filename in self.scanAllImages(dirpath):
             if pattern and pattern not in filename:
                 continue
@@ -3721,8 +3725,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.minID = -2
 
     def openVideo(self):
-        # clear the file list widget
-        self.fileListWidget.clear()
+
 
         # enable export if json file exists
         
@@ -3738,7 +3741,9 @@ class MainWindow(QtWidgets.QMainWindow):
         )
 
         if videoFile[0]:
-            
+            # clear the file list widget
+            self.fileListWidget.clear()
+            self.uniqLabelList.clear()
             self.reset_for_new_mode("video")
             
             self.CURRENT_VIDEO_NAME = videoFile[0].split(

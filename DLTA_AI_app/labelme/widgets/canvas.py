@@ -699,7 +699,11 @@ class Canvas(QtWidgets.QWidget):
 
             # Draw the loading text
             p.setPen(QtGui.QColor(255, 255, 255))
-            p.setFont(QtGui.QFont("Arial", 20))
+            try:
+                fontsize = self.pixmap.width() / 50
+                p.setFont(QtGui.QFont("Arial", fontsize))
+            except:
+                p.setFont(QtGui.QFont("Arial", 20))
             p.drawText(
                 self.pixmap.rect(),
                 QtCore.Qt.AlignCenter,
