@@ -1548,7 +1548,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def update_tracking_method(self, method='bytetrack'):
         self.waitWindow(
-            visible=True, text=f'Wait a second.\n{method} is Loading...')
+            visible=True, text=f'Please Wait.\n{method} is Loading...')
         self.tracking_method = method
         self.tracking_config = ROOT / 'trackers' / \
             method / 'configs' / (method + '.yaml')
@@ -1802,7 +1802,7 @@ class MainWindow(QtWidgets.QMainWindow):
         """
 
         self.waitWindow(
-            visible=True, text=f'Wait a second.\nID {id} is being interpolated...')
+            visible=True, text=f'Please Wait.\nID {id} is being interpolated...')
 
         listObj = self.load_objects_from_json__orjson()
 
@@ -1895,7 +1895,7 @@ class MainWindow(QtWidgets.QMainWindow):
         """
 
         self.waitWindow(
-            visible=True, text=f'Wait a second.\nIDs are being interpolated with SAM...')
+            visible=True, text=f'Please Wait.\nIDs are being interpolated with SAM...')
 
         if self.sam_model_comboBox.currentText() == "Select Model (SAM disabled)":
             helpers.OKmsgBox("SAM is disabled",
@@ -1948,7 +1948,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.interrupted = False
                 break
             self.waitWindow(
-                visible=True, text=f'Wait a second.\nIDs are being interpolated with SAM...\nFrame {frameIDX}')
+                visible=True, text=f'Please Wait.\nIDs are being interpolated with SAM...\nFrame {frameIDX}')
 
             frameIMAGE = self.get_frame_by_idx(frameIDX)
             try:
@@ -2779,7 +2779,7 @@ class MainWindow(QtWidgets.QMainWindow):
         
         self.multi_model_flag = False
         self.waitWindow(
-            visible=True, text=f'Wait a second.\n{model_name} is being Loaded...')
+            visible=True, text=f'Please Wait.\n{model_name} is being Loaded...')
         self.intelligenceHelper.current_model_name, self.intelligenceHelper.current_mm_model = self.intelligenceHelper.make_mm_model(
             model_name)
         self.waitWindow()
@@ -2868,6 +2868,10 @@ class MainWindow(QtWidgets.QMainWindow):
     def openFile(self, _value=False):
         # self.current_annotation_mode = 'img'
         # self.disconnectVideoShortcuts()
+
+        # clear the file list widget
+        self.fileListWidget.clear()
+
         self.actions.export.setEnabled(False)
         try:
             cv2.destroyWindow('video processing')
@@ -3110,6 +3114,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.toggleActions(False)
         self.canvas.setEnabled(False)
         self.actions.saveAs.setEnabled(False)
+
+        # clear the file list widget
+        self.fileListWidget.clear()
 
         self.current_annotation_mode = ""
         self.right_click_menu()
@@ -3456,7 +3463,7 @@ class MainWindow(QtWidgets.QMainWindow):
         return images
 
     def annotate_one(self,called_from_tracking=False):
-        # self.waitWindow(visible=True, text="Wait a second.\nModel is Working...")
+        # self.waitWindow(visible=True, text="Please Wait.\nModel is Working...")
         # self.CURRENT_ANNOATAION_FLAGS['id'] = False
         if self.current_annotation_mode == "video":
             if self.multi_model_flag:
@@ -3714,6 +3721,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.minID = -2
 
     def openVideo(self):
+        # clear the file list widget
+        self.fileListWidget.clear()
 
         # enable export if json file exists
         
@@ -4407,7 +4416,7 @@ class MainWindow(QtWidgets.QMainWindow):
             ret, image = input_cap.read()
             shapes = []
             # self.waitWindow(
-            #         visible=True, text=f'Wait a second.\nFrame {target_frame_idx} is being exported...')
+            #         visible=True, text=f'Please Wait.\nFrame {target_frame_idx} is being exported...')
             frame_idx = listObj[target_frame_idx]['frame_idx']
             frame_objects = listObj[target_frame_idx]['frame_data']
             # print(frame_idx)
@@ -4429,7 +4438,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 # output_cap.write(image)
                 continue
             self.waitWindow(
-                visible=True, text=f'Wait a second.\nFrame {target_frame_idx} is being exported...')
+                visible=True, text=f'Please Wait.\nFrame {target_frame_idx} is being exported...')
             image = self.draw_bb_on_image(image, shapes, image_qt_flag=False)
             output_cap.write(image)
 
@@ -5151,7 +5160,7 @@ class MainWindow(QtWidgets.QMainWindow):
             return
         model_type = self.sam_model_comboBox.currentText()
         self.waitWindow(
-            visible=True, text=f'Wait a second.\n{model_type} is Loading...')
+            visible=True, text=f'Please Wait.\n{model_type} is Loading...')
         with open('models_menu/sam_models.json') as f:
             data = json.load(f)
         checkpoint_path = ""
