@@ -29,3 +29,4 @@ from .qt import fmtShortcut
 from .export import exportCOCO, exportCOCOvid, exportMOT, FolderDialog
 from .model_explorer import ModelExplorerDialog
 from .help import show_runtime_data, git_hub_link, feedback, open_license, check_updates, preferences, shortcut_selector, open_guide
+from .vid_to_frames import VideoFrameExtractor

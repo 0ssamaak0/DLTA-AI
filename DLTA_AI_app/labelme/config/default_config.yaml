@@ -183,7 +183,7 @@ shortcuts:
   export: Ctrl+E
   export_video: shift+V
   fit_width: Ctrl+Shift+F
-  fit_window: Ctrl+F
+  fit_window: null
   ignore_updates: shift+Z
   interpolate: shift+I
   mark_as_key: shift+M
@@ -194,6 +194,7 @@ shortcuts:
   open_next: null
   open_prev: null
   open_video: Ctrl+M
+  open_video_frames : Ctrl+F
   paste: Ctrl+V
   play: Space
   prev_1: Left

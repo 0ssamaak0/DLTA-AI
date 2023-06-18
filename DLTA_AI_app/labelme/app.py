@@ -369,14 +369,14 @@ class MainWindow(QtWidgets.QMainWindow):
             self.openFile,
             shortcuts["open"],
             "open",
-            self.tr("Open image or label file (Ctrl+O)"),
+            self.tr(f"Open image or label file ({str(shortcuts['open'])})"),
         )
         opendir = action(
             self.tr("&Open Dir"),
             self.openDirDialog,
             shortcuts["open_dir"],
             "opendir",
-            self.tr(u"Open Dir (Ctrl+U)"),
+            self.tr(f"Open Dir ({str(shortcuts['open_dir'])})"),
         )
         # tunred off for now as it is not working properly
         openNextImg = action(
@@ -401,7 +401,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.saveFile,
             shortcuts["save"],
             "save",
-            self.tr("Save labels to file (Ctrl+S)"),
+            self.tr(f"Save labels to file ({str(shortcuts['save'])})"),
             enabled=False,
         )
         export = action(
@@ -409,7 +409,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.exportData,
             shortcuts["export"],
             "export",
-            self.tr(u"Export annotations to COCO format (Ctrl+E)"),
+            self.tr(f"Export annotations to COCO format ({str(shortcuts['export'])})"),
             enabled=False,
         )
         modelExplorer = action(
@@ -894,7 +894,14 @@ class MainWindow(QtWidgets.QMainWindow):
             self.openVideo,
             shortcuts["open_video"],
             "video",
-            self.tr("Open a video file (Ctrl+M)"),
+            self.tr(f"Open a video file ({shortcuts['open_video']})"),
+        )
+        openVideoFrames = action(
+            self.tr("Open Video as Frames"),
+            self.openVideoFrames,
+            shortcuts["open_video_frames"],
+            "frames",
+            self.tr(f"Open Video as Frames ({shortcuts['open_video_frames']})"),
         )
 
         # Lavel list context menu.
@@ -943,6 +950,7 @@ class MainWindow(QtWidgets.QMainWindow):
             openPrevImg=openPrevImg,
             export=export,
             openVideo=openVideo,
+            openVideoFrames = openVideoFrames,
             fileMenuActions=(open_, opendir, save, saveAs, close, quit),
             modelExplorer=modelExplorer,
             runtime_data=runtime_data,
@@ -1024,6 +1032,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 open_,
                 opendir,
                 openVideo,
+                openVideoFrames,
                 None,
                 save,
                 saveAs,
@@ -2150,6 +2159,7 @@ class MainWindow(QtWidgets.QMainWindow):
             filename = self.imageList[currIndex]
             if filename:
                 self.loadFile(filename)
+                self.refresh_image_MODE()
 
     # React to canvas signals.
     def shapeSelectionChanged(self, selected_shapes):
@@ -2816,6 +2826,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     # tunred off for now (removed from menus) as it is not working properly
     def openPrevImg(self, _value=False):
+        self.refresh_image_MODE()
         keep_prev = self._config["keep_prev"]
         if Qt.KeyboardModifiers() == (Qt.ControlModifier | Qt.ShiftModifier):
             self._config["keep_prev"] = True
@@ -2839,6 +2850,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     # tunred off for now as it is not working properly
     def openNextImg(self, _value=False, load=True):
+        self.refresh_image_MODE()
         keep_prev = self._config["keep_prev"]
         if Qt.KeyboardModifiers() == (Qt.ControlModifier | Qt.ShiftModifier):
             self._config["keep_prev"] = True
@@ -2864,6 +2876,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.loadFile(self.filename)
 
         self._config["keep_prev"] = keep_prev
+        self.refresh_image_MODE()
 
     def openFile(self, _value=False):
         # self.current_annotation_mode = 'img'
@@ -3421,6 +3434,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.openNextImg()
 
     def importDirImages(self, dirpath, pattern=None, load=True):
+        
         self.actions.openNextImg.setEnabled(True)
         self.actions.openPrevImg.setEnabled(True)
         self.actions.export.setEnabled(True)
@@ -3450,6 +3464,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 item.setCheckState(Qt.Unchecked)
             self.fileListWidget.addItem(item)
         self.openNextImg(load=load)
+        
 
     def scanAllImages(self, folderPath):
         extensions = [
@@ -3726,7 +3741,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def openVideo(self):
 
-
         # enable export if json file exists
         
         try:
@@ -3800,6 +3814,21 @@ class MainWindow(QtWidgets.QMainWindow):
         # disable save and save as
         self.actions.save.setEnabled(False)
         self.actions.saveAs.setEnabled(False)
+    
+    def openVideoFrames(self):
+        video_frame_extractor_dialog = utils.VideoFrameExtractor()
+        video_frame_extractor_dialog.exec_()
+
+        dir_path_name = video_frame_extractor_dialog.path_name
+        if dir_path_name:
+            self.importDirImages(dir_path_name)
+            self.set_video_controls_visibility(False)
+            # enable Visualization Options
+            for option in self.vid_options:
+                if option in [self.id_checkBox, self.traj_checkBox, self.trajectory_length_lineEdit]:
+                    option.setEnabled(False)
+                else:
+                    option.setEnabled(True)
 
     def load_shapes_for_video_frame(self, json_file_name, index):
         # this function loads the shapes for the video frame from the json file
