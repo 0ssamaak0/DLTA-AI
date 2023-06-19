@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <meta name="turbo-cache-control" content="no-cache" data-turbo-track="reload" data-track-token="3.0.3.740375130112">
+    <meta name="turbo-cache-control" content="no-cache" data-turbo-track="reload" data-track-token="3.0.3.740494591167">
 
     <!-- See retype.com -->
     <meta name="generator" content="Retype 3.0.3">
@@ -11,6 +11,7 @@
     <!-- Primary Meta Tags -->
     <title>Segmentation</title>
     <meta name="title" content="Segmentation">
+    <meta name="description" content="Instance Segmentation is one of the major features in DLTA-AI, from the huge library to the different options and pramaters, to the ability to apply..." />
 
     <!-- Canonical -->
     <link rel="canonical" href="/main_features/segmentation/" />
@@ -19,20 +20,22 @@
     <meta property="og:type" content="website">
     <meta property="og:url" content="/main_features/segmentation/">
     <meta property="og:title" content="Segmentation">
+    <meta property="og:description" content="Instance Segmentation is one of the major features in DLTA-AI, from the huge library to the different options and pramaters, to the ability to apply...">
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
     <meta property="twitter:url" content="/main_features/segmentation/">
     <meta property="twitter:title" content="Segmentation">
+    <meta property="twitter:description" content="Instance Segmentation is one of the major features in DLTA-AI, from the huge library to the different options and pramaters, to the ability to apply...">
 
     <script>(function () { var el = document.documentElement, m = localStorage.getItem("doc_theme"), wm = window.matchMedia; if (m === "dark" || (!m && wm && wm("(prefers-color-scheme: dark)").matches)) { el.classList.add("dark") } else { el.classList.remove("dark") } })();</script>
 
     <link href="../../assets/icon.png" rel="icon" />
-    <link href="../../resources/css/retype.css?v=3.0.3.740375130112" rel="stylesheet" />
+    <link href="../../resources/css/retype.css?v=3.0.3.740494591167" rel="stylesheet" />
 
-    <script type="text/javascript" src="../../resources/js/config.js?v=3.0.3.740375130112" data-turbo-eval="false" defer></script>
+    <script type="text/javascript" src="../../resources/js/config.js?v=3.0.3.740494591167" data-turbo-eval="false" defer></script>
     <script type="text/javascript" src="../../resources/js/retype.js?v=3.0.3" data-turbo-eval="false" defer></script>
-    <script id="lunr-js" type="text/javascript" src="../../resources/js/lunr.js?v=3.0.3.740375130112" data-turbo-eval="false" defer></script>
+    <script id="lunr-js" type="text/javascript" src="../../resources/js/lunr.js?v=3.0.3.740494591167" data-turbo-eval="false" defer></script>
 </head>
 <body>
     <div id="docs-app" class="relative text-base antialiased text-gray-700 bg-white font-body dark:bg-dark-850 dark:text-dark-300">
@@ -174,42 +177,98 @@
         <span>Segmentation</span>
     </h1>
 </doc-anchor-target>
+<p>Instance Segmentation is one of the major features in DLTA-AI, from the huge library to the different options and pramaters, to the ability to apply manual edits to the results, DLTA-AI proivdes a fully customizable and easy to use segmentation experience.</p>
 <doc-anchor-target id="model-selection">
     <h2>
         <doc-anchor-trigger class="header-anchor-trigger" to="#model-selection">#</doc-anchor-trigger>
         <span>Model Selection</span>
     </h2>
 </doc-anchor-target>
+<p>The model Selection can be done directly by selecting a segmentation model from the menu, or by selecting a model from the huge library of models in the <a href="../../model_selection/model_explorer/">Model Explorer</a></p>
+<p>
+<figure>
+    <div class="relative w-full mb-6 overflow-hidden pt-9/16">
+        <iframe class="w-full h-full border-0 absolute inset-0" src="https://www.youtube.com/embed/bYjy82Ug2wU?start=10" allowfullscreen></iframe>
+    </div>
+</figure>
+</p>
 <doc-anchor-target id="inferencing">
     <h2>
         <doc-anchor-trigger class="header-anchor-trigger" to="#inferencing">#</doc-anchor-trigger>
         <span>Inferencing</span>
     </h2>
 </doc-anchor-target>
+<p>The model can be run on the current image only (works in all <a href="../inputs/">input modes</a>) or on all images (directory mode only)</p>
+<p>
+<figure>
+    <div class="relative w-full mb-6 overflow-hidden pt-9/16">
+        <iframe class="w-full h-full border-0 absolute inset-0" src="https://www.youtube.com/embed/bYjy82Ug2wU?start=28" allowfullscreen></iframe>
+    </div>
+</figure>
+</p>
+<doc-anchor-target id="visualization-options">
+    <h2>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#visualization-options">#</doc-anchor-trigger>
+        <span>Visualization Options</span>
+    </h2>
+</doc-anchor-target>
+<p>you can select the visualization options from the menu, such as showing the segmentation mask, or just bounding box, and the class name and the cofidence scor as well</p>
+<p>
+<figure>
+    <div class="relative w-full mb-6 overflow-hidden pt-9/16">
+        <iframe class="w-full h-full border-0 absolute inset-0" src="https://www.youtube.com/embed/bYjy82Ug2wU?start=60" allowfullscreen></iframe>
+    </div>
+</figure>
+</p>
 <doc-anchor-target id="select-classes">
     <h2>
         <doc-anchor-trigger class="header-anchor-trigger" to="#select-classes">#</doc-anchor-trigger>
         <span>Select Classes</span>
     </h2>
 </doc-anchor-target>
+<p>you can select some classes among the 80 of <a href="https://cocodataset.org/">COCO classes</a> you can select for just this use (forgotten when you close DLTA-AI) or set them as default classes (saved when you close DLTA-AI)</p>
+<p>
+<figure>
+    <div class="relative w-full mb-6 overflow-hidden pt-9/16">
+        <iframe class="w-full h-full border-0 absolute inset-0" src="https://www.youtube.com/embed/bYjy82Ug2wU?start=84" allowfullscreen></iframe>
+    </div>
+</figure>
+</p>
 <doc-anchor-target id="thresholds">
     <h2>
         <doc-anchor-trigger class="header-anchor-trigger" to="#thresholds">#</doc-anchor-trigger>
         <span>Thresholds</span>
     </h2>
 </doc-anchor-target>
+<p>To give the annotator the full control and the ability to choose the optimum point in the precision/recall tradeoff, DLTA-AI provides 2 thresholding options</p>
 <doc-anchor-target id="confidence-threshold">
     <h3>
         <doc-anchor-trigger class="header-anchor-trigger" to="#confidence-threshold">#</doc-anchor-trigger>
         <span>Confidence Threshold</span>
     </h3>
 </doc-anchor-target>
+<p>Confidence threshold is very simple, by just typing the threshold value of setting it through the slider, all predictions with confidence less than the threshold will be ignored</p>
+<p>
+<figure>
+    <div class="relative w-full mb-6 overflow-hidden pt-9/16">
+        <iframe class="w-full h-full border-0 absolute inset-0" src="https://www.youtube.com/embed/bYjy82Ug2wU?start=112" allowfullscreen></iframe>
+    </div>
+</figure>
+</p>
 <doc-anchor-target id="iou-threshold-for-non-maximum-suppression">
     <h3>
         <doc-anchor-trigger class="header-anchor-trigger" to="#iou-threshold-for-non-maximum-suppression">#</doc-anchor-trigger>
         <span>IOU Threshold (For Non Maximum Suppression)</span>
     </h3>
 </doc-anchor-target>
+<p>DLTA-AI internally applies Non Maximum Suppression (NMS) to the predictions, to remove the overlapping predictions, the IOU threshold is the threshold used in NMS.</p>
+<p>
+<figure>
+    <div class="relative w-full mb-6 overflow-hidden pt-9/16">
+        <iframe class="w-full h-full border-0 absolute inset-0" src="https://www.youtube.com/embed/bYjy82Ug2wU?start=150" allowfullscreen></iframe>
+    </div>
+</figure>
+</p>
 
                                 
                                 <!-- Required only on API pages -->
