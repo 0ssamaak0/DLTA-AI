@@ -4,4 +4,4 @@ order: 5
 
 ---
 
-# Model Explorer
+# Merge Models

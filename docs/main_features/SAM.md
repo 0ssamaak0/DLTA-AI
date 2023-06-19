@@ -7,7 +7,7 @@ order: 10
 META AI model [Segment Anything](https://segment-anything.com/) or `SAM` is integrated in DLTA-AI in many ways to increase the accuracy of the Annotation process, in a very native user expirience with almost zero effort to install.
 
 ## Installation
-Like all other models, The Model Explorer can be used to install the checkpoints directly with just a single click
+Like all other models, The [Model Explorer]("../model_selection/model_explorer.md") can be used to install the checkpoints directly with just a single click
 
 [!embed](https://youtu.be/8g15M9bE1uA?t=5)
 

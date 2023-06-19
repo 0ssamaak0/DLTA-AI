@@ -221,7 +221,7 @@ sort_labels: true
 store_data: true
 theme: auto
 validate_label: null
-vid_dock:
+vis_dock:
   closable: true
   floatable: true
   movable: true
