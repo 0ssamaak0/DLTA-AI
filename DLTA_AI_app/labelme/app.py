@@ -3544,9 +3544,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setDirty()
         # self.waitWindow()
         
-    def refresh_image_MODE(self):
+    def refresh_image_MODE(self, fromSignal=False):
         try:
-            if self.current_annotation_mode == "video":
+            if self.current_annotation_mode == "video" and not fromSignal:
                 return
             self.CURRENT_SHAPES_IN_IMG = self.convert_qt_shapes_to_shapes(self.canvas.shapes)
             imageX = helpers.draw_bb_on_image_MODE(self.CURRENT_ANNOATAION_FLAGS,
@@ -5171,6 +5171,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.update_current_frame_annotation_button_clicked()
         else:
             self.sam_clear_annotation_button_clicked()
+            self.refresh_image_MODE()
 
         self.sam_buttons_colors("X")
 
