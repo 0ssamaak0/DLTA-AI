@@ -247,10 +247,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.file_dock.setWidget(fileListWidget)
 
 
-        self.vid_dock = QtWidgets.QDockWidget(self.tr(u"Visualization Options"), self)
-        self.vid_dock.setObjectName(u"Visualization Options")
-        self.vid_widget = QtWidgets.QWidget()
-        self.vid_dock.setWidget(self.vid_widget)
+        self.vis_dock = QtWidgets.QDockWidget(self.tr(u"Visualization Options"), self)
+        self.vis_dock.setObjectName(u"Visualization Options")
+        self.vis_widget = QtWidgets.QWidget()
+        self.vis_dock.setWidget(self.vis_widget)
 
 
         self.zoomWidget = ZoomWidget()
@@ -336,7 +336,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.minID = -2
 
         features = QtWidgets.QDockWidget.DockWidgetFeatures()
-        for dock in ["flag_dock", "label_dock", "shape_dock", "file_dock", "vid_dock"]:
+        for dock in ["flag_dock", "label_dock", "shape_dock", "file_dock", "vis_dock"]:
             if self._config[dock]["closable"]:
                 features = features | QtWidgets.QDockWidget.DockWidgetClosable
             if self._config[dock]["floatable"]:
@@ -351,7 +351,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.addDockWidget(Qt.RightDockWidgetArea, self.label_dock)
         self.addDockWidget(Qt.RightDockWidgetArea, self.shape_dock)
         self.addDockWidget(Qt.RightDockWidgetArea, self.file_dock)
-        self.addDockWidget(Qt.RightDockWidgetArea, self.vid_dock)
+        self.addDockWidget(Qt.RightDockWidgetArea, self.vis_dock)
 
 
         # Actions
@@ -1051,7 +1051,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.menus.ui_elements.setIcon(QtGui.QIcon("labelme/icons/UI.png"))
         utils.addActions(self.menus.ui_elements,
                          (
-                             self.vid_dock.toggleViewAction(),
+                             self.vis_dock.toggleViewAction(),
                              self.label_dock.toggleViewAction(),
                              self.shape_dock.toggleViewAction(),
                              self.file_dock.toggleViewAction(),
@@ -2163,21 +2163,24 @@ class MainWindow(QtWidgets.QMainWindow):
 
     # React to canvas signals.
     def shapeSelectionChanged(self, selected_shapes):
-        self._noSelectionSlot = True
-        for shape in self.canvas.selectedShapes:
-            shape.selected = False
-        self.labelList.clearSelection()
-        self.canvas.selectedShapes = selected_shapes
-        for shape in self.canvas.selectedShapes:
-            shape.selected = True
-            item = self.labelList.findItemByShape(shape)
-            self.labelList.selectItem(item)
-            self.labelList.scrollToItem(item)
-        self._noSelectionSlot = False
-        n_selected = len(selected_shapes)
-        self.actions.delete.setEnabled(n_selected)
-        self.actions.copy.setEnabled(n_selected)
-        self.actions.edit.setEnabled(n_selected == 1)
+        try:
+            self._noSelectionSlot = True
+            for shape in self.canvas.selectedShapes:
+                shape.selected = False
+            self.labelList.clearSelection()
+            self.canvas.selectedShapes = selected_shapes
+            for shape in self.canvas.selectedShapes:
+                shape.selected = True
+                item = self.labelList.findItemByShape(shape)
+                self.labelList.selectItem(item)
+                self.labelList.scrollToItem(item)
+            self._noSelectionSlot = False
+            n_selected = len(selected_shapes)
+            self.actions.delete.setEnabled(n_selected)
+            self.actions.copy.setEnabled(n_selected)
+            self.actions.edit.setEnabled(n_selected == 1)
+        except Exception as e:
+            helpers.OKmsgBox(f"Error", f"Error: {e}", "critical")
 
     def addLabel(self, shape):
         if shape.group_id is None or self.current_annotation_mode != "video":
@@ -2920,7 +2923,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.fileListWidget.clear()
         self.uniqLabelList.clear()
         # enable Visualization Options
-        for option in self.vid_options:
+        for option in self.vis_options:
             if option in [self.id_checkBox, self.traj_checkBox, self.trajectory_length_lineEdit]:
                 option.setEnabled(False)
             else:
@@ -3137,7 +3140,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.current_annotation_mode = ""
         self.right_click_menu()
         
-        for option in self.vid_options:
+        for option in self.vis_options:
             option.setEnabled(False)
 
     def getLabelFile(self):
@@ -3264,7 +3267,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
                 self.main_video_frames_slider_changed()
         except Exception as e:
-            helpers.OKmsgBox(f"Error", "Error: {e}", "critical")
+            helpers.OKmsgBox(f"Error", f"Error: {e}", "critical")
 
     def delete_ids_from_all_frames(self, deleted_ids, from_frame, to_frame):
         
@@ -3385,7 +3388,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
 
         # enable Visualization Options
-        for option in self.vid_options:
+        for option in self.vis_options:
             if option in [self.id_checkBox, self.traj_checkBox, self.trajectory_length_lineEdit]:
                 option.setEnabled(False)
             else:
@@ -3798,7 +3801,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.calculate_trajectories()
 
 
-            for option in self.vid_options:
+            for option in self.vis_options:
                 option.setEnabled(True)
 
         # label = shape["label"]
@@ -3824,7 +3827,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.importDirImages(dir_path_name)
             self.set_video_controls_visibility(False)
             # enable Visualization Options
-            for option in self.vid_options:
+            for option in self.vis_options:
                 if option in [self.id_checkBox, self.traj_checkBox, self.trajectory_length_lineEdit]:
                     option.setEnabled(False)
                 else:
@@ -4834,20 +4837,20 @@ class MainWindow(QtWidgets.QMainWindow):
         self.polygons_visable_checkBox.stateChanged.connect(
             self.polygons_visable_checkBox_changed)
 
-        self.vid_options = [self.id_checkBox, self.class_checkBox, self.bbox_checkBox, self.mask_checkBox, self.polygons_visable_checkBox, self.traj_checkBox, self.trajectory_length_lineEdit, self.conf_checkBox]
-        # add to self.vid_dock
-        self.vid_widget.setLayout(QtWidgets.QGridLayout())
-        self.vid_widget.layout().setContentsMargins(10, 10, 25, 10)  # set padding
-        self.vid_widget.layout().addWidget(self.id_checkBox, 0, 0)
-        self.vid_widget.layout().addWidget(self.class_checkBox, 0, 1)
-        self.vid_widget.layout().addWidget(self.bbox_checkBox, 1, 0)
-        self.vid_widget.layout().addWidget(self.mask_checkBox, 1, 1)
-        self.vid_widget.layout().addWidget(self.traj_checkBox, 2, 0)
-        self.vid_widget.layout().addWidget(self.trajectory_length_lineEdit, 2, 1)
-        self.vid_widget.layout().addWidget(self.polygons_visable_checkBox, 3, 0)
-        self.vid_widget.layout().addWidget(self.conf_checkBox, 3, 1)
+        self.vis_options = [self.id_checkBox, self.class_checkBox, self.bbox_checkBox, self.mask_checkBox, self.polygons_visable_checkBox, self.traj_checkBox, self.trajectory_length_lineEdit, self.conf_checkBox]
+        # add to self.vis_dock
+        self.vis_widget.setLayout(QtWidgets.QGridLayout())
+        self.vis_widget.layout().setContentsMargins(10, 10, 25, 10)  # set padding
+        self.vis_widget.layout().addWidget(self.id_checkBox, 0, 0)
+        self.vis_widget.layout().addWidget(self.class_checkBox, 0, 1)
+        self.vis_widget.layout().addWidget(self.bbox_checkBox, 1, 0)
+        self.vis_widget.layout().addWidget(self.mask_checkBox, 1, 1)
+        self.vis_widget.layout().addWidget(self.traj_checkBox, 2, 0)
+        self.vis_widget.layout().addWidget(self.trajectory_length_lineEdit, 2, 1)
+        self.vis_widget.layout().addWidget(self.polygons_visable_checkBox, 3, 0)
+        self.vis_widget.layout().addWidget(self.conf_checkBox, 3, 1)
 
-        for option in self.vid_options:
+        for option in self.vis_options:
             option.setEnabled(False)
 
 
