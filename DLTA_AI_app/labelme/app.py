@@ -1960,11 +1960,6 @@ class MainWindow(QtWidgets.QMainWindow):
                 visible=True, text=f'Please Wait.\nIDs are being interpolated with SAM...\nFrame {frameIDX}')
 
             frameIMAGE = self.get_frame_by_idx(frameIDX)
-            try:
-                same_image = self.sam_predictor.check_image(
-                    frameIMAGE)
-            except:
-                return
 
             for ididx in range(len(idsLIST)):
                 i = frameIDX - first_frame_idxLIST[ididx]
@@ -1976,7 +1971,14 @@ class MainWindow(QtWidgets.QMainWindow):
                 if (records[i] != None):
                     current = copy.deepcopy(records[i])
                     cur_bbox = current['bbox']
+                    listObj[frameIDX - 1]['frame_data'].append(current)
+                    continue
                 else:
+                    try:
+                        same_image = self.sam_predictor.check_image(
+                            frameIMAGE)
+                    except:
+                        return
                     prev_idx = i - 1
                     current = copy.deepcopy(records[i - 1])
                     next_idx = i + 1
@@ -3544,9 +3546,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setDirty()
         # self.waitWindow()
         
-    def refresh_image_MODE(self):
+    def refresh_image_MODE(self, fromSignal=False):
         try:
-            if self.current_annotation_mode == "video":
+            if self.current_annotation_mode == "video" and not fromSignal:
                 return
             self.CURRENT_SHAPES_IN_IMG = self.convert_qt_shapes_to_shapes(self.canvas.shapes)
             imageX = helpers.draw_bb_on_image_MODE(self.CURRENT_ANNOATAION_FLAGS,
@@ -5174,6 +5176,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.update_current_frame_annotation_button_clicked()
         else:
             self.sam_clear_annotation_button_clicked()
+            self.refresh_image_MODE()
 
         self.sam_buttons_colors("X")
 

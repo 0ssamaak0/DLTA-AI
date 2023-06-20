@@ -33,7 +33,7 @@ class Canvas(QtWidgets.QWidget):
     samFinish = QtCore.Signal()
     # reset = QtCore.Signal()
     # interrupted = QtCore.Signal()
-    APPrefresh = QtCore.Signal()
+    APPrefresh = QtCore.Signal(bool)
 
     CREATE, EDIT = 0, 1
     CREATE, EDIT = 0, 1
@@ -511,7 +511,7 @@ class Canvas(QtWidgets.QWidget):
                 self.shapeMoved.emit()
 
             self.movingShape = False
-            self.APPrefresh.emit()
+            self.APPrefresh.emit(True)
 
     def endMove(self, copy):
         assert self.selectedShapes and self.selectedShapesCopy
