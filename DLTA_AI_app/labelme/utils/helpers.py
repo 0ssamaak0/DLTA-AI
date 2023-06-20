@@ -104,7 +104,7 @@ def addPoints(shape, n):
     
     # if sub == 0, then n == 0, no need to add points    
     if sub == 0:
-        return res
+        return shape
     
     # if sub < 1, then we a point between every pair of points then we handle the points again
     if sub < 1:
@@ -270,30 +270,15 @@ def allign(shape1, shape2):
     shape2_center = centerOFmass(shape2)
     shape2_org = [[shape2[i][0] - shape2_center[0], shape2[i]
                     [1] - shape2_center[1]] for i in range(len(shape2))]
-
-    shape1_slope = np.arctan2(
-        np.array(shape1_org)[:, 1], np.array(shape1_org)[:, 0]).tolist()
-    shape2_slope = np.arctan2(
-        np.array(shape2_org)[:, 1], np.array(shape2_org)[:, 0]).tolist()
-
-    shape1_alligned = []
-    shape2_alligned = []
-
-    for i in range(len(shape1_slope)):
-        x1 = np.argmax(shape1_slope)
-        x2 = np.argmax(shape2_slope)
-        shape1_alligned.append(shape1_org[x1])
-        shape2_alligned.append(shape2_org[x2])
-        shape1_org.pop(x1)
-        shape2_org.pop(x2)
-        shape1_slope.pop(x1)
-        shape2_slope.pop(x2)
-
-    shape1_alligned = [[shape1_alligned[i][0] + shape1_center[0], shape1_alligned[i]
-                        [1] + shape1_center[1]] for i in range(len(shape1_alligned))]
-    shape2_alligned = [[shape2_alligned[i][0] + shape2_center[0], shape2_alligned[i]
-                        [1] + shape2_center[1]] for i in range(len(shape2_alligned))]
-
+    
+    # sorting the points according to their slopes
+    sorted_shape1 = sorted(shape1_org, key=lambda x: np.arctan2(x[1], x[0]), reverse=True)
+    sorted_shape2 = sorted(shape2_org, key=lambda x: np.arctan2(x[1], x[0]), reverse=True)
+    shape1_alligned = [[sorted_shape1[i][0] + shape1_center[0], sorted_shape1[i]
+                        [1] + shape1_center[1]] for i in range(len(sorted_shape1))]
+    shape2_alligned = [[sorted_shape2[i][0] + shape2_center[0], sorted_shape2[i]
+                        [1] + shape2_center[1]] for i in range(len(sorted_shape2))]
+    
     return (shape1_alligned, shape2_alligned)
 
 

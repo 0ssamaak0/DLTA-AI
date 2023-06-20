@@ -1714,10 +1714,7 @@ class MainWindow(QtWidgets.QMainWindow):
             with_sam = True if self.config['interpolationDefMethod'] == 'SAM' else False
             with_keyframes = True if self.config['interpolationDefType'] == 'key' else False
             
-            print(f"with linear: {with_linear}")
-            print(f"with sam: {with_sam}")
-            print(f"with keyframes: {with_keyframes}")
-            print(f"config: {self.config}")
+            
             if with_keyframes:
                 allAccepted, allRejected, ids = helpers.checkKeyFrames(idsORG, self.key_frames)
                 if not allAccepted:
