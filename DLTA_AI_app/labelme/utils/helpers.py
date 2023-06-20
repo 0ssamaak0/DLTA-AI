@@ -157,11 +157,18 @@ def reducePoints(polygon, n):
     # taking the minimum of these distances as the distance of the point
     distances = polygon.copy()
     for i in range(len(polygon)):
-        mid = (np.array(polygon[i - 1]) +
-                np.array(polygon[(i + 1) % len(polygon)])) / 2
-        dif = np.array(polygon[i]) - mid
-        dist_mid = np.sqrt(dif[0] * dif[0] + dif[1] * dif[1])
-
+        x1,y1,x2,y2 = polygon[i-1][0], polygon[i-1][1], polygon[(i+1)%len(polygon)][0], polygon[(i+1)%len(polygon)][1]
+        x,y = polygon[i][0], polygon[i][1]
+        
+        if x1 == x2:
+            dist_perp = abs(x - x1)
+        elif y1 == y2:
+            dist_perp = abs(y - y1)
+        else:
+            m = (y2 - y1) / (x2 - x1)
+            c = y1 - m * x1
+            dist_perp = abs(m * x - y + c) / np.sqrt(m * m + 1)
+        
         dif_right = np.array(
             polygon[(i + 1) % len(polygon)]) - np.array(polygon[i])
         dist_right = np.sqrt(
@@ -171,7 +178,7 @@ def reducePoints(polygon, n):
         dist_left = np.sqrt(
             dif_left[0] * dif_left[0] + dif_left[1] * dif_left[1])
 
-        distances[i] = min(dist_mid, dist_right, dist_left)
+        distances[i] = min(dist_perp, dist_right, dist_left)
     
     # adding small random values to distances to avoid duplicate minimum distances
     # it will not affect the result

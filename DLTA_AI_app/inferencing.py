@@ -30,82 +30,82 @@ class models_inference():
         bbox = [min(x), min(y), max(x), max(y)]
         return bbox
 
-    def addPoints(self, shape, n):
-        res = shape.copy()
-        sub = 1.0 * n / (len(shape) - 1)
-        if sub == 0:
-            return res
-        if sub < 1:
-            res = []
-            res.append(shape[0])
-            flag = True
-            for i in range(len(shape) - 1):
-                dif = [shape[i + 1][0] - shape[i][0],
-                       shape[i + 1][1] - shape[i][1]]
-                newPoint = [shape[i][0] + dif[0] *
-                            0.5, shape[i][1] + dif[1] * 0.5]
-                if flag:
-                    res.append(newPoint)
-                res.append(shape[i + 1])
-                n -= 1
-                if n == 0:
-                    flag = False
-            return res
-        else:
-            now = int(sub) + 1
-            res = []
-            res.append(shape[0])
-            for i in range(len(shape) - 1):
-                dif = [shape[i + 1][0] - shape[i][0],
-                       shape[i + 1][1] - shape[i][1]]
-                for j in range(1, now):
-                    newPoint = [shape[i][0] + dif[0] * j /
-                                now, shape[i][1] + dif[1] * j / now]
-                    res.append(newPoint)
-                res.append(shape[i + 1])
-            return self.addPoints(res, n + len(shape) - len(res))
+    # def addPoints(self, shape, n):
+    #     res = shape.copy()
+    #     sub = 1.0 * n / (len(shape) - 1)
+    #     if sub == 0:
+    #         return res
+    #     if sub < 1:
+    #         res = []
+    #         res.append(shape[0])
+    #         flag = True
+    #         for i in range(len(shape) - 1):
+    #             dif = [shape[i + 1][0] - shape[i][0],
+    #                    shape[i + 1][1] - shape[i][1]]
+    #             newPoint = [shape[i][0] + dif[0] *
+    #                         0.5, shape[i][1] + dif[1] * 0.5]
+    #             if flag:
+    #                 res.append(newPoint)
+    #             res.append(shape[i + 1])
+    #             n -= 1
+    #             if n == 0:
+    #                 flag = False
+    #         return res
+    #     else:
+    #         now = int(sub) + 1
+    #         res = []
+    #         res.append(shape[0])
+    #         for i in range(len(shape) - 1):
+    #             dif = [shape[i + 1][0] - shape[i][0],
+    #                    shape[i + 1][1] - shape[i][1]]
+    #             for j in range(1, now):
+    #                 newPoint = [shape[i][0] + dif[0] * j /
+    #                             now, shape[i][1] + dif[1] * j / now]
+    #                 res.append(newPoint)
+    #             res.append(shape[i + 1])
+    #         return self.addPoints(res, n + len(shape) - len(res))
 
-    def reducePoints(self, polygon, n):
-        if n >= len(polygon):
-            return polygon
-        distances = polygon.copy()
-        for i in range(len(polygon)):
-            mid = (np.array(polygon[i - 1]) +
-                   np.array(polygon[(i + 1) % len(polygon)])) / 2
-            dif = np.array(polygon[i]) - mid
-            dist_mid = np.sqrt(dif[0] * dif[0] + dif[1] * dif[1])
+    # def reducePoints(self, polygon, n):
+    #     if n >= len(polygon):
+    #         return polygon
+    #     distances = polygon.copy()
+    #     for i in range(len(polygon)):
+    #         mid = (np.array(polygon[i - 1]) +
+    #                np.array(polygon[(i + 1) % len(polygon)])) / 2
+    #         dif = np.array(polygon[i]) - mid
+    #         dist_mid = np.sqrt(dif[0] * dif[0] + dif[1] * dif[1])
 
-            dif_right = np.array(
-                polygon[(i + 1) % len(polygon)]) - np.array(polygon[i])
-            dist_right = np.sqrt(
-                dif_right[0] * dif_right[0] + dif_right[1] * dif_right[1])
+    #         dif_right = np.array(
+    #             polygon[(i + 1) % len(polygon)]) - np.array(polygon[i])
+    #         dist_right = np.sqrt(
+    #             dif_right[0] * dif_right[0] + dif_right[1] * dif_right[1])
 
-            dif_left = np.array(polygon[i - 1]) - np.array(polygon[i])
-            dist_left = np.sqrt(
-                dif_left[0] * dif_left[0] + dif_left[1] * dif_left[1])
+    #         dif_left = np.array(polygon[i - 1]) - np.array(polygon[i])
+    #         dist_left = np.sqrt(
+    #             dif_left[0] * dif_left[0] + dif_left[1] * dif_left[1])
 
-            distances[i] = min(dist_mid, dist_right, dist_left)
-        distances = [distances[i] + random.random()
-                     for i in range(len(distances))]
-        ratio = 1.0 * n / len(polygon)
-        threshold = np.percentile(distances, 100 - ratio * 100)
+    #         distances[i] = min(dist_mid, dist_right, dist_left)
+    #     distances = [distances[i] + random.random()
+    #                  for i in range(len(distances))]
+    #     ratio = 1.0 * n / len(polygon)
+    #     threshold = np.percentile(distances, 100 - ratio * 100)
 
-        i = 0
-        while i < len(polygon):
-            if distances[i] < threshold:
-                polygon[i] = None
-                i += 1
-            i += 1
-        res = [x for x in polygon if x is not None]
-        return self.reducePoints(res, n)
+    #     i = 0
+    #     while i < len(polygon):
+    #         if distances[i] < threshold:
+    #             polygon[i] = None
+    #             i += 1
+    #         i += 1
+    #     res = [x for x in polygon if x is not None]
+    #     return self.reducePoints(res, n)
 
-    def handlePoints(self, polygon, n):
-        if n == len(polygon):
-            return polygon
-        elif n > len(polygon):
-            return self.addPoints(polygon, n - len(polygon))
-        else:
-            return self.reducePoints(polygon, n)
+    # def handlePoints(self, polygon, n):
+    #     if n == len(polygon):
+    #         return polygon
+    #     elif n > len(polygon):
+    #         return self.addPoints(polygon, n - len(polygon))
+    #     else:
+    #         return self.reducePoints(polygon, n)
 
     # def interpolate_polygon(self , polygon, n_points):
     #     # interpolate polygon to get less points
