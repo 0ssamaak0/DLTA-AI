@@ -2638,6 +2638,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.canvas.loadPixmap(QtGui.QPixmap.fromImage(image))
         flags = {k: False for k in self._config["flags"] or []}
         if self.labelFile:
+            self.actions.export.setEnabled(True)
             self.CURRENT_SHAPES_IN_IMG = self.labelFile.shapes
             # print("self.CURRENT_SHAPES_IN_IMG", self.CURRENT_SHAPES_IN_IMG)
             # image = self.draw_bb_on_image(image  , self.CURRENT_SHAPES_IN_IMG)
@@ -2888,8 +2889,6 @@ class MainWindow(QtWidgets.QMainWindow):
         # self.current_annotation_mode = 'img'
         # self.disconnectVideoShortcuts()
 
-
-
         self.actions.export.setEnabled(False)
         try:
             cv2.destroyWindow('video processing')
@@ -3033,27 +3032,50 @@ class MainWindow(QtWidgets.QMainWindow):
                     else:
                         return
                 # custom exports
+                custom_exports_list_video = [custom_export for custom_export in custom_exports_list if custom_export.mode == "video"]
                 if len(custom_exports_radio_checked_list) != 0:
                     for i in range(len(custom_exports_radio_checked_list)):
                         if custom_exports_radio_checked_list[i]:
                             # Get user input for custom export path
                             folderDialog = utils.FolderDialog(
-                                f"{custom_exports_list[i].file_name}.{custom_exports_list[i].format}", custom_exports_list[i].format)
+                                f"{custom_exports_list_video[i].file_name}.{custom_exports_list_video[i].format}", custom_exports_list_video[i].format)
                             if folderDialog.exec_():
-                                pth = custom_exports_list[i](json_file_name, self.CURRENT_VIDEO_WIDTH, self.CURRENT_VIDEO_HEIGHT, folderDialog.selectedFiles()[0])
+                                try:
+                                    pth = custom_exports_list_video[i](json_file_name, self.CURRENT_VIDEO_WIDTH, self.CURRENT_VIDEO_HEIGHT, folderDialog.selectedFiles()[0])
+                                except Exception as e:
+                                    helpers.OKmsgBox(f"Error", f"Error: with custom export {custom_exports_list_video[i].button_name}\n check the parameters matches the specified ones in custom_exports.py\n Error Message: {e}", "critical")
                             else:
                                 return
 
+            # Image and Directory modes
             elif self.current_annotation_mode == "img" or self.current_annotation_mode == "dir":
-                # Get user input for COCO export path
-                folderDialog = utils.FolderDialog("coco.json", "json")
-                if folderDialog.exec_():
-                    if self.current_annotation_mode == "dir":
-                        pth = utils.exportCOCO(self.target_directory, self.save_path, folderDialog.selectedFiles()[0])
-                    else:
-                        pth = utils.exportCOCO(self.target_directory, self.save_path, folderDialog.selectedFiles()[0])
-                else:
+                result, coco_radio, custom_exports_radio_checked_list = helpers.exportData_GUI(mode= "image")
+                if not result:
                     return
+                save_path = self.save_path if self.save_path else self.labelFile.filename
+                if coco_radio:
+                    # Get user input for COCO export path
+                    folderDialog = utils.FolderDialog("coco.json", "json")
+                    if folderDialog.exec_():
+                        pth = utils.exportCOCO(self.target_directory, save_path, folderDialog.selectedFiles()[0])
+                    else:
+                        return
+                # custom exports
+                custom_exports_list_image = [custom_export for custom_export in custom_exports_list if custom_export.mode == "image"]
+                if len(custom_exports_radio_checked_list) != 0:
+                    for i in range(len(custom_exports_radio_checked_list)):
+                        if custom_exports_radio_checked_list[i]:
+                            # Get user input for custom export path
+                            folderDialog = utils.FolderDialog(
+                                f"{custom_exports_list_image[i].file_name}.{custom_exports_list_image[i].format}", custom_exports_list_image[i].format)
+                            if folderDialog.exec_():
+                                try:
+                                    pth = custom_exports_list_image[i](self.target_directory, save_path, folderDialog.selectedFiles()[0])
+                                except Exception as e:
+                                    helpers.OKmsgBox(f"Error", f"Error: with custom export {custom_exports_list_image[i].button_name}\n check the parameters matches the specified ones in custom_exports.py\n Error Message: {e}", "critical")
+                            else:
+                                return
+
         except Exception as e:
             # Error QMessageBox
             msg = QtWidgets.QMessageBox()
@@ -3069,16 +3091,18 @@ class MainWindow(QtWidgets.QMainWindow):
             # display QMessageBox with ok button and label "Exporting COCO"
             msg = QtWidgets.QMessageBox()
             try:
-                msg.setIcon(QtWidgets.QMessageBox.Information)
-                msg.setText(f"Annotations exported successfully to {pth}")
-                msg.setWindowTitle("Export Success")
+                if pth not in ["", None, False]:
+                    msg.setIcon(QtWidgets.QMessageBox.Information)
+                    msg.setText(f"Annotations exported successfully to {pth}")
+                    msg.setWindowTitle("Export Success")
+                else:
+                    msg.setIcon(QtWidgets.QMessageBox.Critical)
+                    msg.setText(f"Export Failed")
+                    msg.setWindowTitle("Export Failed")
             except:
                 msg.setIcon(QtWidgets.QMessageBox.Critical)
-                msg.setText(
-                    f"Please Sepcify a valid path")
+                msg.setText(f"Please Sepcify a valid path")
                 msg.setWindowTitle("Export Failed")
-            msg.setIconPixmap(QtGui.QPixmap(
-                'labelme/icons/done.png', 'PNG').scaled(50, 50, QtCore.Qt.KeepAspectRatio))
             msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
             msg.exec_()
 
@@ -4465,43 +4489,59 @@ class MainWindow(QtWidgets.QMainWindow):
         listObj = self.load_objects_from_json__orjson()
 
         # make a progress bar for exporting video (with percentage of progress)   TO DO LATER
-
+        empty_frame = False
+        empty_video = True
         for target_frame_idx in range(self.TOTAL_VIDEO_FRAMES):
-            self.INDEX_OF_CURRENT_FRAME = target_frame_idx + 1
-            ret, image = input_cap.read()
-            shapes = []
-            # self.waitWindow(
-            #         visible=True, text=f'Please Wait.\nFrame {target_frame_idx} is being exported...')
-            frame_idx = listObj[target_frame_idx]['frame_idx']
-            frame_objects = listObj[target_frame_idx]['frame_data']
-            # print(frame_idx)
-            for object_ in frame_objects:
-                shape = {}
-                shape["label"] = object_['class_name']
-                shape["group_id"] = str(object_['tracker_id'])
-                shape["content"] = str(object_['confidence'])
-                shape["bbox"] = object_['bbox']
-                points = object_['segment']
-                points = np.array(points, np.int16).flatten().tolist()
-                shape["points"] = points
-                shape["shape_type"] = "polygon"
-                shape["other_data"] = {}
-                shape["flags"] = {}
-                shapes.append(shape)
+            try:
+                self.INDEX_OF_CURRENT_FRAME = target_frame_idx + 1
+                ret, image = input_cap.read()
+                shapes = []
+                # self.waitWindow(
+                #         visible=True, text=f'Please Wait.\nFrame {target_frame_idx} is being exported...')
+                frame_idx = listObj[target_frame_idx]['frame_idx']
+                frame_objects = listObj[target_frame_idx]['frame_data']
+                # print(frame_idx)
+                for object_ in frame_objects:
+                    shape = {}
+                    shape["label"] = object_['class_name']
+                    shape["group_id"] = str(object_['tracker_id'])
+                    shape["content"] = str(object_['confidence'])
+                    shape["bbox"] = object_['bbox']
+                    points = object_['segment']
+                    points = np.array(points, np.int16).flatten().tolist()
+                    shape["points"] = points
+                    shape["shape_type"] = "polygon"
+                    shape["other_data"] = {}
+                    shape["flags"] = {}
+                    shapes.append(shape)
 
-            if len(shapes) == 0:
-                # output_cap.write(image)
-                continue
-            self.waitWindow(
-                visible=True, text=f'Please Wait.\nFrame {target_frame_idx} is being exported...')
-            image = self.draw_bb_on_image(image, shapes, image_qt_flag=False)
-            output_cap.write(image)
+                if len(shapes) == 0:
+                    if not empty_frame:
+                        self.waitWindow(visible=True, text=f'Processing...')
+                        empty_frame = True
+                    continue
+                self.waitWindow(visible=True, text=f'Please Wait.\nFrame {target_frame_idx} is being exported...')
+                image = self.draw_bb_on_image(image, shapes, image_qt_flag=False)
+                output_cap.write(image)
+                empty_frame = False
+                empty_video = False
+            except:
+                input_cap.release()
+                output_cap.release()
+
 
         input_cap.release()
         output_cap.release()
         # print("done exporting video")
         self.waitWindow()
 
+        try:
+            if empty_video:
+                os.remove(output_video_file_name)
+                return False
+        except:
+            pass
+        
         self.INDEX_OF_CURRENT_FRAME = self.main_video_frames_slider.value()
         # show message saying that the video is exported
         if output_filename is False:

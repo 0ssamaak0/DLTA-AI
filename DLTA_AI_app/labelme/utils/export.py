@@ -111,7 +111,7 @@ def get_area_from_polygon(polygon, mode="segmentation"):
         raise ValueError("mode must be either 'segmentation' or 'bbox'")
 
 
-def exportCOCO(target_directory, save_path, annotation_path,):
+def exportCOCO(target_directory, save_path, annotation_path):
     """
     Export annotations in COCO format from a directory of JSON files for image and dir modes
 

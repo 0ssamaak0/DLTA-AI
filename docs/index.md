@@ -3,7 +3,7 @@ label: "What is DLTA-AI?"
 icon: "assets/icon.png"
 ---
 
-# DLTA-AI 
+# DLTA-AI User Guide
 ## This user guide is still under development, please check back later 🚧🚧
 
 This is a paragraph.

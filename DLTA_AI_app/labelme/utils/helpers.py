@@ -1676,7 +1676,7 @@ def interpolationOptions_GUI(config):
     return result, config
 
 
-def exportData_GUI():
+def exportData_GUI(mode = "video"):
     
     """
     Summary:
@@ -1705,9 +1705,10 @@ def exportData_GUI():
     font.setBold(True)
     font.setPointSize(10)
 
-    vid_label = QtWidgets.QLabel("Export Video")
-    vid_label.setFont(font)
-    vid_label.setMargin(10)
+    if mode == "video":
+        vid_label = QtWidgets.QLabel("Export Video")
+        vid_label.setFont(font)
+        vid_label.setMargin(10)
 
     std_label = QtWidgets.QLabel("Export Annotations (Standard Formats)")
     std_label.setFont(font)
@@ -1721,22 +1722,35 @@ def exportData_GUI():
     button_group = QtWidgets.QButtonGroup()
 
     # Create the radio buttons and add them to the button group
-    video_radio = QtWidgets.QRadioButton("Export Video with current visualization settings")
     coco_radio = QtWidgets.QRadioButton(
         "COCO Format (Detection / Segmentation)")
-    mot_radio = QtWidgets.QRadioButton("MOT Format (Tracking)")
+    
+    # make the video and mot radio buttons if the mode is video
+    if mode == "video":
+        video_radio = QtWidgets.QRadioButton("Export Video with current visualization settings")
+        mot_radio = QtWidgets.QRadioButton("MOT Format (Tracking)")
 
     # make the custom exports radio buttons
     custom_exports_radio_list = []
     if len(custom_exports_list) != 0:
         for custom_exp in custom_exports_list:
-            custom_radio = QtWidgets.QRadioButton(custom_exp.button_name)
-            button_group.addButton(custom_radio)
-            custom_exports_radio_list.append(custom_radio)
-
-    button_group.addButton(video_radio)
+            if custom_exp.mode == "video" and mode == "video":
+                custom_radio = QtWidgets.QRadioButton(custom_exp.button_name)
+                button_group.addButton(custom_radio)
+                custom_exports_radio_list.append(custom_radio)
+            if custom_exp.mode == "image" and mode == "image":
+                custom_radio = QtWidgets.QRadioButton(custom_exp.button_name)
+                button_group.addButton(custom_radio)
+                custom_exports_radio_list.append(custom_radio)
+            
+    
     button_group.addButton(coco_radio)
-    button_group.addButton(mot_radio)
+    
+    # add the video and mot radio buttons to the button group if the mode is video
+    if mode == "video":
+        button_group.addButton(video_radio)
+        button_group.addButton(mot_radio)
+
     # Add custom radio buttons to the button group
     if len(custom_exports_list) != 0:
         for custom_radio in custom_exports_radio_list:
@@ -1745,17 +1759,19 @@ def exportData_GUI():
     # Add to the layout
 
     # video label and radio buttons
-    layout.addWidget(vid_label)
-    layout.addWidget(video_radio)
+    if mode == "video":
+        layout.addWidget(vid_label)
+        layout.addWidget(video_radio)
 
     # standard label and radio buttons
     layout.addWidget(std_label)
     layout.addWidget(coco_radio)
-    layout.addWidget(mot_radio)
+    if mode == "video":
+        layout.addWidget(mot_radio)
 
     # custom label and radio buttons
     layout.addWidget(custom_label)
-    if len(custom_exports_list) != 0:
+    if len(custom_exports_radio_list) != 0:
         for custom_radio in custom_exports_radio_list:
             layout.addWidget(custom_radio)
     else:
@@ -1778,7 +1794,10 @@ def exportData_GUI():
         for custom_radio in custom_exports_radio_list:
             custom_exports_radio_checked_list.append(custom_radio.isChecked())
     
-    return result, coco_radio.isChecked(), mot_radio.isChecked(), video_radio.isChecked(), custom_exports_radio_checked_list
+    if mode == "video":
+        return result, coco_radio.isChecked(), mot_radio.isChecked(), video_radio.isChecked(), custom_exports_radio_checked_list
+    else:
+        return result, coco_radio.isChecked(), custom_exports_radio_checked_list
 
 
 def deleteSelectedShape_GUI(TOTAL_VIDEO_FRAMES, INDEX_OF_CURRENT_FRAME, config):
