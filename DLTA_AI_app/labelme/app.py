@@ -2219,9 +2219,14 @@ class MainWindow(QtWidgets.QMainWindow):
             # label_id = self.uniqLabelList.indexFromItem(item).row() + 1
             # label_id += self._config["shift_auto_shape_color"]
             # return LABEL_COLORMAP[label_id % len(LABEL_COLORMAP)]
-            idx = coco_classes.index(label) if label in coco_classes else -1
-            idx = idx % len(color_palette)
-            color = color_palette[idx] if idx != -1 else (0, 0, 255)
+            # idx = coco_classes.index(label) if label in coco_classes else -1
+            # idx = idx % len(color_palette)
+            # color = color_palette[idx] if idx != -1 else (0, 0, 255)
+            # label_hash = hash(label)
+            # idx = abs(label_hash) % len(color_palette)
+            label_ascii = sum([ord(c) for c in label])
+            idx = label_ascii % len(color_palette)
+            color = color_palette[idx]
             # convert color from bgr to rgb
             return color[::-1]
 
@@ -3665,10 +3670,11 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.rec_frame_for_id(id, listobjframe)
                 label = object['class_name']
                 # color calculation
-                idx = coco_classes.index(
-                    label) if label in coco_classes else -1
-                idx = idx % len(color_palette)
-                color = color_palette[idx] if idx != -1 else (0, 0, 255)
+                # label_hash = hash(label)
+                # idx = abs(label_hash) % len(color_palette)
+                label_ascii = sum([ord(c) for c in label])
+                idx = label_ascii % len(color_palette)
+                color = color_palette[idx]
                 center = self.centerOFmass(object['segment'])
                 try:
                     centers_rec = self.CURRENT_ANNOATAION_TRAJECTORIES['id_' + str(

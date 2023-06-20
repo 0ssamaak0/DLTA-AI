@@ -735,9 +735,14 @@ def draw_bb_on_image(trajectories, CurrentFrameIndex, flags, nTotalFrames, image
         conf = shape["content"]
 
         # color calculation
-        idx = coco_classes.index(label) if label in coco_classes else -1
-        idx = idx % len(color_palette)
-        color = color_palette[idx] if idx != -1 else (0, 0, 255)
+        # idx = coco_classes.index(label) if label in coco_classes else -1
+        # idx = idx % len(color_palette)
+        # color = color_palette[idx] if idx != -1 else (0, 0, 255)
+        # label_hash = hash(label)
+        # idx = abs(label_hash) % len(color_palette)
+        label_ascii = sum([ord(c) for c in label])
+        idx = label_ascii % len(color_palette)
+        color = color_palette[idx]
 
         (x1, y1, x2, y2) = shape["bbox"]
         x, y, w, h = int(x1), int(y1), int(x2 - x1), int(y2 - y1)
@@ -807,9 +812,14 @@ def draw_bb_on_image_MODE(flags, image, shapes):
             shape["points"][0::2], shape["points"][1::2])])
 
         # color calculation
-        idx = coco_classes.index(label) if label in coco_classes else -1
-        idx = idx % len(color_palette)
-        color = color_palette[idx] if idx != -1 else (0, 0, 255)
+        # idx = coco_classes.index(label) if label in coco_classes else -1
+        # idx = idx % len(color_palette)
+        # color = color_palette[idx] if idx != -1 else (0, 0, 255)
+        # label_hash = hash(label)
+        # idx = abs(label_hash) % len(color_palette)
+        label_ascii = sum([ord(c) for c in label])
+        idx = label_ascii % len(color_palette)
+        color = color_palette[idx]
 
         (x1, y1, x2, y2) = shape["bbox"]
         x, y, w, h = int(x1), int(y1), int(x2 - x1), int(y2 - y1)
