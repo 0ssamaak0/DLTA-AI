@@ -44,6 +44,9 @@ class VideoFrameExtractor(QDialog):
         self.sampling_edit.setAlignment(Qt.AlignCenter)
         self.sampling_edit.setEnabled(False)
         self.sampling_edit.textChanged.connect(self.update_sampling_slider)
+        self.sampling_time_label = QLabel("hh:mm:ss")
+        self.sampling_time_label.setFont(font)
+        self.sampling_time_label.setAlignment(Qt.AlignRight)
 
         self.start_label = QLabel("Start frame:")
         self.start_slider = QSlider()
@@ -98,7 +101,10 @@ class VideoFrameExtractor(QDialog):
 
         sampling_layout = QHBoxLayout()
         inner_sampling_layout = QVBoxLayout()
-        sampling_layout.addWidget(self.sampling_label)
+        inner_sampling_layout.addWidget(self.sampling_label)
+        inner_sampling_layout.addWidget(self.sampling_time_label)
+        sampling_layout.addLayout(inner_sampling_layout)
+        inner_sampling_layout = QVBoxLayout()
         inner_sampling_layout.addWidget(self.sampling_edit)
         inner_sampling_layout.addWidget(self.sampling_slider)
         sampling_layout.addLayout(inner_sampling_layout)
@@ -184,6 +190,11 @@ class VideoFrameExtractor(QDialog):
             # update endedit and end time
             self.end_edit.setText(str(self.end_slider.value()))
             self.end_time_label.setText(self.get_time_string(self.max_frame / self.fps))
+            # update sampling 
+            self.sampling_time_label.setText(self.get_time_string(1 / self.fps))
+            self.sampling_slider.setMaximum(self.max_frame // 10)
+            self.sampling_slider.setValue(self.max_frame // 100)
+            self.sampling_max = self.max_frame // 10
             
         else:
             self.file_label.setText("No video is selected")
@@ -209,6 +220,8 @@ class VideoFrameExtractor(QDialog):
                 value = self.sampling_max
             self.sampling_rate = value
             self.sampling_slider.setValue(value)
+            if self.fps:
+                self.sampling_time_label.setText(self.get_time_string(value / self.fps))
         except ValueError:
             pass
 
@@ -321,7 +334,8 @@ class VideoFrameExtractor(QDialog):
                 time_str = self.get_time_string(time_in_sec, separator="_")
 
                 # Save the image with the time in the file name
-                cv2.imwrite(f"{frames_path}/frame_{count}_time_{time_str}.jpg", image)
+                indented_count = str(count).zfill(len(str(n_frames)))
+                cv2.imwrite(f"{frames_path}/frame_{indented_count}_time_{time_str}.jpg", image)
             
             self.progress_bar.setValue(int(((count - start_frame) / (end_frame - start_frame)) * 100))
             self.progress_bar.setFormat(f"{int(((count - start_frame) / (end_frame - start_frame)) * 100)}%")

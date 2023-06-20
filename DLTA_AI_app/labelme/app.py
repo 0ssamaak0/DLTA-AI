@@ -3467,6 +3467,9 @@ class MainWindow(QtWidgets.QMainWindow):
                 item.setCheckState(Qt.Unchecked)
             self.fileListWidget.addItem(item)
         self.openNextImg(load=load)
+        self.fileListWidget.horizontalScrollBar().setValue(
+            self.fileListWidget.horizontalScrollBar().maximum()
+        )
         
 
     def scanAllImages(self, folderPath):
@@ -3824,19 +3827,22 @@ class MainWindow(QtWidgets.QMainWindow):
         self.actions.saveAs.setEnabled(False)
     
     def openVideoFrames(self):
-        video_frame_extractor_dialog = utils.VideoFrameExtractor()
-        video_frame_extractor_dialog.exec_()
+        try:
+            video_frame_extractor_dialog = utils.VideoFrameExtractor()
+            video_frame_extractor_dialog.exec_()
 
-        dir_path_name = video_frame_extractor_dialog.path_name
-        if dir_path_name:
-            self.importDirImages(dir_path_name)
-            self.set_video_controls_visibility(False)
-            # enable Visualization Options
-            for option in self.vis_options:
-                if option in [self.id_checkBox, self.traj_checkBox, self.trajectory_length_lineEdit]:
-                    option.setEnabled(False)
-                else:
-                    option.setEnabled(True)
+            dir_path_name = video_frame_extractor_dialog.path_name
+            if dir_path_name:
+                self.importDirImages(dir_path_name)
+                self.set_video_controls_visibility(False)
+                # enable Visualization Options
+                for option in self.vis_options:
+                    if option in [self.id_checkBox, self.traj_checkBox, self.trajectory_length_lineEdit]:
+                        option.setEnabled(False)
+                    else:
+                        option.setEnabled(True)
+        except Exception as e:
+            helpers.OKmsgBox("Error", f"Error: {e}", "critical")
 
     def load_shapes_for_video_frame(self, json_file_name, index):
         # this function loads the shapes for the video frame from the json file
