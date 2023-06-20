@@ -1960,11 +1960,6 @@ class MainWindow(QtWidgets.QMainWindow):
                 visible=True, text=f'Please Wait.\nIDs are being interpolated with SAM...\nFrame {frameIDX}')
 
             frameIMAGE = self.get_frame_by_idx(frameIDX)
-            try:
-                same_image = self.sam_predictor.check_image(
-                    frameIMAGE)
-            except:
-                return
 
             for ididx in range(len(idsLIST)):
                 i = frameIDX - first_frame_idxLIST[ididx]
@@ -1976,7 +1971,14 @@ class MainWindow(QtWidgets.QMainWindow):
                 if (records[i] != None):
                     current = copy.deepcopy(records[i])
                     cur_bbox = current['bbox']
+                    listObj[frameIDX - 1]['frame_data'].append(current)
+                    continue
                 else:
+                    try:
+                        same_image = self.sam_predictor.check_image(
+                            frameIMAGE)
+                    except:
+                        return
                     prev_idx = i - 1
                     current = copy.deepcopy(records[i - 1])
                     next_idx = i + 1
