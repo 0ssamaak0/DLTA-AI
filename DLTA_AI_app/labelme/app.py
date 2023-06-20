@@ -2180,7 +2180,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.actions.copy.setEnabled(n_selected)
             self.actions.edit.setEnabled(n_selected == 1)
         except Exception as e:
-            helpers.OKmsgBox(f"Error", f"Error: {e}", "critical")
+            pass
 
     def addLabel(self, shape):
         if shape.group_id is None or self.current_annotation_mode != "video":
@@ -4122,14 +4122,17 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def start_tracking_button_clicked(self):
         try:
-            if self.selected_option == 0:
+            try:
+                if self.selected_option == 0:
+                    self.track_buttonClicked()
+                elif self.selected_option == 1:
+                    self.track_assigned_objects_button_clicked()
+                elif self.selected_option == 2:
+                    self.track_full_video_button_clicked()
+            except Exception as e:
                 self.track_buttonClicked()
-            elif self.selected_option == 1:
-                self.track_assigned_objects_button_clicked()
-            elif self.selected_option == 2:
-                self.track_full_video_button_clicked()
         except Exception as e:
-            self.track_buttonClicked()
+            helpers.OKmsgBox("Error", f"Error: {e}", "critical")
             
     def track_buttonClicked(self):
 
