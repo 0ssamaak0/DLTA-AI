@@ -334,6 +334,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # self.last_file_opened = ""
         self.interrupted = False
         self.minID = -2
+        self.maxID = 0
 
         features = QtWidgets.QDockWidget.DockWidgetFeatures()
         for dock in ["flag_dock", "label_dock", "shape_dock", "file_dock", "vis_dock"]:
@@ -3746,6 +3747,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.right_click_menu()
         self.global_listObj = []
         self.minID = -2
+        self.maxID = 0
 
     def openVideo(self):
 
@@ -3804,6 +3806,10 @@ class MainWindow(QtWidgets.QMainWindow):
             self.update_tracking_method()
 
             self.calculate_trajectories()
+            keys = list(self.id_frames_rec.keys())
+            idsORG = [int(keys[i][3:]) for i in range(len(keys))]
+            if len(idsORG) > 0:
+                self.maxID = max(idsORG)
 
 
             for option in self.vis_options:
@@ -4250,6 +4256,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 track = []
                 for i in range(6):
                     track.append(int(org_track[i]))
+                track[4] += int(self.maxID)
                 track.append(org_track[6])
 
                 tracks.append(track)
@@ -4512,6 +4519,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.CURRENT_ANNOATAION_TRAJECTORIES['alpha'] = alpha_Value
         self.key_frames.clear()
         self.id_frames_rec.clear()
+        self.minID = -2
+        self.maxID = 0
 
         for shape in self.canvas.shapes:
             self.canvas.deleteShape(shape)
