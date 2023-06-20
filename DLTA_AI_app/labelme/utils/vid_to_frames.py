@@ -16,6 +16,10 @@ class VideoFrameExtractor(QDialog):
         # set minimum window size
         self.setMinimumSize(500, 300)
 
+        self.setWindowTitle("Open Video as Frames")
+        self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
+
+
         self.sampling_max = 100
         # Initialize variables
         self.vid_path = None

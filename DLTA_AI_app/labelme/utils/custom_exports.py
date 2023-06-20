@@ -118,10 +118,8 @@ def count_objects(target_directory, save_path, annotation_path):
 
         # Get all the JSON files in the specified directory
         json_paths = glob.glob(f"{target_directory}/*.json")
-
         if image_mode:
             json_paths = [save_path]
-
         # Raise an error if no JSON files are found in the directory
         if len(json_paths) == 0:
             raise ValueError("No json files found in the directory")
@@ -137,32 +135,23 @@ def count_objects(target_directory, save_path, annotation_path):
                 inner_count = 0
                 for j in range(len(data["shapes"])):
                     inner_count += 1
-                
                 counts.append(inner_count)
         
         # Plot the counts
         plt.figure(figsize=(20, 12))
         plt.plot(counts)
+        plt.title("Number of Objects Over Time")
         plt.tight_layout(pad=3)
         plt.grid()
-
         plt.xticks(range(len(labels)), labels, rotation=90)
         plt.yticks(range(max(counts)+1))
         plt.xlabel("Time")
         plt.ylabel("Number of Objects")
-
         plt.savefig(annotation_path)
         plt.close()
     
     except Exception as e:
         print(e)
-        # print the line number of the error
-        import sys
-        print("Error on line {}".format(sys.exc_info()[-1].tb_lineno))
-        # print all the error details
-        import traceback
-        print(traceback.format_exc())
-
         print("Error in custom export function")
         raise e
 
