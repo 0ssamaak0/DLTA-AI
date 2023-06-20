@@ -147,9 +147,6 @@ def exportCOCO(target_directory, save_path, annotation_path):
         "date_created": datetime.date.today().strftime("%Y/%m/%d")
     }
 
-    # write list of COCO classes
-
-
     # Create an empty set to store the used classes
     used_classes = set()
 

@@ -3084,6 +3084,7 @@ class MainWindow(QtWidgets.QMainWindow):
             print(e)
             msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
             msg.exec_()
+            return
         else:
             # display QMessageBox with ok button and label "Exporting COCO"
             msg = QtWidgets.QMessageBox()
@@ -3098,7 +3099,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     msg.setWindowTitle("Export Failed")
             except:
                 msg.setIcon(QtWidgets.QMessageBox.Critical)
-                msg.setText(f"Please Sepcify a valid path")
+                msg.setText(f"Export Failed")
                 msg.setWindowTitle("Export Failed")
             msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
             msg.exec_()
@@ -3852,11 +3853,12 @@ class MainWindow(QtWidgets.QMainWindow):
     
     def openVideoFrames(self):
         try:
-            video_frame_extractor_dialog = utils.VideoFrameExtractor()
+            video_frame_extractor_dialog = utils.VideoFrameExtractor(self._config["mute"], helpers.notification)
             video_frame_extractor_dialog.exec_()
 
             dir_path_name = video_frame_extractor_dialog.path_name
             if dir_path_name:
+                self.target_directory = dir_path_name
                 self.importDirImages(dir_path_name)
                 self.set_video_controls_visibility(False)
                 # enable Visualization Options

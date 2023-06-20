@@ -9,8 +9,10 @@ import qdarktheme
 
 
 class VideoFrameExtractor(QDialog):
-    def __init__(self):
+    def __init__(self, mute = None, notification = None):
         super().__init__()
+        self.mute = mute
+        self.notification = notification
         # set minimum window size
         self.setMinimumSize(500, 300)
 
@@ -222,6 +224,8 @@ class VideoFrameExtractor(QDialog):
             self.sampling_slider.setValue(value)
             if self.fps:
                 self.sampling_time_label.setText(self.get_time_string(value / self.fps))
+                if self.end_frame is not None:
+                    self.progress_bar.setFormat(f"Will Extract {(self.end_frame - self.start_frame) // self.sampling_rate} Frames")
         except ValueError:
             pass
 
@@ -243,6 +247,8 @@ class VideoFrameExtractor(QDialog):
             self.start_slider.setValue(value)
             if self.fps:
                 self.start_time_label.setText(self.get_time_string(value / self.fps))
+                if self.end_frame is not None:
+                    self.progress_bar.setFormat(f"Will Extract {(self.end_frame - self.start_frame) // self.sampling_rate} Frames")
         except ValueError:
             pass
 
@@ -261,15 +267,18 @@ class VideoFrameExtractor(QDialog):
             self.end_slider.setValue(value)
             if self.fps:
                 self.end_time_label.setText(self.get_time_string(value / self.fps))
+                if self.end_frame is not None:
+                    self.progress_bar.setFormat(f"Will Extract {(self.end_frame - self.start_frame) // self.sampling_rate} Frames")
         except ValueError:
             pass
 
     def extract_frames(self):
         # Call the vid_to_frames function with the selected parameters
-        if self.vid_path and self.sampling_rate and self.start_frame and self.end_frame:
+        try:
             self.path_name = self.vid_to_frames(self.vid_path, self.sampling_rate, self.start_frame, self.end_frame)
-        else:
-            raise ValueError("Please select a video file")
+        except ValueError as e:
+            self.progress_bar.setFormat(str(e))
+            return
         self.close()
         return self.path_name
         
@@ -351,7 +360,14 @@ class VideoFrameExtractor(QDialog):
                 self.progress_bar.setFormat("Extraction stopped")
                 self.progress_bar.setValue(0)
                 break
-        
+            
+                    # Show a notification if the model explorer is not the active window
+        try:
+            if not self.mute:
+                if not self.isActiveWindow():
+                    self.notification(f"Video Extraction Completed")
+        except:
+            pass
         return frames_path
 
 
