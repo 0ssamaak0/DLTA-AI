@@ -1,0 +1,228 @@
+auto_save: false
+canvas:
+  double_click: close
+  num_backups: 10
+default_classes:
+- person
+- bicycle
+- car
+- motorcycle
+- airplane
+- bus
+- train
+- truck
+- boat
+- traffic light
+- fire hydrant
+- stop sign
+- parking meter
+- bench
+- bird
+- cat
+- dog
+- horse
+- sheep
+- cow
+- elephant
+- bear
+- zebra
+- giraffe
+- backpack
+- umbrella
+- handbag
+- tie
+- suitcase
+- frisbee
+- skis
+- snowboard
+- sports ball
+- kite
+- baseball bat
+- baseball glove
+- skateboard
+- surfboard
+- tennis racket
+- bottle
+- wine glass
+- cup
+- fork
+- knife
+- spoon
+- bowl
+- banana
+- apple
+- sandwich
+- orange
+- broccoli
+- carrot
+- hot dog
+- pizza
+- donut
+- cake
+- chair
+- couch
+- potted plant
+- bed
+- dining table
+- toilet
+- tv
+- laptop
+- mouse
+- remote
+- keyboard
+- cell phone
+- microwave
+- oven
+- toaster
+- sink
+- refrigerator
+- book
+- clock
+- vase
+- scissors
+- teddy bear
+- hair drier
+- toothbrush
+default_shape_color:
+- 0
+- 255
+- 0
+display_label_popup: true
+epsilon: 10.0
+file_dock:
+  closable: true
+  floatable: true
+  movable: true
+  show: true
+file_search: null
+fit_to_content:
+  column: true
+  row: false
+flag_dock:
+  closable: true
+  floatable: true
+  movable: true
+  show: true
+flags: null
+keep_prev: false
+keep_prev_brightness: false
+keep_prev_contrast: false
+keep_prev_scale: false
+label_colors: null
+label_completion: startswith
+label_dock:
+  closable: true
+  floatable: true
+  movable: true
+  show: true
+label_flags: null
+labels: null
+logger_level: info
+mute: false
+shape:
+  fill_color:
+  - 0
+  - 255
+  - 0
+  - 0
+  hvertex_fill_color:
+  - 255
+  - 255
+  - 255
+  - 255
+  line_color:
+  - 0
+  - 255
+  - 0
+  - 128
+  select_fill_color:
+  - 0
+  - 255
+  - 0
+  - 155
+  select_line_color:
+  - 255
+  - 255
+  - 255
+  - 255
+  vertex_fill_color:
+  - 0
+  - 255
+  - 0
+  - 255
+shape_color: auto
+shape_dock:
+  closable: true
+  floatable: true
+  movable: true
+  show: true
+shift_auto_shape_color: 0
+shortcuts:
+  SAM_RESET: X
+  SAM_add_point: A
+  SAM_clear: C
+  SAM_enhance: shift+E
+  SAM_finish_annotation: F
+  SAM_remove_point: R
+  SAM_select_rect: B
+  add_point_to_edge: Ctrl+Shift+P
+  clear_annotations: shift+D
+  close: Ctrl+W
+  copy: Ctrl+C
+  create_circle: null
+  create_line: null
+  create_linestrip: null
+  create_point: null
+  create_polygon: Ctrl+N
+  create_rectangle: null
+  delete_file: Ctrl+Delete
+  delete_polygon: Delete
+  duplicate_polygon: Ctrl+D
+  edit_label: Ctrl+L
+  edit_polygon: Ctrl+J
+  export: Ctrl+E
+  export_video: shift+V
+  fit_width: Ctrl+Shift+F
+  fit_window: null
+  ignore_updates: shift+Z
+  interpolate: shift+I
+  mark_as_key: shift+M
+  next_1: Right
+  next_x: Up
+  open: Ctrl+O
+  open_dir: Ctrl+U
+  open_next: null
+  open_prev: null
+  open_video: Ctrl+M
+  open_video_frames : Ctrl+F
+  paste: Ctrl+V
+  play: Space
+  prev_1: Left
+  prev_x: Down
+  quit: Ctrl+Q
+  save: Ctrl+S
+  save_as: Ctrl+Shift+S
+  save_to: null
+  scale: shift+S
+  stop: Escape
+  toggle_keep_prev_mode: Ctrl+P
+  track: shift+T
+  track_assigned: shift+A
+  track_full: shift+F
+  undo: Ctrl+Z
+  undo_last_point: Backspace
+  update_frame: shift+U
+  zoom_in: Ctrl++
+  zoom_out: Ctrl+-
+  zoom_to_original: Ctrl+0
+show_cross_line: true
+show_label_text_field: true
+sort_labels: true
+store_data: true
+theme: auto
+validate_label: null
+vis_dock:
+  closable: true
+  floatable: true
+  movable: true
+  show: true

@@ -194,7 +194,7 @@ shortcuts:
   open_next: null
   open_prev: null
   open_video: Ctrl+M
-  open_video_frames : Ctrl+F
+  open_video_frames: Ctrl+F
   paste: Ctrl+V
   play: Space
   prev_1: Left

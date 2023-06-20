@@ -289,6 +289,39 @@ def shortcut_selector():
                 shortcuts[name] = key
                 shortcut_table.item(row, 1).setText(key)
 
+    def write_shortcuts_to_ui(config):
+        shortcuts = config.get("shortcuts", {})
+        # Encode the shortcut names for display in the table
+        shortcuts_names_encode = {name: name.lower().capitalize().replace("_", " ").replace("Sam", "SAM").replace("sam", "SAM") for name in shortcuts.keys()}
+
+        # Change the keys of the shortcuts dictionary to use the encoded names
+        shortcuts = {shortcuts_names_encode[key]: value for key, value in shortcuts.items()}
+        
+        row = 0
+        for name, key in shortcuts.items():
+            name_item = QtWidgets.QTableWidgetItem(name)
+            shortcut_item = QtWidgets.QTableWidgetItem(key)
+            shortcut_table.setItem(row, 0, name_item)
+            shortcut_table.setItem(row, 1, shortcut_item)
+            row += 1
+
+    def on_reset_button_clicked():
+        
+        with open("labelme/config/default_config.yaml", "r") as f:
+            config = yaml.load(f, Loader=yaml.FullLoader)
+        
+        write_shortcuts_to_ui(config)
+
+    def on_restore_button_clicked():
+        
+        with open("labelme/config/default_config_base.yaml", "r") as f:
+            configBase = yaml.load(f, Loader=yaml.FullLoader)
+        with open("labelme/config/default_config.yaml", "r") as f:
+            config = yaml.load(f, Loader=yaml.FullLoader)
+        config["shortcuts"] = configBase["shortcuts"]
+        
+        write_shortcuts_to_ui(config)
+
     # Connect the on_shortcut_table_clicked function to the itemClicked signal of the shortcut table
     shortcut_table.itemClicked.connect(on_shortcut_table_clicked)
 
@@ -298,9 +331,19 @@ def shortcut_selector():
     dialog.setWindowTitle("Shortcuts")
     layout = QtWidgets.QVBoxLayout()
     layout.addWidget(shortcut_table)
+    
     ok_button = QtWidgets.QPushButton("OK")
     ok_button.clicked.connect(dialog.accept)
     layout.addWidget(ok_button)
+    
+    reset_button = QtWidgets.QPushButton("Reset")
+    reset_button.clicked.connect(on_reset_button_clicked)
+    layout.addWidget(reset_button)
+    
+    restore_button = QtWidgets.QPushButton("Restore Original Defaults")
+    restore_button.clicked.connect(on_restore_button_clicked)
+    layout.addWidget(restore_button)
+    
     note_label = QtWidgets.QLabel("Shortcuts will be updated after restarting the app.")
     layout.addWidget(note_label)
     dialog.setLayout(layout)
@@ -314,6 +357,15 @@ def shortcut_selector():
 
     # Display the dialog box
     dialog.exec_()
+    
+    # load shortcuts from shortcut table to be updated
+    shortcuts = {}
+    for row in range(shortcut_table.rowCount()):
+        name_item = shortcut_table.item(row, 0)
+        name = name_item.text()
+        shortcut_item = shortcut_table.item(row, 1)
+        shortcut = shortcut_item.text()
+        shortcuts[name] = shortcut if shortcut != "" else None
 
     # Decode the shortcut names back to their original form
     shortcuts = {shortcuts_names_decode[key]: value for key, value in shortcuts.items()}
