@@ -1639,20 +1639,19 @@ class MainWindow(QtWidgets.QMainWindow):
         shape.flags = flags
         shape.group_id = new_group_id
         shape.content = str(content)
+        if self.current_annotation_mode == 'img' or self.current_annotation_mode == 'dir':
+            # item.setText(f' ID {shape.group_id}: {shape.label}')
+            item.setText(f'{shape.label}')
+            self.setDirty()
+            if not self.uniqLabelList.findItemsByLabel(shape.label):
+                item = QtWidgets.QListWidgetItem()
+                item.setData(Qt.UserRole, shape.label)
+                self.uniqLabelList.addItem(item)
+            self.refresh_image_MODE()
+            return
         if shape.group_id is None:
             item.setText(shape.label)
         else:
-            if self.current_annotation_mode == 'img' or self.current_annotation_mode == 'dir':
-                # item.setText(f' ID {shape.group_id}: {shape.label}')
-                item.setText(f'{shape.label}')
-                self.setDirty()
-                if not self.uniqLabelList.findItemsByLabel(shape.label):
-                    item = QtWidgets.QListWidgetItem()
-                    item.setData(Qt.UserRole, shape.label)
-                    self.uniqLabelList.addItem(item)
-                self.refresh_image_MODE()
-                return
-
             idChanged = old_group_id != new_group_id
             only_this_frame = False
             if idChanged:
