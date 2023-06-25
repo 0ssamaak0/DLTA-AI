@@ -35,7 +35,7 @@ and run it using
 ```
 DLTA-AI
 ```
-Check the [Installation section in User Guide](http://localhost:5000/installation/full-installation/) for more details, different installation options and solutions for common issues.
+Check the [Installation section in User Guide](https://0ssamaak0.github.io/DLTA-AI/installation/full-installation/) for more details, different installation options and solutions for common issues.
 # Segment Anything 🪄
 DLTA-AI takes the Annotation to the next level by integrating lastest Meta models [Segment Anything (SAM)](https://github.com/facebookresearch/segment-anything) to support zero-shot segmentation for any class
 
