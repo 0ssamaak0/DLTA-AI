@@ -14,13 +14,27 @@ branding:
 favicon: assets/icon.png
 
 links:
-- text: Getting Started
-  link: https://retype.com/guides/getting-started/
+- text: GitHub
+  link: https://github.com/0ssamaak0/DLTA-AI
+  icon: mark-github
+
+- text: Issues
+  link: https://github.com/0ssamaak0/DLTA-AI/issues
+  icon: bug
+
+- text: Release Notes
+  link: https://github.com/0ssamaak0/DLTA-AI/releases
+  icon: note
+
+- text: Youtube Channel
+  link: https://www.youtube.com/@DLTA-AI
+  icon: video
 
 
 footer:
-  copyright: "© All rights reserved." 
+  copyright: "DLTA-AI is licensed under GPLv3 License" 
   links:                               
     - text: License    
-      link: license.md 
+      link: https://github.com/0ssamaak0/DLTA-AI/blob/master/LICENSE
+      icon: law
 

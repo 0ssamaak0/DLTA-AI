@@ -340,7 +340,7 @@ def shortcut_selector():
     reset_button.clicked.connect(on_reset_button_clicked)
     layout.addWidget(reset_button)
     
-    restore_button = QtWidgets.QPushButton("Restore Original Defaults")
+    restore_button = QtWidgets.QPushButton("Restore Default Shortcuts")
     restore_button.clicked.connect(on_restore_button_clicked)
     layout.addWidget(restore_button)
     
@@ -349,7 +349,7 @@ def shortcut_selector():
     dialog.setLayout(layout)
 
     # Set the size of the dialog box
-    dialog.setFixedWidth(shortcut_table.sizeHintForColumn(0) + shortcut_table.sizeHintForColumn(1) + 50)
+    dialog.setMinimumWidth(shortcut_table.sizeHintForColumn(0) + shortcut_table.sizeHintForColumn(1) + 55)
     dialog.setMinimumHeight(shortcut_table.rowHeight(0) * 10 + 50)
 
     # Set the size policy to allow vertical resizing
