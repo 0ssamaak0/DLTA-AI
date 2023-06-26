@@ -577,6 +577,14 @@ class Intelligence():
         horizontalLayout.addWidget(deselectAllButton)
         verticalLayout.addLayout(horizontalLayout)
 
+        # create a search field to allow the user to search for a specific class
+        # filter the classes in the scroll area based on the search field dynamically
+        searchField = QtWidgets.QLineEdit(dialog)
+        searchField.setPlaceholderText("Search for a class")
+        verticalLayout.addWidget(searchField)
+        # filter the classes in the scroll area based on the search field dynamically
+        searchField.textChanged.connect(self.filterClasses)
+
         # Create a scroll area for the class checkboxes
         scrollArea = QtWidgets.QScrollArea(dialog)
         scrollArea.setWidgetResizable(True)
@@ -642,6 +650,7 @@ class Intelligence():
             if self.classes[i].isChecked():
                 indx = coco_classes.index(self.classes[i].text())
                 self.selectedclasses[indx] = self.classes[i].text()
+        print(self.selectedclasses)
         return self.selectedclasses
 
     def saveClasses(self, dialog, is_default=False):
@@ -694,6 +703,27 @@ class Intelligence():
         # Iterate over the QCheckBox widgets for each class and set their checked state to False
         for checkbox in self.classes:
             checkbox.setChecked(False)
+    
+    def filterClasses(self, text):
+        """
+        Filter the classes in the scroll area based on the search field dynamically.
+
+        :param text: The text entered in the search field.
+        """
+        if not text:
+            # If the search text is empty, show all the QCheckBox widgets
+            for checkbox in self.classes:
+                checkbox.setVisible(True)
+        else:
+            # Otherwise, filter the QCheckBox widgets based on the search text
+            for checkbox in self.classes:
+                if text.lower() in checkbox.text().lower():
+                    checkbox.setVisible(True)
+                else:
+                    checkbox.setVisible(False)
+
+
+
 
     def mergeSegModels(self):
         # add a resizable and scrollable dialog that contains all the models and allow the user to select among them using checkboxes
