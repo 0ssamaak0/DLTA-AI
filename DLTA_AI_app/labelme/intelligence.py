@@ -262,7 +262,7 @@ class Intelligence():
             print('merging masks')
             results0, results1 = self.reader.merge_masks()
             results = self.reader.polegonise(
-                results0, results1, classdict=self.selectedclasses, threshold=self.conf_threshold)['results']
+                results0, results1, classdict=self.selectedclasses)['results']
 
         else:
             if img_array_flag:
@@ -271,7 +271,7 @@ class Intelligence():
                 # print(type(results))
                 if isinstance(results, tuple):
                     results = self.reader.polegonise(
-                        results[0], results[1], classdict=self.selectedclasses, threshold=self.conf_threshold)['results']
+                        results[0], results[1], classdict=self.selectedclasses)['results']
                 else:
                     results = results['results']
             else:
@@ -279,7 +279,7 @@ class Intelligence():
                     img=image, model=self.current_mm_model, classdict=self.selectedclasses, threshold=self.conf_threshold)
                 if isinstance(results, tuple):
                     results = self.reader.polegonise(
-                        results[0], results[1], classdict=self.selectedclasses, threshold=self.conf_threshold)['results']
+                        results[0], results[1], classdict=self.selectedclasses)['results']
                 else:
                     results = results['results']
             end_time = time.time()
@@ -744,6 +744,9 @@ class Intelligence():
         dialog.setMinimumSize(QtCore.QSize(200, 200))
         verticalLayout = QtWidgets.QVBoxLayout(dialog)
         verticalLayout.setObjectName("verticalLayout")
+        label = QtWidgets.QLabel(dialog)
+        label.setText("Model Name\t\t\tConfidence Threshold")
+        verticalLayout.addWidget(label)
         scrollArea = QtWidgets.QScrollArea(dialog)
         scrollArea.setWidgetResizable(True)
         scrollArea.setObjectName("scrollArea")

@@ -270,7 +270,7 @@ class models_inference():
         #         assert len(results0[i]) == len(results1[i])
         return results0, results1
 
-    def polegonise(self, results0, results1, classdict, threshold=0.3, show_bbox_flag=False):
+    def polegonise(self, results0, results1, classdict, show_bbox_flag=False):
         result_dict = {}
         res_list = []
 
@@ -278,8 +278,8 @@ class models_inference():
         # print(self.classes_numbering)
         for classno in range(len(results0)):
             for instance in range(len(results0[classno])):
-                if float(results0[classno][instance][-1]) < float(threshold):
-                    continue
+                # if float(results0[classno][instance][-1]) < float(threshold):
+                #     continue
                 result = {}
                 result["class"] = classdict.get(
                     self.classes_numbering[classno])
