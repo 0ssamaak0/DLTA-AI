@@ -1523,7 +1523,7 @@ def reducing_Intersection(Intersection):
 # GUI functions
 # ---------------------------------------------------------------
 
-def OKmsgBox(title, text, type = "info"):
+def OKmsgBox(title, text, type = "info", turnResult = False):
     """
     Show a message box.
 
@@ -1545,8 +1545,13 @@ def OKmsgBox(title, text, type = "info"):
         msgBox.setIcon(QtWidgets.QMessageBox.Critical)
     msgBox.setText(text)
     msgBox.setWindowTitle(title)
-    msgBox.setStandardButtons(QtWidgets.QMessageBox.Ok)
-    return msgBox.exec_()
+    if turnResult:
+        msgBox.setStandardButtons(QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel)
+        msgBox.setDefaultButton(QtWidgets.QMessageBox.Ok)
+    else:
+        msgBox.setStandardButtons(QtWidgets.QMessageBox.Ok)
+    msgBox.exec_()
+    return msgBox.result()
 
 
 def editLabel_idChanged_GUI(config):
@@ -1616,6 +1621,14 @@ def interpolationOptions_GUI(config):
         config: the updated dictionary of configurations
     """
     
+    def show_unshow_overwrite():
+        if with_sam.isChecked():
+            config.update({'interpolationDefMethod': 'SAM'})
+            overwrite_checkBox.setEnabled(True)
+        else:
+            config.update({'interpolationDefMethod': 'Linear'})
+            overwrite_checkBox.setEnabled(False)
+    
     dialog = QtWidgets.QDialog()
     dialog.setWindowTitle("Choose Interpolation Options")
     dialog.setWindowModality(Qt.ApplicationModal)
@@ -1639,8 +1652,9 @@ def interpolationOptions_GUI(config):
     method_group.addButton(with_linear)
     method_group.addButton(with_sam)
 
-    with_linear.toggled.connect(lambda: config.update({'interpolationDefMethod': 'Linear'}))
-    with_sam.toggled.connect(lambda: config.update({'interpolationDefMethod': 'SAM'}))
+
+    with_linear.toggled.connect(show_unshow_overwrite)
+    with_sam.toggled.connect(show_unshow_overwrite)
 
     layout.addWidget(method_label)
     method_layout = QtWidgets.QHBoxLayout()
@@ -1663,6 +1677,15 @@ def interpolationOptions_GUI(config):
     keyframes_layout.addWidget(with_keyframes)
     keyframes_layout.addWidget(without_keyframes)
     layout.addLayout(keyframes_layout)
+    
+    overwrite_checkBox = QtWidgets.QCheckBox("Overwrite used frames with SAM")
+    overwrite_checkBox.setChecked(config['interpolationOverwrite'])
+    overwrite_checkBox.toggled.connect(lambda: config.update({'interpolationOverwrite': overwrite_checkBox.isChecked()}))
+    layout.addWidget(overwrite_checkBox)
+    
+    show_unshow_overwrite()
+    # for some reason you must check linear then sam to make it work
+    with_linear.setChecked(True)
 
     buttonBox = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Ok)
     buttonBox.accepted.connect(dialog.accept)

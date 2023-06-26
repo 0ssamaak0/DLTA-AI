@@ -320,6 +320,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.config = {'deleteDefault': "this frame only",
                        'interpolationDefMethod': "linear",
                        'interpolationDefType': "all",
+                       'interpolationOverwrite': False,
                        'creationDefault': "Create new shape (ie. not detected before)",
                        'EditDefault': "Edit only this frame",
                        'toolMode': 'video'}
@@ -732,6 +733,14 @@ class MainWindow(QtWidgets.QMainWindow):
             self.tr("Mark this frame as KEY for interpolation"),
             enabled=True,
         )
+        remove_all_keyframes = action(
+            self.tr("&Remove all keyframes"),
+            self.remove_all_keyframes,
+            None,
+            "mark",
+            self.tr("Remove all keyframes"),
+            enabled=True,
+        )
         scale = action(
             self.tr("&Scale"),
             self.scaleMENU,
@@ -975,6 +984,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 enhance,
                 interpolate,
                 mark_as_key,
+                remove_all_keyframes,
                 scale,
                 copyShapes,
                 pasteShapes,
@@ -1723,7 +1733,7 @@ class MainWindow(QtWidgets.QMainWindow):
                         return
                     else:
                         resutl = helpers.OKmsgBox("Key Frames Error", 
-                                        f"Some of the selected IDs have no KEY frames.\n    ie. less than 2 key frames\n The interpolation is performed only for the IDs with KEY frames.\nIDs: {ids}.")
+                                        f"Some of the selected IDs have no KEY frames.\n    ie. less than 2 key frames\n The interpolation is performed only for the IDs with KEY frames.\nIDs: {ids}.", "info", turnResult=True)
                         if resutl != QtWidgets.QMessageBox.Ok:
                             return
             else:
@@ -1755,8 +1765,16 @@ class MainWindow(QtWidgets.QMainWindow):
             self.update_current_frame_annotation()
             id = self.canvas.selectedShapes[0].group_id
             try:
-                self.key_frames['id_' +
-                                str(id)].add(self.INDEX_OF_CURRENT_FRAME)
+                if self.INDEX_OF_CURRENT_FRAME not in self.key_frames['id_' + str(id)]:
+                    self.key_frames['id_' +
+                                    str(id)].add(self.INDEX_OF_CURRENT_FRAME)
+                else:
+                    res = helpers.OKmsgBox("Caution", f"Frame {self.INDEX_OF_CURRENT_FRAME} is already a key frame for ID {id}.\nDo you want to remove it?", "warning", turnResult=True)
+                    if res == QtWidgets.QMessageBox.Ok:
+                        self.key_frames['id_' +
+                                    str(id)].remove(self.INDEX_OF_CURRENT_FRAME)
+                    else:
+                        return
             except:
                 self.key_frames['id_' +
                                 str(id)] = set()
@@ -1766,6 +1784,14 @@ class MainWindow(QtWidgets.QMainWindow):
         except Exception as e:
             helpers.OKmsgBox("Error", f"Error: {e}", "critical")
 
+    def remove_all_keyframes(self):
+        try:
+            self.update_current_frame_annotation()
+            id = self.canvas.selectedShapes[0].group_id
+            self.key_frames['id_' + str(id)] = set()
+        except:
+            pass
+        
     def rec_frame_for_id(self, id, frame, type_='add'):
         
         """
@@ -1912,6 +1938,7 @@ class MainWindow(QtWidgets.QMainWindow):
         idsLIST = []
         first_frame_idxLIST = []
         last_frame_idxLIST = []
+        oneFrame_flag_idxLIST = []
         for id in idsLISTX:
             try:
                 if only_edited:
@@ -1923,13 +1950,18 @@ class MainWindow(QtWidgets.QMainWindow):
             except:
                 continue
             if minf == maxf:
-                continue
+                maxf = self.TOTAL_VIDEO_FRAMES
+                oneFrame_flag_idxLIST.append(1)
+            else:
+                oneFrame_flag_idxLIST.append(0)
             first_frame_idxLIST.append(minf)
             last_frame_idxLIST.append(maxf)
             idsLIST.append(id)
 
         if len(idsLIST) == 0:
             return
+        
+        overwrite = self.config['interpolationOverwrite']
 
         listObj = self.load_objects_from_json__orjson()
         listObjNEW = copy.deepcopy(listObj)
@@ -1968,28 +2000,33 @@ class MainWindow(QtWidgets.QMainWindow):
                 if (records[i] != None):
                     current = copy.deepcopy(records[i])
                     cur_bbox = current['bbox']
-                    listObj[frameIDX - 1]['frame_data'].append(current)
-                    continue
+                    if not overwrite:
+                        listObj[frameIDX - 1]['frame_data'].append(current)
+                        continue
                 else:
-                    try:
-                        same_image = self.sam_predictor.check_image(
-                            frameIMAGE)
-                    except:
-                        return
                     prev_idx = i - 1
                     current = copy.deepcopy(records[i - 1])
-                    next_idx = i + 1
-                    for j in range(i + 1, len(records)):
-                        self.waitWindow(visible=True)
-                        if (records[j] != None):
-                            next_idx = j
-                            break
-                    cur_bbox = ((next_idx - i) / (next_idx - prev_idx)) * np.array(records[prev_idx]['bbox']) + (
-                        (i - prev_idx) / (next_idx - prev_idx)) * np.array(records[next_idx]['bbox'])
-                    cur_bbox = [int(cur_bbox[i]) for i in range(len(cur_bbox))]
-                    current['bbox'] = copy.deepcopy(cur_bbox)
+                    
+                    if oneFrame_flag_idxLIST[ididx] == 0:
+                        next_idx = i + 1
+                        for j in range(i + 1, len(records)):
+                            self.waitWindow(visible=True)
+                            if (records[j] != None):
+                                next_idx = j
+                                break
+                        cur_bbox = ((next_idx - i) / (next_idx - prev_idx)) * np.array(records[prev_idx]['bbox']) + (
+                            (i - prev_idx) / (next_idx - prev_idx)) * np.array(records[next_idx]['bbox'])
+                        cur_bbox = [int(cur_bbox[i]) for i in range(len(cur_bbox))]
+                        current['bbox'] = copy.deepcopy(cur_bbox)
+                    
                     records[i] = current
 
+                try:
+                    same_image = self.sam_predictor.check_image(
+                        frameIMAGE)
+                except:
+                    return
+                
                 cur_bbox, cur_segment = self.sam_enhanced_bbox_segment(
                     frameIMAGE, cur_bbox, 1.2, max_itr=5, forSHAPE=False)
 
@@ -3721,22 +3758,23 @@ class MainWindow(QtWidgets.QMainWindow):
         #         3  enhance,
         #         4  interpolate,
         #         5  mark_as_key,
-        #         6  scale,
-        #         7  copyShapes,
-        #         8  pasteShapes,
-        #         9  copy,
-        #         10 delete,
-        #         11 undo,
-        #         12 undoLastPoint,
-        #         13 addPointToEdge,
-        #         14 removePoint,
-        #         15 update_curr_frame,
-        #         16 ignore_changes
+        #         6  remove_all_keyframes,
+        #         7  scale,
+        #         8  copyShapes,
+        #         9  pasteShapes,
+        #         10  copy,
+        #         11 delete,
+        #         12 undo,
+        #         13 undoLastPoint,
+        #         14 addPointToEdge,
+        #         15 removePoint,
+        #         16 update_curr_frame,
+        #         17 ignore_changes
 
 
         mode = self.current_annotation_mode
-        video_menu_list = [0, 1, 2, 3, 4, 5, 6, 7, 8,    10,         13, 15, 16]
-        image_menu_list = [0, 1, 2, 3,                9, 10, 11, 12, 13        ]
+        video_menu_list = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9,     11,         14, 16, 17]
+        image_menu_list = [0, 1, 2, 3,                   10, 11, 12, 13, 14        ]
         
         if self.current_annotation_mode == "video":
             self.canvas.menus[0].clear()
