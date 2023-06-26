@@ -171,6 +171,7 @@ class models_inference():
     @torch.no_grad()
     def decode_file(self, img, model, classdict, threshold=0.3, img_array_flag=False):
 
+        #print(f"from inside inference: with threshold : {threshold}")
         if model.__class__.__name__ == "YOLO":  
             if isinstance(img, str):
                 img = cv2.imread(img)

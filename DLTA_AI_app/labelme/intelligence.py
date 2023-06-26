@@ -243,20 +243,22 @@ class Intelligence():
             if len(self.selectedmodels) == 0:
                 return []
             self.reader.annotating_models.clear()
-            for model_name in self.selectedmodels:
+            for model_name,model_threshold in self.selectedmodels:
+                #print(f"Annotating on {model_name} with threshold {model_threshold}")
                 self.current_model_name, self.current_mm_model = self.make_mm_model(
                     model_name)
                 if img_array_flag:
                     results0, results1 = self.reader.decode_file(
-                        img=image, model=self.current_mm_model, classdict=self.selectedclasses, threshold=self.conf_threshold, img_array_flag=True)
+                        img=image, model=self.current_mm_model, classdict=self.selectedclasses, threshold=model_threshold, img_array_flag=True)
                 else:
                     results0, results1 = self.reader.decode_file(
-                        img=image, model=self.current_mm_model, classdict=self.selectedclasses, threshold=self.conf_threshold)
-                self.reader.annotating_models[model_name] = [
-                    results0, results1]
+                        img=image, model=self.current_mm_model, classdict=self.selectedclasses, threshold=model_threshold)
+                
+                self.reader.annotating_models[model_name] = [results0, results1]
                 end_time = time.time()
                 print(
                     f"Time taken to annoatate img on {self.current_model_name}: {int((end_time - start_time)*1000)} ms" + "\n")
+            
             print('merging masks')
             results0, results1 = self.reader.merge_masks()
             results = self.reader.polegonise(
@@ -733,17 +735,12 @@ class Intelligence():
             for model in data.keys():
                 if "YOLOv8" not in model:
                     models.append(model)
-        # ExplorerMerge = ModelExplorerDialog(merge=True)
-        # ExplorerMerge.adjustSize()
-        # ExplorerMerge.resize(
-        #     int(ExplorerMerge.width() * 2), int(ExplorerMerge.height() * 1.5))
-        # ExplorerMerge.exec_()
 
         dialog = QtWidgets.QDialog(self.parent)
         dialog.setWindowTitle('Select Models')
         dialog.setWindowFlags(dialog.windowFlags() & ~QtCore.Qt.WindowContextHelpButtonHint)
         dialog.setWindowModality(QtCore.Qt.ApplicationModal)
-        dialog.resize(200, 250)
+        dialog.resize(350, 250)
         dialog.setMinimumSize(QtCore.QSize(200, 200))
         verticalLayout = QtWidgets.QVBoxLayout(dialog)
         verticalLayout.setObjectName("verticalLayout")
@@ -767,16 +764,24 @@ class Intelligence():
         buttonBox.accepted.connect(dialog.accept)
         buttonBox.rejected.connect(dialog.reject)
         self.models = []
+        self.thresholds = []
         for i in range(len(models)):
+            model_layout = QtWidgets.QHBoxLayout()
             self.models.append(QtWidgets.QCheckBox(models[i], dialog))
-            verticalLayout_2.addWidget(self.models[i])
+            self.thresholds.append(QtWidgets.QDoubleSpinBox(dialog))
+            self.thresholds[i].setRange(0, 1)
+            self.thresholds[i].setSingleStep(0.01)
+            self.thresholds[i].setValue(0.5)
+            model_layout.addWidget(self.models[i])
+            model_layout.addWidget(self.thresholds[i])
+            verticalLayout_2.addLayout(model_layout)
         dialog.show()
         dialog.exec_()
         self.selectedmodels.clear()
         for i in range(len(self.models)):
             if self.models[i].isChecked():
-                self.selectedmodels.append(self.models[i].text())
-        print(self.selectedmodels)
+                self.selectedmodels.append((self.models[i].text(),self.thresholds[i].value()))
+        #print(self.selectedmodels)
         return self.selectedmodels
 
     def updateDialog(self, completed, total):
