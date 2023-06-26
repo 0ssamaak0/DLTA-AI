@@ -650,7 +650,7 @@ class Intelligence():
             if self.classes[i].isChecked():
                 indx = coco_classes.index(self.classes[i].text())
                 self.selectedclasses[indx] = self.classes[i].text()
-        print(self.selectedclasses)
+        #print(self.selectedclasses)
         return self.selectedclasses
 
     def saveClasses(self, dialog, is_default=False):
