@@ -13,6 +13,8 @@ import json
 import orjson
 import copy
 import sys
+import subprocess
+import platform
 
 try:
     from .custom_exports import custom_exports_list
@@ -1672,23 +1674,16 @@ def interpolationOptions_GUI(config):
 
 
 def exportData_GUI(mode = "video"):
-    
     """
-    Summary:
-        Show a dialog to choose the export options in video mode.
-        (COCO Format (Detection / Segmentation), MOT Format (Tracking))
-        
+    Displays a dialog box for choosing export options for annotations and videos.
+
     Args:
-        None
-        
+        mode (str): The mode of the export. Can be either "video" or "image". Defaults to "video".
+
     Returns:
-        result: the result of the dialog
-        vid_radio.isChecked(): a flag to indicate if the Video Format is checked
-        coco_radio.isChecked(): a flag to indicate if the COCO Format is checked
-        mot_radio.isChecked(): a flag to indicate if the MOT Format is checked
-        custom_exports: a list of the custom exports that are checked
+        A tuple containing the result of the dialog box and the selected export options. If the dialog box is accepted, the first element of the tuple is `QtWidgets.QDialog.Accepted`. Otherwise, it is `QtWidgets.QDialog.Rejected`. The second element of the tuple is a boolean indicating whether to export annotations in COCO format. If `mode` is "video", the third element of the tuple is a boolean indicating whether to export annotations in MOT format, and the fourth element is a boolean indicating whether to export the video with the current visualization settings. If there are any custom export options available, the fifth element of the tuple is a list of booleans indicating whether to export using each custom export option.
     """
-    
+
     dialog = QtWidgets.QDialog()
     dialog.setWindowTitle("Choose Export Options")
     dialog.setWindowModality(Qt.ApplicationModal)
@@ -1709,7 +1704,7 @@ def exportData_GUI(mode = "video"):
     std_label.setFont(font)
     std_label.setMargin(10)
 
-    custom_label = QtWidgets.QLabel("Export Annotations (Customized Formats)")
+    custom_label = QtWidgets.QLabel("Export Annotations (Custom Formats)")
     custom_label.setFont(font)
     custom_label.setMargin(10)
     
@@ -1772,6 +1767,11 @@ def exportData_GUI(mode = "video"):
     else:
         layout.addWidget(QtWidgets.QLabel("No Custom Exports Available, you can add them in utils.custom_exports.py"))
 
+    # create button when clicking it open custom_exports.py file
+    custom_exports_button = QtWidgets.QPushButton("Open Custom Exports")
+    custom_exports_button.clicked.connect(open_file)
+    layout.addWidget(custom_exports_button)
+
     buttonBox = QtWidgets.QDialogButtonBox(
         QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel)
     buttonBox.accepted.connect(dialog.accept)
@@ -1794,6 +1794,36 @@ def exportData_GUI(mode = "video"):
     else:
         return result, coco_radio.isChecked(), custom_exports_radio_checked_list
 
+
+
+def open_file():
+    """
+    Open a file with the default application for the file type.
+
+    Args:
+        filename (str): The name of the file to open.
+
+    Raises:
+        OSError: If the file cannot be opened.
+
+    Returns:
+        None
+    """
+    filename = os.path.join(os.getcwd(), 'labelme/utils/custom_exports.py')
+    print(filename)
+    # Determine the platform and use the appropriate command to open the file
+    # Windows
+    if platform.system() == 'Windows':
+        os.startfile(filename)
+    # macOS
+    elif platform.system() == 'Darwin':
+        os.system(f'open {filename}')
+    else:
+        try:
+            opener = "open" if platform.system() == "Darwin" else "xdg-open"
+            subprocess.call([opener, filename])
+        except OSError:
+            print(f"Could not open file: {filename}")
 
 def deleteSelectedShape_GUI(TOTAL_VIDEO_FRAMES, INDEX_OF_CURRENT_FRAME, config):
     
