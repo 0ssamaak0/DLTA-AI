@@ -29,6 +29,7 @@ from mmdet.apis import inference_detector, init_detector
 warnings.filterwarnings("ignore")
 
 from .utils import helpers
+from .utils.sam import Sam_Predictor
 
 
 coco_classes = ['person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', 'truck', 'boat', 'traffic light',
@@ -194,7 +195,7 @@ class Intelligence():
         return selected_model_name, model
 
     @ torch.no_grad()
-    def make_mm_model_more(self, selected_model_name, config, checkpoint):
+    def make_mm_model_more(self, selected_model_name, config, checkpoint, device = None):
         torch.cuda.empty_cache()
         print(
             f"Selected model is {selected_model_name}\n and config is {config}\n and checkpoint is {checkpoint}")
@@ -204,6 +205,17 @@ class Intelligence():
             try:
                 model = YOLO(checkpoint)
                 model.fuse()
+                return selected_model_name, model
+            except Exception as e:
+                helpers.OKmsgBox("Error", f"Error in loading the model\n{e}", "critical")
+                return
+            
+        # if SAM
+        elif "SAM" in selected_model_name:
+            try:
+                # make "ViT-L SAM model-L" to "vit_l"
+                model_type = selected_model_name.lower().replace("-", "_").split(" ")[0]
+                model = Sam_Predictor(model_type, checkpoint, device)
                 return selected_model_name, model
             except Exception as e:
                 helpers.OKmsgBox("Error", f"Error in loading the model\n{e}", "critical")
@@ -265,26 +277,24 @@ class Intelligence():
                 results0, results1, classdict=self.selectedclasses)['results']
 
         else:
-            if img_array_flag:
-                results = self.reader.decode_file(
-                    img=image, model=self.current_mm_model, classdict=self.selectedclasses, threshold=self.conf_threshold, img_array_flag=True)
-                # print(type(results))
-                if isinstance(results, tuple):
-                    results = self.reader.polegonise(
-                        results[0], results[1], classdict=self.selectedclasses)['results']
-                else:
-                    results = results['results']
+            
+            if "SAM" in self.current_model_name:
+                shapes = self.current_mm_model.get_all_shapes(image, self.iou_threshold)
+                end_time = time.time()
+                print(f"Time taken to annoatate img on {self.current_model_name}: {int((end_time - start_time)*1000)} ms")
+                return shapes
+            
+            results = self.reader.decode_file(
+                img=image, model=self.current_mm_model, classdict=self.selectedclasses, threshold=self.conf_threshold, img_array_flag=img_array_flag)
+            # print(type(results))
+            if isinstance(results, tuple):
+                results = self.reader.polegonise(
+                    results[0], results[1], classdict=self.selectedclasses)['results']
             else:
-                results = self.reader.decode_file(
-                    img=image, model=self.current_mm_model, classdict=self.selectedclasses, threshold=self.conf_threshold)
-                if isinstance(results, tuple):
-                    results = self.reader.polegonise(
-                        results[0], results[1], classdict=self.selectedclasses)['results']
-                else:
-                    results = results['results']
+                results = results['results']
+            
             end_time = time.time()
-            print(
-                f"Time taken to annoatate img on {self.current_model_name}: {int((end_time - start_time)*1000)} ms")
+            print(f"Time taken to annoatate img on {self.current_model_name}: {int((end_time - start_time)*1000)} ms")
 
         shapes = []
         for result in results:
@@ -301,10 +311,10 @@ class Intelligence():
             # shape_points is result["seg"] flattened
             shape["points"] = [item for sublist in result["seg"]
                                for item in sublist]
-
             shapes.append(shape)
-            shapes, boxes, confidences, class_ids, segments = self.OURnms(
-                shapes, self.iou_threshold)
+            
+        shapes, boxes, confidences, class_ids, segments = self.OURnms(
+            shapes, self.iou_threshold)
             # self.addLabel(shape)
         return shapes
 
@@ -503,19 +513,19 @@ class Intelligence():
         layout.addWidget(label)
 
         slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
-        slider.setMinimum(1)
-        slider.setMaximum(100)
-        slider.setValue(int(prev_threshold * 100))
+        slider.setMinimum(0)
+        slider.setMaximum(1000)
+        slider.setValue(int(prev_threshold * 1000))
 
         text_input = QtWidgets.QLineEdit(str(prev_threshold))
 
         def on_slider_change(value):
-            text_input.setText(str(value / 100))
+            text_input.setText(str(value / 1000))
 
         def on_text_change(text):
             try:
                 value = float(text)
-                slider.setValue(int(value * 100))
+                slider.setValue(int(value * 1000))
             except ValueError:
                 pass
 
@@ -541,7 +551,7 @@ class Intelligence():
         button_box.rejected.connect(on_cancel)
 
         if dialog.exec_() == QtWidgets.QDialog.Accepted:
-            return slider.value() / 100
+            return slider.value() / 1000
         else:
             return prev_threshold
 

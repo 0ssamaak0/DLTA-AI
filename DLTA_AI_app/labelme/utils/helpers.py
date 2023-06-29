@@ -15,6 +15,7 @@ import copy
 import sys
 import subprocess
 import platform
+from shapely.geometry import Polygon
 
 try:
     from .custom_exports import custom_exports_list
@@ -404,6 +405,30 @@ def compute_iou(box1, box2):
     # Compute IOU
     iou = intersection_area / union_area if union_area > 0 else 0
 
+    return iou
+    
+
+def compute_iou_exact(self, shape1, shape2):
+    
+    """
+    Summary:
+        Computes IOU between two polygons.
+    
+    Args:
+        shape1 (list): List of 2D coordinates(also list) of the first polygon.
+        shape2 (list): List of 2D coordinates(also list) of the second polygon.
+        
+    Returns:
+        iou (float): IOU between the two polygons.
+    """
+    
+    shape1 = [tuple(x) for x in shape1]
+    shape2 = [tuple(x) for x in shape2]
+    polygon1 = Polygon(shape1)
+    polygon2 = Polygon(shape2)
+    intersection = polygon1.intersection(polygon2).area
+    union = polygon1.union(polygon2).area
+    iou = intersection / union if union > 0 else 0
     return iou
     
 

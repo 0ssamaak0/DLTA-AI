@@ -1938,7 +1938,6 @@ class MainWindow(QtWidgets.QMainWindow):
         idsLIST = []
         first_frame_idxLIST = []
         last_frame_idxLIST = []
-        oneFrame_flag_idxLIST = []
         for id in idsLISTX:
             try:
                 if only_edited:
@@ -1950,10 +1949,7 @@ class MainWindow(QtWidgets.QMainWindow):
             except:
                 continue
             if minf == maxf:
-                maxf = self.TOTAL_VIDEO_FRAMES
-                oneFrame_flag_idxLIST.append(1)
-            else:
-                oneFrame_flag_idxLIST.append(0)
+                continue
             first_frame_idxLIST.append(minf)
             last_frame_idxLIST.append(maxf)
             idsLIST.append(id)
@@ -2007,17 +2003,16 @@ class MainWindow(QtWidgets.QMainWindow):
                     prev_idx = i - 1
                     current = copy.deepcopy(records[i - 1])
                     
-                    if oneFrame_flag_idxLIST[ididx] == 0:
-                        next_idx = i + 1
-                        for j in range(i + 1, len(records)):
-                            self.waitWindow(visible=True)
-                            if (records[j] != None):
-                                next_idx = j
-                                break
-                        cur_bbox = ((next_idx - i) / (next_idx - prev_idx)) * np.array(records[prev_idx]['bbox']) + (
-                            (i - prev_idx) / (next_idx - prev_idx)) * np.array(records[next_idx]['bbox'])
-                        cur_bbox = [int(cur_bbox[i]) for i in range(len(cur_bbox))]
-                        current['bbox'] = copy.deepcopy(cur_bbox)
+                    next_idx = i + 1
+                    for j in range(i + 1, len(records)):
+                        self.waitWindow(visible=True)
+                        if (records[j] != None):
+                            next_idx = j
+                            break
+                    cur_bbox = ((next_idx - i) / (next_idx - prev_idx)) * np.array(records[prev_idx]['bbox']) + (
+                        (i - prev_idx) / (next_idx - prev_idx)) * np.array(records[next_idx]['bbox'])
+                    cur_bbox = [int(cur_bbox[i]) for i in range(len(cur_bbox))]
+                    current['bbox'] = copy.deepcopy(cur_bbox)
                     
                     records[i] = current
 
@@ -2866,7 +2861,7 @@ class MainWindow(QtWidgets.QMainWindow):
         selected_model_name, config, checkpoint = model_explorer_dialog.selected_model
         if selected_model_name != -1:
             self.intelligenceHelper.current_model_name, self.intelligenceHelper.current_mm_model = self.intelligenceHelper.make_mm_model_more(
-                selected_model_name, config, checkpoint)
+                selected_model_name, config, checkpoint, device)
         self.updateSamControls()
 
     # tunred off for now (removed from menus) as it is not working properly
@@ -3556,38 +3551,57 @@ class MainWindow(QtWidgets.QMainWindow):
     def annotate_one(self,called_from_tracking=False):
         # self.waitWindow(visible=True, text="Please Wait.\nModel is Working...")
         # self.CURRENT_ANNOATAION_FLAGS['id'] = False
-        if self.current_annotation_mode == "video":
+        # if self.current_annotation_mode == "video":
+        #     if self.multi_model_flag:
+        #         shapes = self.intelligenceHelper.get_shapes_of_one(
+        #             self.CURRENT_FRAME_IMAGE, img_array_flag=True, multi_model_flag=True)
+        #     else:
+        #         shapes = self.intelligenceHelper.get_shapes_of_one(
+        #             self.CURRENT_FRAME_IMAGE, img_array_flag=True)
+        #     if called_from_tracking:
+        #         return shapes
+
+        # # elif self.current_annotation_mode == "multimodel":
+        # #     shapes = self.intelligenceHelper.get_shapes_of_one(
+        # #         self.CURRENT_FRAME_IMAGE, img_array_flag=True, multi_model_flag=True)
+        #     # to handle the bug of the user selecting no models
+        #     # if len(shapes) == 0:
+        #     #     self.waitWindow()
+        #     #     return
+        # else:
+        #     # if self.filename != self.last_file_opened:
+        #     #     self.last_file_opened = self.filename
+        #     #     self.intelligenceHelper.clear_annotating_models()
+        #     try:
+        #         if os.path.exists(self.filename):
+        #             self.labelList.clearSelection()
+        #         if self.multi_model_flag:
+        #             shapes = self.intelligenceHelper.get_shapes_of_one(self.CURRENT_FRAME_IMAGE, img_array_flag=True, multi_model_flag=True)
+        #         else:
+        #             shapes = self.intelligenceHelper.get_shapes_of_one(
+        #                 self.CURRENT_FRAME_IMAGE, img_array_flag=True)
+        #     except Exception as e:
+        #         helpers.OKmsgBox("Error", f"{e}", "critical")
+        #         return
+        
+        try:
+            if self.current_annotation_mode != "video":
+                if os.path.exists(self.filename):
+                    self.labelList.clearSelection()
+                    
             if self.multi_model_flag:
                 shapes = self.intelligenceHelper.get_shapes_of_one(
                     self.CURRENT_FRAME_IMAGE, img_array_flag=True, multi_model_flag=True)
             else:
                 shapes = self.intelligenceHelper.get_shapes_of_one(
                     self.CURRENT_FRAME_IMAGE, img_array_flag=True)
-            if called_from_tracking:
+            
+            if self.current_annotation_mode == "video" and called_from_tracking:
                 return shapes
-
-        # elif self.current_annotation_mode == "multimodel":
-        #     shapes = self.intelligenceHelper.get_shapes_of_one(
-        #         self.CURRENT_FRAME_IMAGE, img_array_flag=True, multi_model_flag=True)
-            # to handle the bug of the user selecting no models
-            # if len(shapes) == 0:
-            #     self.waitWindow()
-            #     return
-        else:
-            # if self.filename != self.last_file_opened:
-            #     self.last_file_opened = self.filename
-            #     self.intelligenceHelper.clear_annotating_models()
-            try:
-                if os.path.exists(self.filename):
-                    self.labelList.clearSelection()
-                if self.multi_model_flag:
-                    shapes = self.intelligenceHelper.get_shapes_of_one(self.CURRENT_FRAME_IMAGE, img_array_flag=True, multi_model_flag=True)
-                else:
-                    shapes = self.intelligenceHelper.get_shapes_of_one(
-                        self.CURRENT_FRAME_IMAGE, img_array_flag=True)
-            except Exception as e:
-                helpers.OKmsgBox("Error", f"{e}", "critical")
-                return
+            
+        except Exception as e:
+            helpers.OKmsgBox("Error", f"{e}", "critical")
+            return
             
         imageX = helpers.draw_bb_on_image_MODE(self.CURRENT_ANNOATAION_FLAGS,
                                                     self.image, 

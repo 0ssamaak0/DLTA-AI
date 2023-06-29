@@ -184,11 +184,11 @@ class ModelExplorerDialog(QDialog):
                 # make select_row_button disabled
                 select_row_button.setEnabled(False)
 
-            # Disable SAM Selection
-            if model["Model"] == "SAM":
-                select_row_button.setEnabled(False)
-                # change text
-                select_row_button.setText("Select from SAM Toolbar")
+            # # Disable SAM Selection
+            # if model["Model"] == "SAM":
+            #     select_row_button.setEnabled(False)
+            #     # change text
+            #     select_row_button.setText("Select from SAM Toolbar")
 
             row_count += 1
 
