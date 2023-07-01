@@ -5,6 +5,7 @@ from qtpy import QtWidgets
 from labelme import QT5
 from labelme.shape import Shape
 import labelme.utils
+import copy
 
 
 # TODO(unknown):
@@ -71,6 +72,9 @@ class Canvas(QtWidgets.QWidget):
         self.is_loading = False
         self.loading_angle = 0
         self.loading_text = "Loading..."
+        # tracking area
+        self.tracking_area = ""
+        self.tracking_area_polygon = []
         
         self.current_annotation_mode = ""
 
@@ -435,6 +439,11 @@ class Canvas(QtWidgets.QWidget):
                     self.SAM_rects = [self.SAM_rect]
                     self.pointAdded.emit()
                     self.SAM_rect = []
+            
+            elif self.tracking_area == "drawing":
+                if not self.outOfPixmap(pos):
+                    self.tracking_area_polygon.append([pos.x(), pos.y()])
+            
             # the other is editing mode
             else:
                 group_mode = int(ev.modifiers()) == QtCore.Qt.ControlModifier
@@ -553,6 +562,9 @@ class Canvas(QtWidgets.QWidget):
         ):
             self.current.popPoint()
             self.finalise()
+            
+        if self.tracking_area == "drawing":
+            self.tracking_area = "drawn"
 
     def selectShapes(self, shapes):
         self.setHiding()
@@ -806,6 +818,24 @@ class Canvas(QtWidgets.QWidget):
             h = abs(point1[1] - point2[1])
             p.drawRect(x1, y1, w, h)
 
+        if self.tracking_area != "":
+            pen = QtGui.QPen(
+                QtGui.QColor("#FF0000"),
+                2 * max(1, int(round(2.0 / Shape.scale))),
+                QtCore.Qt.SolidLine,
+            )
+            p.setPen(pen)
+            p.setOpacity(0.1)
+            p.setBrush(QtGui.QColor("#FF0000"));
+            if len(self.tracking_area_polygon) > 0:
+                point2 = [self.prevMovePoint.x(), self.prevMovePoint.y()]
+                total = copy.deepcopy(self.tracking_area_polygon)
+                if self.tracking_area == "drawing":
+                    total.append(point2)
+                total = [ QtCore.QPoint(p[0], p[1]) for p in total]
+                p.drawPolygon(total)
+
+
         p.end()
 
     def transformPos(self, point):
@@ -961,6 +991,8 @@ class Canvas(QtWidgets.QWidget):
         if key == QtCore.Qt.Key_Return:
             if self.SAM_mode != "":
                 self.samFinish.emit()
+            elif self.tracking_area:
+                self.tracking_area = "drawn"
             elif self.canCloseShape():
                 self.finalise()
             

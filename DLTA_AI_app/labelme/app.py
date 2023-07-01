@@ -10,6 +10,7 @@ import re
 import traceback
 import webbrowser
 import copy
+from shapely.geometry import Polygon
 
 # import asyncio
 # import PyQt5
@@ -1379,6 +1380,8 @@ class MainWindow(QtWidgets.QMainWindow):
         
         self.interrupted = True
         self.sam_reset_button_clicked()
+        if self.canvas.tracking_area == "drawing":
+            self.area_dropdown_activated(1)
 
     def undoShapeEdit(self):
         self.canvas.restoreShape()
@@ -4210,7 +4213,21 @@ class MainWindow(QtWidgets.QMainWindow):
     def get_boxes_conf_classids_segments(self, shapes):
         return helpers.get_boxes_conf_classids_segments(shapes)
 
-
+    def area_dropdown_activated(self, index):
+        
+        self.canvas.cancelManualDrawing()
+        self.setEditMode()
+        self.canvas.setCursor(QtGui.QCursor(QtCore.Qt.CrossCursor))
+        self.canvas.h_w_of_image = [
+            self.CURRENT_FRAME_IMAGE.shape[0], self.CURRENT_FRAME_IMAGE.shape[1]]
+        
+        if index == 0:
+            self.canvas.tracking_area = ""
+            self.canvas.tracking_area_polygon = []
+        else:
+            self.canvas.tracking_area = "drawing"
+            self.canvas.tracking_area_polygon = []
+        
     def track_dropdown_changed(self, index):
         self.selected_option = index
 
@@ -4366,6 +4383,21 @@ class MainWindow(QtWidgets.QMainWindow):
                         'Error', 'Please use the tracker on the image first so that you can select labels with IDs to track')
 
                     return
+                
+            if self.area_dropdown.currentIndex() == 1 and len(self.canvas.tracking_area_polygon) > 2:
+                area_polygon = self.canvas.tracking_area_polygon
+                shape1 = [tuple([int(x[0]), int(x[1])]) for x in area_polygon]
+                polygon1 = Polygon(shape1)
+                final = []
+                for shape in self.CURRENT_SHAPES_IN_IMG:
+                    points = shape["points"]
+                    shape2 = [tuple([int(points[z]), int(points[z + 1])])
+                            for z in range(0, len(points), 2)]
+                    polygon2 = Polygon(shape2)
+                    if polygon1.intersects(polygon2):
+                        final.append(shape)
+                self.CURRENT_SHAPES_IN_IMG = copy.deepcopy(final)
+                
 
             # to understand the json output file structure it is a dictionary of frames and each frame is a dictionary of tracker_ids and each tracker_id is a dictionary of bbox , confidence , class_id , segment
             json_frame = {}
@@ -4867,6 +4899,12 @@ class MainWindow(QtWidgets.QMainWindow):
         self.track_dropdown.setCurrentIndex(0)
         self.track_dropdown.currentIndexChanged.connect(self.track_dropdown_changed)
         self.videoControls_2.addWidget(self.track_dropdown)
+        
+        self.area_dropdown = QtWidgets.QComboBox()
+        self.area_dropdown.addItems(["Cancel Area", "Select Area"])        
+        self.area_dropdown.setCurrentIndex(0)
+        self.area_dropdown.activated.connect(self.area_dropdown_activated)
+        self.videoControls_2.addWidget(self.area_dropdown)
 
         self.start_button = QtWidgets.QPushButton("Start Tracking")
         self.start_button.setIcon(

@@ -408,7 +408,7 @@ def compute_iou(box1, box2):
     return iou
     
 
-def compute_iou_exact(self, shape1, shape2):
+def compute_iou_exact(shape1, shape2):
     
     """
     Summary:
