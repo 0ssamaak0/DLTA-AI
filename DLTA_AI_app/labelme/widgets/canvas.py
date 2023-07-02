@@ -834,6 +834,12 @@ class Canvas(QtWidgets.QWidget):
                     total.append(point2)
                 total = [ QtCore.QPoint(p[0], p[1]) for p in total]
                 p.drawPolygon(total)
+                p.setOpacity(0.7)
+                if self.tracking_area == "drawing":
+                    p.drawPolyline(total)
+                else:
+                    total.append(total[0])
+                    p.drawPolyline(total)
 
 
         p.end()
@@ -993,6 +999,7 @@ class Canvas(QtWidgets.QWidget):
                 self.samFinish.emit()
             elif self.tracking_area:
                 self.tracking_area = "drawn"
+                self.update()
             elif self.canCloseShape():
                 self.finalise()
             

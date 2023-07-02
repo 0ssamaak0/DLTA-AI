@@ -2117,7 +2117,7 @@ class MainWindow(QtWidgets.QMainWindow):
         
         if len(self.canvas.selectedShapes) == 0:
             return
-        self.copiedShapes = self.canvas.selectedShapes
+        self.copiedShapes = copy.deepcopy(self.canvas.selectedShapes)
 
     def pasteShapesSelected(self):
         
@@ -5275,6 +5275,25 @@ class MainWindow(QtWidgets.QMainWindow):
         self.sam_enhance_annotation_button.clicked.connect(
             self.sam_enhance_annotation_button_clicked)
         self.sam_toolbar.addWidget(self.sam_enhance_annotation_button)
+        
+        # add a point of track with SAM
+        self.sam_track_annotation_button = QtWidgets.QPushButton()
+        self.sam_track_annotation_button.setAccessibleName(
+            "sam_track_annotation_button")
+        self.sam_track_annotation_button.setStyleSheet(
+            "QPushButton { font-size: 10pt; font-weight: bold; }")
+        self.sam_track_annotation_button.setText("Track by SAM")
+        # add icon to button
+        self.sam_track_annotation_button.setIcon(
+            QtGui.QIcon("labelme/icons/SAM.png"))
+        # make the icon bigger  
+        self.sam_track_annotation_button.setIconSize(QtCore.QSize(24, 24))
+        # self.sam_track_annotation_button.setShortcut(self._config["shortcuts"]["SAM_enhance"])
+        self.sam_track_annotation_button.setToolTip(
+            f'Track Selected Polygons with SAM')
+        self.sam_track_annotation_button.clicked.connect(
+            self.sam_track_annotation_button_clicked)
+        self.sam_toolbar.addWidget(self.sam_track_annotation_button)
 
         self.set_sam_toolbar_enable(False)
         self.sam_buttons_colors("x")
@@ -5291,7 +5310,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.sam_clear_annotation_button_clicked()
         self.createMode_options()
 
-    def sam_enhance_annotation_button_clicked(self):
+    def sam_enhance_annotation_button_clicked(self, samTrack=None):
         if self.sam_model_comboBox.currentText() == "Select Model (SAM disabled)":
             helpers.OKmsgBox("SAM is disabled",
                              "SAM is disabled.\nPlease enable SAM.")
@@ -5302,8 +5321,12 @@ class MainWindow(QtWidgets.QMainWindow):
         except:
             return
         
-        toBeEnhanced = self.canvas.selectedShapes if len(self.canvas.selectedShapes) > 0 else self.canvas.shapes
-
+        if type(samTrack) == list:
+            self.canvas.shapes = samTrack
+            toBeEnhanced = samTrack
+        else:
+            toBeEnhanced = self.canvas.selectedShapes if len(self.canvas.selectedShapes) > 0 else self.canvas.shapes
+        
         for shape in toBeEnhanced:
             try:
                 self.canvas.shapes.remove(shape)
@@ -5328,6 +5351,34 @@ class MainWindow(QtWidgets.QMainWindow):
             self.refresh_image_MODE()
 
         self.sam_buttons_colors("X")
+
+    def sam_track_annotation_button_clicked(self):
+        
+        if self.sam_model_comboBox.currentText() == "Select Model (SAM disabled)":
+            helpers.OKmsgBox("SAM is disabled",
+                             "SAM is disabled.\nPlease enable SAM.")
+            return
+        
+        if self.FRAMES_TO_TRACK + self.INDEX_OF_CURRENT_FRAME <= self.TOTAL_VIDEO_FRAMES:
+            number_of_frames_to_track = self.FRAMES_TO_TRACK
+        else:
+            number_of_frames_to_track = self.TOTAL_VIDEO_FRAMES - self.INDEX_OF_CURRENT_FRAME
+        
+        self.canvas.shapes = self.canvas.selectedShapes if len(self.canvas.selectedShapes) > 0 else self.canvas.shapes
+        self.update_current_frame_annotation_button_clicked()
+        self.sam_enhance_annotation_button_clicked(samTrack = self.canvas.shapes)
+        
+        while not self.interrupted and number_of_frames_to_track > 0:
+            base = copy.deepcopy(self.canvas.shapes)
+            self.main_video_frames_slider.setValue(self.main_video_frames_slider.value() + 1)
+            self.canvas.shapes = copy.deepcopy(base)
+            self.update_current_frame_annotation_button_clicked()
+            self.sam_enhance_annotation_button_clicked(samTrack = self.canvas.shapes)
+            QtWidgets.QApplication.processEvents()
+            number_of_frames_to_track -= 1
+        
+        self.update_current_frame_annotation_button_clicked()
+        self.interrupted = False
 
     def sam_models(self):
         cwd = os.getcwd()
