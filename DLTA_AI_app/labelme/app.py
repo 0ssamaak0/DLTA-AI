@@ -4177,6 +4177,17 @@ class MainWindow(QtWidgets.QMainWindow):
                 "you need to assign at least one object to track",
             )
             return
+        
+        # if the chosen model is from SAM models
+        mName = self.intelligenceHelper.current_model_name
+        if 'ViT' in mName:
+            mName = mName.lower().replace("-", "_").split(" ")[0]
+        index = self.sam_model_comboBox.findText(mName)
+        if index != -1:
+            self.sam_model_comboBox.setCurrentText(mName)
+            self.sam_track_annotation_button_clicked()
+            return
+            
 
         self.TRACK_ASSIGNED_OBJECTS_ONLY = True
         self.track_buttonClicked()
@@ -5276,24 +5287,24 @@ class MainWindow(QtWidgets.QMainWindow):
             self.sam_enhance_annotation_button_clicked)
         self.sam_toolbar.addWidget(self.sam_enhance_annotation_button)
         
-        # add a point of track with SAM
-        self.sam_track_annotation_button = QtWidgets.QPushButton()
-        self.sam_track_annotation_button.setAccessibleName(
-            "sam_track_annotation_button")
-        self.sam_track_annotation_button.setStyleSheet(
-            "QPushButton { font-size: 10pt; font-weight: bold; }")
-        self.sam_track_annotation_button.setText("Track by SAM")
-        # add icon to button
-        self.sam_track_annotation_button.setIcon(
-            QtGui.QIcon("labelme/icons/SAM.png"))
-        # make the icon bigger  
-        self.sam_track_annotation_button.setIconSize(QtCore.QSize(24, 24))
-        # self.sam_track_annotation_button.setShortcut(self._config["shortcuts"]["SAM_enhance"])
-        self.sam_track_annotation_button.setToolTip(
-            f'Track Selected Polygons with SAM')
-        self.sam_track_annotation_button.clicked.connect(
-            self.sam_track_annotation_button_clicked)
-        self.sam_toolbar.addWidget(self.sam_track_annotation_button)
+        # # add a point of track with SAM
+        # self.sam_track_annotation_button = QtWidgets.QPushButton()
+        # self.sam_track_annotation_button.setAccessibleName(
+        #     "sam_track_annotation_button")
+        # self.sam_track_annotation_button.setStyleSheet(
+        #     "QPushButton { font-size: 10pt; font-weight: bold; }")
+        # self.sam_track_annotation_button.setText("Track by SAM")
+        # # add icon to button
+        # self.sam_track_annotation_button.setIcon(
+        #     QtGui.QIcon("labelme/icons/SAM.png"))
+        # # make the icon bigger  
+        # self.sam_track_annotation_button.setIconSize(QtCore.QSize(24, 24))
+        # # self.sam_track_annotation_button.setShortcut(self._config["shortcuts"]["SAM_enhance"])
+        # self.sam_track_annotation_button.setToolTip(
+        #     f'Track Selected Polygons with SAM')
+        # self.sam_track_annotation_button.clicked.connect(
+        #     self.sam_track_annotation_button_clicked)
+        # self.sam_toolbar.addWidget(self.sam_track_annotation_button)
 
         self.set_sam_toolbar_enable(False)
         self.sam_buttons_colors("x")
@@ -5367,13 +5378,31 @@ class MainWindow(QtWidgets.QMainWindow):
         self.canvas.shapes = self.canvas.selectedShapes if len(self.canvas.selectedShapes) > 0 else self.canvas.shapes
         self.update_current_frame_annotation_button_clicked()
         self.sam_enhance_annotation_button_clicked(samTrack = self.canvas.shapes)
+        base1 = copy.deepcopy(self.canvas.shapes)
         
+        self.interrupted = False
         while not self.interrupted and number_of_frames_to_track > 0:
-            base = copy.deepcopy(self.canvas.shapes)
             self.main_video_frames_slider.setValue(self.main_video_frames_slider.value() + 1)
-            self.canvas.shapes = copy.deepcopy(base)
+            self.canvas.shapes = copy.deepcopy(base1)
             self.update_current_frame_annotation_button_clicked()
             self.sam_enhance_annotation_button_clicked(samTrack = self.canvas.shapes)
+            base2 = copy.deepcopy(self.canvas.shapes)
+            # do something with base1 and base2
+            for i in range(len(base1)):
+                old = helpers.getXYPointsFromQTShape(base1[i])
+                new = helpers.getXYPointsFromQTShape(base2[i])
+                iou = helpers.compute_iou_exact(old, new)
+                print("iou : ", iou)
+                if iou == 1.0:
+                    print("A polygon is not moving, enhance it")
+                    shapeX = self.convert_qt_shapes_to_shapes([base2[i]])[0]
+                    x1, y1, x2, y2 = shapeX["bbox"]
+                    cur_bbox, cur_segment = self.sam_enhanced_bbox_segment(
+                        self.CURRENT_FRAME_IMAGE, [x1, y1, x2, y2], 1.2, max_itr=5, forSHAPE=True)
+                    shapeX["points"] = cur_segment
+                    base2[i] = convert_shapes_to_qt_shapes([shapeX])[0]
+            # do something with base1 and base2
+            base1 = base2
             QtWidgets.QApplication.processEvents()
             number_of_frames_to_track -= 1
         

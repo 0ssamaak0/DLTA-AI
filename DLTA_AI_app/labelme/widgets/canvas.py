@@ -565,6 +565,7 @@ class Canvas(QtWidgets.QWidget):
             
         if self.tracking_area == "drawing":
             self.tracking_area = "drawn"
+            self.update()
 
     def selectShapes(self, shapes):
         self.setHiding()

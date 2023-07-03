@@ -321,6 +321,29 @@ def flattener(list_2d):
     return points
 
 
+def getXYPointsFromQTShape(shape, out_list=True):
+    
+    """
+    Summary:
+        Get the x and y coordinates of a QTShape.
+    
+    Args:
+        shape: a QTShape
+        output: the output format, 'tuple' or 'list'
+        
+    Returns:
+        xyPoints: a list of points, each point is a list of x and y coordinates
+    """
+    
+    points = shape.points
+    flattened = flattener(points)
+    if out_list:
+        xyPoints = [ [flattened[i], flattened[i+1]] for i in range(0, len(flattened), 2) ]
+    else:
+        xyPoints = [ (flattened[i], flattened[i+1]) for i in range(0, len(flattened), 2) ]
+    return xyPoints
+
+
 def mapFrameToTime(frameNumber, fps):
     
     """
@@ -426,6 +449,8 @@ def compute_iou_exact(shape1, shape2):
     shape2 = [tuple(x) for x in shape2]
     polygon1 = Polygon(shape1)
     polygon2 = Polygon(shape2)
+    if polygon1.intersects(polygon2) is False:
+        return 0
     intersection = polygon1.intersection(polygon2).area
     union = polygon1.union(polygon2).area
     iou = intersection / union if union > 0 else 0
