@@ -3007,7 +3007,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self.fileListWidget.repaint()
 
     def saveFile(self, _value=False):
-        self.actions.export.setEnabled(True)
         assert not self.image.isNull(), "cannot save empty image"
         if self.labelFile:
             # DL20180323 - overwrite when in directory
@@ -3020,6 +3019,8 @@ class MainWindow(QtWidgets.QMainWindow):
         else:
             self.save_path = self.saveFileDialog()
             self._saveFile(self.save_path)
+        if self.save_path is not None and self.save_path != "":
+            self.actions.export.setEnabled(True)
 
     def exportData(self):
         """
