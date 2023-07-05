@@ -15,6 +15,7 @@ import copy
 import sys
 import subprocess
 import platform
+from shapely.geometry import Polygon
 
 try:
     from .custom_exports import custom_exports_list
@@ -1505,14 +1506,65 @@ def reducing_Intersection(Intersection):
     return reduced_Intersection
 
 
+def adjust_shapes_to_original_image(shapes, x1, y1, area_points):
+    
+    shape1 = [tuple([int(x[0]), int(x[1])]) for x in area_points]
+    polygon1 = Polygon(shape1)
+    final = []
+    
+    for shape in shapes:
+        shape['points'] = [shape['points'][i] + x1 if i % 2 == 0 else shape['points'][i] + y1 for i in range(len(shape['points']))]
+        shape['bbox'] = [shape['bbox'][0] + x1, shape['bbox'][1] + y1, shape['bbox'][2] + x1, shape['bbox'][3] + y1]
+        
+        points = shape["points"]
+        shape2 = [tuple([int(points[z]), int(points[z + 1])])
+                for z in range(0, len(points), 2)]
+        polygon2 = Polygon(shape2)
+        if polygon1.intersects(polygon2):
+            final.append(shape)
+    
+    return final
 
 
 
+def track_area_adjustedBboex(area_points, dims, ratio = 0.1):
+    
+    [x1, y1, x2, y2] = get_bbox_xyxy(area_points)
+    [w, h] = [x2 - x1, y2 - y1]
+    x1 = int(max(0, x1 - w * ratio))
+    y1 = int(max(0, y1 - h * ratio))
+    x2 = int(min(dims[1], x2 + w * ratio))
+    y2 = int(min(dims[0], y2 + h * ratio))
+    
+    return [x1, y1, x2, y2]
 
 
 
-
-
+def compute_iou_exact(shape1, shape2):
+    
+    """
+    Summary:
+        Computes IOU between two polygons.
+    
+    Args:
+        shape1 (list): List of 2D coordinates(also list) of the first polygon.
+        shape2 (list): List of 2D coordinates(also list) of the second polygon.
+        
+    Returns:
+        iou (float): IOU between the two polygons.
+    """
+    
+    shape1 = [tuple(x) for x in shape1]
+    shape2 = [tuple(x) for x in shape2]
+    polygon1 = Polygon(shape1)
+    polygon2 = Polygon(shape2)
+    if polygon1.intersects(polygon2) is False:
+        return 0
+    intersection = polygon1.intersection(polygon2).area
+    union = polygon1.union(polygon2).area
+    iou = intersection / union if union > 0 else 0
+    return iou
+    
 
 
 

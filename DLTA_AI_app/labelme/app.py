@@ -1031,6 +1031,7 @@ class MainWindow(QtWidgets.QMainWindow):
             saved_models=QtWidgets.QMenu(self.tr("Select Segmentation model")),
             tracking_models=QtWidgets.QMenu(self.tr("Select Tracking model")),
             labelList=labelmenu,
+            certain_area=QtWidgets.QMenu(self.tr("Select Certain Area")),
 
             ui_elements=QtWidgets.QMenu(self.tr("&Show UI Elements")),
             zoom_options=QtWidgets.QMenu(self.tr("&Zoom Options")),
@@ -1098,6 +1099,8 @@ class MainWindow(QtWidgets.QMainWindow):
             QtGui.QIcon("labelme/icons/brain.png"))
         self.menus.tracking_models.setIcon(
             QtGui.QIcon("labelme/icons/tracking.png"))
+        self.menus.certain_area.setIcon(
+            QtGui.QIcon("labelme/icons/polygon.png"))
 
         utils.addActions(
             self.menus.model_selection,
@@ -1118,6 +1121,7 @@ class MainWindow(QtWidgets.QMainWindow):
             (
                 set_conf_threshold,
                 set_iou_threshold,
+                self.menus.certain_area,
                 None,
                 select_classes,
 
@@ -1379,6 +1383,8 @@ class MainWindow(QtWidgets.QMainWindow):
         
         self.interrupted = True
         self.sam_reset_button_clicked()
+        if self.canvas.tracking_area == "drawing":
+            self.certain_area_clicked(1)
 
     def undoShapeEdit(self):
         self.canvas.restoreShape()
@@ -1527,6 +1533,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 menu.addAction(action)
                 i += 1
         self.add_tracking_models_menu()
+        self.add_certain_area_menu()
 
     def add_tracking_models_menu(self):
         menu2 = self.menus.tracking_models
@@ -1565,6 +1572,25 @@ class MainWindow(QtWidgets.QMainWindow):
         action.triggered.connect(
             lambda: self.update_tracking_method('botsort'))
         menu2.addAction(action)
+
+    def add_certain_area_menu(self):
+        menu3 = self.menus.certain_area
+        menu3.clear()
+        
+        icon = utils.newIcon("polygon")
+        action = QtWidgets.QAction(
+            icon, "Select Certain Area", self)
+        action.triggered.connect(
+            lambda: self.certain_area_clicked(1))
+        menu3.addAction(action)
+        
+        icon = utils.newIcon("rectangle")
+        action = QtWidgets.QAction(
+            icon, "Cancel Area", self)
+        action.triggered.connect(
+            lambda: self.certain_area_clicked(0))
+        menu3.addAction(action)
+        
 
     def update_tracking_method(self, method='bytetrack'):
         self.waitWindow(
@@ -1938,7 +1964,6 @@ class MainWindow(QtWidgets.QMainWindow):
         idsLIST = []
         first_frame_idxLIST = []
         last_frame_idxLIST = []
-        oneFrame_flag_idxLIST = []
         for id in idsLISTX:
             try:
                 if only_edited:
@@ -1950,10 +1975,7 @@ class MainWindow(QtWidgets.QMainWindow):
             except:
                 continue
             if minf == maxf:
-                maxf = self.TOTAL_VIDEO_FRAMES
-                oneFrame_flag_idxLIST.append(1)
-            else:
-                oneFrame_flag_idxLIST.append(0)
+                continue
             first_frame_idxLIST.append(minf)
             last_frame_idxLIST.append(maxf)
             idsLIST.append(id)
@@ -2007,17 +2029,16 @@ class MainWindow(QtWidgets.QMainWindow):
                     prev_idx = i - 1
                     current = copy.deepcopy(records[i - 1])
                     
-                    if oneFrame_flag_idxLIST[ididx] == 0:
-                        next_idx = i + 1
-                        for j in range(i + 1, len(records)):
-                            self.waitWindow(visible=True)
-                            if (records[j] != None):
-                                next_idx = j
-                                break
-                        cur_bbox = ((next_idx - i) / (next_idx - prev_idx)) * np.array(records[prev_idx]['bbox']) + (
-                            (i - prev_idx) / (next_idx - prev_idx)) * np.array(records[next_idx]['bbox'])
-                        cur_bbox = [int(cur_bbox[i]) for i in range(len(cur_bbox))]
-                        current['bbox'] = copy.deepcopy(cur_bbox)
+                    next_idx = i + 1
+                    for j in range(i + 1, len(records)):
+                        self.waitWindow(visible=True)
+                        if (records[j] != None):
+                            next_idx = j
+                            break
+                    cur_bbox = ((next_idx - i) / (next_idx - prev_idx)) * np.array(records[prev_idx]['bbox']) + (
+                        (i - prev_idx) / (next_idx - prev_idx)) * np.array(records[next_idx]['bbox'])
+                    cur_bbox = [int(cur_bbox[i]) for i in range(len(cur_bbox))]
+                    current['bbox'] = copy.deepcopy(cur_bbox)
                     
                     records[i] = current
 
@@ -2119,7 +2140,7 @@ class MainWindow(QtWidgets.QMainWindow):
         
         if len(self.canvas.selectedShapes) == 0:
             return
-        self.copiedShapes = self.canvas.selectedShapes
+        self.copiedShapes = copy.deepcopy(self.canvas.selectedShapes)
 
     def pasteShapesSelected(self):
         
@@ -2866,7 +2887,7 @@ class MainWindow(QtWidgets.QMainWindow):
         selected_model_name, config, checkpoint = model_explorer_dialog.selected_model
         if selected_model_name != -1:
             self.intelligenceHelper.current_model_name, self.intelligenceHelper.current_mm_model = self.intelligenceHelper.make_mm_model_more(
-                selected_model_name, config, checkpoint)
+                selected_model_name, config, checkpoint, device)
         self.updateSamControls()
 
     # tunred off for now (removed from menus) as it is not working properly
@@ -3557,38 +3578,69 @@ class MainWindow(QtWidgets.QMainWindow):
     def annotate_one(self,called_from_tracking=False):
         # self.waitWindow(visible=True, text="Please Wait.\nModel is Working...")
         # self.CURRENT_ANNOATAION_FLAGS['id'] = False
-        if self.current_annotation_mode == "video":
-            if self.multi_model_flag:
-                shapes = self.intelligenceHelper.get_shapes_of_one(
-                    self.CURRENT_FRAME_IMAGE, img_array_flag=True, multi_model_flag=True)
-            else:
-                shapes = self.intelligenceHelper.get_shapes_of_one(
-                    self.CURRENT_FRAME_IMAGE, img_array_flag=True)
-            if called_from_tracking:
-                return shapes
+        # if self.current_annotation_mode == "video":
+        #     if self.multi_model_flag:
+        #         shapes = self.intelligenceHelper.get_shapes_of_one(
+        #             self.CURRENT_FRAME_IMAGE, img_array_flag=True, multi_model_flag=True)
+        #     else:
+        #         shapes = self.intelligenceHelper.get_shapes_of_one(
+        #             self.CURRENT_FRAME_IMAGE, img_array_flag=True)
+        #     if called_from_tracking:
+        #         return shapes
 
-        # elif self.current_annotation_mode == "multimodel":
-        #     shapes = self.intelligenceHelper.get_shapes_of_one(
-        #         self.CURRENT_FRAME_IMAGE, img_array_flag=True, multi_model_flag=True)
-            # to handle the bug of the user selecting no models
-            # if len(shapes) == 0:
-            #     self.waitWindow()
-            #     return
+        # # elif self.current_annotation_mode == "multimodel":
+        # #     shapes = self.intelligenceHelper.get_shapes_of_one(
+        # #         self.CURRENT_FRAME_IMAGE, img_array_flag=True, multi_model_flag=True)
+        #     # to handle the bug of the user selecting no models
+        #     # if len(shapes) == 0:
+        #     #     self.waitWindow()
+        #     #     return
+        # else:
+        #     # if self.filename != self.last_file_opened:
+        #     #     self.last_file_opened = self.filename
+        #     #     self.intelligenceHelper.clear_annotating_models()
+        #     try:
+        #         if os.path.exists(self.filename):
+        #             self.labelList.clearSelection()
+        #         if self.multi_model_flag:
+        #             shapes = self.intelligenceHelper.get_shapes_of_one(self.CURRENT_FRAME_IMAGE, img_array_flag=True, multi_model_flag=True)
+        #         else:
+        #             shapes = self.intelligenceHelper.get_shapes_of_one(
+        #                 self.CURRENT_FRAME_IMAGE, img_array_flag=True)
+        #     except Exception as e:
+        #         helpers.OKmsgBox("Error", f"{e}", "critical")
+        #         return
+        areaFlag = len(self.canvas.tracking_area_polygon) > 2
+        if areaFlag:
+            dims = self.CURRENT_FRAME_IMAGE.shape
+            area_points = self.canvas.tracking_area_polygon
+            [x1, y1, x2, y2] = helpers.track_area_adjustedBboex(area_points, dims, ratio=0.1)
+            targetImage = self.CURRENT_FRAME_IMAGE[y1: y2, x1: x2]
         else:
-            # if self.filename != self.last_file_opened:
-            #     self.last_file_opened = self.filename
-            #     self.intelligenceHelper.clear_annotating_models()
-            try:
+            targetImage = self.CURRENT_FRAME_IMAGE
+            
+            
+        try:
+            if self.current_annotation_mode != "video":
                 if os.path.exists(self.filename):
                     self.labelList.clearSelection()
-                if self.multi_model_flag:
-                    shapes = self.intelligenceHelper.get_shapes_of_one(self.CURRENT_FRAME_IMAGE, img_array_flag=True, multi_model_flag=True)
-                else:
-                    shapes = self.intelligenceHelper.get_shapes_of_one(
-                        self.CURRENT_FRAME_IMAGE, img_array_flag=True)
-            except Exception as e:
-                helpers.OKmsgBox("Error", f"{e}", "critical")
-                return
+                    
+            if self.multi_model_flag:
+                shapes = self.intelligenceHelper.get_shapes_of_one(
+                    targetImage, img_array_flag=True, multi_model_flag=True)
+            else:
+                shapes = self.intelligenceHelper.get_shapes_of_one(
+                    targetImage, img_array_flag=True)
+                
+            if areaFlag:
+                shapes = helpers.adjust_shapes_to_original_image(shapes, x1, y1, area_points)
+            
+            if self.current_annotation_mode == "video" and called_from_tracking:
+                return shapes
+            
+        except Exception as e:
+            helpers.OKmsgBox("Error", f"{e}", "critical")
+            return
             
         imageX = helpers.draw_bb_on_image_MODE(self.CURRENT_ANNOATAION_FLAGS,
                                                     self.image, 
@@ -4197,7 +4249,19 @@ class MainWindow(QtWidgets.QMainWindow):
     def get_boxes_conf_classids_segments(self, shapes):
         return helpers.get_boxes_conf_classids_segments(shapes)
 
-
+    def certain_area_clicked(self, index):
+        
+        self.canvas.cancelManualDrawing()
+        self.setEditMode()
+        self.canvas.setCursor(QtGui.QCursor(QtCore.Qt.CrossCursor))
+        
+        if index == 0:
+            self.canvas.tracking_area = ""
+            self.canvas.tracking_area_polygon = []
+        else:
+            self.canvas.tracking_area = "drawing"
+            self.canvas.tracking_area_polygon = []
+        
     def track_dropdown_changed(self, index):
         self.selected_option = index
 
@@ -5426,9 +5490,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self.sam_buttons_colors("rect")
         self.canvas.setCursor(QtGui.QCursor(QtCore.Qt.CrossCursor))
         self.canvas.SAM_mode = "select rect"
-        self.canvas.h_w_of_image = [
-            self.CURRENT_FRAME_IMAGE.shape[0], self.CURRENT_FRAME_IMAGE.shape[1]]
-
     def sam_clear_annotation_button_clicked(self):
         self.canvas.cancelManualDrawing()
         self.sam_buttons_colors("clear")

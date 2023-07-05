@@ -5,6 +5,7 @@ from qtpy import QtWidgets
 from labelme import QT5
 from labelme.shape import Shape
 import labelme.utils
+import copy
 
 
 # TODO(unknown):
@@ -66,11 +67,13 @@ class Canvas(QtWidgets.QWidget):
         self.SAM_current = None
         # mouse tracking
         self.show_cross_line = True
-        self.h_w_of_image = [-1, -1]
         # Waiting window
         self.is_loading = False
         self.loading_angle = 0
         self.loading_text = "Loading..."
+        # tracking area
+        self.tracking_area = ""
+        self.tracking_area_polygon = []
         
         self.current_annotation_mode = ""
 
@@ -365,15 +368,11 @@ class Canvas(QtWidgets.QWidget):
         self.hEdge = None
         self.movingShape = True  # Save changes
 
-    def correct_pos_for_SAM(self, pos):
+    def corrected_pos_into_pixmap(self, pos):
         x = pos.x()
         y = pos.y()
-        h = self.h_w_of_image[0]
-        w = self.h_w_of_image[1]
-        x = max(0, x)
-        y = max(0, y)
-        x = min(w, x)
-        y = min(h, y)
+        x = min(self.pixmap.width() , max(0, x))
+        y = min(self.pixmap.height(), max(0, y))
         res = QtCore.QPointF(x, y)
         return res
 
@@ -428,13 +427,18 @@ class Canvas(QtWidgets.QWidget):
                     # print(self.SAM_coordinates)
                     self.pointAdded.emit()
             elif self.SAM_mode == 'select rect':
-                self.SAM_rect.append(self.correct_pos_for_SAM(pos))
+                self.SAM_rect.append(self.corrected_pos_into_pixmap(pos))
                 if len(self.SAM_rect) == 2:
                     print("do smth")
                     # self.SAM_rects.append(self.SAM_rect)
                     self.SAM_rects = [self.SAM_rect]
                     self.pointAdded.emit()
                     self.SAM_rect = []
+            
+            elif self.tracking_area == "drawing":
+                corrected_pos = self.corrected_pos_into_pixmap(pos)
+                self.tracking_area_polygon.append([corrected_pos.x(), corrected_pos.y()])
+            
             # the other is editing mode
             else:
                 group_mode = int(ev.modifiers()) == QtCore.Qt.ControlModifier
@@ -494,7 +498,7 @@ class Canvas(QtWidgets.QWidget):
                 self.removeSelectedPoint()
         elif ev.button() == QtCore.Qt.LeftButton and len(self.SAM_rect) == 1:
             if abs(pos.x() - self.SAM_rect[0].x()) + abs(pos.y() - self.SAM_rect[0].y()) > 50:
-                self.SAM_rect.append(self.correct_pos_for_SAM(pos))
+                self.SAM_rect.append(self.corrected_pos_into_pixmap(pos))
                 print("do smth")
                 # self.SAM_rects.append(self.SAM_rect)
                 self.SAM_rects = [self.SAM_rect]
@@ -553,6 +557,10 @@ class Canvas(QtWidgets.QWidget):
         ):
             self.current.popPoint()
             self.finalise()
+            
+        if self.tracking_area == "drawing":
+            self.tracking_area = "drawn"
+            self.update()
 
     def selectShapes(self, shapes):
         self.setHiding()
@@ -746,13 +754,15 @@ class Canvas(QtWidgets.QWidget):
             )
             p.setPen(pen)
             p.setOpacity(0.5)
+            mouseX = min( self.pixmap.width() ,max(0, self.prevMovePoint.x()))
+            mouseY = min( self.pixmap.height() ,max(0, self.prevMovePoint.y()))
             p.drawLine(
-                QtCore.QPointF(self.prevMovePoint.x(), 0),
-                QtCore.QPointF(self.prevMovePoint.x(), self.pixmap.height()),
+                QtCore.QPointF(mouseX, 0),
+                QtCore.QPointF(mouseX, self.pixmap.height()),
             )
             p.drawLine(
-                QtCore.QPointF(0, self.prevMovePoint.y()),
-                QtCore.QPointF(self.pixmap.width(), self.prevMovePoint.y()),
+                QtCore.QPointF(0, mouseY),
+                QtCore.QPointF(self.pixmap.width(), mouseY),
             )
 
         # draw SAM rectangle
@@ -766,7 +776,7 @@ class Canvas(QtWidgets.QWidget):
             p.setOpacity(0.8)
 
             point1 = [self.SAM_rect[0].x(), self.SAM_rect[0].y()]
-            corrected = self.correct_pos_for_SAM(self.prevMovePoint)
+            corrected = self.corrected_pos_into_pixmap(self.prevMovePoint)
             point2 = [corrected.x(), corrected.y()]
             x1 = min(point1[0], point2[0])
             y1 = min(point1[1], point2[1])
@@ -805,6 +815,31 @@ class Canvas(QtWidgets.QWidget):
             w = abs(point1[0] - point2[0])
             h = abs(point1[1] - point2[1])
             p.drawRect(x1, y1, w, h)
+
+        if self.tracking_area != "":
+            pen = QtGui.QPen(
+                QtGui.QColor("#FF0000"),
+                2 * max(1, int(round(2.0 / Shape.scale))),
+                QtCore.Qt.SolidLine,
+            )
+            p.setPen(pen)
+            p.setOpacity(0.1)
+            p.setBrush(QtGui.QColor("#FF0000"));
+            if len(self.tracking_area_polygon) > 0:
+                corrected = self.corrected_pos_into_pixmap(self.prevMovePoint)
+                point2 = [corrected.x(), corrected.y()]
+                total = copy.deepcopy(self.tracking_area_polygon)
+                if self.tracking_area == "drawing":
+                    total.append(point2)
+                total = [ QtCore.QPoint(p[0], p[1]) for p in total]
+                p.drawPolygon(total)
+                p.setOpacity(0.7)
+                if self.tracking_area == "drawing":
+                    p.drawPolyline(total)
+                else:
+                    total.append(total[0])
+                    p.drawPolyline(total)
+
 
         p.end()
 
@@ -961,6 +996,9 @@ class Canvas(QtWidgets.QWidget):
         if key == QtCore.Qt.Key_Return:
             if self.SAM_mode != "":
                 self.samFinish.emit()
+            elif self.tracking_area:
+                self.tracking_area = "drawn"
+                self.update()
             elif self.canCloseShape():
                 self.finalise()
             
