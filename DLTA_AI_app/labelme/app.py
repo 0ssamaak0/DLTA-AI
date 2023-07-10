@@ -39,6 +39,8 @@ from .label_file import LabelFileError
 from .logger import logger
 from .shape import Shape
 from .widgets import BrightnessContrastDialog, Canvas, LabelDialog, LabelListWidget, LabelListWidgetItem, ToolBar, UniqueLabelQListWidget, ZoomWidget
+from .widgets import MsgBox, interpolation_UI, exportData_UI, deleteSelectedShape_UI, scaleObject_UI, getIDfromUser_UI, notification
+from .widgets.editLabel_videoMode import editLabel_idChanged_UI, editLabel_handle_data
 from .intelligence import Intelligence
 from .intelligence import convert_shapes_to_qt_shapes
 from .intelligence import coco_classes, color_palette
@@ -1675,8 +1677,8 @@ class MainWindow(QtWidgets.QMainWindow):
         shape.flags = flags
         shape.group_id = new_group_id
         shape.content = str(content)
+        
         if self.current_annotation_mode == 'img' or self.current_annotation_mode == 'dir':
-            # item.setText(f' ID {shape.group_id}: {shape.label}')
             item.setText(f'{shape.label}')
             self.setDirty()
             if not self.uniqLabelList.findItemsByLabel(shape.label):
@@ -1685,22 +1687,22 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.uniqLabelList.addItem(item)
             self.refresh_image_MODE()
             return
+        
+        # now we are in video mode
         if shape.group_id is None:
             item.setText(shape.label)
+            
         else:
+            
             idChanged = old_group_id != new_group_id
-            only_this_frame = False
-            if idChanged:
-                result, self.config = helpers.editLabel_idChanged_GUI(
-                    self.config)
-                if result == QtWidgets.QDialog.Accepted:
-                    only_this_frame = True if self.config['EditDefault'] == 'Edit only this frame' else False
-                else:
-                    return
-
-            listObj = self.load_objects_from_json__orjson()
-
-            if helpers.check_duplicates_editLabel(self.id_frames_rec, old_group_id, new_group_id, only_this_frame, idChanged, self.INDEX_OF_CURRENT_FRAME):
+            result, self.config, only_this_frame, duplicates = editLabel_idChanged_UI(
+                self.config, 
+                old_group_id, 
+                new_group_id, 
+                self.id_frames_rec, 
+                self.INDEX_OF_CURRENT_FRAME)
+            
+            if duplicates or result != QtWidgets.QDialog.Accepted:
                 shape.label = old_text
                 shape.flags = old_flags
                 shape.content = old_content
@@ -1708,8 +1710,10 @@ class MainWindow(QtWidgets.QMainWindow):
                 return
             
             self.minID = min(self.minID, new_group_id - 1)
+            
+            listObj = self.load_objects_from_json__orjson()
 
-            self.id_frames_rec, self.CURRENT_ANNOATAION_TRAJECTORIES, listObj = helpers.handle_id_editLabel(
+            self.id_frames_rec, self.CURRENT_ANNOATAION_TRAJECTORIES, listObj = editLabel_handle_data(
                                         currFrame = self.INDEX_OF_CURRENT_FRAME,
                                         listObj = listObj,
                                         trajectories = self.CURRENT_ANNOATAION_TRAJECTORIES,
@@ -1741,7 +1745,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 idsORG = [shape.group_id for shape in self.canvas.selectedShapes]
                 id = self.canvas.selectedShapes[0].group_id
 
-            result, self.config = helpers.interpolationOptions_GUI(self.config)
+            result, self.config = interpolation_UI.PopUp(self.config)
             if result != QtWidgets.QDialog.Accepted:
                 return
             
@@ -1754,11 +1758,11 @@ class MainWindow(QtWidgets.QMainWindow):
                 allAccepted, allRejected, ids = helpers.checkKeyFrames(idsORG, self.key_frames)
                 if not allAccepted:
                     if allRejected:
-                        helpers.OKmsgBox("Key Frames Error",
+                        MsgBox.OKmsgBox("Key Frames Error",
                                         f"All of the selected IDs have no KEY frames.\n    ie. less than 2 key frames\n The interpolation is NOT performed.")
                         return
                     else:
-                        resutl = helpers.OKmsgBox("Key Frames Error", 
+                        resutl = MsgBox.OKmsgBox("Key Frames Error", 
                                         f"Some of the selected IDs have no KEY frames.\n    ie. less than 2 key frames\n The interpolation is performed only for the IDs with KEY frames.\nIDs: {ids}.", "info", turnResult=True)
                         if resutl != QtWidgets.QMessageBox.Ok:
                             return
@@ -1778,7 +1782,7 @@ class MainWindow(QtWidgets.QMainWindow):
                                     only_edited=with_keyframes)
             self.waitWindow()
         except Exception as e:
-            helpers.OKmsgBox("Error", f"Error: {e}", "critical")
+            MsgBox.OKmsgBox("Error", f"Error: {e}", "critical")
 
     def mark_as_key(self):
         
@@ -1795,7 +1799,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     self.key_frames['id_' +
                                     str(id)].add(self.INDEX_OF_CURRENT_FRAME)
                 else:
-                    res = helpers.OKmsgBox("Caution", f"Frame {self.INDEX_OF_CURRENT_FRAME} is already a key frame for ID {id}.\nDo you want to remove it?", "warning", turnResult=True)
+                    res = MsgBox.OKmsgBox("Caution", f"Frame {self.INDEX_OF_CURRENT_FRAME} is already a key frame for ID {id}.\nDo you want to remove it?", "warning", turnResult=True)
                     if res == QtWidgets.QMessageBox.Ok:
                         self.key_frames['id_' +
                                     str(id)].remove(self.INDEX_OF_CURRENT_FRAME)
@@ -1808,7 +1812,7 @@ class MainWindow(QtWidgets.QMainWindow):
                                 str(id)].add(self.INDEX_OF_CURRENT_FRAME)
             self.main_video_frames_slider_changed()
         except Exception as e:
-            helpers.OKmsgBox("Error", f"Error: {e}", "critical")
+            MsgBox.OKmsgBox("Error", f"Error: {e}", "critical")
 
     def remove_all_keyframes(self):
         try:
@@ -1956,7 +1960,7 @@ class MainWindow(QtWidgets.QMainWindow):
             visible=True, text=f'Please Wait.\nIDs are being interpolated with SAM...')
 
         if self.sam_model_comboBox.currentText() == "Select Model (SAM disabled)":
-            helpers.OKmsgBox("SAM is disabled",
+            MsgBox.OKmsgBox("SAM is disabled",
                              f"SAM is disabled.\nPlease enable SAM.")
             return
 
@@ -2069,7 +2073,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self._config = get_config()
         if not self._config["mute"]:
             if not self.isActiveWindow():
-                helpers.notification("SAM Interpolation Completed")
+                notification.PopUp("SAM Interpolation Completed")
 
     def get_frame_by_idx(self, frameIDX):
         self.CAP.set(cv2.CAP_PROP_POS_FRAMES, frameIDX - 1)
@@ -2118,11 +2122,11 @@ class MainWindow(QtWidgets.QMainWindow):
         """
         
         if len(self.canvas.selectedShapes) != 1:
-            helpers.OKmsgBox(f'Scale error',
+            MsgBox.OKmsgBox(f'Scale error',
                              f'There is {len(self.canvas.selectedShapes)} selected shapes. Please select only one shape to scale.')
             return
             
-        result = helpers.scaleMENU_GUI(self)
+        result = scaleObject_UI.PopUp(self)
         if result == QtWidgets.QDialog.Accepted:
             self.update_current_frame_annotation_button_clicked()
             return
@@ -2165,7 +2169,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.rec_frame_for_id(shape.group_id, self.INDEX_OF_CURRENT_FRAME)
 
         if flag:
-            helpers.OKmsgBox("IDs already exist",
+            MsgBox.OKmsgBox("IDs already exist",
                              "A Shape(s) with the same ID(s) already exist(s) in this frame.\n\nShapes with no duplicate IDs are Copied Successfully.")
 
         if self.current_annotation_mode == "video":
@@ -2193,7 +2197,7 @@ class MainWindow(QtWidgets.QMainWindow):
         return helpers.is_id_repeated(self, group_id, frameIdex)
 
     def get_id_from_user(self, group_id, text):
-        return helpers.getIDfromUser_GUI(self, group_id, text)
+        return getIDfromUser_UI.PopUp(self, group_id, text)
 
     def fileSearchChanged(self):
         self.importDirImages(
@@ -2867,7 +2871,7 @@ class MainWindow(QtWidgets.QMainWindow):
             Open model explorer dialog to select or download models
         """
         self._config = get_config()
-        model_explorer_dialog = utils.ModelExplorerDialog(self, self._config["mute"], helpers.notification)
+        model_explorer_dialog = utils.ModelExplorerDialog(self, self._config["mute"], notification.PopUp)
         # make it fit its contents
         model_explorer_dialog.adjustSize()
         model_explorer_dialog.setMinimumWidth(model_explorer_dialog.table.width() * 1.5)
@@ -3060,7 +3064,7 @@ class MainWindow(QtWidgets.QMainWindow):
         try:
             if self.current_annotation_mode == "video":
                 # Get user input for export options
-                result, coco_radio, mot_radio, video_radio, custom_exports_radio_checked_list = helpers.exportData_GUI()
+                result, coco_radio, mot_radio, video_radio, custom_exports_radio_checked_list = exportData_UI.PopUp()
                 if not result:
                     return
 
@@ -3103,13 +3107,13 @@ class MainWindow(QtWidgets.QMainWindow):
                                 try:
                                     pth = custom_exports_list_video[i](json_file_name, self.CURRENT_VIDEO_WIDTH, self.CURRENT_VIDEO_HEIGHT, folderDialog.selectedFiles()[0])
                                 except Exception as e:
-                                    helpers.OKmsgBox(f"Error", f"Error: with custom export {custom_exports_list_video[i].button_name}\n check the parameters matches the specified ones in custom_exports.py\n Error Message: {e}", "critical")
+                                    MsgBox.OKmsgBox(f"Error", f"Error: with custom export {custom_exports_list_video[i].button_name}\n check the parameters matches the specified ones in custom_exports.py\n Error Message: {e}", "critical")
                             else:
                                 return
 
             # Image and Directory modes
             elif self.current_annotation_mode == "img" or self.current_annotation_mode == "dir":
-                result, coco_radio, custom_exports_radio_checked_list = helpers.exportData_GUI(mode= "image")
+                result, coco_radio, custom_exports_radio_checked_list = exportData_UI.PopUp(mode= "image")
                 if not result:
                     return
                 save_path = self.save_path if self.save_path else self.labelFile.filename
@@ -3132,7 +3136,7 @@ class MainWindow(QtWidgets.QMainWindow):
                                 try:
                                     pth = custom_exports_list_image[i](self.target_directory, save_path, folderDialog.selectedFiles()[0])
                                 except Exception as e:
-                                    helpers.OKmsgBox(f"Error", f"Error: with custom export {custom_exports_list_image[i].button_name}\n check the parameters matches the specified ones in custom_exports.py\n Error Message: {e}", "critical")
+                                    MsgBox.OKmsgBox(f"Error", f"Error: with custom export {custom_exports_list_image[i].button_name}\n check the parameters matches the specified ones in custom_exports.py\n Error Message: {e}", "critical")
                             else:
                                 return
 
@@ -3344,7 +3348,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     return
 
                 # if video mode
-                result, self.config, fromFrameVAL, toFrameVAL = helpers.deleteSelectedShape_GUI(
+                result, self.config, fromFrameVAL, toFrameVAL = deleteSelectedShape_UI.PopUp(
                     self.TOTAL_VIDEO_FRAMES,
                     self.INDEX_OF_CURRENT_FRAME,
                     self.config)
@@ -3355,7 +3359,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
                 self.main_video_frames_slider_changed()
         except Exception as e:
-            helpers.OKmsgBox(f"Error", f"Error: {e}", "critical")
+            MsgBox.OKmsgBox(f"Error", f"Error: {e}", "critical")
 
     def delete_ids_from_all_frames(self, deleted_ids, from_frame, to_frame):
         
@@ -3608,7 +3612,7 @@ class MainWindow(QtWidgets.QMainWindow):
         #             shapes = self.intelligenceHelper.get_shapes_of_one(
         #                 self.CURRENT_FRAME_IMAGE, img_array_flag=True)
         #     except Exception as e:
-        #         helpers.OKmsgBox("Error", f"{e}", "critical")
+        #         MsgBox.OKmsgBox("Error", f"{e}", "critical")
         #         return
         areaFlag = len(self.canvas.tracking_area_polygon) > 2
         if areaFlag:
@@ -3639,7 +3643,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 return shapes
             
         except Exception as e:
-            helpers.OKmsgBox("Error", f"{e}", "critical")
+            MsgBox.OKmsgBox("Error", f"{e}", "critical")
             return
             
         imageX = helpers.draw_bb_on_image_MODE(self.CURRENT_ANNOATAION_FLAGS,
@@ -3686,7 +3690,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def annotate_batch(self):
         images = []
         self._config = get_config()
-        notif = [self._config["mute"], self, helpers.notification]
+        notif = [self._config["mute"], self, notification.PopUp]
         for filename in self.imageList:
             images.append(filename)
         if self.multi_model_flag:
@@ -3949,7 +3953,7 @@ class MainWindow(QtWidgets.QMainWindow):
     
     def openVideoFrames(self):
         try:
-            video_frame_extractor_dialog = utils.VideoFrameExtractor(self._config["mute"], helpers.notification)
+            video_frame_extractor_dialog = utils.VideoFrameExtractor(self._config["mute"], notification.PopUp)
             video_frame_extractor_dialog.exec_()
 
             dir_path_name = video_frame_extractor_dialog.path_name
@@ -3964,7 +3968,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     else:
                         option.setEnabled(True)
         except Exception as e:
-            helpers.OKmsgBox("Error", f"Error: {e}", "critical")
+            MsgBox.OKmsgBox("Error", f"Error: {e}", "critical")
 
     def load_shapes_for_video_frame(self, json_file_name, index):
         # this function loads the shapes for the video frame from the json file
@@ -4277,7 +4281,7 @@ class MainWindow(QtWidgets.QMainWindow):
             except Exception as e:
                 self.track_buttonClicked()
         except Exception as e:
-            helpers.OKmsgBox("Error", f"Error: {e}", "critical")
+            MsgBox.OKmsgBox("Error", f"Error: {e}", "critical")
             
     def track_buttonClicked(self):
 
@@ -4465,7 +4469,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self._config = get_config()
         if not self._config["mute"]:
             if not self.isActiveWindow():
-                helpers.notification("Tracking Completed")
+                notification.PopUp("Tracking Completed")
 
         self.TrackingMode = False
         self.labelFile = None
@@ -4652,7 +4656,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.INDEX_OF_CURRENT_FRAME = self.main_video_frames_slider.value()
         # show message saying that the video is exported
         if output_filename is False:
-            helpers.OKmsgBox("Export Video", "Done Exporting Video")
+            MsgBox.OKmsgBox("Export Video", "Done Exporting Video")
 
         if output_filename is not False:
             return output_filename
@@ -4680,7 +4684,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # now delete the json file if it exists
         if os.path.exists(json_file_name):
             os.remove(json_file_name)
-        helpers.OKmsgBox("clear annotations",
+        MsgBox.OKmsgBox("clear annotations",
                          "All video frames annotations are cleared")
         self.main_video_frames_slider.setValue(2)
         self.main_video_frames_slider.setValue(1)
@@ -5306,7 +5310,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def sam_enhance_annotation_button_clicked(self):
         if self.sam_model_comboBox.currentText() == "Select Model (SAM disabled)":
-            helpers.OKmsgBox("SAM is disabled",
+            MsgBox.OKmsgBox("SAM is disabled",
                              "SAM is disabled.\nPlease enable SAM.")
             return
         try:

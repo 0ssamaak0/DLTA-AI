@@ -28,7 +28,7 @@ import torch
 from mmdet.apis import inference_detector, init_detector
 warnings.filterwarnings("ignore")
 
-from .utils import helpers
+from .widgets.MsgBox import OKmsgBox
 
 
 coco_classes = ['person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', 'truck', 'boat', 'traffic light',
@@ -167,7 +167,7 @@ class Intelligence():
                 print(
                     f'selected model : {selected_model_name} \nconfig : {config}\ncheckpoint : {checkpoint} \n')
         except Exception as e:
-            helpers.OKmsgBox("Error", f"Error in loading the model\n{e}", "critical")
+            OKmsgBox("Error", f"Error in loading the model\n{e}", "critical")
             return
 
 
@@ -206,7 +206,7 @@ class Intelligence():
                 model.fuse()
                 return selected_model_name, model
             except Exception as e:
-                helpers.OKmsgBox("Error", f"Error in loading the model\n{e}", "critical")
+                OKmsgBox("Error", f"Error in loading the model\n{e}", "critical")
                 return
 
         # It's a MMDetection model
@@ -216,8 +216,8 @@ class Intelligence():
                 model = init_detector(config, checkpoint, device=torch.device(
                     "cuda" if torch.cuda.is_available() else "cpu"))
             except Exception as e:
-                helpers.OKmsgBox
-                helpers.OKmsgBox("Error", f"Error in loading the model\n{e}", "critical")
+                OKmsgBox
+                OKmsgBox("Error", f"Error in loading the model\n{e}", "critical")
                 return
             return selected_model_name, model
 
