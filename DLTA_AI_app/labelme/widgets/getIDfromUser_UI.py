@@ -1,6 +1,7 @@
 from qtpy.QtCore import Qt
 from qtpy import QtWidgets
 from .MsgBox import OKmsgBox
+from labelme.utils.helpers.mathOps import is_id_repeated
 
 
 def PopUp(self, group_id, text):
@@ -23,7 +24,7 @@ def PopUp(self, group_id, text):
     mainTEXT = "A Shape with that ID already exists in this frame.\n\n"
     repeated = 0
 
-    while self.is_id_repeated(group_id):
+    while is_id_repeated(self, group_id):
         dialog = QtWidgets.QDialog()
         dialog.setWindowTitle("ID already exists")
         dialog.setWindowModality(Qt.ApplicationModal)

@@ -2,19 +2,15 @@ import numpy as np
 import random
 import cv2
 from qtpy import QtGui
+from qtpy import QtCore
 from labelme import PY2
 import os
 import json
 import orjson
 import copy
 from shapely.geometry import Polygon
-
-try:
-    from .custom_exports import custom_exports_list
-except:
-    custom_exports_list = []
-    print("custom_exports file not found")
-
+import skimage
+from labelme.shape import Shape
 
 coco_classes = ['person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', 'truck', 'boat', 'traffic light',
                 'fire hydrant', 'stop sign', 'parking meter', 'bench', 'bird', 'cat', 'dog', 'horse', 'sheep', 'cow',
@@ -46,19 +42,6 @@ color_palette = [(75, 25, 230),
                  (195, 255, 170)]
 
 
-"""
-Shape Structure:
-    A shape is a dictionary with keys (label, points, group_id, shape_type, flags, line_color, fill_color, shape_type).
-    A segment is a list of points.
-    A point is a list of two coordinates [x, y].
-    A group_id is the id of the track that the shape belongs to.
-    A class_id is the id of the class that the shape belongs to.
-    A class_id = -1 means that the shape does not belong to any class in the coco dataset.
-"""
-
-
-# Calculations Functions
-
 def get_bbox_xyxy(segment):
     
     """
@@ -78,7 +61,6 @@ def get_bbox_xyxy(segment):
     x1 = np.max(segment[:, 0])
     y1 = np.max(segment[:, 1])
     return [x0, y0, x1, y1]
-
 
 def addPoints(shape, n):
     
@@ -126,7 +108,6 @@ def addPoints(shape, n):
             res.append(shape[i + 1])
         # recursive call to check if there are any points to add
         return addPoints(res, n + len(shape) - len(res))
-
 
 def reducePoints(polygon, n):
     
@@ -193,7 +174,6 @@ def reducePoints(polygon, n):
     # recursive call to check if there are any points to remove
     return reducePoints(res, n)
 
-
 def handlePoints(polygon, n):
     
     """
@@ -220,7 +200,6 @@ def handlePoints(polygon, n):
     else:
         return reducePoints(polygon, n)
 
-
 def handleTwoSegments(segment1, segment2):
     
     """
@@ -242,7 +221,6 @@ def handleTwoSegments(segment1, segment2):
         segment2 = handlePoints(segment2, biglen)
     (segment1, segment2) = allign(segment1, segment2)
     return (segment1, segment2)
-
 
 def allign(shape1, shape2):
     
@@ -276,7 +254,6 @@ def allign(shape1, shape2):
     
     return (shape1_alligned, shape2_alligned)
 
-
 def centerOFmass(points):
     
     """
@@ -294,7 +271,6 @@ def centerOFmass(points):
     sumY = np.sum(nppoints[:, 1])
     return [int(sumX / len(points)), int(sumY / len(points))]
 
-
 def flattener(list_2d):
     
     """
@@ -311,7 +287,6 @@ def flattener(list_2d):
     points = [(p.x(), p.y()) for p in list_2d]
     points = np.array(points, np.int16).flatten().tolist()
     return points
-
 
 def mapFrameToTime(frameNumber, fps):
     
@@ -341,7 +316,6 @@ def mapFrameToTime(frameNumber, fps):
     # print them in formal time format
     return frameHours, frameMinutes, frameSeconds, frameMilliseconds
 
-
 def class_name_to_id(class_name):
     
     """
@@ -361,7 +335,6 @@ def class_name_to_id(class_name):
     except:
         # this means that the class name is not in the coco dataset
         return -1
-
 
 def compute_iou(box1, box2):
     
@@ -398,7 +371,31 @@ def compute_iou(box1, box2):
     iou = intersection_area / union_area if union_area > 0 else 0
 
     return iou
+
+def compute_iou_exact(shape1, shape2):
     
+    """
+    Summary:
+        Computes IOU between two polygons.
+    
+    Args:
+        shape1 (list): List of 2D coordinates(also list) of the first polygon.
+        shape2 (list): List of 2D coordinates(also list) of the second polygon.
+        
+    Returns:
+        iou (float): IOU between the two polygons.
+    """
+    
+    shape1 = [tuple(x) for x in shape1]
+    shape2 = [tuple(x) for x in shape2]
+    polygon1 = Polygon(shape1)
+    polygon2 = Polygon(shape2)
+    if polygon1.intersects(polygon2) is False:
+        return 0
+    intersection = polygon1.intersection(polygon2).area
+    union = polygon1.union(polygon2).area
+    iou = intersection / union if union > 0 else 0
+    return iou
 
 def match_detections_with_tracks(detections, tracks, iou_threshold=0.5):
     
@@ -446,7 +443,6 @@ def match_detections_with_tracks(detections, tracks, iou_threshold=0.5):
 
     return matched_detections, unmatched_detections
 
-
 def get_boxes_conf_classids_segments(shapes):
     
     """
@@ -487,7 +483,6 @@ def get_boxes_conf_classids_segments(shapes):
 
     return boxes, confidences, class_ids, segments
 
-
 def convert_qt_shapes_to_shapes(qt_shapes):
     
     """
@@ -515,6 +510,33 @@ def convert_qt_shapes_to_shapes(qt_shapes):
         ))
     return shapes
 
+def convert_shapes_to_qt_shapes(shapes):
+    qt_shapes = []
+    for shape in shapes:
+        label = shape["label"]
+        points = shape["points"]
+        bbox = shape["bbox"]
+        shape_type = shape["shape_type"]
+        # flags = shape["flags"]
+        content = shape["content"]
+        group_id = shape["group_id"]
+        # other_data = shape["other_data"]
+
+        if not points:
+            # skip point-empty shape
+            continue
+
+        shape = Shape(
+            label=label,
+            shape_type=shape_type,
+            group_id=group_id,
+            content=content,
+        )
+        for i in range(0, len(points), 2):
+            shape.addPoint(QtCore.QPointF(points[i], points[i + 1]))
+        shape.close()
+        qt_shapes.append(shape)
+    return qt_shapes
 
 def convert_QT_to_cv(incomingImage):
     
@@ -539,7 +561,6 @@ def convert_QT_to_cv(incomingImage):
     arr = np.array(ptr).reshape(height, width, 4)  # Copies the data
     return arr
 
-
 def convert_cv_to_qt(cv_img):
     
     """
@@ -559,360 +580,6 @@ def convert_cv_to_qt(cv_img):
     convert_to_Qt_format = QtGui.QImage(
         rgb_image.data, w, h, bytes_per_line, QtGui.QImage.Format_RGB888)
     return convert_to_Qt_format
-
-
-def draw_bb_id(flags, image, x, y, w, h, id, conf, label, color=(0, 0, 255), thickness=1):
-    if image is None:
-        print("Image is None")
-        return
-    
-    """
-    Summary:
-        Draw bounding box and id on an image (Single id).
-        
-    Args:
-        flags: a dictionary of flags (bbox, id, class)
-        image: a cv2 image
-        x: x coordinate of the bounding box
-        y: y coordinate of the bounding box
-        w: width of the bounding box
-        h: height of the bounding box
-        id: id of the shape
-        label: label of the shape (class name)
-        color: color of the bounding box
-        thickness: thickness of the bounding box
-        
-    Returns:
-        image: a cv2 image
-    """
-    
-    if flags['bbox']:
-        image = cv2.rectangle(
-            image, (x, y), (x + w, y + h), color, thickness + 1)
-
-    if flags['id'] or flags['class'] or flags['conf']:
-        text = ''
-        if flags['id'] and flags['class']:
-            text = f'#{id} [{label}]'
-        if flags['id'] and not flags['class']:
-            text = f'#{id}'
-        if not flags['id'] and flags['class']:
-            text = f'[{label}]'
-        if flags['conf']:
-            text = f'{text} {conf}' if len(text) > 0 else f'{conf}'
-
-        fontscale = image.shape[0] / 2000
-        if fontscale < 0.3:
-            fontscale = 0.3
-        elif fontscale > 5:
-            fontscale = 5
-
-        text_width, text_height = cv2.getTextSize(
-            text, cv2.FONT_HERSHEY_SIMPLEX, fontscale, thickness)[0]
-        text_x = x + 10
-        text_y = y - 10
-
-        text_background_x1 = x
-        text_background_y1 = y - 2 * 10 - text_height
-
-        text_background_x2 = x + 2 * 10 + text_width
-        text_background_y2 = y
-
-        # fontscale is proportional to the image size
-        cv2.rectangle(
-            img=image,
-            pt1=(text_background_x1, text_background_y1),
-            pt2=(text_background_x2, text_background_y2),
-            color=color,
-            thickness=cv2.FILLED,
-        )
-        cv2.putText(
-            img=image,
-            text=text,
-            org=(text_x, text_y),
-            fontFace=cv2.FONT_HERSHEY_SIMPLEX,
-            fontScale=fontscale,
-            color=(0, 0, 0),
-            thickness=thickness,
-            lineType=cv2.LINE_AA,
-        )
-
-    # there is no bbox but there is id or class
-    if (not flags['bbox']) and (flags['id'] or flags['class'] or flags['conf']):
-        image = cv2.line(image, (x + int(w / 2), y + int(h / 2)),
-                            (x + 50, y - 5), color, thickness + 1)
-
-    return image
-
-
-def draw_trajectories(trajectories, CurrentFrameIndex, flags, img, shapes):
-    
-    """
-    Summary:
-        Draw trajectories on an image.
-        
-    Args:
-        trajectories: a dictionary of trajectories
-        CurrentFrameIndex: the current frame index
-        flags: a dictionary of flags (traj, mask)
-        img: a cv2 image
-        shapes: a list of shapes
-        
-    Returns:
-        img: a cv2 image
-    """
-    
-    x = trajectories['length']
-    for shape in shapes:
-        id = shape["group_id"]
-        pts_traj = trajectories['id_' + str(id)][max(
-            CurrentFrameIndex - x, 0): CurrentFrameIndex]
-        pts_poly = np.array([[x, y] for x, y in zip(
-            shape["points"][0::2], shape["points"][1::2])])
-        color_poly = trajectories['id_color_' + str(
-            id)]
-
-        if flags['mask']:
-            original_img = img.copy()
-            if pts_poly is not None:
-                cv2.fillPoly(img, pts=[pts_poly], color=color_poly)
-            alpha = trajectories['alpha']
-            img = cv2.addWeighted(original_img, alpha, img, 1 - alpha, 0)
-        for i in range(len(pts_traj) - 1, 0, - 1):
-
-            thickness = (len(pts_traj) - i <= 10) * 1 + (len(pts_traj) -
-                                                            i <= 20) * 1 + (len(pts_traj) - i <= 30) * 1 + 3
-            # max_thickness = 6
-            # thickness = max(1, round(i / len(pts_traj) * max_thickness))
-
-            if pts_traj[i - 1] is None or pts_traj[i] is None:
-                continue
-            if pts_traj[i] == (-1, - 1) or pts_traj[i - 1] == (-1, - 1):
-                break
-
-            # color_traj = tuple(int(0.95 * x) for x in color_poly)
-            color_traj = color_poly
-
-            if flags['traj']:
-                cv2.line(img, pts_traj[i - 1],
-                            pts_traj[i], color_traj, thickness)
-                if ((len(pts_traj) - 1 - i) % 10 == 0):
-                    cv2.circle(img, pts_traj[i], 3, (0, 0, 0), -1)
-
-    return img
-
-
-def draw_bb_on_image(trajectories, CurrentFrameIndex, flags, nTotalFrames, image, shapes, image_qt_flag=True):
-    
-    """
-    Summary:
-        Draw bounding boxes and trajectories on an image (multiple ids).
-        
-    Args:
-        trajectories: a dictionary of trajectories.
-        CurrentFrameIndex: the current frame index.
-        nTotalFrames: the total number of frames.
-        image: a QT image or a cv2 image.
-        shapes: a list of shapes.
-        image_qt_flag: a flag to indicate if the image is a QT image or a cv2 image.
-        
-    Returns:
-        img: a QT image or a cv2 image.
-    """
-    
-    img = image
-    if image_qt_flag:
-        img = convert_QT_to_cv(image)
-
-    for shape in shapes:
-        id = shape["group_id"]
-        label = shape["label"]
-        conf = shape["content"]
-
-        # color calculation
-        # idx = coco_classes.index(label) if label in coco_classes else -1
-        # idx = idx % len(color_palette)
-        # color = color_palette[idx] if idx != -1 else (0, 0, 255)
-        # label_hash = hash(label)
-        # idx = abs(label_hash) % len(color_palette)
-        label_ascii = sum([ord(c) for c in label])
-        idx = label_ascii % len(color_palette)
-        color = color_palette[idx]
-
-        (x1, y1, x2, y2) = shape["bbox"]
-        x, y, w, h = int(x1), int(y1), int(x2 - x1), int(y2 - y1)
-        img = draw_bb_id(flags, img, x, y, w, h, id, conf,
-                                label, color, thickness=1)
-        center = (int((x1 + x2) / 2), int((y1 + y2) / 2))
-        try:
-            centers_rec = trajectories['id_' + str(id)]
-            try:
-                (xp, yp) = centers_rec[CurrentFrameIndex - 2]
-                (xn, yn) = center
-                if (xp == -1 or xn == -1):
-                    c = 5 / 0
-                r = 0.5
-                x = r * xn + (1 - r) * xp
-                y = r * yn + (1 - r) * yp
-                center = (int(x), int(y))
-            except:
-                pass
-            centers_rec[CurrentFrameIndex - 1] = center
-            trajectories['id_' +
-                                                    str(id)] = centers_rec
-            trajectories['id_color_' +
-                                                    str(id)] = color
-        except:
-            centers_rec = [(-1, - 1)] * int(nTotalFrames)
-            centers_rec[CurrentFrameIndex - 1] = center
-            trajectories['id_' +
-                                                    str(id)] = centers_rec
-            trajectories['id_color_' +
-                                                    str(id)] = color
-
-    # print(sys.getsizeof(trajectories))
-
-    img = draw_trajectories(trajectories, CurrentFrameIndex, flags, img, shapes)
-
-    if image_qt_flag:
-        img = convert_cv_to_qt(img, )
-
-    return img
-
-
-def draw_bb_on_image_MODE(flags, image, shapes):
-    
-    """
-    Summary:
-        Draw bounding boxes on an QT image (multiple ids) in MODE image.
-        
-    Args:
-        flags: a dictionary of flags.
-        image: a QT image.
-        shapes: a list of shapes.
-        
-    Returns:
-        img: a QT image.
-    """
-    
-    img = convert_QT_to_cv(image)
-
-    for shape in shapes:
-        
-        label = shape["label"]
-        if label == "SAM instance":
-            continue
-        conf = shape["content"]
-        pts_poly = np.array([[x, y] for x, y in zip(
-            shape["points"][0::2], shape["points"][1::2])])
-
-        # color calculation
-        # idx = coco_classes.index(label) if label in coco_classes else -1
-        # idx = idx % len(color_palette)
-        # color = color_palette[idx] if idx != -1 else (0, 0, 255)
-        # label_hash = hash(label)
-        # idx = abs(label_hash) % len(color_palette)
-        label_ascii = sum([ord(c) for c in label])
-        idx = label_ascii % len(color_palette)
-        color = color_palette[idx]
-
-        (x1, y1, x2, y2) = shape["bbox"]
-        x, y, w, h = int(x1), int(y1), int(x2 - x1), int(y2 - y1)
-        
-        img = draw_bb_label_on_image_MODE(flags, img, x, y, w, h,
-                                label, conf, color, thickness=1)
-        
-        if flags['mask']:
-            original_img = img.copy()
-            if pts_poly is not None:
-                cv2.fillPoly(img, pts=[pts_poly], color=color)
-            alpha = 0.70
-            img = cv2.addWeighted(original_img, alpha, img, 1 - alpha, 0)
-    
-    img = convert_cv_to_qt(img, )
-
-    return img
-
-
-def draw_bb_label_on_image_MODE(flags, image, x, y, w, h, label, conf, color=(0, 0, 255), thickness=1):
-    if image is None:
-        print("Image is None")
-        return
-    
-    """
-    Summary:
-        Draw bounding box and id on an image (Single id).
-        
-    Args:
-        flags: a dictionary of flags (bbox, id, class)
-        image: a cv2 image
-        x: x coordinate of the bounding box
-        y: y coordinate of the bounding box
-        w: width of the bounding box
-        h: height of the bounding box
-        label: label of the shape (class name)
-        color: color of the bounding box
-        thickness: thickness of the bounding box
-        
-    Returns:
-        image: a cv2 image
-    """
-    
-    if flags['bbox']:
-        image = cv2.rectangle(
-            image, (x, y), (x + w, y + h), color, thickness + 1)
-
-    if flags['conf'] or flags['class']:
-        
-        if flags['conf'] and flags['class']:
-            text = f'[{label}] {conf}'
-        if flags['conf'] and not flags['class']:
-            text = f'{conf}'
-        if not flags['conf'] and flags['class']:
-            text = f'[{label}]'
-
-        fontscale = image.shape[0] / 2000
-        if fontscale < 0.3:
-            fontscale = 0.3
-        elif fontscale > 5:
-            fontscale = 5
-        text_width, text_height = cv2.getTextSize(
-            text, cv2.FONT_HERSHEY_SIMPLEX, fontscale, thickness)[0]
-        text_x = x + 10
-        text_y = y - 10
-
-        text_background_x1 = x
-        text_background_y1 = y - 2 * 10 - text_height
-
-        text_background_x2 = x + 2 * 10 + text_width
-        text_background_y2 = y
-
-        # fontscale is proportional to the image size
-        cv2.rectangle(
-            img=image,
-            pt1=(text_background_x1, text_background_y1),
-            pt2=(text_background_x2, text_background_y2),
-            color=color,
-            thickness=cv2.FILLED,
-        )
-        cv2.putText(
-            img=image,
-            text=text,
-            org=(text_x, text_y),
-            fontFace=cv2.FONT_HERSHEY_SIMPLEX,
-            fontScale=fontscale,
-            color=(0, 0, 0),
-            thickness=thickness,
-            lineType=cv2.LINE_AA,
-        )
-
-    # there is no bbox but there is id or class
-    if (not flags['bbox']) and (flags['conf'] or flags['class']):
-        image = cv2.line(image, (x + int(w / 2), y + int(h / 2)),
-                            (x + 50, y - 5), color, thickness + 1)
-
-    return image
-
 
 def SAM_rects_to_boxes(rects):
     
@@ -938,7 +605,6 @@ def SAM_rects_to_boxes(rects):
     if len(res) == 0:
         res = None
     return res
-
 
 def SAM_points_and_labels_from_coordinates(coordinates):
     
@@ -969,7 +635,6 @@ def SAM_points_and_labels_from_coordinates(coordinates):
 
     return input_points, input_labels
 
-
 def load_objects_from_json__json(json_file_name, nTotalFrames):
     
     """
@@ -997,7 +662,6 @@ def load_objects_from_json__json(json_file_name, nTotalFrames):
     jf.close()
     return listObj
 
-
 def load_objects_to_json__json(json_file_name, listObj):
     
     """
@@ -1017,7 +681,6 @@ def load_objects_to_json__json(json_file_name, listObj):
                     indent=4,
                     separators=(',', ': '))
     json_file.close()
-
 
 def load_objects_from_json__orjson(json_file_name, nTotalFrames):
     
@@ -1044,7 +707,6 @@ def load_objects_from_json__orjson(json_file_name, nTotalFrames):
     jf.close()
     return listObj
 
-
 def load_objects_to_json__orjson(json_file_name, listObj):
     
     """
@@ -1062,7 +724,6 @@ def load_objects_to_json__orjson(json_file_name, listObj):
     with open(json_file_name, "wb") as jf:
         jf.write(orjson.dumps(listObj, option=orjson.OPT_INDENT_2))
     jf.close()
-
 
 def scaleQTshape(self, originalshape, center, ratioX, ratioY):
     
@@ -1098,7 +759,6 @@ def scaleQTshape(self, originalshape, center, ratioX, ratioY):
     self.canvas.selectedShapes.append(shape)
     self.addLabel(shape)
 
-
 def is_id_repeated(self, group_id, frameIdex=-1):
     
     """
@@ -1124,7 +784,6 @@ def is_id_repeated(self, group_id, frameIdex=-1):
             return True
     
     return False
-
 
 def checkKeyFrames(ids, keyFrames):
     
@@ -1155,7 +814,6 @@ def checkKeyFrames(ids, keyFrames):
     allRejected = len(idsToTrack) == 0
     
     return allAccepted, allRejected, idsToTrack
-
 
 def getInterpolated(baseObject, baseObjectFrame, nextObject, nextObjectFrame, curFrame):
     
@@ -1192,7 +850,6 @@ def getInterpolated(baseObject, baseObjectFrame, nextObject, nextObjectFrame, cu
     
     return cur
 
-
 def update_saved_models_json(cwd):
     
     """
@@ -1219,8 +876,7 @@ def update_saved_models_json(cwd):
 
     with open(cwd + "/saved_models.json", "w") as f:
         json.dump(saved_models, f, indent=4) 
-
-  
+ 
 def delete_id_from_rec_and_traj(id, id_frames_rec, trajectories, frames):
     
     """
@@ -1243,7 +899,6 @@ def delete_id_from_rec_and_traj(id, id_frames_rec, trajectories, frames):
         
     return id_frames_rec, trajectories
     
-
 def adjust_shapes_to_original_image(shapes, x1, y1, area_points):
     
     shape1 = [tuple([int(x[0]), int(x[1])]) for x in area_points]
@@ -1263,7 +918,6 @@ def adjust_shapes_to_original_image(shapes, x1, y1, area_points):
     
     return final
 
-
 def track_area_adjustedBboex(area_points, dims, ratio = 0.1):
     
     [x1, y1, x2, y2] = get_bbox_xyxy(area_points)
@@ -1275,28 +929,132 @@ def track_area_adjustedBboex(area_points, dims, ratio = 0.1):
     
     return [x1, y1, x2, y2]
 
+def get_contour_length(contour):
+    contour_start = contour
+    contour_end = np.r_[contour[1:], contour[0:1]]
+    return np.linalg.norm(contour_end - contour_start, axis=1).sum()
 
-def compute_iou_exact(shape1, shape2):
-    
+def mask_to_polygons(mask, n_points=25, resize_factors=[1.0, 1.0]):
+    mask = mask > 0.0
+    contours = skimage.measure.find_contours(mask)
+    if len(contours) == 0:
+        return []
+    contour = max(contours, key=get_contour_length)
+    coords = skimage.measure.approximate_polygon(
+        coords=contour,
+        tolerance=np.ptp(contour, axis=0).max() / 100,
+    )
+
+    coords = coords * resize_factors
+    # convert coords from x y to y x
+    coords = np.fliplr(coords)
+
+    # segment_points are a list of coords
+    segment_points = coords.astype(int)
+    polygon = segment_points
+    return polygon
+
+def polygon_to_shape(polygon, score, className="SAM instance"):
+    shape = {}
+    shape["label"] = className
+    shape["content"] = str(round(score, 2))
+    shape["group_id"] = None
+    shape["shape_type"] = "polygon"
+    shape["bbox"] = get_bbox_xyxy(polygon)
+
+    shape["flags"] = {}
+    shape["other_data"] = {}
+
+    # shape_points is result["seg"] flattened
+    shape["points"] = [item for sublist in polygon
+                            for item in sublist]
+    # print(shape)
+    return shape
+
+def OURnms_confidenceBased(shapes, iou_threshold=0.5):
     """
-    Summary:
-        Computes IOU between two polygons.
-    
+    Perform non-maximum suppression on a list of shapes based on their bounding boxes using IOU threshold.
+
     Args:
-        shape1 (list): List of 2D coordinates(also list) of the first polygon.
-        shape2 (list): List of 2D coordinates(also list) of the second polygon.
-        
+        shapes (list): List of shapes, each shape is a dictionary with keys (bbox, confidence, class_id)
+        iou_threshold (float): IOU threshold for non-maximum suppression.
+
     Returns:
-        iou (float): IOU between the two polygons.
+        list: List of shapes after performing non-maximum suppression, each shape is a dictionary with keys (bbox, confidence, class_id)
     """
+    iou_threshold = float(iou_threshold)
+    for shape in shapes:
+        if shape['content'] is None:
+            shape['content'] = 1.0
+
+    # Sort shapes by their confidence
+    shapes.sort(key=lambda x: x['content'], reverse=True)
+
+    boxes, confidences, class_ids, segments = get_boxes_conf_classids_segments(
+        shapes)
+
+    toBeRemoved = []
+
+    # Loop through each shape
+    for i in range(len(shapes)):
+        shape_bbox = boxes[i]
+        # Loop through each remaining shape
+        for j in range(i + 1, len(shapes)):
+            remaining_shape_bbox = boxes[j]
+
+            # Compute IOU between shape and remaining_shape
+            iou = compute_iou(shape_bbox, remaining_shape_bbox)
+
+            # If IOU is greater than threshold, remove remaining_shape from shapes list
+            if iou > iou_threshold:
+                toBeRemoved.append(j)
+
+    shapesFinal = []
+    boxesFinal = []
+    confidencesFinal = []
+    class_idsFinal = []
+    segmentsFinal = []
+    for i in range(len(shapes)):
+        if i in toBeRemoved:
+            continue
+        shapesFinal.append(shapes[i])
+    boxesFinal, confidencesFinal, class_idsFinal, segmentsFinal = get_boxes_conf_classids_segments(
+        shapesFinal)
+
+    return shapesFinal, boxesFinal, confidencesFinal, class_idsFinal, segmentsFinal
+
+
+def OURnms_areaBased_fromSAM(self, sam_result, iou_threshold=0.5):
+        
+    iou_threshold = float(iou_threshold)
+
+    # Sort shapes by their areas
+    sortedResult = sorted(sam_result, key=lambda x: x['area'], reverse=True)
+    masks = [ mask['segmentation'] for mask in sortedResult]
+    scores = [mask['stability_score'] for mask in sortedResult]
+    polygons = [mask_to_polygons(mask) for mask in masks]
     
-    shape1 = [tuple(x) for x in shape1]
-    shape2 = [tuple(x) for x in shape2]
-    polygon1 = Polygon(shape1)
-    polygon2 = Polygon(shape2)
-    if polygon1.intersects(polygon2) is False:
-        return 0
-    intersection = polygon1.intersection(polygon2).area
-    union = polygon1.union(polygon2).area
-    iou = intersection / union if union > 0 else 0
-    return iou
+    toBeRemoved = []
+
+    # Loop through each shape
+    if iou_threshold > 0.99:
+        for i in range(len(polygons)):
+            shape1 = polygons[i]
+            # Loop through each remaining shape
+            for j in range(i + 1, len(sortedResult)):
+                shape2 = polygons[j]
+                # Compute IOU between shape and remaining_shape
+                iou = compute_iou_exact(shape1, shape2)
+                # If IOU is greater than threshold, remove remaining_shape from shapes list
+                if iou > iou_threshold:
+                    toBeRemoved.append(j)
+
+    shapes = []
+    for i in range(len(polygons)):
+        if i in toBeRemoved:
+            continue
+        shapes.append(self.polygon_to_shape(polygons[i], scores[i], f'X{i}'))
+
+    return shapes
+
+

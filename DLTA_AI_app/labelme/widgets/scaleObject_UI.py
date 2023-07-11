@@ -1,7 +1,7 @@
 from qtpy import QtCore
 from qtpy.QtCore import Qt
 from qtpy import QtWidgets
-from labelme.utils.helpers import scaleQTshape
+from labelme.utils.helpers.mathOps import scaleQTshape
 
 
 

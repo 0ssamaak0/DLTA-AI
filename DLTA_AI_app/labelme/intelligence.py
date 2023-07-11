@@ -29,6 +29,7 @@ from mmdet.apis import inference_detector, init_detector
 warnings.filterwarnings("ignore")
 
 from .widgets.MsgBox import OKmsgBox
+from .utils.helpers import mathOps
 
 
 coco_classes = ['person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', 'truck', 'boat', 'traffic light',
@@ -94,40 +95,12 @@ class IntelligenceWorker(QThread):
                     s = self.source.get_shapes_of_one(filename, multi_model_flag=True)
                 else:
                     s = self.source.get_shapes_of_one(filename)
-                s = convert_shapes_to_qt_shapes(s)
+                s = mathOps.convert_shapes_to_qt_shapes(s)
                 self.source.saveLabelFile(filename, s)
             except Exception as e:
                 print(e)
             self.sinOut.emit(index, total)
 
-
-def convert_shapes_to_qt_shapes(shapes):
-    qt_shapes = []
-    for shape in shapes:
-        label = shape["label"]
-        points = shape["points"]
-        bbox = shape["bbox"]
-        shape_type = shape["shape_type"]
-        # flags = shape["flags"]
-        content = shape["content"]
-        group_id = shape["group_id"]
-        # other_data = shape["other_data"]
-
-        if not points:
-            # skip point-empty shape
-            continue
-
-        shape = Shape(
-            label=label,
-            shape_type=shape_type,
-            group_id=group_id,
-            content=content,
-        )
-        for i in range(0, len(points), 2):
-            shape.addPoint(QtCore.QPointF(points[i], points[i + 1]))
-        shape.close()
-        qt_shapes.append(shape)
-    return qt_shapes
 
 
 class Intelligence():
@@ -221,18 +194,6 @@ class Intelligence():
                 return
             return selected_model_name, model
 
-    def get_bbox(self, segmentation):
-        x = []
-        y = []
-        for i in range(len(segmentation)):
-            x.append(segmentation[i][0])
-            y.append(segmentation[i][1])
-        # get the bbox in xyxy format
-        if len(x) == 0 or len(y) == 0:
-            return []
-        bbox = [min(x), min(y), max(x), max(y)]
-        return bbox
-
     def get_shapes_of_one(self, image, img_array_flag=False, multi_model_flag=False):
         # print(f"Threshold is {self.conf_threshold}")
         # results = self.reader.decode_file(img_path = filename, threshold = self.conf_threshold , selected_model_name = self.current_model_name)["results"]
@@ -291,7 +252,7 @@ class Intelligence():
             shape["content"] = result["confidence"]
             shape["group_id"] = None
             shape["shape_type"] = "polygon"
-            shape["bbox"] = self.get_bbox(result["seg"])
+            shape["bbox"] = mathOps.get_bbox_xyxy(result["seg"])
 
             shape["flags"] = {}
             shape["other_data"] = {}
@@ -301,120 +262,10 @@ class Intelligence():
                                for item in sublist]
 
             shapes.append(shape)
-            shapes, boxes, confidences, class_ids, segments = self.OURnms(
+            shapes, boxes, confidences, class_ids, segments = mathOps.OURnms_confidenceBased(
                 shapes, self.iou_threshold)
             # self.addLabel(shape)
         return shapes
-
-    def get_boxes_conf_classids_segments(self, shapes):
-        boxes = []
-        confidences = []
-        class_ids = []
-        segments = []
-        for s in shapes:
-            label = s["label"]
-            points = s["points"]
-            # points are one dimensional array of x1,y1,x2,y2,x3,y3,x4,y4
-            # we will convert it to a 2 dimensional array of points (segment)
-            segment = []
-            for j in range(0, len(points), 2):
-                segment.append([int(points[j]), int(points[j + 1])])
-            # if points is empty pass
-            # if len(points) == 0:
-            #     continue
-            segments.append(segment)
-
-            boxes.append(self.get_bbox(segment))
-            confidences.append(float(s["content"]))
-            class_ids.append(coco_classes.index(
-                label)if label in coco_classes else -1)
-
-        return boxes, confidences, class_ids, segments
-
-    def compute_iou(self, box1, box2):
-        """
-        Computes IOU between two bounding boxes.
-
-        Args:
-            box1 (list): List of 4 coordinates (xmin, ymin, xmax, ymax) of the first box.
-            box2 (list): List of 4 coordinates (xmin, ymin, xmax, ymax) of the second box.
-
-        Returns:
-            iou (float): IOU between the two boxes.
-        """
-        # Compute intersection coordinates
-        xmin = max(box1[0], box2[0])
-        ymin = max(box1[1], box2[1])
-        xmax = min(box1[2], box2[2])
-        ymax = min(box1[3], box2[3])
-
-        # Compute intersection area
-        if xmin < xmax and ymin < ymax:
-            intersection_area = (xmax - xmin) * (ymax - ymin)
-        else:
-            intersection_area = 0
-
-        # Compute union area
-        box1_area = (box1[2] - box1[0]) * (box1[3] - box1[1])
-        box2_area = (box2[2] - box2[0]) * (box2[3] - box2[1])
-        union_area = box1_area + box2_area - intersection_area
-
-        # Compute IOU
-        iou = intersection_area / union_area if union_area > 0 else 0
-
-        return iou
-
-    def OURnms(self, shapes, iou_threshold=0.5):
-        """
-        Perform non-maximum suppression on a list of shapes based on their bounding boxes using IOU threshold.
-
-        Args:
-            shapes (list): List of shapes, each shape is a dictionary with keys (bbox, confidence, class_id)
-            iou_threshold (float): IOU threshold for non-maximum suppression.
-
-        Returns:
-            list: List of shapes after performing non-maximum suppression, each shape is a dictionary with keys (bbox, confidence, class_id)
-        """
-        iou_threshold = float(iou_threshold)
-        for shape in shapes:
-            if shape['content'] is None:
-                shape['content'] = 1.0
-
-        # Sort shapes by their confidence
-        shapes.sort(key=lambda x: x['content'], reverse=True)
-
-        boxes, confidences, class_ids, segments = self.get_boxes_conf_classids_segments(
-            shapes)
-
-        toBeRemoved = []
-
-        # Loop through each shape
-        for i in range(len(shapes)):
-            shape_bbox = boxes[i]
-            # Loop through each remaining shape
-            for j in range(i + 1, len(shapes)):
-                remaining_shape_bbox = boxes[j]
-
-                # Compute IOU between shape and remaining_shape
-                iou = self.compute_iou(shape_bbox, remaining_shape_bbox)
-
-                # If IOU is greater than threshold, remove remaining_shape from shapes list
-                if iou > iou_threshold:
-                    toBeRemoved.append(j)
-
-        shapesFinal = []
-        boxesFinal = []
-        confidencesFinal = []
-        class_idsFinal = []
-        segmentsFinal = []
-        for i in range(len(shapes)):
-            if i in toBeRemoved:
-                continue
-            shapesFinal.append(shapes[i])
-        boxesFinal, confidencesFinal, class_idsFinal, segmentsFinal = self.get_boxes_conf_classids_segments(
-            shapesFinal)
-
-        return shapesFinal, boxesFinal, confidencesFinal, class_idsFinal, segmentsFinal
 
     # print the labels of the selected classes in the dialog
     # def updatlabellist(self):
@@ -783,11 +634,6 @@ class Intelligence():
             self.parent.loadFile(self.parent.filename)
 
 
-    def flattener(self, list_2d):
-        points = [(p.x(), p.y()) for p in list_2d]
-        points = np.array(points, np.uint16).flatten().tolist()
-        return points
-
     def clear_annotating_models(self):
         self.reader.annotating_models.clear()
 
@@ -799,7 +645,7 @@ class Intelligence():
             data.update(
                 dict(
                     label=s.label.encode("utf-8") if PY2 else s.label,
-                    points=self.flattener(s.points),
+                    points=mathOps.flattener(s.points),
                     bbox=s.bbox,
                     group_id=s.group_id,
                     content=s.content,

@@ -1,7 +1,7 @@
 from qtpy.QtCore import Qt
 from qtpy import QtWidgets
 from labelme.widgets.MsgBox import OKmsgBox
-from labelme.utils.helpers import coco_classes
+from labelme.utils.helpers.mathOps import coco_classes
 import copy
 
 

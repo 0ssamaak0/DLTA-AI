@@ -28,5 +28,6 @@ from .qt import fmtShortcut
 
 from .export import exportCOCO, exportCOCOvid, exportMOT, FolderDialog
 from .model_explorer import ModelExplorerDialog
-from .help import show_runtime_data, git_hub_link, feedback, open_license, check_updates, preferences, shortcut_selector, open_guide
+from labelme.widgets.links import open_git_hub, open_license, open_guide
+from labelme.widgets import runtime_data_UI, preferences_UI, shortcut_selector_UI, check_updates_UI, feedback_UI
 from .vid_to_frames import VideoFrameExtractor

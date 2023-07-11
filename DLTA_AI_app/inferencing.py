@@ -7,11 +7,9 @@ from mmdet.apis import inference_detector, init_detector, async_inference_detect
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.interpolate import splprep, splev
 import warnings
-import random
-from ultralytics.yolo.utils.ops import Profile, non_max_suppression, scale_boxes, process_mask, process_mask_native
-import skimage.measure
+# from ultralytics.yolo.utils.ops import Profile, non_max_suppression, scale_boxes, process_mask, process_mask_native
+from labelme.utils.helpers import mathOps
 
 warnings.filterwarnings("ignore")
 
@@ -20,150 +18,6 @@ class models_inference():
     def __init__(self):
         self.annotating_models = {}
 
-    def get_bbox(self, segmentation):
-        x = []
-        y = []
-        for i in range(len(segmentation)):
-            x.append(segmentation[i][0])
-            y.append(segmentation[i][1])
-        # get the bbox in xyxy format
-        bbox = [min(x), min(y), max(x), max(y)]
-        return bbox
-
-    # def addPoints(self, shape, n):
-    #     res = shape.copy()
-    #     sub = 1.0 * n / (len(shape) - 1)
-    #     if sub == 0:
-    #         return res
-    #     if sub < 1:
-    #         res = []
-    #         res.append(shape[0])
-    #         flag = True
-    #         for i in range(len(shape) - 1):
-    #             dif = [shape[i + 1][0] - shape[i][0],
-    #                    shape[i + 1][1] - shape[i][1]]
-    #             newPoint = [shape[i][0] + dif[0] *
-    #                         0.5, shape[i][1] + dif[1] * 0.5]
-    #             if flag:
-    #                 res.append(newPoint)
-    #             res.append(shape[i + 1])
-    #             n -= 1
-    #             if n == 0:
-    #                 flag = False
-    #         return res
-    #     else:
-    #         now = int(sub) + 1
-    #         res = []
-    #         res.append(shape[0])
-    #         for i in range(len(shape) - 1):
-    #             dif = [shape[i + 1][0] - shape[i][0],
-    #                    shape[i + 1][1] - shape[i][1]]
-    #             for j in range(1, now):
-    #                 newPoint = [shape[i][0] + dif[0] * j /
-    #                             now, shape[i][1] + dif[1] * j / now]
-    #                 res.append(newPoint)
-    #             res.append(shape[i + 1])
-    #         return self.addPoints(res, n + len(shape) - len(res))
-
-    # def reducePoints(self, polygon, n):
-    #     if n >= len(polygon):
-    #         return polygon
-    #     distances = polygon.copy()
-    #     for i in range(len(polygon)):
-    #         mid = (np.array(polygon[i - 1]) +
-    #                np.array(polygon[(i + 1) % len(polygon)])) / 2
-    #         dif = np.array(polygon[i]) - mid
-    #         dist_mid = np.sqrt(dif[0] * dif[0] + dif[1] * dif[1])
-
-    #         dif_right = np.array(
-    #             polygon[(i + 1) % len(polygon)]) - np.array(polygon[i])
-    #         dist_right = np.sqrt(
-    #             dif_right[0] * dif_right[0] + dif_right[1] * dif_right[1])
-
-    #         dif_left = np.array(polygon[i - 1]) - np.array(polygon[i])
-    #         dist_left = np.sqrt(
-    #             dif_left[0] * dif_left[0] + dif_left[1] * dif_left[1])
-
-    #         distances[i] = min(dist_mid, dist_right, dist_left)
-    #     distances = [distances[i] + random.random()
-    #                  for i in range(len(distances))]
-    #     ratio = 1.0 * n / len(polygon)
-    #     threshold = np.percentile(distances, 100 - ratio * 100)
-
-    #     i = 0
-    #     while i < len(polygon):
-    #         if distances[i] < threshold:
-    #             polygon[i] = None
-    #             i += 1
-    #         i += 1
-    #     res = [x for x in polygon if x is not None]
-    #     return self.reducePoints(res, n)
-
-    # def handlePoints(self, polygon, n):
-    #     if n == len(polygon):
-    #         return polygon
-    #     elif n > len(polygon):
-    #         return self.addPoints(polygon, n - len(polygon))
-    #     else:
-    #         return self.reducePoints(polygon, n)
-
-    # def interpolate_polygon(self , polygon, n_points):
-    #     # interpolate polygon to get less points
-    #     polygon = np.array(polygon)
-    #     if len(polygon) < 25:
-    #         return polygon
-    #     return np.array(self.reducePoints(polygon.tolist() , n_points))
-    #     x = polygon[:, 0]
-    #     y = polygon[:, 1]
-    #     tck, u = splprep([x, y], s=0, per=1)
-    #     u_new = np.linspace(u.min(), u.max(), n_points)
-    #     x_new, y_new = splev(u_new, tck, der=0)
-    #     return np.array([x_new, y_new]).T
-
-    # # function to masks into polygons
-    # def mask_to_polygons(self , mask, n_points=25):
-    #     # Find contours
-    #     contours = cv2.findContours(
-    #         mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)[0]
-    #     # Convert contours to polygons
-    #     polygon = []
-    #     for contour in contours:
-    #         contour = contour.flatten().tolist()
-    #         # Remove last point if it is the same as the first
-    #         if contour[-2:] == contour[:2]:
-    #             contour = contour[:-2]
-    #         polygon.append(contour)
-    #     polygon = [(polygon[0][i], polygon[0][i + 1])
-    #                for i in np.arange(0, len(polygon[0]), 2)]
-    #     polygon = self.interpolate_polygon(polygon, n_points)
-    #     polygon = [[int(sublist[0]) , int(sublist[1])] for sublist in polygon ]
-
-    #     return polygon
-
-    def get_contour_length(self, contour):
-        contour_start = contour
-        contour_end = np.r_[contour[1:], contour[0:1]]
-        return np.linalg.norm(contour_end - contour_start, axis=1).sum()
-
-    def mask_to_polygons(self, mask, n_points=25, resize_factors=[1.0, 1.0]):
-        mask = mask > 0.0
-        contours = skimage.measure.find_contours(mask)
-        if len(contours) == 0:
-            return []
-        contour = max(contours, key=self.get_contour_length)
-        coords = skimage.measure.approximate_polygon(
-            coords=contour,
-            tolerance=np.ptp(contour, axis=0).max() / 100,
-        )
-
-        coords = coords * resize_factors
-        # convert coords from x y to y x
-        coords = np.fliplr(coords)
-
-        # segment_points are a list of coords
-        segment_points = coords.astype(int)
-        polygon = segment_points
-        return polygon
 
     def full_points(bbox):
         return np.array([[bbox[0], bbox[1]], [bbox[0], bbox[3]], [bbox[2], bbox[3]], [bbox[2], bbox[1]]])
@@ -213,7 +67,7 @@ class models_inference():
             if len(masks) == 0:
                 return {"results":{}}
             for mask in masks:
-                polygon = self.mask_to_polygons(
+                polygon = mathOps.mask_to_polygons(
                     mask, resize_factors=resize_factors)
                 polygons.append(polygon)
 
@@ -286,10 +140,10 @@ class models_inference():
                 result["confidence"] = str(
                     round(results0[classno][instance][-1], 2))
                 if classno == 0:
-                    result["seg"] = self.mask_to_polygons(
+                    result["seg"] = mathOps.mask_to_polygons(
                         results1[classno][instance].astype(np.uint8), 10)
                 else:
-                    result["seg"] = self.mask_to_polygons(
+                    result["seg"] = mathOps.mask_to_polygons(
                         results1[classno][instance].astype(np.uint8), 25)
 
                 # result["bbox"] = self.get_bbox(result["seg"])
