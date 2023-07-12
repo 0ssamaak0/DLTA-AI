@@ -1,120 +1,67 @@
 # -*- coding: utf-8 -*-
 import functools
 import json
-import orjson
-import time
 import math
-import os
-import os.path as osp
 import re
-import traceback
 import webbrowser
 import copy
-
-# import asyncio
-# import PyQt5
-# from qtpy.QtCore import Signal, Slot
 import imgviz
-from matplotlib import pyplot as plt
+import torch
+import cv2
+import warnings
+import os
+import os.path as osp
+import numpy as np
+from pathlib import Path
+
 from qtpy import QtCore
 from qtpy.QtCore import Qt, QThread
-# from qtpy.QtCore import Signal as pyqtSignal
-
 from qtpy import QtGui
 from qtpy import QtWidgets
-import random
-
-# from labelme import __appname__
-# from labelme import PY2
-# from labelme import QT5
+from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
 
 from . import __appname__
 from . import PY2
 from . import QT5
-
 from . import utils
-from .config import get_config
-from .label_file import LabelFile
-from .label_file import LabelFileError
-from .logger import logger
-from .shape import Shape
-from .widgets import BrightnessContrastDialog, Canvas, LabelDialog, LabelListWidget, LabelListWidgetItem, ToolBar, UniqueLabelQListWidget, ZoomWidget
-from .widgets import MsgBox, interpolation_UI, exportData_UI, deleteSelectedShape_UI, scaleObject_UI, getIDfromUser_UI, notification, runtime_data_UI, preferences_UI, shortcut_selector_UI, links, feedback_UI, check_updates_UI
-from .widgets.editLabel_videoMode import editLabel_idChanged_UI, editLabel_handle_data
-from .intelligence import Intelligence
-from .intelligence import coco_classes, color_palette
+
 from .utils.sam import Sam_Predictor
 from .utils.helpers import visualizations, mathOps
-
-from onemetric.cv.utils.iou import box_iou_batch
-from dataclasses import dataclass
-from supervision.detection.core import Detections
-from trackers.multi_tracker_zoo import create_tracker
-# from ultralytics.yolo.utils.torch_utils import select_device
-# non_max_suppression, scale_boxes, process_mask, process_mask_native
-from ultralytics.yolo.utils.ops import Profile
-from ultralytics.yolo.utils.torch_utils import select_device
-
-import torch
-import numpy as np
-import cv2
-from pathlib import Path
-
-# import time
-# import threading
-import warnings
-from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
-
 from .utils.custom_exports import custom_exports_list
 
+from .config import get_config
+
+from .label_file import LabelFile
+from .label_file import LabelFileError
+
+from .logger import logger
+
+from .shape import Shape
+
+from .widgets import BrightnessContrastDialog, Canvas, LabelDialog, LabelListWidget, LabelListWidgetItem, ToolBar, UniqueLabelQListWidget, ZoomWidget
+from .widgets import MsgBox, interpolation_UI, exportData_UI, deleteSelectedShape_UI, scaleObject_UI, getIDfromUser_UI, notification
+from .widgets import runtime_data_UI, preferences_UI, shortcut_selector_UI, links, feedback_UI, check_updates_UI
+from .widgets.editLabel_videoMode import editLabel_idChanged_UI, editLabel_handle_data
+
+from .intelligence import Intelligence
+from .intelligence import coco_classes, color_palette
+
+from supervision.detection.core import Detections
+from trackers.multi_tracker_zoo import create_tracker
+from ultralytics.yolo.utils.torch_utils import select_device
 
 warnings.filterwarnings("ignore")
 
-
-class TrackingThread(QThread):
-    def __init__(self, parent=None):
-        super(TrackingThread, self).__init__(parent)
-        self.parent = parent
-
-    def run(self):
-        self.parent.track_buttonClicked()
-# os.environ["OMP_NUM_THREADS"] = "1"
-# os.environ["OPENBLAS_NUM_THREADS"] = "1"
-# os.environ["MKL_NUM_THREADS"] = "1"
-# os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
-# os.environ["NUMEXPR_NUM_THREADS"] = "1"
-
-
+# the root of the repo
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]
-# print(f'\n\n ROOT: {ROOT}\n\n')
-# now get go up one more level to the root of the repo
 ROOT = ROOT.parents[0]
-# print(f'\n\n ROOT: {ROOT}\n\n')
-# WEIGHTS = ROOT / 'weights'
 
-# if str(ROOT) not in sys.path:
-#     sys.path.append(str(ROOT))  # add ROOT to PATH
-# if str(ROOT / 'trackers' / 'strongsort') not in sys.path:
-#     sys.path.append(str(ROOT / 'trackers' / 'strongsort'))  # add strong_sort ROOT to PATH
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
-# print(f'\n\n ROOT: {ROOT}\n\n')
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-# reid_weights = Path('osnet_x0_25_msmt17.pt')
 reid_weights = Path('osnet_x1_0_msmt17.pt')
-# reid_weights = Path('osnet_ms_d_c.pth.tar')
-
-
-# FIXME
-# - [medium] Set max zoom value to something big enough for FitWidth/Window
-# TODO(unknown):
-# - [high] Add polygon movement with arrow keys
-# - [high] Deselect shape when clicking and already selected(?)
-# - [low,maybe] Preview images on file dialogs.
-# - Zoom is too "steppy".
-
-
 LABEL_COLORMAP = imgviz.label_colormap(value=200)
+
 
 
 class MainWindow(QtWidgets.QMainWindow):
@@ -168,8 +115,7 @@ class MainWindow(QtWidgets.QMainWindow):
         try:
             self.intelligenceHelper = Intelligence(self)
         except:
-            print(
-                "it seems you have a problem with initializing model\ncheck you have at least one model")
+            print("it seems you have a problem with initializing model\ncheck you have at least one model")
             self.helper_first_time_flag = True
         else:
             self.helper_first_time_flag = False
@@ -257,8 +203,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.zoomWidget = ZoomWidget()
         self.setAcceptDrops(True)
 
-        self.addVideoControls()
-        self.addSamControls()
 
         self.canvas = self.labelList.canvas = Canvas(
             epsilon=self._config["epsilon"],
@@ -280,9 +224,17 @@ class MainWindow(QtWidgets.QMainWindow):
         self.canvas.shapeMoved.connect(self.setDirty)
         self.canvas.selectionChanged.connect(self.shapeSelectionChanged)
         self.canvas.drawingPolygon.connect(self.toggleDrawingSensitive)
+        self.canvas.edgeSelected.connect(self.canvasShapeEdgeSelected)
+        self.canvas.APPrefresh.connect(self.refresh_image_MODE)
+        
+        
+        # adding toolbars of SAM and and related slots
+        self.addSamControls()
 
         # Canvas SAM slots
         self.canvas.pointAdded.connect(self.run_sam_model)
+        self.canvas.samFinish.connect(self.sam_finish_annotation_button_clicked)
+        
         # SAM predictor
         self.sam_predictor = None
         self.current_sam_shape = None
@@ -299,7 +251,10 @@ class MainWindow(QtWidgets.QMainWindow):
         # for merge
         self.multi_model_flag = False
 
-        # for video annotation
+        # adding toolbars of video mode and and related slots
+        self.addVideoControls()
+        
+        # for video annotation and tracking
         self.frame_time = 0
         self.FRAMES_TO_SKIP = 30
         self.TRACK_ASSIGNED_OBJECTS_ONLY = False
@@ -312,28 +267,18 @@ class MainWindow(QtWidgets.QMainWindow):
                                          "mask": True,
                                          "polygons": True,
                                          "conf": True}
-        self.CURRENT_ANNOATAION_TRAJECTORIES = {}
-        # keep it like that, don't change it
-        self.CURRENT_ANNOATAION_TRAJECTORIES['length'] = 30
-        # keep it like that, don't change it
-        self.CURRENT_ANNOATAION_TRAJECTORIES['alpha'] = 0.70
+        self.CURRENT_ANNOATAION_TRAJECTORIES = {'length': 30,
+                                                'alpha': 0.70}
         self.CURRENT_SHAPES_IN_IMG = []
-        self.config = {'deleteDefault': "this frame only",
-                       'interpolationDefMethod': "linear",
-                       'interpolationDefType': "all",
-                       'interpolationOverwrite': False,
-                       'creationDefault': "Create new shape (ie. not detected before)",
-                       'EditDefault': "Edit only this frame",
-                       'toolMode': 'video'}
+        self.featuresOptions = {'deleteDefault': "this frame only",
+                                'interpolationDefMethod': "linear",
+                                'interpolationDefType': "all",
+                                'interpolationOverwrite': False,
+                                'EditDefault': "Edit only this frame"}
         self.key_frames = {}
         self.id_frames_rec = {}
         self.copiedShapes = []
-        # make CLASS_NAMES_DICT a dictionary of coco class names
-        # self.CLASS_NAMES_DICT =
-        # self.frame_number = 0
         self.INDEX_OF_CURRENT_FRAME = 1
-        # # for image annotation
-        # self.last_file_opened = ""
         self.interrupted = False
         self.minID = -2
         self.maxID = 0
@@ -430,7 +375,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self.tr("Save labels to a different file"),
             enabled=False,
         )
-
         deleteFile = action(
             self.tr("&Delete File"),
             self.deleteFile,
@@ -439,7 +383,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self.tr("Delete current label file"),
             enabled=False,
         )
-
         changeOutputDir = action(
             self.tr("&Change Output Dir"),
             slot=self.changeOutputDirDialog,
@@ -447,7 +390,6 @@ class MainWindow(QtWidgets.QMainWindow):
             icon="open",
             tip=self.tr(u"Change where annotations are loaded/saved"),
         )
-
         saveAuto = action(
             text=self.tr("Save &Automatically"),
             slot=lambda x: self.actions.saveAuto.setChecked(x),
@@ -457,7 +399,6 @@ class MainWindow(QtWidgets.QMainWindow):
             enabled=True,
         )
         saveAuto.setChecked(self._config["auto_save"])
-
         saveWithImageData = action(
             text="Save With Image Data",
             slot=self.enableSaveImageWithData,
@@ -465,7 +406,6 @@ class MainWindow(QtWidgets.QMainWindow):
             checkable=True,
             checked=self._config["store_data"],
         )
-
         close = action(
             "&Close",
             self.closeFile,
@@ -473,7 +413,6 @@ class MainWindow(QtWidgets.QMainWindow):
             "close",
             "Close current file",
         )
-
         toggle_keep_prev_mode = action(
             self.tr("Keep Previous Annotation"),
             self.toggleKeepPrevMode,
@@ -483,10 +422,9 @@ class MainWindow(QtWidgets.QMainWindow):
             checkable=True,
         )
         toggle_keep_prev_mode.setChecked(self._config["keep_prev"])
-
         createMode = action(
             self.tr("Create Polygons"),
-            self.createMode_options,
+            self.setCreateMode,
             shortcuts["create_polygon"],
             "objects",
             self.tr("Start drawing polygons"),
@@ -545,7 +483,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self.tr("Move and edit the selected polygons"),
             enabled=False,
         )
-
         delete = action(
             self.tr("Delete Polygons"),
             self.deleteSelectedShape,
@@ -585,7 +522,6 @@ class MainWindow(QtWidgets.QMainWindow):
             tip="Remove selected point from polygon",
             enabled=False,
         )
-
         undo = action(
             self.tr("Undo"),
             self.undoShapeEdit,
@@ -594,7 +530,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self.tr("Undo last add and edit of shape"),
             enabled=False,
         )
-
         hideAll = action(
             self.tr("&Hide\nPolygons"),
             functools.partial(self.togglePolygons, False),
@@ -609,7 +544,6 @@ class MainWindow(QtWidgets.QMainWindow):
             tip=self.tr("Show all polygons"),
             enabled=False,
         )
-
         zoom = QtWidgets.QWidgetAction(self)
         zoom.setDefaultWidget(self.zoomWidget)
         self.zoomWidget.setWhatsThis(
@@ -684,6 +618,7 @@ class MainWindow(QtWidgets.QMainWindow):
             checked=self._config["show_cross_line"],
             enabled=True,
         )
+        
         # Group zoom controls into a list for easier toggling.
         zoomActions = (
             self.zoomWidget,
@@ -752,7 +687,7 @@ class MainWindow(QtWidgets.QMainWindow):
         )
         copyShapes = action(
             self.tr("&Copy"),
-            self.copyShapesSelected,
+            self.ctrlCopy,
             shortcuts["copy"],
             "copy",
             self.tr("Copy selected polygons"),
@@ -760,7 +695,7 @@ class MainWindow(QtWidgets.QMainWindow):
         )
         pasteShapes = action(
             self.tr("&Paste"),
-            self.pasteShapesSelected,
+            self.ctrlPaste,
             shortcuts["paste"],
             "paste",
             self.tr("paste copied polygons"),
@@ -793,6 +728,7 @@ class MainWindow(QtWidgets.QMainWindow):
             enabled=True,
         )
         fill_drawing.trigger()
+        
         # intelligence actions
         annotate_one_action = action(
             self.tr("Run Model on Current Image"),
@@ -801,7 +737,6 @@ class MainWindow(QtWidgets.QMainWindow):
             "open",
             self.tr("Run Model on Current Image")
         )
-
         annotate_batch_action = action(
             self.tr("Run Model on All Images"),
             self.annotate_batch,
@@ -1013,13 +948,7 @@ class MainWindow(QtWidgets.QMainWindow):
             onShapesPresent=(saveAs, hideAll, showAll),
         )
 
-        self.canvas.edgeSelected.connect(self.canvasShapeEdgeSelected)
         self.canvas.vertexSelected.connect(self.actions.removePoint.setEnabled)
-        self.canvas.samFinish.connect(
-            self.sam_finish_annotation_button_clicked)
-        self.canvas.APPrefresh.connect(self.refresh_image_MODE)
-        # self.canvas.reset.connect(self.sam_reset_button_clicked)
-        # self.canvas.interrupted.connect(self.SETinterrupted)
 
         self.menus = utils.struct(
             file=self.menu(self.tr("&File")),
@@ -1249,9 +1178,6 @@ class MainWindow(QtWidgets.QMainWindow):
         
         QtWidgets.QShortcut(QtGui.QKeySequence(self._config['shortcuts']['stop']), self).activated.connect(self.Escape_clicked)
 
-        # self.firstStart = True
-        # if self.firstStart:
-        #    QWhatsThis.enterWhatsThisMode()
 
     def menu(self, title, actions=None):
         menu = self.menuBar().addMenu(title)
@@ -1350,8 +1276,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.imagePath = None
         self.imageData = None
         self.CURRENT_FRAME_IMAGE = None
-        # self.CURRENT_SHAPES_IN_IMG = []
-        # self.SAM_SHAPES_IN_IMAGE = []
         self.labelFile = None
         self.otherData = None
         self.canvas.resetState()
@@ -1372,6 +1296,7 @@ class MainWindow(QtWidgets.QMainWindow):
     # Callbacks
 
     def Escape_clicked(self):
+        
         """
         Summary:
             This function is called when the user presses the escape key.
@@ -1389,10 +1314,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.labelList.clear()
         self.loadShapes(self.canvas.shapes)
         self.actions.undo.setEnabled(self.canvas.isShapeRestorable)
-
-    def tutorial(self):
-        url = "https://github.com/wkentaro/labelme/tree/master/examples/tutorial"  # NOQA
-        webbrowser.open(url)
 
     def toggleDrawingSensitive(self, drawing=True):
         """Toggle drawing sensitive.
@@ -1459,28 +1380,6 @@ class MainWindow(QtWidgets.QMainWindow):
             else:
                 raise ValueError("Unsupported createMode: %s" % createMode)
         self.actions.editMode.setEnabled(not edit)
-
-    def turnOFF_SAM(self):
-        if self.sam_model_comboBox.currentText() != "Select Model (SAM disabled)":
-            self.sam_clear_annotation_button_clicked()
-        self.sam_buttons_colors('x')
-        self.set_sam_toolbar_enable(False)
-        self.canvas.SAM_mode = ""
-        self.canvas.SAM_coordinates = []
-        self.canvas.SAM_rect = []
-        self.canvas.SAM_rects = []
-        self.canvas.SAM_current = None
-
-    def turnON_SAM(self):
-        if self.sam_model_comboBox.currentText() == "Select Model (SAM disabled)":
-            return
-        self.sam_buttons_colors("X")
-        self.set_sam_toolbar_enable(True)
-        self.canvas.SAM_mode = ""
-        self.canvas.SAM_coordinates = []
-        self.canvas.SAM_rect = []
-        self.canvas.SAM_rects = []
-        self.canvas.SAM_current = None
 
     def setEditMode(self):
 
@@ -1604,7 +1503,6 @@ class MainWindow(QtWidgets.QMainWindow):
             if hasattr(self.tracker, 'model'):
                 if hasattr(self.tracker.model, 'warmup'):
                     self.tracker.model.warmup()
-                    # print('Warmup done')
         self.waitWindow()
 
         print(f'Changed tracking method to {method}')
@@ -1624,8 +1522,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     return True
         return False
 
-    def createMode_options(self):
-
+    def setCreateMode(self):
         self.turnON_SAM()
         self.toggleDrawMode(False, createMode="polygon")
         return
@@ -1673,6 +1570,7 @@ class MainWindow(QtWidgets.QMainWindow):
         shape.group_id = new_group_id
         shape.content = str(content)
 
+        # if img or dir -> do smth then return
         if self.current_annotation_mode == 'img' or self.current_annotation_mode == 'dir':
             item.setText(f'{shape.label}')
             self.setDirty()
@@ -1690,8 +1588,8 @@ class MainWindow(QtWidgets.QMainWindow):
         else:
 
             idChanged = old_group_id != new_group_id
-            result, self.config, only_this_frame, duplicates = editLabel_idChanged_UI(
-                self.config,
+            result, self.featuresOptions, only_this_frame, duplicates = editLabel_idChanged_UI(
+                self.featuresOptions,
                 old_group_id,
                 new_group_id,
                 self.id_frames_rec,
@@ -1721,63 +1619,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
             self.load_objects_to_json__orjson(listObj)
             self.main_video_frames_slider_changed()
-
-    def interpolateMENU(self, item=None):
-        try:
-            if len(self.canvas.selectedShapes) == 0:
-                mb = QtWidgets.QMessageBox
-                msg = self.tr("Interpolate all IDs?\n")
-                answer = mb.warning(self, self.tr(
-                    "Attention"), msg, mb.Yes | mb.No)
-                if answer != mb.Yes:
-                    return
-                else:
-                    self.update_current_frame_annotation()
-                    keys = list(self.id_frames_rec.keys())
-                    idsORG = [int(keys[i][3:]) for i in range(len(keys))]
-            else:
-                self.update_current_frame_annotation()
-                idsORG = [shape.group_id for shape in self.canvas.selectedShapes]
-                id = self.canvas.selectedShapes[0].group_id
-
-            result, self.config = interpolation_UI.PopUp(self.config)
-            if result != QtWidgets.QDialog.Accepted:
-                return
-
-            with_linear = True if self.config['interpolationDefMethod'] == 'linear' else False
-            with_sam = True if self.config['interpolationDefMethod'] == 'SAM' else False
-            with_keyframes = True if self.config['interpolationDefType'] == 'key' else False
-
-            if with_keyframes:
-                allAccepted, allRejected, ids = mathOps.checkKeyFrames(
-                    idsORG, self.key_frames)
-                if not allAccepted:
-                    if allRejected:
-                        MsgBox.OKmsgBox("Key Frames Error",
-                                        f"All of the selected IDs have no KEY frames.\n    ie. less than 2 key frames\n The interpolation is NOT performed.")
-                        return
-                    else:
-                        resutl = MsgBox.OKmsgBox("Key Frames Error",
-                                                 f"Some of the selected IDs have no KEY frames.\n    ie. less than 2 key frames\n The interpolation is performed only for the IDs with KEY frames.\nIDs: {ids}.", "info", turnResult=True)
-                        if resutl != QtWidgets.QMessageBox.Ok:
-                            return
-            else:
-                ids = idsORG
-
-            self.interrupted = False
-            if with_sam:
-                self.interpolate_with_sam(ids, with_keyframes)
-            else:
-                for id in ids:
-                    QtWidgets.QApplication.processEvents()
-                    if self.interrupted:
-                        self.interrupted = False
-                        break
-                    self.interpolate(id=id,
-                                     only_edited=with_keyframes)
-            self.waitWindow()
-        except Exception as e:
-            MsgBox.OKmsgBox("Error", f"Error: {e}", "critical")
 
     def mark_as_key(self):
         """
@@ -1844,6 +1685,63 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.id_frames_rec['id_' + str(id)].remove(frame)
             except:
                 pass
+
+    def interpolateMENU(self, item=None):
+        try:
+            if len(self.canvas.selectedShapes) == 0:
+                mb = QtWidgets.QMessageBox
+                msg = self.tr("Interpolate all IDs?\n")
+                answer = mb.warning(self, self.tr(
+                    "Attention"), msg, mb.Yes | mb.No)
+                if answer != mb.Yes:
+                    return
+                else:
+                    self.update_current_frame_annotation()
+                    keys = list(self.id_frames_rec.keys())
+                    idsORG = [int(keys[i][3:]) for i in range(len(keys))]
+            else:
+                self.update_current_frame_annotation()
+                idsORG = [shape.group_id for shape in self.canvas.selectedShapes]
+                id = self.canvas.selectedShapes[0].group_id
+
+            result, self.featuresOptions = interpolation_UI.PopUp(self.featuresOptions)
+            if result != QtWidgets.QDialog.Accepted:
+                return
+
+            with_linear = True if self.featuresOptions['interpolationDefMethod'] == 'linear' else False
+            with_sam = True if self.featuresOptions['interpolationDefMethod'] == 'SAM' else False
+            with_keyframes = True if self.featuresOptions['interpolationDefType'] == 'key' else False
+
+            if with_keyframes:
+                allAccepted, allRejected, ids = mathOps.checkKeyFrames(
+                    idsORG, self.key_frames)
+                if not allAccepted:
+                    if allRejected:
+                        MsgBox.OKmsgBox("Key Frames Error",
+                                        f"All of the selected IDs have no KEY frames.\n    ie. less than 2 key frames\n The interpolation is NOT performed.")
+                        return
+                    else:
+                        resutl = MsgBox.OKmsgBox("Key Frames Error",
+                                                 f"Some of the selected IDs have no KEY frames.\n    ie. less than 2 key frames\n The interpolation is performed only for the IDs with KEY frames.\nIDs: {ids}.", "info", turnResult=True)
+                        if resutl != QtWidgets.QMessageBox.Ok:
+                            return
+            else:
+                ids = idsORG
+
+            self.interrupted = False
+            if with_sam:
+                self.interpolate_with_sam(ids, with_keyframes)
+            else:
+                for id in ids:
+                    QtWidgets.QApplication.processEvents()
+                    if self.interrupted:
+                        self.interrupted = False
+                        break
+                    self.interpolate(id=id,
+                                     only_edited=with_keyframes)
+            self.waitWindow()
+        except Exception as e:
+            MsgBox.OKmsgBox("Error", f"Error: {e}", "critical")
 
     def interpolate(self, id, only_edited=False):
         """
@@ -1980,7 +1878,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if len(idsLIST) == 0:
             return
 
-        overwrite = self.config['interpolationOverwrite']
+        overwrite = self.featuresOptions['interpolationOverwrite']
 
         listObj = self.load_objects_from_json__orjson()
         listObjNEW = copy.deepcopy(listObj)
@@ -2074,39 +1972,6 @@ class MainWindow(QtWidgets.QMainWindow):
         success, img = self.CAP.read()
         return img
 
-    def sam_enhanced_bbox_segment(self, frameIMAGE, cur_bbox, thresh, max_itr=5, forSHAPE=False):
-        oldAREA = abs(cur_bbox[2] - cur_bbox[0]) * \
-            abs(cur_bbox[3] - cur_bbox[1])
-        [x1, y1, x2, y2] = [cur_bbox[0], cur_bbox[1],
-                            cur_bbox[2], cur_bbox[3]]
-        listPOINTS = [min(x1, x2), min(y1, y2),
-                      max(x1, x2), max(y1, y2)]
-        listPOINTS = [int(round(x)) for x in listPOINTS]
-        input_boxes = [listPOINTS]
-        mask, score = self.sam_predictor.predict(point_coords=None,
-                                                 point_labels=None,
-                                                 box=input_boxes,
-                                                 image=frameIMAGE)
-        points = mathOps.mask_to_polygons(mask)
-        SAMshape = mathOps.polygon_to_shape(points, score)
-        cur_segment = SAMshape['points']
-        cur_segment = [[int(cur_segment[i]), int(cur_segment[i + 1])]
-                       for i in range(0, len(cur_segment), 2)]
-        cur_bbox = [min(np.array(cur_segment)[:, 0]), min(np.array(cur_segment)[:, 1]),
-                    max(np.array(cur_segment)[:, 0]), max(np.array(cur_segment)[:, 1])]
-        cur_bbox = [int(round(x)) for x in cur_bbox]
-        newAREA = abs(cur_bbox[2] - cur_bbox[0]) * \
-            abs(cur_bbox[3] - cur_bbox[1])
-        bigger, smaller = max(oldAREA, newAREA), min(oldAREA, newAREA)
-        # print(f'oldAREA: {oldAREA}, newAREA: {newAREA}, bigger/smaller: {bigger/smaller}')
-        if bigger/smaller < thresh or max_itr == 1:
-            if forSHAPE:
-                return cur_bbox, SAMshape['points']
-            else:
-                return cur_bbox, cur_segment
-        else:
-            return self.sam_enhanced_bbox_segment(frameIMAGE, cur_bbox, thresh, max_itr-1, forSHAPE)
-
     def scaleMENU(self):
         """
         Summary:
@@ -2127,7 +1992,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.main_video_frames_slider_changed()
             return
 
-    def copyShapesSelected(self):
+    def ctrlCopy(self):
         """
         Summary:
             This function is called when the user presses the "Copy" button.
@@ -2138,7 +2003,7 @@ class MainWindow(QtWidgets.QMainWindow):
             return
         self.copiedShapes = copy.deepcopy(self.canvas.selectedShapes)
 
-    def pasteShapesSelected(self):
+    def ctrlPaste(self):
         """
         Summary:
             This function is called when the user presses the "Paste" button.
@@ -2243,15 +2108,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def _get_rgb_by_label(self, label):
         if self._config["shape_color"] == "auto":
-            # item = self.uniqLabelList.findItemsByLabel(label)[0]
-            # label_id = self.uniqLabelList.indexFromItem(item).row() + 1
-            # label_id += self._config["shift_auto_shape_color"]
-            # return LABEL_COLORMAP[label_id % len(LABEL_COLORMAP)]
-            # idx = coco_classes.index(label) if label in coco_classes else -1
-            # idx = idx % len(color_palette)
-            # color = color_palette[idx] if idx != -1 else (0, 0, 255)
-            # label_hash = hash(label)
-            # idx = abs(label_hash) % len(color_palette)
             label_ascii = sum([ord(c) for c in label])
             idx = label_ascii % len(color_palette)
             color = color_palette[idx]
@@ -2293,10 +2149,8 @@ class MainWindow(QtWidgets.QMainWindow):
             points = shape["points"]
             bbox = shape["bbox"]
             shape_type = shape["shape_type"]
-            # flags = shape["flags"]
             content = shape["content"]
             group_id = shape["group_id"]
-            # other_data = shape["other_data"]
 
             if not points:
                 # skip point-empty shape
@@ -2319,8 +2173,6 @@ class MainWindow(QtWidgets.QMainWindow):
                         for key in keys:
                             default_flags[key] = False
             shape.flags = default_flags
-            # shape.flags.update(flags)
-            # shape.other_data = other_data
 
             s.append(shape)
         self.loadShapes(s, replace=replace)
@@ -2383,7 +2235,6 @@ class MainWindow(QtWidgets.QMainWindow):
                     raise RuntimeError("There are duplicate files.")
                 items[0].setCheckState(Qt.Checked)
             # disable allows next and previous image to proceed
-            # self.filename = filename
             return True
         except LabelFileError as e:
             self.errorMessage(
@@ -2435,8 +2286,7 @@ class MainWindow(QtWidgets.QMainWindow):
             text, flags, group_id, content = self.labelDialog.popUp(text)
             if not text:
                 self.labelDialog.edit.setText(previous_text)
-        print(
-            f'---------- after POPUP ----------- group_id: {group_id}, text: {text}')
+
         if text and not self.validateLabel(text):
             self.errorMessage(
                 self.tr("Invalid label"),
@@ -2481,7 +2331,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
         else:
             if self.canvas.SAM_mode == "finished":
-                # print(f'---------- SAM_mode is finished ----------- group_id: {group_id}, text: {text}')
                 self.current_sam_shape["label"] = text
                 self.current_sam_shape["group_id"] = -1
                 self.canvas.SAM_mode = ""
@@ -2667,7 +2516,6 @@ class MainWindow(QtWidgets.QMainWindow):
         if self.labelFile:
             self.actions.export.setEnabled(True)
             self.CURRENT_SHAPES_IN_IMG = self.labelFile.shapes
-            # print("self.CURRENT_SHAPES_IN_IMG", self.CURRENT_SHAPES_IN_IMG)
             self.canvas.loadPixmap(QtGui.QPixmap.fromImage(image))
             self.loadLabels(self.labelFile.shapes)
             if self.labelFile.flags is not None:
@@ -2914,8 +2762,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.refresh_image_MODE()
 
     def openFile(self, _value=False):
-        # self.current_annotation_mode = 'img'
-        # self.disconnectVideoShortcuts()
 
         self.actions.export.setEnabled(False)
         try:
@@ -2946,7 +2792,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self.loadFile(filename)
             self.refresh_image_MODE()
             self.set_video_controls_visibility(False)
-            # self.right_click_menu()
 
         self.filename = filename
         # clear the file list widget
@@ -3323,10 +3168,10 @@ class MainWindow(QtWidgets.QMainWindow):
                     return
 
                 # if video mode
-                result, self.config, fromFrameVAL, toFrameVAL = deleteSelectedShape_UI.PopUp(
+                result, self.featuresOptions, fromFrameVAL, toFrameVAL = deleteSelectedShape_UI.PopUp(
                     self.TOTAL_VIDEO_FRAMES,
                     self.INDEX_OF_CURRENT_FRAME,
-                    self.config)
+                    self.featuresOptions)
                 if result == QtWidgets.QDialog.Accepted:
                     for deleted_id in deleted_ids:
                         self.delete_ids_from_all_frames(
@@ -3421,12 +3266,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setDirty()
         if self.current_annotation_mode == 'video':
             self.update_current_frame_annotation_button_clicked()
-        self.right_click_menu()
 
     def openDirDialog(self, _value=False, dirpath=None):
-        # self.disconnectVideoShortcuts()
-
-        # self.current_annotation_mode = "dir"
+        
         if not self.mayContinue():
             return
 
@@ -3507,7 +3349,6 @@ class MainWindow(QtWidgets.QMainWindow):
         if not self.mayContinue() or not dirpath:
             return
         self.reset_for_new_mode("dir")
-        # self.right_click_menu()
         self.lastOpenDir = dirpath
         self.filename = None
         self.fileListWidget.clear()
@@ -3547,6 +3388,20 @@ class MainWindow(QtWidgets.QMainWindow):
                     images.append(relativePath)
         images.sort(key=lambda x: x.lower())
         return images
+    
+    def refresh_image_MODE(self, fromSignal=False):
+        try:
+            if self.current_annotation_mode == "video" and not fromSignal:
+                return
+            self.CURRENT_SHAPES_IN_IMG = mathOps.convert_qt_shapes_to_shapes(self.canvas.shapes)
+            imageX = visualizations.draw_bb_on_image_MODE(self.CURRENT_ANNOATAION_FLAGS,
+                                                          self.image,
+                                                          self.CURRENT_SHAPES_IN_IMG)
+            self.labelList.clear()
+            self.canvas.loadPixmap(QtGui.QPixmap.fromImage(imageX))
+            self.loadLabels(self.CURRENT_SHAPES_IN_IMG)
+        except:
+            pass
 
     def annotate_one(self, called_from_tracking=False):
 
@@ -3587,15 +3442,6 @@ class MainWindow(QtWidgets.QMainWindow):
                                                       self.image,
                                                       shapes)
 
-        # for shape in shapes:
-        #     print(shape["group_id"])
-        #     print(shape["bbox"])
-
-        # image = self.drawXXX_bb_on_image(self.image  , self.CURRENT_SHAPES_IN_IMG)
-        # self.canvas.loadPixmap(QtGui.QPixmap.fromImage(image))
-
-        # make all annotation_flags false except show polygons
-
         # clear shapes already in lablelist (fixes saving multiple shapes of same object bug)
         self.labelList.clear()
         self.CURRENT_SHAPES_IN_IMG = shapes
@@ -3605,25 +3451,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.actions.undoLastPoint.setEnabled(False)
         self.actions.undo.setEnabled(True)
         self.setDirty()
-        # self.waitWindow()
-
-    def refresh_image_MODE(self, fromSignal=False):
-        try:
-            if self.current_annotation_mode == "video" and not fromSignal:
-                return
-            self.CURRENT_SHAPES_IN_IMG = mathOps.convert_qt_shapes_to_shapes(
-                self.canvas.shapes)
-            imageX = visualizations.draw_bb_on_image_MODE(self.CURRENT_ANNOATAION_FLAGS,
-                                                          self.image,
-                                                          self.CURRENT_SHAPES_IN_IMG)
-            # self.canvas.setEnabled(False)
-            self.labelList.clear()
-            self.canvas.loadPixmap(QtGui.QPixmap.fromImage(imageX))
-            self.loadLabels(self.CURRENT_SHAPES_IN_IMG)
-            # self.canvas.setEnabled(True)
-            # self.actions.editMode.setEnabled(True)
-        except:
-            pass
 
     def annotate_batch(self):
         images = []
@@ -3693,9 +3520,6 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.minID = min(self.minID, id - 1)
                 self.rec_frame_for_id(id, listobjframe)
                 label = object['class_name']
-                # color calculation
-                # label_hash = hash(label)
-                # idx = abs(label_hash) % len(color_palette)
                 label_ascii = sum([ord(c) for c in label])
                 idx = label_ascii % len(color_palette)
                 color = color_palette[idx]
@@ -3759,8 +3583,7 @@ class MainWindow(QtWidgets.QMainWindow):
         #         17 ignore_changes
 
         mode = self.current_annotation_mode
-        video_menu_list = [0, 1, 2, 3, 4, 5, 6,
-                           7, 8, 9,     11,         14, 16, 17]
+        video_menu_list = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9,     11,         14,    16, 17]
         image_menu_list = [0, 1, 2, 3,                   10, 11, 12, 13, 14]
 
         if self.current_annotation_mode == "video":
@@ -3781,11 +3604,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.menus.edit, (self.actions.menu[i] for i in image_menu_list))
 
     def reset_for_new_mode(self, mode):
-        length_Value = self.CURRENT_ANNOATAION_TRAJECTORIES['length']
-        alpha_Value = self.CURRENT_ANNOATAION_TRAJECTORIES['alpha']
-        self.CURRENT_ANNOATAION_TRAJECTORIES.clear()
-        self.CURRENT_ANNOATAION_TRAJECTORIES['length'] = length_Value
-        self.CURRENT_ANNOATAION_TRAJECTORIES['alpha'] = alpha_Value
+        self.CURRENT_ANNOATAION_TRAJECTORIES = {'length': 30,
+                                                'alpha': 0.70}
         self.key_frames.clear()
         self.id_frames_rec.clear()
 
@@ -3837,19 +3657,13 @@ class MainWindow(QtWidgets.QMainWindow):
             else:
                 self.actions.export.setEnabled(False)
 
-            # print('video file name : ' , self.CURRENT_VIDEO_NAME)
-            # print("video file path : " , self.CURRENT_VIDEO_PATH)
             cap = cv2.VideoCapture(videoFile[0])
             self.CURRENT_VIDEO_HEIGHT = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
             self.CURRENT_VIDEO_WIDTH = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
             self.CAP = cap
-            # # making the total video frames equal to the total frames in the video file - 1 as the indexing starts from 0
-            # self.TOTAL_VIDEO_FRAMES = int(
-            #     self.CAP.get(cv2.CAP_PROP_FRAME_COUNT - 1) )
             self.TOTAL_VIDEO_FRAMES = int(
                 self.CAP.get(cv2.CAP_PROP_FRAME_COUNT))
             self.CURRENT_VIDEO_FPS = self.CAP.get(cv2.CAP_PROP_FPS)
-            print("Total Frames : ", self.TOTAL_VIDEO_FRAMES)
             self.main_video_frames_slider.setMaximum(self.TOTAL_VIDEO_FRAMES)
             self.frames_to_track_slider.setMaximum(
                 self.TOTAL_VIDEO_FRAMES - self.INDEX_OF_CURRENT_FRAME)
@@ -3870,15 +3684,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
             for option in self.vis_options:
                 option.setEnabled(True)
-
-        # label = shape["label"]
-        # points = shape["points"]
-        # bbox = shape["bbox"]
-        # shape_type = shape["shape_type"]
-        # flags = shape["flags"]
-        # content = shape["content"]
-        # group_id = shape["group_id"]
-        # other_data = shape["other_data"]
 
         # disable save and save as
         self.actions.save.setEnabled(False)
@@ -3915,12 +3720,7 @@ class MainWindow(QtWidgets.QMainWindow):
         listObj = np.array(listObj)
 
         shapes = []
-        # for i in range(len(listObj)):
         i = target_frame_idx - 1
-        # frame_idx = listObj[i]['frame_idx']
-        # if frame_idx == target_frame_idx:
-        # print (listObj[i])
-        # print(i)
         frame_objects = listObj[i]['frame_data']
         for object_ in frame_objects:
             shape = {}
@@ -3939,8 +3739,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.CURRENT_SHAPES_IN_IMG = shapes
 
     def loadFramefromVideo(self, frame_array, index=1):
-        # filename = str(index) + ".jpg"
-        # self.filename = filename
+        
         self.resetState()
         self.canvas.setEnabled(False)
 
@@ -3953,13 +3752,10 @@ class MainWindow(QtWidgets.QMainWindow):
         if self._config["keep_prev"]:
             prev_shapes = self.canvas.shapes
 
-        # detectionData = [(50, 50, 200, 200, 11), (200, 200, 400, 400, 12), (400, 400, 600, 600, 13)]
-        # image = drawXXX_bb_on_image(image, detectionData)
         flags = {k: False for k in self._config["flags"] or []}
         self.canvas.loadPixmap(QtGui.QPixmap.fromImage(image))
 
         if self.TrackingMode:
-            # print("Tracking Mode", len(self.CURRENT_SHAPES_IN_IMG))
             image = self.draw_bb_on_image(image, self.CURRENT_SHAPES_IN_IMG)
             self.canvas.loadPixmap(QtGui.QPixmap.fromImage(image))
             if len(self.CURRENT_SHAPES_IN_IMG) > 0:
@@ -3977,7 +3773,6 @@ class MainWindow(QtWidgets.QMainWindow):
             else:
                 json_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}_tracking_results.json'
                 if os.path.exists(json_file_name):
-                    # print('json file exists , loading shapes')
                     self.load_shapes_for_video_frame(json_file_name, index)
                     image = self.draw_bb_on_image(
                         image, self.CURRENT_SHAPES_IN_IMG)
@@ -3986,10 +3781,6 @@ class MainWindow(QtWidgets.QMainWindow):
                         self.loadLabels(self.CURRENT_SHAPES_IN_IMG)
 
         self.loadFlags(flags)
-        # if self._config["keep_prev"] and self.noShapes():
-        #     self.loadShapes(prev_shapes, replace=False)
-        #     self.setDirty()
-        # else:
         self.setClean()
         self.canvas.setEnabled(True)
         # set zoom values
@@ -4073,7 +3864,10 @@ class MainWindow(QtWidgets.QMainWindow):
                 f'Pause ({self._config["shortcuts"]["play"]})')
             self.playPauseButton.setIcon(
                 self.style().standardIcon(QtWidgets.QStyle.SP_MediaPlay))
-        # print(1)
+        
+    def move_frame_by_frame(self):
+        QtWidgets.QApplication.processEvents()
+        self.main_video_frames_slider.setValue(self.INDEX_OF_CURRENT_FRAME + 1)
 
     def main_video_frames_slider_changed(self):
 
@@ -4128,18 +3922,13 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.frames_to_track_slider.setValue(
                     self.frames_to_track_slider.maximum())
             elif value < 2:
-                self.frames_to_track_slider.setValue(2)
+                self.frames_to_track_slider.setValue(1)
         except ValueError:
             pass
 
     def frames_to_track_slider_changed(self, value):
         self.frames_to_track_input.setText(str(value))
         self.FRAMES_TO_TRACK = self.frames_to_track_slider.value()
-        zeros = (2 - int(np.log10(self.FRAMES_TO_TRACK + 0.9))) * '0'
-
-    def move_frame_by_frame(self):
-        QtWidgets.QApplication.processEvents()
-        self.main_video_frames_slider.setValue(self.INDEX_OF_CURRENT_FRAME + 1)
 
     def track_assigned_objects_button_clicked(self):
         # first check if there is objects in self.canvas.shapes list or not . if not then output a error message and return
@@ -4155,26 +3944,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.TRACK_ASSIGNED_OBJECTS_ONLY = False
 
     def update_gui_after_tracking(self, index):
-        # self.loadFramefromVideo(self.CURRENT_FRAME_IMAGE, self.INDEX_OF_CURRENT_FRAME)
-        # QtWidgets.QApplication.processEvents()
-        # progress_value = int((index + 1) / self.FRAMES_TO_TRACK * 100)
-        # self.tracking_progress_bar_signal.emit(progress_value)
-
-        # QtWidgets.QApplication.processEvents()
         if index != self.FRAMES_TO_TRACK - 1:
             self.main_video_frames_slider.setValue(
                 self.INDEX_OF_CURRENT_FRAME + 1)
         QtWidgets.QApplication.processEvents()
-
-    def track_buttonClicked_wrapper(self):
-        # ...
-
-        # Disable the track button
-        # self.actions.track.setEnabled(False)
-
-        # Create a thread to run the tracking process
-        self.thread = TrackingThread(parent=self)
-        self.thread.start()
 
     def certain_area_clicked(self, index):
 
@@ -4209,18 +3982,9 @@ class MainWindow(QtWidgets.QMainWindow):
     def track_buttonClicked(self):
 
         # Disable Exports & Change button text
-        # self.export_as_video_button.setEnabled(False)
         self.actions.export.setEnabled(False)
 
-        # dt = (Profile(), Profile(), Profile(), Profile())
-
         self.tracking_progress_bar.setVisible(True)
-        # self.track_stop_button.setVisible(True)
-        # self.track_stop_button.setEnabled(True)
-        frame_shape = self.CURRENT_FRAME_IMAGE.shape
-        # print(frame_shape)
-
-        json_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}_tracking_results.json'
 
         # first we need to check there is a json file with the same name as the video
         listObj = self.load_objects_from_json__orjson()
@@ -4230,17 +3994,12 @@ class MainWindow(QtWidgets.QMainWindow):
         tracks_to_follow = None
         if len(shapes) > 0:
             existing_annotation = True
-            # print(f'FRAME{self.INDEX_OF_CURRENT_FRAME}', len(shapes))
             tracks_to_follow = []
             for shape in shapes:
-                # print(shape.label)
                 if shape.group_id != None:
                     tracks_to_follow.append(int(shape.group_id))
 
-        # print(f'track_ids_to_follow = {tracks_to_follow}')
-
         self.TrackingMode = True
-        bs = 1
         curr_frame, prev_frame = None, None
 
         if self.FRAMES_TO_TRACK + self.INDEX_OF_CURRENT_FRAME <= self.TOTAL_VIDEO_FRAMES:
@@ -4261,19 +4020,14 @@ class MainWindow(QtWidgets.QMainWindow):
 
             if existing_annotation:
                 existing_annotation = False
-                # print('\nloading existing annotation\n')
                 shapes = self.canvas.shapes
                 shapes = mathOps.convert_qt_shapes_to_shapes(shapes)
             else:
                 with torch.no_grad():
-                    # shapes = self.intelligenceHelper.get_shapes_of_one(
-                    #     self.CURRENT_FRAME_IMAGE, img_array_flag=True)
                     shapes = self.annotate_one(called_from_tracking=True)
 
             curr_frame = self.CURRENT_FRAME_IMAGE
-            # current_objects_ids = []
             if len(shapes) == 0:
-                # print("no detection in this frame")
                 self.update_gui_after_tracking(i)
                 continue
 
@@ -4297,12 +4051,10 @@ class MainWindow(QtWidgets.QMainWindow):
 
             dets = torch.cat((boxes, confidences.unsqueeze(
                 1), class_ids.unsqueeze(1)), dim=1)
-            # convert dets to torch.float32 to avoid error in the tracker update function
             dets = dets.to(torch.float32)
             if hasattr(self.tracker, 'tracker') and hasattr(self.tracker.tracker, 'camera_update'):
                 if prev_frame is not None and curr_frame is not None:  # camera motion compensation
                     self.tracker.tracker.camera_update(prev_frame, curr_frame)
-                    # print('camera update')
             prev_frame = curr_frame
             with torch.no_grad():
                 org_tracks = self.tracker.update(
@@ -4332,7 +4084,6 @@ class MainWindow(QtWidgets.QMainWindow):
                         for item in self.labelList.selectedItems():
                             x = item.text()
                             i1, i2 = x.find('D'), x.find(':')
-                            # print(x, x[i1 + 2:i2])
                             tracks_to_follow.append(int(x[i1 + 2:i2]))
                     self.CURRENT_SHAPES_IN_IMG = [
                         shape_ for shape_ in shapes if shape_["group_id"] in tracks_to_follow]
@@ -4367,25 +4118,12 @@ class MainWindow(QtWidgets.QMainWindow):
 
             json_frame.update({'frame_data': json_frame_object_list})
 
-            # for h in range(len(listObj)):
-            #     if listObj[h]['frame_idx'] == self.INDEX_OF_CURRENT_FRAME:
-            #         listObj.pop(h)
-            #         break
-            # listObj.pop(self.INDEX_OF_CURRENT_FRAME - 1)
-
-            # sort the list of frames by the frame index
-            # listObj.append(json_frame)
             listObj[self.INDEX_OF_CURRENT_FRAME - 1] = json_frame
 
             QtWidgets.QApplication.processEvents()
             self.update_gui_after_tracking(i)
             print('finished tracking for frame ', self.INDEX_OF_CURRENT_FRAME)
-            import psutil
-            if self.INDEX_OF_CURRENT_FRAME % 10 == 0:
-                print(
-                    f"Total Memory: {psutil.virtual_memory().total / 1024 ** 3} GB | Free Memory: {psutil.virtual_memory().free / 1024 ** 3} GB | Percent Used: {psutil.virtual_memory().percent} %")
-
-        # listObj = sorted(listObj, key=lambda k: k['frame_idx'])
+            
         self.load_objects_to_json__orjson(listObj)
 
         # Notify the user that the tracking is finished
@@ -4401,12 +4139,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.tracking_progress_bar.hide()
         self.tracking_progress_bar.setValue(0)
-        # self.track_stop_button.hide()
-        # self.track_stop_button.setEnabled(False)
 
         # Enable Exports & Restore button Text and Color
         self.actions.export.setEnabled(True)
-        # self.export_as_video_button.setEnabled(True)
 
     def track_full_video_button_clicked(self):
         self.FRAMES_TO_TRACK = int(
@@ -4427,19 +4162,6 @@ class MainWindow(QtWidgets.QMainWindow):
                 widget.setVisible(visible)
             except:
                 pass
-        # self.videoControls_3.setVisible(visible)
-        # for widget in self.videoControls_3.children():
-        #     try:
-        #         widget.setVisible(visible)
-        #     except:
-        #         pass
-        # Disable Stop tracking button by default
-        # self.track_stop_button.setEnabled(False)
-
-    def window_wait(self, seconds):
-        loop = QtCore.QEventLoop()
-        QtCore.QTimer.singleShot(seconds * 1000, loop.quit)
-        loop.exec_()
 
     def traj_checkBox_changed(self):
         try:
@@ -4510,14 +4232,11 @@ class MainWindow(QtWidgets.QMainWindow):
             pass
 
     def export_as_video_button_clicked(self, output_filename=None):
-        # print (f"output filename is {output_filename}")
         self.update_current_frame_annotation()
-        json_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}_tracking_results.json'
         input_video_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}.mp4'
         output_video_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}_tracking_results.mp4'
         if output_filename is not False:
             output_video_file_name = output_filename
-        print(f"output video file name is {output_video_file_name}")
         input_cap = cv2.VideoCapture(input_video_file_name)
         output_cap = cv2.VideoWriter(output_video_file_name, cv2.VideoWriter_fourcc(
             *'mp4v'), int(self.CURRENT_VIDEO_FPS), (int(self.CURRENT_VIDEO_WIDTH), int(self.CURRENT_VIDEO_HEIGHT)))
@@ -4531,11 +4250,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.INDEX_OF_CURRENT_FRAME = target_frame_idx + 1
                 ret, image = input_cap.read()
                 shapes = []
-                # self.waitWindow(
-                #         visible=True, text=f'Please Wait.\nFrame {target_frame_idx} is being exported...')
-                frame_idx = listObj[target_frame_idx]['frame_idx']
                 frame_objects = listObj[target_frame_idx]['frame_data']
-                # print(frame_idx)
                 for object_ in frame_objects:
                     shape = {}
                     shape["label"] = object_['class_name']
@@ -4568,7 +4283,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
         input_cap.release()
         output_cap.release()
-        # print("done exporting video")
         self.waitWindow()
 
         try:
@@ -4588,11 +4302,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def clear_video_annotations_button_clicked(self):
         self.global_listObj = []
-        length_Value = self.CURRENT_ANNOATAION_TRAJECTORIES['length']
-        alpha_Value = self.CURRENT_ANNOATAION_TRAJECTORIES['alpha']
-        self.CURRENT_ANNOATAION_TRAJECTORIES.clear()
-        self.CURRENT_ANNOATAION_TRAJECTORIES['length'] = length_Value
-        self.CURRENT_ANNOATAION_TRAJECTORIES['alpha'] = alpha_Value
+        self.CURRENT_ANNOATAION_TRAJECTORIES = {'length': 30,
+                                                'alpha': 0.70}
         self.key_frames.clear()
         self.id_frames_rec.clear()
         self.minID = -2
@@ -4661,21 +4372,8 @@ class MainWindow(QtWidgets.QMainWindow):
             json_frame_object_list.append(json_tracked_object)
         json_frame.update({'frame_data': json_frame_object_list})
 
-        # for h in range(len(listObj)):
-        #     if listObj[h]['frame_idx'] == self.INDEX_OF_CURRENT_FRAME:
-        #         listObj.pop(h)
-        #         break
-        # listObj.pop(self.INDEX_OF_CURRENT_FRAME - 1)
-
-        # listObj.append(json_frame)
         listObj[self.INDEX_OF_CURRENT_FRAME - 1] = json_frame
-
-        # listObj = sorted(listObj, key=lambda k: k['frame_idx'])
-        # with open(json_file_name, 'w') as json_file:
-        #     json.dump(listObj, json_file,
-        #               indent=4,
-        #               separators=(',', ': '))
-        # json_file.close()
+        
         self.load_objects_to_json__orjson(listObj)
         print("saved frame annotation")
 
@@ -4705,14 +4403,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.videoControls_2.setStyleSheet(
             "QToolBar#videoControls_2 { border: 50px }")
         self.addToolBar(Qt.TopToolBarArea, self.videoControls_2)
-
-        # self.videoControls_3 = QtWidgets.QToolBar()
-        # self.videoControls_3.setMovable(True)
-        # self.videoControls_3.setFloatable(True)
-        # self.videoControls_3.setObjectName("videoControls_2")
-        # self.videoControls_3.setStyleSheet(
-        #     "QToolBar#videoControls_3 { border: 50px }")
-        # self.addToolBar(Qt.TopToolBarArea, self.videoControls_3)
 
         self.frames_to_skip_slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
         self.frames_to_skip_slider.setMinimum(1)
@@ -4761,7 +4451,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.playPauseButton.setStyleSheet("QPushButton { margin: 5px;}")
         # when the button is clicked, print "Pressed!" in the terminal
         self.playPauseButton.pressed.connect(self.playPauseButtonClicked)
-        # self.playPauseButton.clicked.connect(self.playPauseButtonClicked)
 
         self.nextFrame_button = QtWidgets.QPushButton()
         self.nextFrame_button.setText(">>")
@@ -4811,7 +4500,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # add the slider to control the video frame
         self.frames_to_track_slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
-        self.frames_to_track_slider.setMinimum(2)
+        self.frames_to_track_slider.setMinimum(1)
         self.frames_to_track_slider.setMaximum(100)
         self.frames_to_track_slider.setValue(4)
         self.frames_to_track_slider.setTickPosition(
@@ -4989,20 +4678,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self.clear_video_annotations_button_clicked)
         self.videoControls_2.addWidget(self.clear_video_annotations_button)
 
-        # # add export as video button (currently Disabled)
-        # self.export_as_video_button = QtWidgets.QPushButton()
-        # self.export_as_video_button.setStyleSheet(
-        #     self.buttons_text_style_sheet)
-        # self.export_as_video_button.setText("Export as video")
-        # self.export_as_video_button.setShortcut(self._config['shortcuts']['export_video'])
-        # self.export_as_video_button.setToolTip(
-        #         f'shortcut ({self._config["shortcuts"]["export_video"]})')
-        # self.export_as_video_button.clicked.connect(
-        #     self.export_as_video_button_clicked)
-        # self.videoControls_3.addWidget(self.export_as_video_button)
-
-        # add a button to clear all video annotations
-
         self.set_video_controls_visibility(False)
 
     def draw_bb_on_image(self, image, shapes, image_qt_flag=True):
@@ -5035,7 +4710,6 @@ class MainWindow(QtWidgets.QMainWindow):
         if not visible:
             try:
                 self.sam_clear_annotation_button_clicked()
-                # self.sam_model_comboBox.setCurrentIndex(0)
                 self.sam_buttons_colors("X")
             except:
                 pass
@@ -5220,11 +4894,10 @@ class MainWindow(QtWidgets.QMainWindow):
         # call the sam_models function to get all the models
         self.sam_model_comboBox.addItem("Select Model (SAM disabled)")
         self.sam_model_comboBox.addItems(self.sam_models())
-        # print("updated sam models")
 
     def sam_reset_button_clicked(self):
         self.sam_clear_annotation_button_clicked()
-        self.createMode_options()
+        self.setCreateMode()
 
     def sam_enhance_annotation_button_clicked(self):
         if self.sam_model_comboBox.currentText() == "Select Model (SAM disabled)":
@@ -5243,7 +4916,6 @@ class MainWindow(QtWidgets.QMainWindow):
         for shape in toBeEnhanced:
             try:
                 self.canvas.shapes.remove(shape)
-                # self.canvas.selectedShapes.remove(shape)
                 self.remLabels([shape])
             except:
                 return
@@ -5254,7 +4926,6 @@ class MainWindow(QtWidgets.QMainWindow):
             shapeX["points"] = cur_segment
             shapeX = mathOps.convert_shapes_to_qt_shapes([shapeX])[0]
             self.canvas.shapes.append(shapeX)
-            # self.canvas.selectedShapes.append(shapeX)
             self.addLabel(shapeX)
 
         if self.current_annotation_mode == "video":
@@ -5283,7 +4954,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.sam_clear_annotation_button_clicked()
         self.sam_buttons_colors("X")
         if self.sam_model_comboBox.currentText() == "Select Model (SAM disabled)":
-            # self.createMode_options()
             self.set_sam_toolbar_enable(False)
             return
         model_type = self.sam_model_comboBox.currentText()
@@ -5295,7 +4965,6 @@ class MainWindow(QtWidgets.QMainWindow):
         for model in data:
             if model['name'] == model_type:
                 checkpoint_path = model['checkpoint']
-        # print(model_type, checkpoint_path, device)
         if checkpoint_path != "":
             self.sam_predictor = Sam_Predictor(
                 model_type, checkpoint_path, device)
@@ -5309,7 +4978,7 @@ class MainWindow(QtWidgets.QMainWindow):
         print("done loading model")
 
         if createFlag:
-            self.createMode_options()
+            self.setCreateMode()
             if self.sam_last_mode == "point":
                 self.sam_add_point_button_clicked()
             elif self.sam_last_mode == "rectangle":
@@ -5416,7 +5085,6 @@ class MainWindow(QtWidgets.QMainWindow):
     def sam_clear_annotation_button_clicked(self):
         self.canvas.cancelManualDrawing()
         self.sam_buttons_colors("clear")
-        # print("sam clear annotation button clicked")
         self.canvas.SAM_coordinates = []
         self.canvas.SAM_mode = ""
         self.canvas.SAM_rect = []
@@ -5433,10 +5101,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self.CURRENT_SHAPES_IN_IMG)
 
         self.loadLabels(self.CURRENT_SHAPES_IN_IMG)
-        # self.loadLabels(self.SAM_SHAPES_IN_IMAGE, replace=False)
-
-        # later for confirmed sam instances
-        # self.laodLabels(self.CURRENT_SAM_SHAPES_IN_IMG,replace=false)
 
     def sam_finish_annotation_button_clicked(self):
         self.canvas.cancelManualDrawing()
@@ -5461,13 +5125,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.labelList.clear()
         sam_qt_shape = mathOps.convert_shapes_to_qt_shapes([self.current_sam_shape])[0]
         self.canvas.SAM_current = sam_qt_shape
-        # print("sam qt shape", type(sam_qt_shape), "sam shape", type(self.current_sam_shape))
         self.canvas.finalise(SAM_SHAPE=True)
-        # self.SAM_SHAPES_IN_IMAGE.append(self.current_sam_shape)
         self.CURRENT_SHAPES_IN_IMG = mathOps.convert_qt_shapes_to_shapes(
             self.canvas.shapes)
-        # for shape in self.CURRENT_SHAPES_IN_IMG:
-        #     print(shape["label"])
         self.CURRENT_SHAPES_IN_IMG = self.check_sam_instance_in_shapes(
             self.CURRENT_SHAPES_IN_IMG)
         try:
@@ -5508,7 +5168,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def run_sam_model(self):
 
-        # print("run sam model")
         if self.sam_predictor is None or self.sam_model_comboBox.currentText() == "Select Model (SAM disabled)":
             print("please select a model")
             return
@@ -5533,23 +5192,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
         points = mathOps.mask_to_polygons(mask)
         shape = mathOps.polygon_to_shape(points, score)
-        # print(self.current_sam_shape)
         self.current_sam_shape = shape
-        # if self.CURRENT_SHAPES_IN_IMG != []:
-        # if self.CURRENT_SHAPES_IN_IMG[-1]["label"] == "SAM instance"  :
-        # self.CURRENT_SHAPES_IN_IMG.pop()
-        # self.CURRENT_SHAPES_IN_IMG.append(shape)
-        # shapes  = mathOps.convert_shapes_to_qt_shapes(self.CURRENT_SHAPES_IN_IMG)[0]
-        # self.loadLabels(self.CURRENT_SHAPES_IN_IMG)
-        # self.loadLabels(self.CURRENT_SHAPES_IN_IMG)
-        # self.labelList.clear()
-        # self.loadLabels(self.CURRENT_SHAPES_IN_IMG)
         self.labelList.clear()
-        # self.canvas.loadPixmap(QtGui.QPixmap.fromImage(self.image))
-        # we need it since it does replace=True on whatever was on the canvas
-
-        # print(f'len of canvas shapes {len(self.canvas.shapes)}')
-        # print(f'len of current shapes {len(self.CURRENT_SHAPES_IN_IMG)}')
 
         self.CURRENT_SHAPES_IN_IMG = mathOps.convert_qt_shapes_to_shapes(
             self.canvas.shapes)
@@ -5559,10 +5203,59 @@ class MainWindow(QtWidgets.QMainWindow):
         self.CURRENT_SHAPES_IN_IMG.append(self.current_sam_shape)
         self.loadLabels(self.CURRENT_SHAPES_IN_IMG)
 
-        # self.loadLabels(self.SAM_SHAPES_IN_IMAGE, replace=False)
-        # self.loadLabels([self.current_sam_shape], replace=False)
+    def turnOFF_SAM(self):
+        if self.sam_model_comboBox.currentText() != "Select Model (SAM disabled)":
+            self.sam_clear_annotation_button_clicked()
+        self.sam_buttons_colors('x')
+        self.set_sam_toolbar_enable(False)
+        self.canvas.SAM_mode = ""
+        self.canvas.SAM_coordinates = []
+        self.canvas.SAM_rect = []
+        self.canvas.SAM_rects = []
+        self.canvas.SAM_current = None
 
-        # print("done running sam model")
+    def turnON_SAM(self):
+        if self.sam_model_comboBox.currentText() == "Select Model (SAM disabled)":
+            return
+        self.sam_buttons_colors("X")
+        self.set_sam_toolbar_enable(True)
+        self.canvas.SAM_mode = ""
+        self.canvas.SAM_coordinates = []
+        self.canvas.SAM_rect = []
+        self.canvas.SAM_rects = []
+        self.canvas.SAM_current = None
+
+    def sam_enhanced_bbox_segment(self, frameIMAGE, cur_bbox, thresh, max_itr=5, forSHAPE=False):
+        oldAREA = abs(cur_bbox[2] - cur_bbox[0]) * \
+            abs(cur_bbox[3] - cur_bbox[1])
+        [x1, y1, x2, y2] = [cur_bbox[0], cur_bbox[1],
+                            cur_bbox[2], cur_bbox[3]]
+        listPOINTS = [min(x1, x2), min(y1, y2),
+                      max(x1, x2), max(y1, y2)]
+        listPOINTS = [int(round(x)) for x in listPOINTS]
+        input_boxes = [listPOINTS]
+        mask, score = self.sam_predictor.predict(point_coords=None,
+                                                 point_labels=None,
+                                                 box=input_boxes,
+                                                 image=frameIMAGE)
+        points = mathOps.mask_to_polygons(mask)
+        SAMshape = mathOps.polygon_to_shape(points, score)
+        cur_segment = SAMshape['points']
+        cur_segment = [[int(cur_segment[i]), int(cur_segment[i + 1])]
+                       for i in range(0, len(cur_segment), 2)]
+        cur_bbox = [min(np.array(cur_segment)[:, 0]), min(np.array(cur_segment)[:, 1]),
+                    max(np.array(cur_segment)[:, 0]), max(np.array(cur_segment)[:, 1])]
+        cur_bbox = [int(round(x)) for x in cur_bbox]
+        newAREA = abs(cur_bbox[2] - cur_bbox[0]) * \
+            abs(cur_bbox[3] - cur_bbox[1])
+        bigger, smaller = max(oldAREA, newAREA), min(oldAREA, newAREA)
+        if bigger/smaller < thresh or max_itr == 1:
+            if forSHAPE:
+                return cur_bbox, SAMshape['points']
+            else:
+                return cur_bbox, cur_segment
+        else:
+            return self.sam_enhanced_bbox_segment(frameIMAGE, cur_bbox, thresh, max_itr-1, forSHAPE)
 
     def load_objects_from_json__json(self):
         if self.global_listObj != []:
@@ -5586,25 +5279,3 @@ class MainWindow(QtWidgets.QMainWindow):
         json_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}_tracking_results.json'
         mathOps.load_objects_to_json__orjson(json_file_name, listObj)
 
-
-# important parameters across the gui
-
-# INDEX_OF_CURRENT_FRAME
-# self.FRAMES_TO_SKIP
-# frames to track
-# self.TOTAL_VIDEO_FRAMES
-# self.CURRENT_VIDEO_FPS   --> to be used to play the video at the correct speed
-# self.CAP
-# self.CLASS_NAMES_DICT
-# self.CURRENT_FRAME_IMAGE
-# self.CURRENT_VIDEO_NAME
-# self.CURRENT_VIDEO_PATH
-# self.CURRENT_SHAPES_IN_IMG
-
-# self.CURRENT_ANNOATAION_FLAGS = {"traj" : False  ,
-#                                 "bbox" : False  ,
-#                                   "id" : False ,
-#                                   "class" : True,
-#                                   "mask" : True}
-# to do
-# remove the video processing tool bar in the other cases
