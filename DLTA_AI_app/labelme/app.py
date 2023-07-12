@@ -42,6 +42,8 @@ from .widgets import BrightnessContrastDialog, Canvas, LabelDialog, LabelListWid
 from .widgets import MsgBox, interpolation_UI, exportData_UI, deleteSelectedShape_UI, scaleObject_UI, getIDfromUser_UI, notification
 from .widgets import runtime_data_UI, preferences_UI, shortcut_selector_UI, links, feedback_UI, check_updates_UI
 from .widgets.editLabel_videoMode import editLabel_idChanged_UI, editLabel_handle_data
+from .widgets.segmentation_options_UI import SegmentationOptionsUI
+from .widgets.merge_feature_UI import MergeFeatureUI
 
 from .intelligence import Intelligence
 from .intelligence import coco_classes, color_palette
@@ -110,6 +112,12 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # update models json
         mathOps.update_saved_models_json(os.getcwd())
+
+
+        # add the segmentation UI controls interfance
+        self.segmentation_options_UI = SegmentationOptionsUI(self)
+        # add the merge ui interface
+        self.merge_feature_UI = MergeFeatureUI(self)
 
         super(MainWindow, self).__init__()
         try:
@@ -3277,24 +3285,30 @@ class MainWindow(QtWidgets.QMainWindow):
             self.intelligenceHelper.get_shapes_of_batch(images, notif=notif)
 
     def setConfThreshold(self):
+        # if a threshold exists, pass it as the previous value
         if self.intelligenceHelper.conf_threshold:
-            self.intelligenceHelper.conf_threshold = self.intelligenceHelper.setConfThreshold(
+            self.intelligenceHelper.conf_threshold = self.segmentation_options_UI.setConfThreshold(
                 self.intelligenceHelper.conf_threshold)
+        # if not, use the default value in the function as the previous value
         else:
-            self.intelligenceHelper.conf_threshold = self.intelligenceHelper.setConfThreshold()
+            self.intelligenceHelper.conf_threshold = self.segmentation_options_UI.setConfThreshold()
 
     def setIOUThreshold(self):
+        # if a threshold exists, pass it as the previous value
         if self.intelligenceHelper.iou_threshold:
-            self.intelligenceHelper.iou_threshold = self.intelligenceHelper.setIOUThreshold(
+            self.intelligenceHelper.iou_threshold = self.segmentation_options_UI.setIOUThreshold(
                 self.intelligenceHelper.iou_threshold)
+        # if not, use the default value in the function as the previous value
         else:
-            self.intelligenceHelper.iou_threshold = self.intelligenceHelper.setIOUThreshold()
+            self.intelligenceHelper.iou_threshold = self.segmentation_options_UI.setIOUThreshold()
 
     def selectClasses(self):
-        self.intelligenceHelper.selectedclasses = self.intelligenceHelper.selectClasses()
+        print(" from intelligenceHelper:" + str(self.intelligenceHelper.selectedclasses))
+        self.intelligenceHelper.selectedclasses = self.segmentation_options_UI.selectClasses()
 
     def mergeSegModels(self):
-        self.intelligenceHelper.selectedmodels = self.intelligenceHelper.mergeSegModels()
+        print(" from intelligenceHelper:" + str(self.intelligenceHelper.selectedmodels))
+        self.intelligenceHelper.selectedmodels = self.merge_feature_UI.mergeSegModels()
         # check if the user selected any models
         if len(self.intelligenceHelper.selectedmodels) == 0:
             print("No models selected")
