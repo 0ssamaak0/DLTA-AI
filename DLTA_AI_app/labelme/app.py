@@ -2579,7 +2579,7 @@ class MainWindow(QtWidgets.QMainWindow):
         selected_model_name, config, checkpoint = model_explorer_dialog.selected_model
         if selected_model_name != -1:
             self.intelligenceHelper.current_model_name, self.intelligenceHelper.current_mm_model = self.intelligenceHelper.make_mm_model_more(
-                selected_model_name, config, checkpoint, device)
+                selected_model_name, config, checkpoint)
         self.updateSamControls()
 
     def openFile(self, _value=False):
