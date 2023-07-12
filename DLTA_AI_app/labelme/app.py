@@ -325,24 +325,6 @@ class MainWindow(QtWidgets.QMainWindow):
             "opendir",
             self.tr(f"Open Dir ({str(shortcuts['open_dir'])})"),
         )
-        # tunred off for now as it is not working properly
-        openNextImg = action(
-            self.tr("&Next Image"),
-            self.openNextImg,
-            shortcuts["open_next"],
-            "next",
-            self.tr(u"Open next (hold Ctl+Shift to copy labels)"),
-            enabled=False,
-        )
-        # tunred off for now as it is not working properly
-        openPrevImg = action(
-            self.tr("&Prev Image"),
-            self.openPrevImg,
-            shortcuts["open_prev"],
-            "prev",
-            self.tr(u"Open prev (hold Ctl+Shift to copy labels)"),
-            enabled=False,
-        )
         save = action(
             self.tr("&Save"),
             self.saveFile,
@@ -428,51 +410,6 @@ class MainWindow(QtWidgets.QMainWindow):
             shortcuts["create_polygon"],
             "objects",
             self.tr("Start drawing polygons"),
-            enabled=False,
-        )
-        # tunred off for now (removed from menus) as it is not working properly
-        createRectangleMode = action(
-            self.tr("Create Rectangle"),
-            lambda: self.toggleDrawMode(False, createMode="rectangle"),
-            shortcuts["create_rectangle"],
-            "objects",
-            self.tr("Start drawing rectangles"),
-            enabled=False,
-        )
-        # tunred off for now (removed from menus) as it is not working properly
-        createCircleMode = action(
-            self.tr("Create Circle"),
-            lambda: self.toggleDrawMode(False, createMode="circle"),
-            shortcuts["create_circle"],
-            "objects",
-            self.tr("Start drawing circles"),
-            enabled=False,
-        )
-        # tunred off for now (removed from menus) as it is not working properly
-        createLineMode = action(
-            self.tr("Create Line"),
-            lambda: self.toggleDrawMode(False, createMode="line"),
-            shortcuts["create_line"],
-            "objects",
-            self.tr("Start drawing lines"),
-            enabled=False,
-        )
-        # tunred off for now (removed from menus) as it is not working properly
-        createPointMode = action(
-            self.tr("Create Point"),
-            lambda: self.toggleDrawMode(False, createMode="point"),
-            shortcuts["create_point"],
-            "objects",
-            self.tr("Start drawing points"),
-            enabled=False,
-        )
-        # tunred off for now (removed from menus) as it is not working properly
-        createLineStripMode = action(
-            self.tr("Create LineStrip"),
-            lambda: self.toggleDrawMode(False, createMode="linestrip"),
-            shortcuts["create_linestrip"],
-            "objects",
-            self.tr("Start drawing linestrip. Ctrl+LeftClick ends creation."),
             enabled=False,
         )
         editMode = action(
@@ -879,11 +816,6 @@ class MainWindow(QtWidgets.QMainWindow):
             removePoint=removePoint,
             createMode=createMode,
             editMode=editMode,
-            createRectangleMode=createRectangleMode,
-            createCircleMode=createCircleMode,
-            createLineMode=createLineMode,
-            createPointMode=createPointMode,
-            createLineStripMode=createLineStripMode,
             zoom=zoom,
             zoomIn=zoomIn,
             zoomOut=zoomOut,
@@ -893,8 +825,6 @@ class MainWindow(QtWidgets.QMainWindow):
             brightnessContrast=brightnessContrast,
             show_cross_line=show_cross_line,
             zoomActions=zoomActions,
-            openNextImg=openNextImg,
-            openPrevImg=openPrevImg,
             export=export,
             openVideo=openVideo,
             openVideoFrames=openVideoFrames,
@@ -937,11 +867,6 @@ class MainWindow(QtWidgets.QMainWindow):
             onLoadActive=(
                 close,
                 createMode,
-                createRectangleMode,
-                createCircleMode,
-                createLineMode,
-                createPointMode,
-                createLineStripMode,
                 editMode,
                 brightnessContrast,
             ),
@@ -1237,11 +1162,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.dirty = False
         self.actions.save.setEnabled(False)
         self.actions.createMode.setEnabled(True)
-        self.actions.createRectangleMode.setEnabled(True)
-        self.actions.createCircleMode.setEnabled(True)
-        self.actions.createLineMode.setEnabled(True)
-        self.actions.createPointMode.setEnabled(True)
-        self.actions.createLineStripMode.setEnabled(True)
         title = __appname__
         if self.filename is not None:
             title = "{} - {}".format(title, self.filename)
@@ -1329,56 +1249,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.canvas.createMode = createMode
         if edit:
             self.actions.createMode.setEnabled(True)
-            self.actions.createRectangleMode.setEnabled(True)
-            self.actions.createCircleMode.setEnabled(True)
-            self.actions.createLineMode.setEnabled(True)
-            self.actions.createPointMode.setEnabled(True)
-            self.actions.createLineStripMode.setEnabled(True)
         else:
             if createMode == "polygon":
                 self.actions.createMode.setEnabled(False)
-                self.actions.createRectangleMode.setEnabled(True)
-                self.actions.createCircleMode.setEnabled(True)
-                self.actions.createLineMode.setEnabled(True)
-                self.actions.createPointMode.setEnabled(True)
-                self.actions.createLineStripMode.setEnabled(True)
-            elif createMode == "rectangle":
-                self.actions.createMode.setEnabled(True)
-                self.actions.createRectangleMode.setEnabled(False)
-                self.actions.createCircleMode.setEnabled(True)
-                self.actions.createLineMode.setEnabled(True)
-                self.actions.createPointMode.setEnabled(True)
-                self.actions.createLineStripMode.setEnabled(True)
-            elif createMode == "line":
-                self.actions.createMode.setEnabled(True)
-                self.actions.createRectangleMode.setEnabled(True)
-                self.actions.createCircleMode.setEnabled(True)
-                self.actions.createLineMode.setEnabled(False)
-                self.actions.createPointMode.setEnabled(True)
-                self.actions.createLineStripMode.setEnabled(True)
-            elif createMode == "point":
-                self.actions.createMode.setEnabled(True)
-                self.actions.createRectangleMode.setEnabled(True)
-                self.actions.createCircleMode.setEnabled(True)
-                self.actions.createLineMode.setEnabled(True)
-                self.actions.createPointMode.setEnabled(False)
-                self.actions.createLineStripMode.setEnabled(True)
-            elif createMode == "circle":
-                self.actions.createMode.setEnabled(True)
-                self.actions.createRectangleMode.setEnabled(True)
-                self.actions.createCircleMode.setEnabled(False)
-                self.actions.createLineMode.setEnabled(True)
-                self.actions.createPointMode.setEnabled(True)
-                self.actions.createLineStripMode.setEnabled(True)
-            elif createMode == "linestrip":
-                self.actions.createMode.setEnabled(True)
-                self.actions.createRectangleMode.setEnabled(True)
-                self.actions.createCircleMode.setEnabled(True)
-                self.actions.createLineMode.setEnabled(True)
-                self.actions.createPointMode.setEnabled(True)
-                self.actions.createLineStripMode.setEnabled(False)
             else:
-                raise ValueError("Unsupported createMode: %s" % createMode)
+                self.actions.createMode.setEnabled(True)
         self.actions.editMode.setEnabled(not edit)
 
     def setEditMode(self):
@@ -2707,60 +2582,6 @@ class MainWindow(QtWidgets.QMainWindow):
                 selected_model_name, config, checkpoint, device)
         self.updateSamControls()
 
-    # tunred off for now (removed from menus) as it is not working properly
-    def openPrevImg(self, _value=False):
-        self.refresh_image_MODE()
-        keep_prev = self._config["keep_prev"]
-        if Qt.KeyboardModifiers() == (Qt.ControlModifier | Qt.ShiftModifier):
-            self._config["keep_prev"] = True
-
-        if not self.mayContinue():
-            return
-
-        if len(self.imageList) <= 0:
-            return
-
-        if self.filename is None:
-            return
-
-        currIndex = self.imageList.index(self.filename)
-        if currIndex - 1 >= 0:
-            filename = self.imageList[currIndex - 1]
-            if filename:
-                self.loadFile(filename)
-
-        self._config["keep_prev"] = keep_prev
-
-    # tunred off for now as it is not working properly
-    def openNextImg(self, _value=False, load=True):
-        self.refresh_image_MODE()
-        keep_prev = self._config["keep_prev"]
-        if Qt.KeyboardModifiers() == (Qt.ControlModifier | Qt.ShiftModifier):
-            self._config["keep_prev"] = True
-
-        if not self.mayContinue():
-            return
-
-        if len(self.imageList) <= 0:
-            return
-
-        filename = None
-        if self.filename is None:
-            filename = self.imageList[0]
-        else:
-            currIndex = self.imageList.index(self.filename)
-            if currIndex + 1 < len(self.imageList):
-                filename = self.imageList[currIndex + 1]
-            else:
-                filename = self.imageList[-1]
-        self.filename = filename
-
-        if self.filename and load:
-            self.loadFile(self.filename)
-
-        self._config["keep_prev"] = keep_prev
-        self.refresh_image_MODE()
-
     def openFile(self, _value=False):
 
         self.actions.export.setEnabled(False)
@@ -3334,16 +3155,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 item.setCheckState(Qt.Unchecked)
             self.fileListWidget.addItem(item)
 
-        if len(self.imageList) > 1:
-            self.actions.openNextImg.setEnabled(True)
-            self.actions.openPrevImg.setEnabled(True)
-
-        self.openNextImg()
-
     def importDirImages(self, dirpath, pattern=None, load=True):
 
-        self.actions.openNextImg.setEnabled(True)
-        self.actions.openPrevImg.setEnabled(True)
         self.actions.export.setEnabled(True)
 
         if not self.mayContinue() or not dirpath:
@@ -3369,7 +3182,6 @@ class MainWindow(QtWidgets.QMainWindow):
             else:
                 item.setCheckState(Qt.Unchecked)
             self.fileListWidget.addItem(item)
-        self.openNextImg(load=load)
         self.fileListWidget.horizontalScrollBar().setValue(
             self.fileListWidget.horizontalScrollBar().maximum()
         )
@@ -3573,7 +3385,7 @@ class MainWindow(QtWidgets.QMainWindow):
         #         7  scale,
         #         8  copyShapes,
         #         9  pasteShapes,
-        #         10  copy,
+        #         10 copy,
         #         11 delete,
         #         12 undo,
         #         13 undoLastPoint,
@@ -3583,8 +3395,8 @@ class MainWindow(QtWidgets.QMainWindow):
         #         17 ignore_changes
 
         mode = self.current_annotation_mode
-        video_menu_list = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9,     11,         14,    16, 17]
-        image_menu_list = [0, 1, 2, 3,                   10, 11, 12, 13, 14]
+        video_menu_list = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9,     11,         14, 15, 16, 17]
+        image_menu_list = [0, 1, 2, 3,                   10, 11, 12, 13, 14, 15]
 
         if self.current_annotation_mode == "video":
             self.canvas.menus[0].clear()
@@ -5279,3 +5091,74 @@ class MainWindow(QtWidgets.QMainWindow):
         json_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}_tracking_results.json'
         mathOps.load_objects_to_json__orjson(json_file_name, listObj)
 
+############################# important parameters across the gui ############################################
+# INDEX_OF_CURRENT_FRAME
+# self.FRAMES_TO_SKIP
+# frames to track
+# self.TOTAL_VIDEO_FRAMES
+# self.CURRENT_VIDEO_FPS   --> to be used to play the video at the correct speed
+# self.CAP
+# self.CLASS_NAMES_DICT
+# self.CURRENT_FRAME_IMAGE
+# self.CURRENT_VIDEO_NAME
+# self.CURRENT_VIDEO_PATH
+# self.CURRENT_SHAPES_IN_IMG
+
+# self.CURRENT_ANNOATAION_FLAGS = {"traj" : False  ,
+#                                 "bbox" : False  ,
+#                                   "id" : False ,
+#                                   "class" : True,
+#                                   "mask" : True}
+# to do
+# remove the video processing tool bar in the other cases
+##############################################################################################################
+
+
+
+########################################## FIXME #############################################################
+# before line 63
+# - [medium] Set max zoom value to something big enough for FitWidth/Window
+# TODO(unknown):
+# - [high] Add polygon movement with arrow keys
+# - [high] Deselect shape when clicking and already selected(?)
+# - [low,maybe] Preview images on file dialogs.
+# - Zoom is too "steppy".
+##############################################################################################################
+
+
+
+######################################## Tracking Thread #####################################################
+# class TrackingThread(QThread):
+#     def __init__(self, parent=None):
+#         super(TrackingThread, self).__init__(parent)
+#         self.parent = parent
+
+#     def run(self):
+#         self.parent.track_buttonClicked()
+
+
+# def track_buttonClicked_wrapper(self):
+#     # ...
+
+#     # Disable the track button
+#     # self.actions.track.setEnabled(False)
+
+#     # Create a thread to run the tracking process
+#     self.thread = TrackingThread(parent=self)
+#     self.thread.start()
+##############################################################################################################
+
+
+
+####################################### trackButtonClicked ###################################################
+# import psutil
+# if self.INDEX_OF_CURRENT_FRAME % 10 == 0:
+#     print(
+#         f"Total Memory: {psutil.virtual_memory().total / 1024 ** 3} GB | Free Memory: {psutil.virtual_memory().free / 1024 ** 3} GB | Percent Used: {psutil.virtual_memory().percent} %")
+##############################################################################################################
+
+
+
+########################################## remove unnecessery use ############################################
+# update_current_frame_annotation(self)
+##############################################################################################################
