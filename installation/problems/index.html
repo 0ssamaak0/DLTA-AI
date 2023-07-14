@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <meta name="turbo-cache-control" content="no-cache" data-turbo-track="reload" data-track-token="3.0.3.742483245918">
+    <meta name="turbo-cache-control" content="no-cache" data-turbo-track="reload" data-track-token="3.0.3.742647451230">
 
     <!-- See retype.com -->
     <meta name="generator" content="Retype 3.0.3">
@@ -31,11 +31,11 @@
     <script>(function () { var el = document.documentElement, m = localStorage.getItem("doc_theme"), wm = window.matchMedia; if (m === "dark" || (!m && wm && wm("(prefers-color-scheme: dark)").matches)) { el.classList.add("dark") } else { el.classList.remove("dark") } })();</script>
 
     <link href="../../assets/icon.png" rel="icon" />
-    <link href="../../resources/css/retype.css?v=3.0.3.742483245918" rel="stylesheet" />
+    <link href="../../resources/css/retype.css?v=3.0.3.742647451230" rel="stylesheet" />
 
-    <script type="text/javascript" src="../../resources/js/config.js?v=3.0.3.742483245918" data-turbo-eval="false" defer></script>
+    <script type="text/javascript" src="../../resources/js/config.js?v=3.0.3.742647451230" data-turbo-eval="false" defer></script>
     <script type="text/javascript" src="../../resources/js/retype.js?v=3.0.3" data-turbo-eval="false" defer></script>
-    <script id="lunr-js" type="text/javascript" src="../../resources/js/lunr.js?v=3.0.3.742483245918" data-turbo-eval="false" defer></script>
+    <script id="lunr-js" type="text/javascript" src="../../resources/js/lunr.js?v=3.0.3.742647451230" data-turbo-eval="false" defer></script>
 </head>
 <body>
     <div id="docs-app" class="relative text-base antialiased text-gray-700 bg-white font-body dark:bg-dark-850 dark:text-dark-300">
@@ -251,10 +251,10 @@
         <span>Solutions to possible problems</span>
     </h1>
 </doc-anchor-target>
-<doc-anchor-target id="1-linux-devices">
+<doc-anchor-target id="qt-platform-plugin-error-in-opencv-on-linux-machines">
     <h2>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#1-linux-devices">#</doc-anchor-trigger>
-        <span>1. (linux devices <span class="docs-emoji">&#x1F427;</span>)</span>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#qt-platform-plugin-error-in-opencv-on-linux-machines">#</doc-anchor-trigger>
+        <span>Qt Platform Plugin Error in OpenCV on Linux Machines <span class="docs-emoji">&#x1F427;</span></span>
     </h2>
 </doc-anchor-target>
 <p>some linux machines may have this problem</p>
@@ -268,10 +268,10 @@ Available platform plugins are: xcb, eglfs, linuxfb, minimal, minimalegl, offscr
 <div class="codeblock-wrapper"><doc-codeblock>
 <pre class="language-none"><code v-pre class="language-none">pip3 install opencv-python-headless</code></pre>
 </doc-codeblock></div>
-<doc-anchor-target id="2-windows-devices-">
+<doc-anchor-target id="microsoft-visual-c-build-tools-error-when-installing-mmdetection-on-windows-machines-">
     <h2>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#2-windows-devices-">#</doc-anchor-trigger>
-        <span>2. (windows devices 🪟)</span>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#microsoft-visual-c-build-tools-error-when-installing-mmdetection-on-windows-machines-">#</doc-anchor-trigger>
+        <span>Microsoft Visual C++ Build Tools Error When Installing MMDetection on Windows Machines 🪟</span>
     </h2>
 </doc-anchor-target>
 <p>some windows machines may have this problem when installing <strong>mmdet</strong></p>
@@ -285,10 +285,10 @@ error: Microsoft Visual C++ 14.0 or greater is required. Get it with &quot;Micro
 <pre class="language-none"><code v-pre class="language-none">conda install -c conda-forge pycocotools</code></pre>
 </doc-codeblock></div>
 <p>or just use Visual Studio installer to Install <code v-pre>MSVC v143 - VS 2022 C++ x64/x86 build tools (Latest)**</code></p>
-<doc-anchor-target id="3-problem-in-installing-mmcv-full">
+<doc-anchor-target id="problem-in-installing-mmcv-full">
     <h2>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#3-problem-in-installing-mmcv-full">#</doc-anchor-trigger>
-        <span>3. Problem in installing mmcv-full</span>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#problem-in-installing-mmcv-full">#</doc-anchor-trigger>
+        <span>Problem in installing mmcv-full</span>
     </h2>
 </doc-anchor-target>
 <p>you may often stuck in installing <code v-pre>mmcv-full</code> with this message</p>
@@ -296,7 +296,24 @@ error: Microsoft Visual C++ 14.0 or greater is required. Get it with &quot;Micro
 <pre class="language-none"><code v-pre class="language-none">Building wheels for collected packages: mmcv-full
   Building wheel for mmcv-full (setup.py) ...</code></pre>
 </doc-codeblock></div>
-<p>you can try installing <a href="https://pytorch.org/get-started/previous-versions/#v1131">pytorch 1.13.1</a>, instead of the lastest version, you can also refer to <a href="https://github.com/open-mmlab/mmcv/issues/1386">this isse</a></p>
+<p>you can try installing <a href="https://pytorch.org/get-started/previous-versions/#v1131">pytorch 1.13.1</a>, instead of the lastest version, you can also refer to <a href="https://github.com/open-mmlab/mmcv/issues/1386">this issue</a></p>
+<doc-anchor-target id="multiple-copies-of-the-openmp-runtime-have-been-linked-into-the-program">
+    <h2>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#multiple-copies-of-the-openmp-runtime-have-been-linked-into-the-program">#</doc-anchor-trigger>
+        <span>Multiple copies of the OpenMP runtime have been linked into the program</span>
+    </h2>
+</doc-anchor-target>
+<p>you may encounter this problem</p>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre class="language-none"><code v-pre class="language-none">OMP: Error #15: Initializing libiomp5md.dll, but found libiomp5md.dll already initialized.
+
+OMP: Hint This means that multiple copies of the OpenMP runtime have been linked into the program. That is dangerous, since it can degrade performance or cause incorrect results. The best thing to do is to ensure that only a single OpenMP runtime is linked into the process, e.g. by avoiding static linking of the OpenMP runtime in any library. As an unsafe, unsupported, undocumented workaround you can set the environment variable KMP_DUPLICATE_LIB_OK=TRUE to allow the program to continue to execute, but that may cause crashes or silently produce incorrect results. For more information, please see http://www.intel.com/software/products/support/.</code></pre>
+</doc-codeblock></div>
+<p>you can solve this by upgrading numpy</p>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre class="language-none"><code v-pre class="language-none">pip install numpy==1.23.3</code></pre>
+</doc-codeblock></div>
+<p>Thanks for <a href="https://github.com/0ssamaak0/DLTA-AI/issues/52">mohamedraafat96&#x27;s issue</a>, you can check this <a href="https://stackoverflow.com/questions/64209238/error-15-initializing-libiomp5md-dll-but-found-libiomp5md-dll-already-initial">stackoverflow answer</a> for more details</p>
 
                                 
                                 <!-- Required only on API pages -->
