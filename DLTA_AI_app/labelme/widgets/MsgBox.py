@@ -1,4 +1,4 @@
-from qtpy import QtWidgets
+from PyQt6 import QtWidgets
 
 
 def OKmsgBox(title, text, type = "info", turnResult = False):

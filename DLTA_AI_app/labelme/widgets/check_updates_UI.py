@@ -1,10 +1,10 @@
 from labelme.widgets.links import open_release
 from bs4 import BeautifulSoup
 import requests
-from PyQt5.QtWidgets import QMessageBox, QLabel
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QFont
-from PyQt5 import QtWidgets
+from PyQt6.QtWidgets import QMessageBox, QLabel
+from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QFont
+from PyQt6 import QtWidgets
 import time
     
     

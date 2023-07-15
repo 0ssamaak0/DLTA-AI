@@ -1,5 +1,5 @@
-from PyQt5 import QtWidgets, QtCore, QtGui
-from PyQt5.QtWidgets import QDialog, QToolBar, QTableWidget, QTableWidgetItem, QVBoxLayout, QHBoxLayout, QComboBox, QCheckBox, QPushButton, QProgressDialog, QApplication, QWidget
+from PyQt6 import QtWidgets, QtCore, QtGui
+from PyQt6.QtWidgets import QDialog, QToolBar, QTableWidget, QTableWidgetItem, QVBoxLayout, QHBoxLayout, QComboBox, QCheckBox, QPushButton, QProgressDialog, QApplication, QWidget
 import json
 import urllib.request
 import requests

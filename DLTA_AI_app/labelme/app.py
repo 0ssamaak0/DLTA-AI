@@ -14,11 +14,11 @@ import os.path as osp
 import numpy as np
 from pathlib import Path
 
-from qtpy import QtCore
-from qtpy.QtCore import Qt, QThread
-from qtpy import QtGui
-from qtpy import QtWidgets
-from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
+from PyQt6 import QtCore
+from PyQt6.QtCore import Qt, QThread
+from PyQt6 import QtGui
+from PyQt6 import QtWidgets
+from PyQt6.QtCore import QObject, pyqtSignal, pyqtSlot
 
 from . import __appname__
 from . import PY2
@@ -80,6 +80,7 @@ class MainWindow(QtWidgets.QMainWindow):
         output_file=None,
         output_dir=None,
     ):
+
         self.buttons_text_style_sheet = "QPushButton {font-size: 10pt; margin: 2px 5px; padding: 2px 7px;font-weight: bold; background-color: #0d69f5; color: #FFFFFF;} QPushButton:hover {background-color: #4990ED;} QPushButton:disabled {background-color: #7A7A7A;}"
 
         if output is not None:
@@ -112,7 +113,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # update models json
         mathOps.update_saved_models_json(os.getcwd())
-
 
         # add the segmentation UI controls interfance
         self.segmentation_options_UI = SegmentationOptionsUI(self)
@@ -212,6 +212,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setAcceptDrops(True)
 
 
+        print("init here")
         self.canvas = self.labelList.canvas = Canvas(
             epsilon=self._config["epsilon"],
             double_click=self._config["canvas"]["double_click"],
@@ -290,7 +291,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.interrupted = False
         self.minID = -2
         self.maxID = 0
-
+ 
         features = QtWidgets.QDockWidget.DockWidgetFeatures()
         for dock in ["flag_dock", "label_dock", "shape_dock", "file_dock", "vis_dock"]:
             if self._config[dock]["closable"]:
@@ -903,6 +904,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
 
         )
+ 
         utils.addActions(
             self.menus.file,
             (
@@ -1108,7 +1110,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.populateModeActions()
         self.right_click_menu()
-        
+
         QtWidgets.QShortcut(QtGui.QKeySequence(self._config['shortcuts']['stop']), self).activated.connect(self.Escape_clicked)
 
 

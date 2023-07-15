@@ -1,5 +1,5 @@
 import yaml
-from PyQt5 import QtWidgets, QtGui, QtCore
+from PyQt6 import QtWidgets, QtGui, QtCore
 
 
 
@@ -20,9 +20,9 @@ def PopUp():
     Libraries:
     This function requires the following libraries to be installed:
     - yaml
-    - PyQt5.QtWidgets
-    - PyQt5.QtGui
-    - PyQt5.QtCore
+    - PyQt6.QtWidgets
+    - PyQt6.QtGui
+    - PyQt6.QtCore
     """
     
 

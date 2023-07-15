@@ -1,6 +1,6 @@
-from PyQt5.QtWidgets import QDialog, QLabel, QVBoxLayout
-from PyQt5.QtGui import QFont
-from PyQt5 import QtCore
+from PyQt6.QtWidgets import QDialog, QLabel, QVBoxLayout
+from PyQt6.QtGui import QFont
+from PyQt6 import QtCore
 import psutil
 import torch
 
@@ -20,7 +20,7 @@ def PopUp():
 
     Libraries:
     This function requires the following libraries to be installed:
-    - PyQt5
+    - PyQt6
     - psutil
     - torch
     """

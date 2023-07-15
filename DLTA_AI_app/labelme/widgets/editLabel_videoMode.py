@@ -1,5 +1,5 @@
-from qtpy.QtCore import Qt
-from qtpy import QtWidgets
+from PyQt6.QtCore import Qt
+from PyQt6 import QtWidgets
 from labelme.widgets.MsgBox import OKmsgBox
 from labelme.utils.helpers.mathOps import coco_classes
 import copy

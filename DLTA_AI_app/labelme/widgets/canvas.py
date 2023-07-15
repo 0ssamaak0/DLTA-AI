@@ -1,6 +1,6 @@
-from qtpy import QtCore
-from qtpy import QtGui
-from qtpy import QtWidgets
+from PyQt6 import QtCore
+from PyQt6 import QtGui
+from PyQt6 import QtWidgets
 
 from labelme import QT5
 from labelme.shape import Shape
@@ -12,30 +12,30 @@ import copy
 # - [maybe] Find optimal epsilon value.
 
 
-CURSOR_DEFAULT = QtCore.Qt.ArrowCursor
-CURSOR_POINT = QtCore.Qt.PointingHandCursor
-CURSOR_DRAW = QtCore.Qt.CrossCursor
-CURSOR_MOVE = QtCore.Qt.ClosedHandCursor
-CURSOR_GRAB = QtCore.Qt.OpenHandCursor
+CURSOR_DEFAULT = QtCore.Qt.CursorShape.ArrowCursor
+CURSOR_POINT = QtCore.Qt.CursorShape.PointingHandCursor
+CURSOR_DRAW = QtCore.Qt.CursorShape.CrossCursor
+CURSOR_MOVE = QtCore.Qt.CursorShape.ClosedHandCursor
+CURSOR_GRAB = QtCore.Qt.CursorShape.OpenHandCursor
 
 
 class Canvas(QtWidgets.QWidget):
 
-    zoomRequest = QtCore.Signal(int, QtCore.QPoint)
-    scrollRequest = QtCore.Signal(int, int)
-    newShape = QtCore.Signal()
-    selectionChanged = QtCore.Signal(list)
-    shapeMoved = QtCore.Signal()
-    drawingPolygon = QtCore.Signal(bool)
-    edgeSelected = QtCore.Signal(bool, object)
-    vertexSelected = QtCore.Signal(bool)
+    zoomRequest = QtCore.pyqtBoundSignal(int, QtCore.QPoint)
+    scrollRequest = QtCore.pyqtBoundSignal(int, int)
+    newShape = QtCore.pyqtBoundSignal()
+    selectionChanged = QtCore.pyqtBoundSignal(list)
+    shapeMoved = QtCore.pyqtBoundSignal()
+    drawingPolygon = QtCore.pyqtBoundSignal(bool)
+    edgeSelected = QtCore.pyqtBoundSignal(bool, object)
+    vertexSelected = QtCore.pyqtBoundSignal(bool)
     
     # SAM signals
-    pointAdded = QtCore.Signal()
-    samFinish = QtCore.Signal()
+    pointAdded = QtCore.pyqtBoundSignal()
+    samFinish = QtCore.pyqtBoundSignal()
     
     # refresh visualization
-    APPrefresh = QtCore.Signal(bool)
+    APPrefresh = QtCore.pyqtBoundSignal(bool)
 
     CREATE, EDIT = 0, 1
     CREATE, EDIT = 0, 1

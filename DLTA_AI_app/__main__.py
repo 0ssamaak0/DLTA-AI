@@ -4,7 +4,7 @@ import sys
 sys.path.append(os.path.dirname(os.path.realpath(__file__)))
 os.chdir(os.path.dirname(os.path.realpath(__file__)))
 
-from qtpy import QtCore, QtGui, QtWidgets
+from PyQt6 import QtGui, QtWidgets
 
 from labelme import __appname__
 from labelme import __version__
@@ -20,9 +20,9 @@ def main():
     app.setWindowIcon(newIcon("icon"))
 
     # create and show splash screen
-    splash_pix = QtGui.QPixmap('labelme/icons/splash_screen.png')
-    splash = QtWidgets.QSplashScreen(splash_pix)
-    splash.show()
+    # splash_pix = QtGui.QPixmap('labelme/icons/splash_screen.png')
+    # splash = QtWidgets.QSplashScreen(splash_pix)
+    # splash.show()
 
     qss = """
     QMenuBar::item {
@@ -55,18 +55,18 @@ def main():
             config = yaml.load(f, Loader=yaml.FullLoader)
         qdarktheme.setup_theme(theme = config["theme"], default_theme = "dark",  additional_qss=qss)
     except Exception as e:
-        pass
+        print(f"ERROR {e}")
 
     # create main window
     from labelme.app import MainWindow
     win = MainWindow()
-    splash.finish(win)
+    # splash.finish(win)
     win.show()
 
     # close splash screen
 
     win.raise_()
-    sys.exit(app.exec_())
+    sys.exit(app.exec())
 
 
 # this main block is required to generate executable by pyinstaller

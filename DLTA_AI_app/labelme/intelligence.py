@@ -10,10 +10,10 @@ except ModuleNotFoundError:
     from inferencing import models_inference
 from labelme.label_file import LabelFile
 from labelme import PY2
-from qtpy.QtCore import QThread
-from qtpy.QtCore import Signal as pyqtSignal
-from qtpy import QtGui
-from qtpy import QtWidgets
+from PyQt6.QtCore import QThread
+from PyQt6.QtCore import pyqtBoundSignal as pyqtSignal
+from PyQt6 import QtGui
+from PyQt6 import QtWidgets
 import os
 import os.path as osp
 import warnings

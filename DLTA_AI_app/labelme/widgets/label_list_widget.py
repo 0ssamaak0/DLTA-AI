@@ -1,9 +1,9 @@
-from qtpy import QtCore
-from qtpy.QtCore import Qt
-from qtpy import QtGui
-from qtpy.QtGui import QPalette
-from qtpy import QtWidgets
-from qtpy.QtWidgets import QStyle
+from PyQt6 import QtCore
+from PyQt6.QtCore import Qt
+from PyQt6 import QtGui
+from PyQt6.QtGui import QPalette
+from PyQt6 import QtWidgets
+from PyQt6.QtWidgets import QStyle
 
 
 # https://stackoverflow.com/a/2039745/4158863
@@ -74,18 +74,18 @@ class LabelListWidgetItem(QtGui.QStandardItem):
         self.setShape(shape)
 
         self.setCheckable(True)
-        self.setCheckState(Qt.Checked)
+        self.setCheckState(Qt.CheckState.Checked)
         self.setEditable(False)
-        self.setTextAlignment(Qt.AlignBottom)
+        self.setTextAlignment(Qt.AlignmentFlag.AlignBottom)
 
     def clone(self):
         return LabelListWidgetItem(self.text(), self.shape())
 
     def setShape(self, shape):
-        self.setData(shape, Qt.UserRole)
+        self.setData(shape, Qt.ItemDataRole.UserRole)
 
     def shape(self):
-        return self.data(Qt.UserRole)
+        return self.data(Qt.ItemDataRole.UserRole)
 
     def __hash__(self):
         return id(self)
@@ -96,7 +96,7 @@ class LabelListWidgetItem(QtGui.QStandardItem):
 
 class StandardItemModel(QtGui.QStandardItemModel):
 
-    itemDropped = QtCore.Signal()
+    itemDropped = QtCore.pyqtBoundSignal()
 
     def removeRows(self, *args, **kwargs):
         ret = super().removeRows(*args, **kwargs)
@@ -106,20 +106,20 @@ class StandardItemModel(QtGui.QStandardItemModel):
 
 class LabelListWidget(QtWidgets.QListView):
 
-    itemDoubleClicked = QtCore.Signal(LabelListWidgetItem)
-    itemSelectionChanged = QtCore.Signal(list, list)
+    itemDoubleClicked = QtCore.pyqtBoundSignal(LabelListWidgetItem)
+    itemSelectionChanged = QtCore.pyqtBoundSignal(list, list)
 
     def __init__(self):
         super(LabelListWidget, self).__init__()
         self._selectedItems = []
 
-        self.setWindowFlags(Qt.Window)
+        self.setWindowFlags(Qt.WindowType.Window)
         self.setModel(StandardItemModel())
         self.model().setItemPrototype(LabelListWidgetItem())
         self.setItemDelegate(HTMLDelegate())
-        self.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
-        self.setDragDropMode(QtWidgets.QAbstractItemView.InternalMove)
-        self.setDefaultDropAction(Qt.MoveAction)
+        self.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.ExtendedSelection)
+        self.setDragDropMode(QtWidgets.QAbstractItemView.DragDropMode.InternalMove)
+        self.setDefaultDropAction(QtCore.Qt.DropAction.MoveAction)
 
         self.doubleClicked.connect(self.itemDoubleClickedEvent)
         self.selectionModel().selectionChanged.connect(

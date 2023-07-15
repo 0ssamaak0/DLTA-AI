@@ -1,6 +1,6 @@
 from labelme.widgets.links import open_issue
-from PyQt5.QtWidgets import QMessageBox
-from PyQt5.QtCore import Qt
+from PyQt6.QtWidgets import QMessageBox
+from PyQt6.QtCore import Qt
 
 
 def PopUp():

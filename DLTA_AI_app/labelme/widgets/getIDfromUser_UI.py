@@ -1,5 +1,5 @@
-from qtpy.QtCore import Qt
-from qtpy import QtWidgets
+from PyQt6.QtCore import Qt
+from PyQt6 import QtWidgets
 from .MsgBox import OKmsgBox
 from labelme.utils.helpers.mathOps import is_id_repeated
 

@@ -1,7 +1,7 @@
 
-from qtpy import QtCore
-from qtpy import QtGui
-from qtpy import QtWidgets
+from PyQt6 import QtCore
+from PyQt6 import QtGui
+from PyQt6 import QtWidgets
 
 # add ClassWidget and allow the user to select among coco classes using a combobox
 class Classeswidget(QtWidgets.QDialog):

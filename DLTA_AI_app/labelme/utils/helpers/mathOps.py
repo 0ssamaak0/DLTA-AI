@@ -1,8 +1,8 @@
 import numpy as np
 import random
 import cv2
-from qtpy import QtGui
-from qtpy import QtCore
+from PyQt6 import QtGui
+from PyQt6 import QtCore
 from labelme import PY2
 import os
 import json

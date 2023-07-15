@@ -3,9 +3,9 @@ import os.path as osp
 
 import numpy as np
 
-from qtpy import QtCore
-from qtpy import QtGui
-from qtpy import QtWidgets
+from PyQt6 import QtCore
+from PyQt6 import QtGui
+from PyQt6 import QtWidgets
 
 
 here = osp.dirname(osp.abspath(__file__))
@@ -69,7 +69,7 @@ def addActions(widget, actions):
 
 
 def labelValidator():
-    return QtGui.QRegExpValidator(QtCore.QRegExp(r"^[^ \t].+"), None)
+    return QtGui.QRegularExpressionValidator(QtCore.QRegularExpression(r"^[^ \t].+"))
 
 
 class struct(object):

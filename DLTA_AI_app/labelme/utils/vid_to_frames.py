@@ -1,10 +1,10 @@
 import os
 import sys
 import cv2
-from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QPushButton, QFileDialog, QSlider, QLineEdit, QVBoxLayout, QHBoxLayout, QDialog, QProgressBar
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QFont
-from PyQt5 import QtWidgets
+from PyQt6.QtWidgets import QApplication, QWidget, QLabel, QPushButton, QFileDialog, QSlider, QLineEdit, QVBoxLayout, QHBoxLayout, QDialog, QProgressBar
+from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QFont
+from PyQt6 import QtWidgets
 import qdarktheme
 
 

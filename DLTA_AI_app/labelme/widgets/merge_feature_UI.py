@@ -1,6 +1,6 @@
 import json
-from qtpy import QtWidgets
-from qtpy import QtCore
+from PyQt6 import QtWidgets
+from PyQt6 import QtCore
 
 
 # create an interface for merging features

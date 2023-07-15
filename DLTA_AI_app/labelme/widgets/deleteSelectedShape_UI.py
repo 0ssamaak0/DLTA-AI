@@ -1,6 +1,6 @@
-from qtpy import QtCore
-from qtpy.QtCore import Qt
-from qtpy import QtWidgets
+from PyQt6 import QtCore
+from PyQt6.QtCore import Qt
+from PyQt6 import QtWidgets
 
 
 def PopUp(TOTAL_VIDEO_FRAMES, INDEX_OF_CURRENT_FRAME, config):
