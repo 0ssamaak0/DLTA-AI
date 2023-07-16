@@ -16,13 +16,13 @@ class UniqueLabelQListWidget(EscapableQListWidget):
         items = []
         for row in range(self.count()):
             item = self.item(row)
-            if item.data(Qt.UserRole) == label:
+            if item.data(Qt.ItemDataRole.UserRole) == label:
                 items.append(item)
         return items
 
     def createItemFromLabel(self, label):
         item = QtWidgets.QListWidgetItem()
-        item.setData(Qt.UserRole, label)
+        item.setData(Qt.ItemDataRole.UserRole, label)
         return item
 
     def setItemLabel(self, item, label, color=None):
@@ -35,7 +35,7 @@ class UniqueLabelQListWidget(EscapableQListWidget):
                     label, *color
                 )
             )
-        qlabel.setAlignment(Qt.AlignBottom)
+        qlabel.setAlignment(Qt.AlignmentFlag.AlignBottom)
 
         item.setSizeHint(qlabel.sizeHint())
 

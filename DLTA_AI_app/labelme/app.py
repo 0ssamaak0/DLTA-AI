@@ -3,7 +3,6 @@ import functools
 import json
 import math
 import re
-import webbrowser
 import copy
 import imgviz
 import torch
@@ -63,7 +62,6 @@ ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 reid_weights = Path('osnet_x1_0_msmt17.pt')
 LABEL_COLORMAP = imgviz.label_colormap(value=200)
-
 
 
 class MainWindow(QtWidgets.QMainWindow):
@@ -157,6 +155,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.flag_dock.setWidget(self.flag_widget)
         self.flag_widget.itemChanged.connect(self.setDirty)
 
+
         self.labelList.itemSelectionChanged.connect(self.labelSelectionChanged)
         self.labelList.itemDoubleClicked.connect(self.editLabel)
         self.labelList.itemChanged.connect(self.labelItemChanged)
@@ -207,12 +206,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.vis_dock.setObjectName(u"Visualization Options")
         self.vis_widget = QtWidgets.QWidget()
         self.vis_dock.setWidget(self.vis_widget)
-
         self.zoomWidget = ZoomWidget()
         self.setAcceptDrops(True)
 
 
-        print("init here")
+
         self.canvas = self.labelList.canvas = Canvas(
             epsilon=self._config["epsilon"],
             double_click=self._config["canvas"]["double_click"],
@@ -224,8 +222,8 @@ class MainWindow(QtWidgets.QMainWindow):
         scrollArea.setWidget(self.canvas)
         scrollArea.setWidgetResizable(True)
         self.scrollBars = {
-            Qt.Vertical: scrollArea.verticalScrollBar(),
-            Qt.Horizontal: scrollArea.horizontalScrollBar(),
+            Qt.Orientation.Vertical: scrollArea.verticalScrollBar(),
+            Qt.Orientation.Horizontal: scrollArea.horizontalScrollBar(),
         }
         self.canvas.scrollRequest.connect(self.scrollRequest)
 
@@ -292,23 +290,21 @@ class MainWindow(QtWidgets.QMainWindow):
         self.minID = -2
         self.maxID = 0
  
-        features = QtWidgets.QDockWidget.DockWidgetFeatures()
         for dock in ["flag_dock", "label_dock", "shape_dock", "file_dock", "vis_dock"]:
             if self._config[dock]["closable"]:
-                features = features | QtWidgets.QDockWidget.DockWidgetClosable
+                getattr(self, dock).setFeatures(QtWidgets.QDockWidget.DockWidgetFeature.DockWidgetClosable)
             if self._config[dock]["floatable"]:
-                features = features | QtWidgets.QDockWidget.DockWidgetFloatable
+                getattr(self, dock).setFeatures(QtWidgets.QDockWidget.DockWidgetFeature.DockWidgetFloatable)
             if self._config[dock]["movable"]:
-                features = features | QtWidgets.QDockWidget.DockWidgetMovable
-            getattr(self, dock).setFeatures(features)
+                getattr(self, dock).setFeatures(QtWidgets.QDockWidget.DockWidgetFeature.DockWidgetMovable)
             if self._config[dock]["show"] is False:
                 getattr(self, dock).setVisible(False)
 
-        self.addDockWidget(Qt.RightDockWidgetArea, self.flag_dock)
-        self.addDockWidget(Qt.RightDockWidgetArea, self.label_dock)
-        self.addDockWidget(Qt.RightDockWidgetArea, self.shape_dock)
-        self.addDockWidget(Qt.RightDockWidgetArea, self.file_dock)
-        self.addDockWidget(Qt.RightDockWidgetArea, self.vis_dock)
+        self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.flag_dock)
+        self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.label_dock)
+        self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.shape_dock)
+        self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.file_dock)
+        self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.vis_dock)
 
         # Actions
         action = functools.partial(utils.newAction, self)
@@ -575,7 +571,7 @@ class MainWindow(QtWidgets.QMainWindow):
             fitWidth,
         )
         self.zoomMode = self.FIT_WINDOW
-        fitWindow.setChecked(Qt.Checked)
+        fitWindow.setChecked(True)
         self.scalers = {
             self.FIT_WINDOW: self.scaleFitWindow,
             self.FIT_WIDTH: self.scaleFitWidth,
@@ -800,7 +796,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # Lavel list context menu.
         labelmenu = QtWidgets.QMenu()
         utils.addActions(labelmenu, (edit, delete))
-        self.labelList.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.labelList.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.labelList.customContextMenuRequested.connect(
             self.popLabelListMenu
         )
@@ -1069,8 +1065,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.zoom_values = {}  # key=filename, value=(zoom_mode, zoom_value)
         self.brightnessContrast_values = {}
         self.scroll_values = {
-            Qt.Horizontal: {},
-            Qt.Vertical: {},
+            Qt.Orientation.Horizontal: {},
+            Qt.Orientation.Vertical: {},
         }  # key=filename, value=scroll_value
 
         if filename is not None and osp.isdir(filename):
@@ -1111,7 +1107,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.populateModeActions()
         self.right_click_menu()
 
-        QtWidgets.QShortcut(QtGui.QKeySequence(self._config['shortcuts']['stop']), self).activated.connect(self.Escape_clicked)
+        QtGui.QShortcut(QtGui.QKeySequence(self._config['shortcuts']['stop']), self).activated.connect(self.Escape_clicked)
 
 
     def menu(self, title, actions=None):
@@ -1123,11 +1119,11 @@ class MainWindow(QtWidgets.QMainWindow):
     def toolbar(self, title, actions=None):
         toolbar = ToolBar(title)
         toolbar.setObjectName("%sToolBar" % title)
-        # toolbar.setOrientation(Qt.Vertical)
-        toolbar.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
+        # toolbar.setOrientation(Qt.Orientation.Vertical)
+        toolbar.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextUnderIcon)
         if actions:
             utils.addActions(toolbar, actions)
-        self.addToolBar(Qt.LeftToolBarArea, toolbar)
+        self.addToolBar(Qt.ToolBarArea.LeftToolBarArea, toolbar)
         return toolbar
 
     # Support Functions
@@ -1289,7 +1285,7 @@ class MainWindow(QtWidgets.QMainWindow):
         files = [f for f in self.recentFiles if f != current and exists(f)]
         for i, f in enumerate(files):
             icon = utils.newIcon("brain")
-            action = QtWidgets.QAction(
+            action = QtGui.QAction(
                 icon, "&%d %s" % (i + 1, QtCore.QFileInfo(f).fileName()), self
             )
             action.triggered.connect(functools.partial(self.loadRecent, f))
@@ -1308,7 +1304,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 if i >= 6:
                     break
                 icon = utils.newIcon("brain")
-                action = QtWidgets.QAction(
+                action = QtGui.QAction(
                     icon, "&%d %s" % (i + 1, model_name), self)
                 action.triggered.connect(functools.partial(
                     self.change_curr_model, model_name))
@@ -1322,34 +1318,34 @@ class MainWindow(QtWidgets.QMainWindow):
         menu2.clear()
 
         icon = utils.newIcon("tracking")
-        action = QtWidgets.QAction(
+        action = QtGui.QAction(
             icon, "1 Byte track (DEFAULT)", self)
         action.triggered.connect(
             lambda: self.update_tracking_method('bytetrack'))
         menu2.addAction(action)
 
         icon = utils.newIcon("tracking")
-        action = QtWidgets.QAction(
+        action = QtGui.QAction(
             icon, "2 Strong SORT  (lowest id switch)", self)
         action.triggered.connect(
             lambda: self.update_tracking_method('strongsort'))
         menu2.addAction(action)
 
         icon = utils.newIcon("tracking")
-        action = QtWidgets.QAction(
+        action = QtGui.QAction(
             icon, "3 Deep SORT", self)
         action.triggered.connect(
             lambda: self.update_tracking_method('deepocsort'))
         menu2.addAction(action)
 
         icon = utils.newIcon("tracking")
-        action = QtWidgets.QAction(
+        action = QtGui.QAction(
             icon, "4 OC SORT", self)
         action.triggered.connect(lambda: self.update_tracking_method('ocsort'))
         menu2.addAction(action)
 
         icon = utils.newIcon("tracking")
-        action = QtWidgets.QAction(
+        action = QtGui.QAction(
             icon, "5 BoT SORT", self)
         action.triggered.connect(
             lambda: self.update_tracking_method('botsort'))
@@ -1360,14 +1356,14 @@ class MainWindow(QtWidgets.QMainWindow):
         menu3.clear()
 
         icon = utils.newIcon("polygon")
-        action = QtWidgets.QAction(
+        action = QtGui.QAction(
             icon, "Select Certain Area", self)
         action.triggered.connect(
             lambda: self.certain_area_clicked(1))
         menu3.addAction(action)
 
         icon = utils.newIcon("rectangle")
-        action = QtWidgets.QAction(
+        action = QtGui.QAction(
             icon, "Cancel Area", self)
         action.triggered.connect(
             lambda: self.certain_area_clicked(0))
@@ -1393,7 +1389,7 @@ class MainWindow(QtWidgets.QMainWindow):
         print(f'Changed tracking method to {method}')
 
     def popLabelListMenu(self, point):
-        self.menus.labelList.exec_(self.labelList.mapToGlobal(point))
+        self.menus.labelList.exec(self.labelList.mapToGlobal(point))
 
     def validateLabel(self, label):
         # no validation
@@ -1401,7 +1397,7 @@ class MainWindow(QtWidgets.QMainWindow):
             return True
 
         for i in range(self.uniqLabelList.count()):
-            label_i = self.uniqLabelList.item(i).data(Qt.UserRole)
+            label_i = self.uniqLabelList.item(i).data(Qt.ItemDataRole.UserRole)
             if self._config["validate_label"] in ["exact"]:
                 if label_i == label:
                     return True
@@ -1461,7 +1457,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.setDirty()
             if not self.uniqLabelList.findItemsByLabel(shape.label):
                 item = QtWidgets.QListWidgetItem()
-                item.setData(Qt.UserRole, shape.label)
+                item.setData(Qt.ItemDataRole.UserRole, shape.label)
                 self.uniqLabelList.addItem(item)
             self.refresh_image_MODE()
             return
@@ -1480,7 +1476,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.id_frames_rec,
                 self.INDEX_OF_CURRENT_FRAME)
 
-            if duplicates or result != QtWidgets.QDialog.Accepted:
+            if duplicates or result != QtWidgets.QDialog.DialogCode.Accepted:
                 shape.label = old_text
                 shape.flags = old_flags
                 shape.content = old_content
@@ -1521,7 +1517,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 else:
                     res = MsgBox.OKmsgBox(
                         "Caution", f"Frame {self.INDEX_OF_CURRENT_FRAME} is already a key frame for ID {id}.\nDo you want to remove it?", "warning", turnResult=True)
-                    if res == QtWidgets.QMessageBox.Ok:
+                    if res == QtWidgets.QMessageBox.StandardButton.Ok:
                         self.key_frames['id_' +
                                         str(id)].remove(self.INDEX_OF_CURRENT_FRAME)
                     else:
@@ -1590,7 +1586,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 id = self.canvas.selectedShapes[0].group_id
 
             result, self.featuresOptions = interpolation_UI.PopUp(self.featuresOptions)
-            if result != QtWidgets.QDialog.Accepted:
+            if result != QtWidgets.QDialog.DialogCode.Accepted:
                 return
 
             with_linear = True if self.featuresOptions['interpolationDefMethod'] == 'linear' else False
@@ -1608,7 +1604,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     else:
                         resutl = MsgBox.OKmsgBox("Key Frames Error",
                                                  f"Some of the selected IDs have no KEY frames.\n    ie. less than 2 key frames\n The interpolation is performed only for the IDs with KEY frames.\nIDs: {ids}.", "info", turnResult=True)
-                        if resutl != QtWidgets.QMessageBox.Ok:
+                        if resutl != QtWidgets.QMessageBox.StandardButton.Ok:
                             return
             else:
                 ids = idsORG
@@ -1870,7 +1866,7 @@ class MainWindow(QtWidgets.QMainWindow):
             return
 
         result = scaleObject_UI.PopUp(self)
-        if result == QtWidgets.QDialog.Accepted:
+        if result == QtWidgets.QDialog.DialogCode.Accepted:
             self.update_current_frame_annotation_button_clicked()
             return
         else:
@@ -2067,7 +2063,7 @@ class MainWindow(QtWidgets.QMainWindow):
         for key, flag in flags.items():
             item = QtWidgets.QListWidgetItem(key)
             item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
-            item.setCheckState(Qt.Checked if flag else Qt.Unchecked)
+            item.setCheckState(Qt.CheckState.Checked if flag else Qt.CheckState.Unchecked)
             self.flag_widget.addItem(item)
 
     def saveLabels(self, filename):
@@ -2094,7 +2090,7 @@ class MainWindow(QtWidgets.QMainWindow):
         for i in range(self.flag_widget.count()):
             item = self.flag_widget.item(i)
             key = item.text()
-            flag = item.checkState() == Qt.Checked
+            flag = item.checkState() == Qt.CheckState.Checked
             flags[key] = flag
         try:
             imagePath = osp.relpath(self.imagePath, osp.dirname(filename))
@@ -2113,12 +2109,12 @@ class MainWindow(QtWidgets.QMainWindow):
             )
             self.labelFile = lf
             items = self.fileListWidget.findItems(
-                self.imagePath, Qt.MatchExactly
+                self.imagePath, Qt.MatchFlag.MatchExactly
             )
             if len(items) > 0:
                 if len(items) != 1:
                     raise RuntimeError("There are duplicate files.")
-                items[0].setCheckState(Qt.Checked)
+                items[0].setCheckState(Qt.CheckState.Checked)
             # disable allows next and previous image to proceed
             return True
         except LabelFileError as e:
@@ -2148,7 +2144,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def labelItemChanged(self, item):
         shape = item.shape()
-        self.canvas.setShapeVisible(shape, item.checkState() == Qt.Checked)
+        self.canvas.setShapeVisible(shape, item.checkState() == Qt.CheckState.Checked)
 
     def labelOrderChanged(self):
         self.setDirty()
@@ -2163,7 +2159,7 @@ class MainWindow(QtWidgets.QMainWindow):
         items = self.uniqLabelList.selectedItems()
         text = None
         if items:
-            text = items[0].data(Qt.UserRole)
+            text = items[0].data(Qt.ItemDataRole.UserRole)
         flags = {}
         group_id = None
         if self._config["display_label_popup"] or not text:
@@ -2267,12 +2263,12 @@ class MainWindow(QtWidgets.QMainWindow):
             y_shift = round(pos.y() * canvas_scale_factor) - pos.y()
 
             self.setScroll(
-                Qt.Horizontal,
-                self.scrollBars[Qt.Horizontal].value() + x_shift,
+                Qt.Orientation.Horizontal,
+                self.scrollBars[Qt.Orientation.Horizontal].value() + x_shift,
             )
             self.setScroll(
-                Qt.Vertical,
-                self.scrollBars[Qt.Vertical].value() + y_shift,
+                Qt.Orientation.Vertical,
+                self.scrollBars[Qt.Orientation.Vertical].value() + y_shift,
             )
 
     def setFitWindow(self, value=True):
@@ -2310,7 +2306,7 @@ class MainWindow(QtWidgets.QMainWindow):
             dialog.slider_brightness.setValue(brightness)
         if contrast is not None:
             dialog.slider_contrast.setValue(contrast)
-        dialog.exec_()
+        dialog.exec()
 
         brightness = dialog.slider_brightness.value()
         contrast = dialog.slider_contrast.value()
@@ -2318,7 +2314,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def togglePolygons(self, value):
         for item in self.labelList:
-            item.setCheckState(Qt.Checked if value else Qt.Unchecked)
+            item.setCheckState(Qt.CheckState.Checked if value else Qt.CheckState.Unchecked)
 
     def loadFile(self, filename=None):
         """Load the specified file, or the last opened file if None."""
@@ -2336,6 +2332,7 @@ class MainWindow(QtWidgets.QMainWindow):
             filename = self.settings.value("filename", "")
         filename = str(filename)
         if not QtCore.QFile.exists(filename):
+            print(f"File {filename} does not exist")
             self.errorMessage(
                 self.tr("Error opening file"),
                 self.tr("No such file: <b>%s</b>") % filename,
@@ -2573,7 +2570,7 @@ class MainWindow(QtWidgets.QMainWindow):
             model_explorer_dialog.table.width() * 1.5)
         model_explorer_dialog.setMinimumHeight(
             model_explorer_dialog.table.rowHeight(0) * 10)
-        model_explorer_dialog.exec_()
+        model_explorer_dialog.exec()
         # init intelligence again if it's the first model
         if self.helper_first_time_flag:
             try:
@@ -2615,8 +2612,7 @@ class MainWindow(QtWidgets.QMainWindow):
             path,
             filters,
         )
-        if QT5:
-            filename, _ = filename
+        filename, _ = filename
         filename = str(filename)
         if filename:
             self.reset_for_new_mode("img")
@@ -2646,8 +2642,8 @@ class MainWindow(QtWidgets.QMainWindow):
             self,
             self.tr("%s - Save/Load Annotations in Directory") % __appname__,
             default_output_dir,
-            QtWidgets.QFileDialog.ShowDirsOnly
-            | QtWidgets.QFileDialog.DontResolveSymlinks,
+            QtWidgets.QFileDialog.Option.ShowDirsOnly
+            | QtWidgets.QFileDialog.Option.DontResolveSymlinks,
         )
         output_dir = str(output_dir)
 
@@ -2717,7 +2713,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     # Get user input for video export path
                     folderDialog = utils.FolderDialog(
                         "tracking_results.mp4", "mp4")
-                    if folderDialog.exec_():
+                    if folderDialog.exec():
                         pth = self.export_as_video_button_clicked(
                             folderDialog.selectedFiles()[0])
                     else:
@@ -2725,7 +2721,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 if coco_radio:
                     # Get user input for COCO export path
                     folderDialog = utils.FolderDialog("coco.json", "json")
-                    if folderDialog.exec_():
+                    if folderDialog.exec():
                         pth = utils.exportCOCOvid(
                             json_file_name, self.CURRENT_VIDEO_WIDTH, self.CURRENT_VIDEO_HEIGHT, folderDialog.selectedFiles()[0])
                     else:
@@ -2733,7 +2729,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 if mot_radio:
                     # Get user input for MOT export path
                     folderDialog = utils.FolderDialog("mot.txt", "txt")
-                    if folderDialog.exec_():
+                    if folderDialog.exec():
                         pth = utils.exportMOT(
                             json_file_name, folderDialog.selectedFiles()[0])
                     else:
@@ -2747,7 +2743,7 @@ class MainWindow(QtWidgets.QMainWindow):
                             # Get user input for custom export path
                             folderDialog = utils.FolderDialog(
                                 f"{custom_exports_list_video[i].file_name}.{custom_exports_list_video[i].format}", custom_exports_list_video[i].format)
-                            if folderDialog.exec_():
+                            if folderDialog.exec():
                                 try:
                                     pth = custom_exports_list_video[i](
                                         json_file_name, self.CURRENT_VIDEO_WIDTH, self.CURRENT_VIDEO_HEIGHT, folderDialog.selectedFiles()[0])
@@ -2767,7 +2763,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 if coco_radio:
                     # Get user input for COCO export path
                     folderDialog = utils.FolderDialog("coco.json", "json")
-                    if folderDialog.exec_():
+                    if folderDialog.exec():
                         pth = utils.exportCOCO(
                             self.target_directory, save_path, folderDialog.selectedFiles()[0])
                     else:
@@ -2781,7 +2777,7 @@ class MainWindow(QtWidgets.QMainWindow):
                             # Get user input for custom export path
                             folderDialog = utils.FolderDialog(
                                 f"{custom_exports_list_image[i].file_name}.{custom_exports_list_image[i].format}", custom_exports_list_image[i].format)
-                            if folderDialog.exec_():
+                            if folderDialog.exec():
                                 try:
                                     pth = custom_exports_list_image[i](
                                         self.target_directory, save_path, folderDialog.selectedFiles()[0])
@@ -2794,33 +2790,33 @@ class MainWindow(QtWidgets.QMainWindow):
         except Exception as e:
             # Error QMessageBox
             msg = QtWidgets.QMessageBox()
-            msg.setIcon(QtWidgets.QMessageBox.Critical)
+            msg.setIcon(QtWidgets.QMessageBox.Icon.Critical)
             msg.setText(f"Error\n {e}")
             msg.setWindowTitle(
                 "Export Error")
             # print exception and error line to terminal
             print(e)
-            msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
-            msg.exec_()
+            msg.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Ok)
+            msg.exec()
             return
         else:
             # display QMessageBox with ok button and label "Exporting COCO"
             msg = QtWidgets.QMessageBox()
             try:
                 if pth not in ["", None, False]:
-                    msg.setIcon(QtWidgets.QMessageBox.Information)
+                    msg.setIcon(QtWidgets.QMessageBox.Icon.Information)
                     msg.setText(f"Annotations exported successfully to {pth}")
                     msg.setWindowTitle("Export Success")
                 else:
-                    msg.setIcon(QtWidgets.QMessageBox.Critical)
+                    msg.setIcon(QtWidgets.QMessageBox.Icon.Critical)
                     msg.setText(f"Export Failed")
                     msg.setWindowTitle("Export Failed")
             except:
-                msg.setIcon(QtWidgets.QMessageBox.Critical)
+                msg.setIcon(QtWidgets.QMessageBox.Icon.Critical)
                 msg.setText(f"Export Failed")
                 msg.setWindowTitle("Export Failed")
-            msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
-            msg.exec_()
+            msg.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Ok)
+            msg.exec()
 
     def saveFileAs(self, _value=False):
         self.actions.export.setEnabled(True)
@@ -2840,9 +2836,9 @@ class MainWindow(QtWidgets.QMainWindow):
                 self, caption, self.currentPath(), filters
             )
         dlg.setDefaultSuffix(LabelFile.suffix[1:])
-        dlg.setAcceptMode(QtWidgets.QFileDialog.AcceptSave)
-        dlg.setOption(QtWidgets.QFileDialog.DontConfirmOverwrite, False)
-        dlg.setOption(QtWidgets.QFileDialog.DontUseNativeDialog, False)
+        dlg.setAcceptMode(QtWidgets.QFileDialog.AcceptMode.AcceptSave)
+        dlg.setOption(QtWidgets.QFileDialog.Option.DontConfirmOverwrite, False)
+        dlg.setOption(QtWidgets.QFileDialog.Option.DontUseNativeDialog, False)
         basename = osp.basename(osp.splitext(self.filename)[0])
         if self.output_dir:
             default_labelfile_name = osp.join(
@@ -2910,7 +2906,7 @@ class MainWindow(QtWidgets.QMainWindow):
             logger.info("Label file is removed: {}".format(label_file))
 
             item = self.fileListWidget.currentItem()
-            item.setCheckState(Qt.Unchecked)
+            item.setCheckState(Qt.CheckState.Unchecked)
 
             self.resetState()
 
@@ -2942,21 +2938,21 @@ class MainWindow(QtWidgets.QMainWindow):
             self,
             self.tr("Save annotations?"),
             msg,
-            mb.Save | mb.Discard | mb.Cancel,
-            mb.Save,
+            mb.StandardButton.Save | mb.StandardButton.Discard | mb.StandardButton.Cancel,
+            mb.StandardButton.Save,
         )
-        if answer == mb.Discard:
+        if answer == mb.StandardButton.Discard:
             return True
-        elif answer == mb.Save:
+        elif answer == mb.StandardButton.Save:
             self.saveFile()
             return True
         else:  # answer == mb.Cancel
             return False
 
     def errorMessage(self, title, message):
-        return QtWidgets.QMessageBox.critical(
-            self, title, "<p><b>%s</b></p>%s" % (title, message)
-        )
+        msg_box = QtWidgets.QMessageBox(QtWidgets.QMessageBox.Icon.Critical, title, message)
+        msg_box.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Ok)
+        return msg_box
 
     def currentPath(self):
         return osp.dirname(str(self.filename)) if self.filename else "."
@@ -2979,7 +2975,7 @@ class MainWindow(QtWidgets.QMainWindow):
             if len(self.canvas.selectedShapes) == 0:
                 return
 
-            yes, no = QtWidgets.QMessageBox.Yes, QtWidgets.QMessageBox.No
+            yes, no = QtWidgets.QMessageBox.StandardButton.Yes, QtWidgets.QMessageBox.StandardButton.No
             msg = self.tr(
                 "You are about to permanently delete {} polygons, "
                 "proceed anyway?"
@@ -3003,7 +2999,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     self.TOTAL_VIDEO_FRAMES,
                     self.INDEX_OF_CURRENT_FRAME,
                     self.featuresOptions)
-                if result == QtWidgets.QDialog.Accepted:
+                if result == QtWidgets.QDialog.DialogCode.Accepted:
                     for deleted_id in deleted_ids:
                         self.delete_ids_from_all_frames(
                             [deleted_id], from_frame=fromFrameVAL, to_frame=toFrameVAL)
@@ -3116,8 +3112,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 self,
                 self.tr("%s - Open Directory") % __appname__,
                 defaultOpenDirPath,
-                QtWidgets.QFileDialog.ShowDirsOnly
-                | QtWidgets.QFileDialog.DontResolveSymlinks,
+                QtWidgets.QFileDialog.Option.ShowDirsOnly
+                | QtWidgets.QFileDialog.Option.DontResolveSymlinks,
             )
         )
         self.target_directory = targetDirPath
@@ -3156,13 +3152,13 @@ class MainWindow(QtWidgets.QMainWindow):
                 label_file_without_path = osp.basename(label_file)
                 label_file = osp.join(self.output_dir, label_file_without_path)
             item = QtWidgets.QListWidgetItem(file)
-            item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable)
+            item.setFlags(Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable)
             if QtCore.QFile.exists(label_file) and LabelFile.is_label_file(
                 label_file
             ):
-                item.setCheckState(Qt.Checked)
+                item.setCheckState(Qt.CheckState.Checked)
             else:
-                item.setCheckState(Qt.Unchecked)
+                item.setCheckState(Qt.CheckState.Unchecked)
             self.fileListWidget.addItem(item)
 
     def importDirImages(self, dirpath, pattern=None, load=True):
@@ -3184,13 +3180,13 @@ class MainWindow(QtWidgets.QMainWindow):
                 label_file_without_path = osp.basename(label_file)
                 label_file = osp.join(self.output_dir, label_file_without_path)
             item = QtWidgets.QListWidgetItem(filename)
-            item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable)
+            item.setFlags(Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable)
             if QtCore.QFile.exists(label_file) and LabelFile.is_label_file(
                 label_file
             ):
-                item.setCheckState(Qt.Checked)
+                item.setCheckState(Qt.CheckState.Checked)
             else:
-                item.setCheckState(Qt.Unchecked)
+                item.setCheckState(Qt.CheckState.Unchecked)
             self.fileListWidget.addItem(item)
         self.fileListWidget.horizontalScrollBar().setValue(
             self.fileListWidget.horizontalScrollBar().maximum()
@@ -3521,7 +3517,7 @@ class MainWindow(QtWidgets.QMainWindow):
         try:
             video_frame_extractor_dialog = utils.VideoFrameExtractor(
                 self._config["mute"], notification.PopUp)
-            video_frame_extractor_dialog.exec_()
+            video_frame_extractor_dialog.exec()
 
             dir_path_name = video_frame_extractor_dialog.path_name
             if dir_path_name:
@@ -3575,7 +3571,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.CURRENT_FRAME_IMAGE = frame_array
         image = QtGui.QImage(self.imageData, self.imageData.shape[1], self.imageData.shape[0],
-                             QtGui.QImage.Format_BGR888)
+                             QtGui.QImage.Format.Format_BGR888)
         self.image = image
         if self._config["keep_prev"]:
             prev_shapes = self.canvas.shapes
@@ -3671,7 +3667,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.playPauseButton.setToolTip(
                 f'Play ({self._config["shortcuts"]["play"]})')
             self.playPauseButton.setIcon(
-                self.style().standardIcon(QtWidgets.QStyle.SP_MediaPause))
+                self.style().standardIcon(QtWidgets.QStyle.StandardPixmap.SP_MediaPause))
             # play the video at the current fps untill the user clicks pause
             self.play_timer = QtCore.QTimer(self)
             # use play_timer.timeout.connect to call a function every time the timer times out
@@ -3691,7 +3687,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.playPauseButton.setToolTip(
                 f'Pause ({self._config["shortcuts"]["play"]})')
             self.playPauseButton.setIcon(
-                self.style().standardIcon(QtWidgets.QStyle.SP_MediaPlay))
+                self.style().standardIcon(QtWidgets.QStyle.StandardPixmap.SP_MediaPlay))
         
     def move_frame_by_frame(self):
         QtWidgets.QApplication.processEvents()
@@ -4222,7 +4218,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.videoControls.setObjectName("videoControls")
         self.videoControls.setStyleSheet(
             "QToolBar#videoControls { border: 50px }")
-        self.addToolBar(Qt.BottomToolBarArea, self.videoControls)
+        self.addToolBar(Qt.ToolBarArea.BottomToolBarArea, self.videoControls)
 
         self.videoControls_2 = QtWidgets.QToolBar()
         self.videoControls_2.setMovable(True)
@@ -4230,14 +4226,14 @@ class MainWindow(QtWidgets.QMainWindow):
         self.videoControls_2.setObjectName("videoControls_2")
         self.videoControls_2.setStyleSheet(
             "QToolBar#videoControls_2 { border: 50px }")
-        self.addToolBar(Qt.TopToolBarArea, self.videoControls_2)
+        self.addToolBar(Qt.ToolBarArea.TopToolBarArea, self.videoControls_2)
 
-        self.frames_to_skip_slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
+        self.frames_to_skip_slider = QtWidgets.QSlider(QtCore.Qt.Orientation.Horizontal)
         self.frames_to_skip_slider.setMinimum(1)
         self.frames_to_skip_slider.setMaximum(100)
         self.frames_to_skip_slider.setValue(3)
         self.frames_to_skip_slider.setTickPosition(
-            QtWidgets.QSlider.TicksBelow)
+            QtWidgets.QSlider.TickPosition.TicksBelow)
         self.frames_to_skip_slider.setTickInterval(1)
         self.frames_to_skip_slider.setMaximumWidth(250)
         self.frames_to_skip_slider.valueChanged.connect(
@@ -4273,7 +4269,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.playPauseButton.setToolTip(
             f'Play ({self._config["shortcuts"]["play"]})')
         self.playPauseButton.setIcon(
-            self.style().standardIcon(QtWidgets.QStyle.SP_MediaPlay))
+            self.style().standardIcon(QtWidgets.QStyle.StandardPixmap.SP_MediaPlay))
 
         self.playPauseButton.setIconSize(QtCore.QSize(22, 22))
         self.playPauseButton.setStyleSheet("QPushButton { margin: 5px;}")
@@ -4302,12 +4298,12 @@ class MainWindow(QtWidgets.QMainWindow):
         self.videoControls.addWidget(self.next_1_Frame_button)
         self.videoControls.addWidget(self.nextFrame_button)
 
-        self.main_video_frames_slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
+        self.main_video_frames_slider = QtWidgets.QSlider(QtCore.Qt.Orientation.Horizontal)
         self.main_video_frames_slider.setMinimum(1)
         self.main_video_frames_slider.setMaximum(100)
         self.main_video_frames_slider.setValue(2)
         self.main_video_frames_slider.setTickPosition(
-            QtWidgets.QSlider.TicksBelow)
+            QtWidgets.QSlider.TickPosition.TicksBelow)
         self.main_video_frames_slider.setTickInterval(1)
         self.main_video_frames_slider.setMaximumWidth(1000)
         self.main_video_frames_slider.valueChanged.connect(
@@ -4327,12 +4323,12 @@ class MainWindow(QtWidgets.QMainWindow):
         # now we start the videocontrols_2 toolbar widgets
 
         # add the slider to control the video frame
-        self.frames_to_track_slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
+        self.frames_to_track_slider = QtWidgets.QSlider(QtCore.Qt.Orientation.Horizontal)
         self.frames_to_track_slider.setMinimum(1)
         self.frames_to_track_slider.setMaximum(100)
         self.frames_to_track_slider.setValue(4)
         self.frames_to_track_slider.setTickPosition(
-            QtWidgets.QSlider.TicksBelow)
+            QtWidgets.QSlider.TickPosition.TicksBelow)
         self.frames_to_track_slider.setTickInterval(1)
         self.frames_to_track_slider.setMaximumWidth(200)
         self.frames_to_track_slider.valueChanged.connect(
@@ -4556,7 +4552,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.sam_toolbar.setObjectName("sam_toolbar")
         self.sam_toolbar.setStyleSheet(
             "QToolBar#videoControls { border: 50px }")
-        self.addToolBar(QtCore.Qt.TopToolBarArea, self.sam_toolbar)
+        self.addToolBar(QtCore.Qt.ToolBarArea.TopToolBarArea, self.sam_toolbar)
 
         # add a label that says "sam model"
         self.sam_model_label = QtWidgets.QLabel()

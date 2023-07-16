@@ -17,7 +17,7 @@ class VideoFrameExtractor(QDialog):
         self.setMinimumSize(500, 300)
 
         self.setWindowTitle("Open Video as Frames")
-        self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
+        self.setWindowFlags(self.windowFlags() & ~Qt.WindowType.WindowContextHelpButtonHint)
 
 
         self.sampling_max = 100
@@ -47,12 +47,12 @@ class VideoFrameExtractor(QDialog):
         self.sampling_slider.valueChanged.connect(self.update_sampling_rate)
         self.sampling_edit = QLineEdit(str(self.sampling_slider.value()))
         self.sampling_edit.setFont(QFont('', 5))
-        self.sampling_edit.setAlignment(Qt.AlignCenter)
+        self.sampling_edit.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.sampling_edit.setEnabled(False)
         self.sampling_edit.textChanged.connect(self.update_sampling_slider)
         self.sampling_time_label = QLabel("hh:mm:ss")
         self.sampling_time_label.setFont(font)
-        self.sampling_time_label.setAlignment(Qt.AlignRight)
+        self.sampling_time_label.setAlignment(Qt.AlignmentFlag.AlignRight)
 
         self.start_label = QLabel("Start frame:")
         self.start_slider = QSlider()
@@ -63,12 +63,12 @@ class VideoFrameExtractor(QDialog):
         self.start_slider.valueChanged.connect(self.update_start_frame)
         self.start_edit = QLineEdit(str(self.start_slider.value()))
         self.start_edit.setFont(QFont('', 5))
-        self.start_edit.setAlignment(Qt.AlignCenter)
+        self.start_edit.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.start_edit.setEnabled(False)
         self.start_edit.textChanged.connect(self.update_start_slider)
         self.start_time_label = QLabel("hh:mm:ss")
         self.start_time_label.setFont(font)
-        self.start_time_label.setAlignment(Qt.AlignRight)
+        self.start_time_label.setAlignment(Qt.AlignmentFlag.AlignRight)
 
         self.end_label = QLabel("End frame:")
         self.end_slider = QSlider()
@@ -79,12 +79,12 @@ class VideoFrameExtractor(QDialog):
         self.end_slider.valueChanged.connect(self.update_end_frame)
         self.end_edit = QLineEdit(str(self.end_slider.value()))
         self.end_edit.setFont(QFont('', 5))
-        self.end_edit.setAlignment(Qt.AlignCenter)
+        self.end_edit.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.end_edit.setEnabled(False)
         self.end_edit.textChanged.connect(self.update_end_slider)
         self.end_time_label = QLabel("hh:mm:ss")
         self.end_time_label.setFont(font)
-        self.end_time_label.setAlignment(Qt.AlignRight)
+        self.end_time_label.setAlignment(Qt.AlignmentFlag.AlignRight)
 
         self.extract_button = QPushButton("Extract Frames")
         self.extract_button.clicked.connect(self.extract_frames)
@@ -121,8 +121,8 @@ class VideoFrameExtractor(QDialog):
 
         start_layout = QHBoxLayout()
         inner_start_layout = QVBoxLayout()
-        inner_start_layout.addWidget(self.start_label, alignment=Qt.AlignLeft)
-        inner_start_layout.addWidget(self.start_time_label, alignment=Qt.AlignLeft)
+        inner_start_layout.addWidget(self.start_label, alignment=Qt.AlignmentFlag.AlignLeft)
+        inner_start_layout.addWidget(self.start_time_label, alignment=Qt.AlignmentFlag.AlignLeft)
         start_layout.addLayout(inner_start_layout)
         inner_start_layout = QVBoxLayout()
         inner_start_layout.addWidget(self.start_edit)
@@ -380,4 +380,4 @@ class VideoFrameExtractor(QDialog):
 #     qdarktheme.setup_theme()
 #     window = VideoFrameExtractor()
 #     window.show()
-#     sys.exit(app.exec_())
+#     sys.exit(app.exec())

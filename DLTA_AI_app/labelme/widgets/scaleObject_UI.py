@@ -44,12 +44,12 @@ def PopUp(self):
     yLabel = QtWidgets.QLabel()
     yLabel.setText("Hight(y) factor is: " + "100" + "%")
 
-    xSlider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
+    xSlider = QtWidgets.QSlider(QtCore.Qt.Orientation.Horizontal)
     xSlider.setMinimum(50)
     xSlider.setMaximum(150)
     xSlider.setValue(100)
     xSlider.setTickPosition(
-        QtWidgets.QSlider.TicksBelow)
+        QtWidgets.QSlider.TickPosition.TicksBelow)
     xSlider.setTickInterval(1)
     xSlider.setMaximumWidth(750)
     xSlider.valueChanged.connect(lambda: xLabel.setText(
@@ -57,12 +57,12 @@ def PopUp(self):
     xSlider.valueChanged.connect(lambda: scaleQTshape(self,
         originalshape, center, xSlider.value(), ySlider.value()))
 
-    ySlider = QtWidgets.QSlider(QtCore.Qt.Vertical)
+    ySlider = QtWidgets.QSlider(QtCore.Qt.Orientation.Vertical)
     ySlider.setMinimum(50)
     ySlider.setMaximum(150)
     ySlider.setValue(100)
     ySlider.setTickPosition(
-        QtWidgets.QSlider.TicksBelow)
+        QtWidgets.QSlider.TickPosition.TicksBelow)
     ySlider.setTickInterval(1)
     ySlider.setMaximumWidth(750)
     ySlider.valueChanged.connect(lambda: yLabel.setText(
@@ -80,6 +80,6 @@ def PopUp(self):
     buttonBox.accepted.connect(dialog.accept)
     layout.addWidget(buttonBox)
     dialog.setLayout(layout)
-    result = dialog.exec_()
+    result = dialog.exec()
     return result    
 

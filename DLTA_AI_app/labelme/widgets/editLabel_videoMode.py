@@ -10,7 +10,7 @@ def editLabel_idChanged_UI(config, old_group_id, new_group_id, id_frames_rec, IN
     idChanged = old_group_id != new_group_id
     
     if not idChanged:
-        result = QtWidgets.QDialog.Accepted
+        result = QtWidgets.QDialog.DialogCode.Accepted
         only_this_frame = False
         duplicates = False
         return result, config, only_this_frame, duplicates
@@ -46,7 +46,7 @@ def editLabel_idChanged_UI(config, old_group_id, new_group_id, id_frames_rec, IN
     buttonBox.accepted.connect(dialog.accept)
     layout.addWidget(buttonBox)
     dialog.setLayout(layout)
-    result = dialog.exec_()
+    result = dialog.exec()
     only_this_frame = config['EditDefault'] == 'Edit only this frame'
     duplicates = check_duplicates_editLabel(id_frames_rec, old_group_id, new_group_id, only_this_frame, idChanged, INDEX_OF_CURRENT_FRAME)
     return result, config, only_this_frame, duplicates

@@ -15,7 +15,7 @@ def PopUp():
     This function takes no parameters.
 
     Returns:
-    If the user clicks the OK button, this function writes the new theme and notification settings to the config file and returns `QtWidgets.QDialog.Accepted`. If the user clicks the Cancel button, this function does not write any changes to the config file and returns `QtWidgets.QDialog.Rejected`.
+    If the user clicks the OK button, this function writes the new theme and notification settings to the config file and returns `QtWidgets.QDialog.DialogCode.Accepted`. If the user clicks the Cancel button, this function does not write any changes to the config file and returns `QtWidgets.QDialog.Rejected`.
 
     Libraries:
     This function requires the following libraries to be installed:
@@ -32,7 +32,7 @@ def PopUp():
     # Create the dialog
     dialog = QtWidgets.QDialog()
     dialog.setWindowTitle("Preferences")
-    dialog.setWindowFlags(dialog.windowFlags() & ~QtCore.Qt.WindowContextHelpButtonHint)
+    dialog.setWindowFlags(dialog.windowFlags() & ~QtCore.Qt.WindowType.WindowContextHelpButtonHint)
 
     # Create the labels
     themeLabel = QtWidgets.QLabel("Theme Settings 🌓")
@@ -116,7 +116,7 @@ def PopUp():
     cancelButton.clicked.connect(dialog.reject)
 
     # Show the dialog
-    if dialog.exec_() == QtWidgets.QDialog.Accepted:
+    if dialog.exec() == QtWidgets.QDialog.DialogCode.Accepted:
         # Write the new theme and notification settings to the config file
         if autoButton.isChecked():
             theme = "auto"

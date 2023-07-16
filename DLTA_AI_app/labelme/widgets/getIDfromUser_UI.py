@@ -54,8 +54,8 @@ def PopUp(self, group_id, text):
         layout.addWidget(properID)
         layout.addWidget(buttonBox)
         dialog.setLayout(layout)
-        result = dialog.exec_()
-        if result != QtWidgets.QDialog.Accepted:
+        result = dialog.exec()
+        if result != QtWidgets.QDialog.DialogCode.Accepted:
             text = False
             return group_id, text
 

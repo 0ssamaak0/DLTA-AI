@@ -11,7 +11,7 @@ except ModuleNotFoundError:
 from labelme.label_file import LabelFile
 from labelme import PY2
 from PyQt6.QtCore import QThread
-from PyQt6.QtCore import pyqtBoundSignal as pyqtSignal
+from PyQt6.QtCore import pyqtSignal as pyqtSignal
 from PyQt6 import QtGui
 from PyQt6 import QtWidgets
 import os

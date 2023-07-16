@@ -242,6 +242,7 @@ class LabelDialog(QtWidgets.QDialog):
         flags = {}
         for i in range(self.flagsLayout.count()):
             item = self.flagsLayout.itemAt(i).widget()
+            print(type(item))
             flags[item.text()] = item.isChecked()
         return flags
 
@@ -288,19 +289,19 @@ class LabelDialog(QtWidgets.QDialog):
             self.edit_group_id.clear()
         else:
             self.edit_group_id.setText(str(group_id))
-        items = self.labelList.findItems(text, QtCore.Qt.MatchFixedString)
+        items = self.labelList.findItems(text, QtCore.Qt.MatchFlag.MatchFixedString)
         if items:
             if len(items) != 1:
                 logger.warning("Label list has duplicate '{}'".format(text))
             self.labelList.setCurrentItem(items[0])
             row = self.labelList.row(items[0])
             self.edit.completer().setCurrentRow(row)
-        self.edit.setFocus(QtCore.Qt.PopupFocusReason)
+        self.edit.setFocus(QtCore.Qt.FocusReason.PopupFocusReason)
         if move:
             self.move(QtGui.QCursor.pos())
         if skip_flag:
             return self.edit.text(), self.getFlags(), self.getGroupId(), self.getContent()
-        if self.exec_():
+        if self.exec():
             return self.edit.text(), self.getFlags(), self.getGroupId(), self.getContent()
         else:
             return None, None, None, None

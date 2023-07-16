@@ -57,14 +57,14 @@ class SegmentationOptionsUI():
     def setConfThreshold(self, prev_threshold=0.3):
         dialog = QtWidgets.QDialog(self.parent)
         dialog.setWindowTitle('Threshold Selector')
-        dialog.setWindowFlags(dialog.windowFlags() & ~QtCore.Qt.WindowContextHelpButtonHint)
+        dialog.setWindowFlags(dialog.windowFlags() & ~QtCore.Qt.WindowType.WindowContextHelpButtonHint)
 
         layout = QtWidgets.QVBoxLayout(dialog)
 
         label = QtWidgets.QLabel('Enter Confidence Threshold')
         layout.addWidget(label)
 
-        slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
+        slider = QtWidgets.QSlider(QtCore.Qt.Orientation.Horizontal)
         slider.setMinimum(1)
         slider.setMaximum(100)
         slider.setValue(int(prev_threshold * 100))
@@ -102,7 +102,7 @@ class SegmentationOptionsUI():
         button_box.accepted.connect(on_ok)
         button_box.rejected.connect(on_cancel)
 
-        if dialog.exec_() == QtWidgets.QDialog.Accepted:
+        if dialog.exec() == QtWidgets.QDialog.DialogCode.Accepted:
             return slider.value() / 100
         else:
             return prev_threshold
@@ -111,14 +111,14 @@ class SegmentationOptionsUI():
     def setIOUThreshold(self, prev_threshold=0.5):
         dialog = QtWidgets.QDialog(self.parent)
         dialog.setWindowTitle('Threshold Selector')
-        dialog.setWindowFlags(dialog.windowFlags() & ~QtCore.Qt.WindowContextHelpButtonHint)
+        dialog.setWindowFlags(dialog.windowFlags() & ~QtCore.Qt.WindowType.WindowContextHelpButtonHint)
 
         layout = QtWidgets.QVBoxLayout(dialog)
 
         label = QtWidgets.QLabel('Enter IOU Threshold')
         layout.addWidget(label)
 
-        slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
+        slider = QtWidgets.QSlider(QtCore.Qt.Orientation.Horizontal)
         slider.setMinimum(1)
         slider.setMaximum(100)
         slider.setValue(int(prev_threshold * 100))
@@ -156,7 +156,7 @@ class SegmentationOptionsUI():
         button_box.accepted.connect(on_ok)
         button_box.rejected.connect(on_cancel)
 
-        if dialog.exec_() == QtWidgets.QDialog.Accepted:
+        if dialog.exec() == QtWidgets.QDialog.DialogCode.Accepted:
             return slider.value() / 100
         else:
             return prev_threshold
@@ -181,7 +181,7 @@ class SegmentationOptionsUI():
         dialog.setWindowModality(QtCore.Qt.ApplicationModal)
         dialog.resize(500, 500)
         dialog.setMinimumSize(QtCore.QSize(500, 500))
-        dialog.setWindowFlags(dialog.windowFlags() & ~QtCore.Qt.WindowContextHelpButtonHint)
+        dialog.setWindowFlags(dialog.windowFlags() & ~QtCore.Qt.WindowType.WindowContextHelpButtonHint)
 
         # Create a vertical layout for the dialog box
         verticalLayout = QtWidgets.QVBoxLayout(dialog)
@@ -210,7 +210,7 @@ class SegmentationOptionsUI():
 
         # Create a button box for the "Select Classes", "Set as Default", and "Cancel" buttons
         buttonBox = QtWidgets.QDialogButtonBox(dialog)
-        buttonBox.setOrientation(QtCore.Qt.Horizontal)
+        buttonBox.setOrientation(QtCore.Qt.Orientation.Horizontal)
         buttonBox.setStandardButtons(
             QtWidgets.QDialogButtonBox.Cancel | QtWidgets.QDialogButtonBox.Ok)
         buttonBox.setObjectName("buttonBox")
@@ -252,7 +252,7 @@ class SegmentationOptionsUI():
 
         # Show the dialog box and wait for the user to close it
         dialog.show()
-        dialog.exec_()
+        dialog.exec()
 
         # Save the selected classes to the self.selectedclasses dictionary and return it
         self.selectedclasses.clear()

@@ -34,7 +34,7 @@ def PopUp(config):
     dialog.setWindowTitle("Choose Interpolation Options")
     dialog.setWindowModality(Qt.ApplicationModal)
     dialog.resize(250, 100)
-    dialog.setWindowFlags(dialog.windowFlags() & ~QtCore.Qt.WindowContextHelpButtonHint)
+    dialog.setWindowFlags(dialog.windowFlags() & ~QtCore.Qt.WindowType.WindowContextHelpButtonHint)
 
     layout = QtWidgets.QVBoxLayout()
 
@@ -93,6 +93,6 @@ def PopUp(config):
     layout.addWidget(buttonBox)
 
     dialog.setLayout(layout)
-    result = dialog.exec_()
+    result = dialog.exec()
     return result, config
 

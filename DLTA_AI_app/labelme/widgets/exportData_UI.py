@@ -20,7 +20,7 @@ def PopUp(mode = "video"):
         mode (str): The mode of the export. Can be either "video" or "image". Defaults to "video".
 
     Returns:
-        A tuple containing the result of the dialog box and the selected export options. If the dialog box is accepted, the first element of the tuple is `QtWidgets.QDialog.Accepted`. Otherwise, it is `QtWidgets.QDialog.Rejected`. The second element of the tuple is a boolean indicating whether to export annotations in COCO format. If `mode` is "video", the third element of the tuple is a boolean indicating whether to export annotations in MOT format, and the fourth element is a boolean indicating whether to export the video with the current visualization settings. If there are any custom export options available, the fifth element of the tuple is a list of booleans indicating whether to export using each custom export option.
+        A tuple containing the result of the dialog box and the selected export options. If the dialog box is accepted, the first element of the tuple is `QtWidgets.QDialog.DialogCode.Accepted`. Otherwise, it is `QtWidgets.QDialog.Rejected`. The second element of the tuple is a boolean indicating whether to export annotations in COCO format. If `mode` is "video", the third element of the tuple is a boolean indicating whether to export annotations in MOT format, and the fourth element is a boolean indicating whether to export the video with the current visualization settings. If there are any custom export options available, the fifth element of the tuple is a list of booleans indicating whether to export using each custom export option.
     """
 
     dialog = QtWidgets.QDialog()
@@ -120,7 +120,7 @@ def PopUp(mode = "video"):
 
     dialog.setLayout(layout)
 
-    result = dialog.exec_()
+    result = dialog.exec()
 
     # prepare the checked list of custom exports
     custom_exports_radio_checked_list = []

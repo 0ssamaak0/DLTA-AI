@@ -550,14 +550,15 @@ def convert_QT_to_cv(incomingImage):
     Returns:
         arr: a cv image MAT format
     """
-
-    incomingImage = incomingImage.convertToFormat(4)
+    from PyQt5.QtGui import QImage as QImg5
+    
+    # incomingImage = incomingImage.convertToFormat(QtGui.QImage.Format.Format_RGBA8888)
 
     width = incomingImage.width()
     height = incomingImage.height()
 
     ptr = incomingImage.bits()
-    ptr.setsize(incomingImage.byteCount())
+    ptr.setsize(incomingImage.sizeInBytes())
     arr = np.array(ptr).reshape(height, width, 4)  # Copies the data
     return arr
 
@@ -578,7 +579,7 @@ def convert_cv_to_qt(cv_img):
     h, w, ch = rgb_image.shape
     bytes_per_line = ch * w
     convert_to_Qt_format = QtGui.QImage(
-        rgb_image.data, w, h, bytes_per_line, QtGui.QImage.Format_RGB888)
+        rgb_image.data, w, h, bytes_per_line, QtGui.QImage.Format.Format_RGB888)
     return convert_to_Qt_format
 
 def SAM_rects_to_boxes(rects):

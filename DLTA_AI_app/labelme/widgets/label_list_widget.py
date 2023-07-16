@@ -26,24 +26,24 @@ class HTMLDelegate(QtWidgets.QStyledItemDelegate):
             if options.widget is None
             else options.widget.style()
         )
-        style.drawControl(QStyle.CE_ItemViewItem, options, painter)
+        style.drawControl(QStyle.ControlElement.CE_ItemViewItem, options, painter)
 
         ctx = QtGui.QAbstractTextDocumentLayout.PaintContext()
 
-        if option.state & QStyle.State_Selected:
+        if option.state & QStyle.StateFlag.State_Selected:
             ctx.palette.setColor(
-                QPalette.Text,
+                QPalette.ColorRole.Text,
                 option.palette.color(
-                    QPalette.Active, QPalette.HighlightedText
+                    QPalette.ColorGroup.Active, QPalette.ColorRole.HighlightedText
                 ),
             )
         else:
             ctx.palette.setColor(
-                QPalette.Text,
-                option.palette.color(QPalette.Active, QPalette.Text),
+                QPalette.ColorRole.Text,
+                option.palette.color(QPalette.ColorGroup.Active, QPalette.ColorRole.Text),
             )
 
-        textRect = style.subElementRect(QStyle.SE_ItemViewItemText, options)
+        textRect = style.subElementRect(QStyle.SubElement.SE_ItemViewItemText, options)
 
         if index.column() != 0:
             textRect.adjust(5, 0, 0, 0)
@@ -96,7 +96,7 @@ class LabelListWidgetItem(QtGui.QStandardItem):
 
 class StandardItemModel(QtGui.QStandardItemModel):
 
-    itemDropped = QtCore.pyqtBoundSignal()
+    itemDropped = QtCore.pyqtSignal()
 
     def removeRows(self, *args, **kwargs):
         ret = super().removeRows(*args, **kwargs)
@@ -106,8 +106,8 @@ class StandardItemModel(QtGui.QStandardItemModel):
 
 class LabelListWidget(QtWidgets.QListView):
 
-    itemDoubleClicked = QtCore.pyqtBoundSignal(LabelListWidgetItem)
-    itemSelectionChanged = QtCore.pyqtBoundSignal(list, list)
+    itemDoubleClicked = QtCore.pyqtSignal(LabelListWidgetItem)
+    itemSelectionChanged = QtCore.pyqtSignal(list, list)
 
     def __init__(self):
         super(LabelListWidget, self).__init__()
@@ -172,7 +172,7 @@ class LabelListWidget(QtWidgets.QListView):
 
     def selectItem(self, item):
         index = self.model().indexFromItem(item)
-        self.selectionModel().select(index, QtCore.QItemSelectionModel.Select)
+        self.selectionModel().select(index, QtCore.QItemSelectionModel.SelectionFlag.Select)
 
     def findItemByShape(self, shape):
         for row in range(self.model().rowCount()):

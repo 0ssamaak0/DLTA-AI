@@ -21,21 +21,21 @@ CURSOR_GRAB = QtCore.Qt.CursorShape.OpenHandCursor
 
 class Canvas(QtWidgets.QWidget):
 
-    zoomRequest = QtCore.pyqtBoundSignal(int, QtCore.QPoint)
-    scrollRequest = QtCore.pyqtBoundSignal(int, int)
-    newShape = QtCore.pyqtBoundSignal()
-    selectionChanged = QtCore.pyqtBoundSignal(list)
-    shapeMoved = QtCore.pyqtBoundSignal()
-    drawingPolygon = QtCore.pyqtBoundSignal(bool)
-    edgeSelected = QtCore.pyqtBoundSignal(bool, object)
-    vertexSelected = QtCore.pyqtBoundSignal(bool)
+    zoomRequest = QtCore.pyqtSignal(int, QtCore.QPoint)
+    scrollRequest = QtCore.pyqtSignal(int, int)
+    newShape = QtCore.pyqtSignal()
+    selectionChanged = QtCore.pyqtSignal(list)
+    shapeMoved = QtCore.pyqtSignal()
+    drawingPolygon = QtCore.pyqtSignal(bool)
+    edgeSelected = QtCore.pyqtSignal(bool, object)
+    vertexSelected = QtCore.pyqtSignal(bool)
     
     # SAM signals
-    pointAdded = QtCore.pyqtBoundSignal()
-    samFinish = QtCore.pyqtBoundSignal()
+    pointAdded = QtCore.pyqtSignal()
+    samFinish = QtCore.pyqtSignal()
     
     # refresh visualization
-    APPrefresh = QtCore.pyqtBoundSignal(bool)
+    APPrefresh = QtCore.pyqtSignal(bool)
 
     CREATE, EDIT = 0, 1
     CREATE, EDIT = 0, 1
@@ -115,7 +115,7 @@ class Canvas(QtWidgets.QWidget):
         
         # Set widget options.
         self.setMouseTracking(True)
-        self.setFocusPolicy(QtCore.Qt.WheelFocus)
+        self.setFocusPolicy(QtCore.Qt.FocusPolicy.WheelFocus)
 
     def fillDrawing(self):
         return self._fill_drawing
@@ -214,10 +214,7 @@ class Canvas(QtWidgets.QWidget):
     def mouseMoveEvent(self, ev):
         """Update line with last point and current coordinates."""
         try:
-            if QT5:
-                pos = self.transformPos(ev.localPos())
-            else:
-                pos = self.transformPos(ev.posF())
+            pos = self.transformPos(ev.position())
         except AttributeError:
             return
 
@@ -255,7 +252,7 @@ class Canvas(QtWidgets.QWidget):
             return
 
         # Polygon copy moving.
-        if QtCore.Qt.RightButton & ev.buttons():
+        if QtCore.Qt.MouseButton.RightButton & ev.buttons():
             if self.selectedShapesCopy and self.prevPoint:
                 self.overrideCursor(CURSOR_MOVE)
                 self.boundedMoveShapes(self.selectedShapesCopy, pos)
@@ -268,7 +265,7 @@ class Canvas(QtWidgets.QWidget):
             return
 
         # Polygon/Vertex moving.
-        if QtCore.Qt.LeftButton & ev.buttons():
+        if QtCore.Qt.MouseButton.LeftButton & ev.buttons():
             if self.selectedVertex():
                 self.boundedMoveVertex(pos)
                 self.repaint()
@@ -364,12 +361,10 @@ class Canvas(QtWidgets.QWidget):
 
     def mousePressEvent(self, ev):
         
-        if QT5:
-            pos = self.transformPos(ev.localPos())
-        else:
-            pos = self.transformPos(ev.posF())
+        pos = self.transformPos(ev.position())
+
         
-        if ev.button() == QtCore.Qt.LeftButton:
+        if ev.button() == QtCore.Qt.MouseButton.LeftButton:
             if self.drawing() and self.SAM_mode == "":
                 if self.current:
                     # Add point to existing shape.
@@ -410,12 +405,12 @@ class Canvas(QtWidgets.QWidget):
             
             # the other is editing mode
             else:
-                group_mode = int(ev.modifiers()) == QtCore.Qt.ControlModifier
+                group_mode = ev.modifiers() == QtCore.Qt.KeyboardModifier.ControlModifier
                 self.selectShapePoint(pos, multiple_selection_mode=group_mode)
                 self.prevPoint = pos
                 self.repaint()
-        elif ev.button() == QtCore.Qt.RightButton and self.editing():
-            group_mode = int(ev.modifiers()) == QtCore.Qt.ControlModifier
+        elif ev.button() == QtCore.Qt.MouseButton.RightButton and self.editing():
+            group_mode = ev.modifiers() == QtCore.Qt.KeyboardModifier.ControlModifier
             self.selectShapePoint(pos, multiple_selection_mode=group_mode)
             self.prevPoint = pos
             self.repaint()
@@ -433,38 +428,35 @@ class Canvas(QtWidgets.QWidget):
 
     def mouseReleaseEvent(self, ev):
         
-        if QT5:
-            pos = self.transformPos(ev.localPos())
-        else:
-            pos = self.transformPos(ev.posF())
+        pos = self.transformPos(ev.position())
         
-        if ev.button() == QtCore.Qt.RightButton:
+        if ev.button() == QtCore.Qt.MouseButton.RightButton:
             menu = self.menus[len(self.selectedShapesCopy) > 0]
             menu = self.handle_right_click(menu)
             self.restoreCursor()
             if (
-                not menu.exec_(self.mapToGlobal(ev.pos()))
+                not menu.exec(self.mapToGlobal(ev.pos()))
                 and self.selectedShapesCopy
             ):
                 # Cancel the move by deleting the shadow copy.
                 self.selectedShapesCopy = []
                 self.repaint()
-        elif ev.button() == QtCore.Qt.LeftButton and self.selectedShapes:
+        elif ev.button() == QtCore.Qt.MouseButton.LeftButton and self.selectedShapes:
             self.overrideCursor(CURSOR_GRAB)
             if (
                 self.editing()
-                and int(ev.modifiers()) == QtCore.Qt.ShiftModifier
+                and ev.modifiers() == QtCore.Qt.KeyboardModifier.ShiftModifier
             ):
                 # Add point to line if: left-click + SHIFT on a line segment
                 self.addPointToEdge()
-        elif ev.button() == QtCore.Qt.LeftButton and self.selectedVertex():
+        elif ev.button() == QtCore.Qt.MouseButton.LeftButton and self.selectedVertex():
             if (
                 self.editing()
-                and int(ev.modifiers()) == QtCore.Qt.ShiftModifier
+                and ev.modifiers() == QtCore.Qt.KeyboardModifier.ShiftModifier
             ):
                 # Delete point if: left-click + SHIFT on a point
                 self.removeSelectedPoint()
-        elif ev.button() == QtCore.Qt.LeftButton and len(self.SAM_rect) == 1:
+        elif ev.button() == QtCore.Qt.MouseButton.LeftButton and len(self.SAM_rect) == 1:
             if abs(pos.x() - self.SAM_rect[0].x()) + abs(pos.y() - self.SAM_rect[0].y()) > 50:
                 self.SAM_rect.append(self.corrected_pos_into_pixmap(pos))
                 self.SAM_rects = [self.SAM_rect]
@@ -571,10 +563,10 @@ class Canvas(QtWidgets.QWidget):
     def boundedMoveShapes(self, shapes, pos):
         if self.outOfPixmap(pos):
             return False  # No need to move
-        o1 = pos + self.offsets[0]
+        o1 = pos + QtCore.QPointF(self.offsets[0])
         if self.outOfPixmap(o1):
             pos -= QtCore.QPoint(min(0, o1.x()), min(0, o1.y()))
-        o2 = pos + self.offsets[1]
+        o2 = pos + QtCore.QPointF(self.offsets[1])
         if self.outOfPixmap(o2):
             pos += QtCore.QPoint(
                 min(0, self.pixmap.width() - o2.x()),
@@ -641,9 +633,9 @@ class Canvas(QtWidgets.QWidget):
 
         p = self._painter
         p.begin(self)
-        p.setRenderHint(QtGui.QPainter.Antialiasing)
-        p.setRenderHint(QtGui.QPainter.HighQualityAntialiasing)
-        p.setRenderHint(QtGui.QPainter.SmoothPixmapTransform)
+        p.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing)
+        p.setRenderHint(QtGui.QPainter.RenderHint.SmoothPixmapTransform)
+        # p.setRenderHint(QtGui.QPainter.HighQualityAntialiasing)
 
         p.scale(self.scale, self.scale)
         p.translate(self.offsetToCenter())
@@ -654,13 +646,13 @@ class Canvas(QtWidgets.QWidget):
         # Draw loading/waiting screen
         if self.is_loading:
             # Draw a semi-transparent rectangle
-            p.setPen(QtCore.Qt.NoPen)
+            p.setPen(QtCore.Qt.PenStyle.NoPen)
             p.setBrush(QtGui.QColor(0, 0, 0, 100))
             p.drawRect(self.pixmap.rect())
 
             # Draw a spinning wheel
             p.setPen(QtGui.QColor(255, 255, 255))
-            p.setBrush(QtCore.Qt.NoBrush)
+            p.setBrush(QtCore.Qt.BrushStyle.NoBrush)
             p.save()
             p.translate(self.pixmap.width() / 2, self.pixmap.height() / 2 - 50)
             p.rotate(self.loading_angle)
@@ -680,7 +672,7 @@ class Canvas(QtWidgets.QWidget):
                 p.setFont(QtGui.QFont("Arial", 20))
             p.drawText(
                 self.pixmap.rect(),
-                QtCore.Qt.AlignCenter,
+                QtCore.Qt.AlignmentFlag.AlignCenter,
                 self.loading_text,
             )
             p.end()
@@ -716,7 +708,7 @@ class Canvas(QtWidgets.QWidget):
             pen = QtGui.QPen(
                 QtGui.QColor("#00FF00"),
                 max(1, int(round(2.0 / Shape.scale))),
-                QtCore.Qt.DashLine,
+                QtCore.Qt.PenStyle.DashLine,
             )
             p.setPen(pen)
             p.setOpacity(0.5)
@@ -736,7 +728,7 @@ class Canvas(QtWidgets.QWidget):
             pen = QtGui.QPen(
                 QtGui.QColor("#FF0000"),
                 2 * max(1, int(round(2.0 / Shape.scale))),
-                QtCore.Qt.SolidLine,
+                QtCore.Qt.PenStyle.SolidLine,
             )
             p.setPen(pen)
             p.setOpacity(0.8)
@@ -757,8 +749,8 @@ class Canvas(QtWidgets.QWidget):
                 pen = QtGui.QPen(
                     QtGui.QColor(color),
                     5 * max(1, int(round(2.0 / Shape.scale))),
-                    QtCore.Qt.SolidLine,
-                    QtCore.Qt.RoundCap,
+                    QtCore.Qt.PenStyle.SolidLine,
+                    QtCore.Qt.PenCapStyle.RoundCap,
                 )
                 p.setPen(pen)
                 p.setOpacity(0.8)
@@ -769,7 +761,7 @@ class Canvas(QtWidgets.QWidget):
             pen = QtGui.QPen(
                 QtGui.QColor("#2D7CFA"),
                 2 * max(1, int(round(2.0 / Shape.scale))),
-                QtCore.Qt.SolidLine,
+                QtCore.Qt.PenStyle.SolidLine,
             )
             p.setPen(pen)
             p.setOpacity(0.8)
@@ -786,7 +778,7 @@ class Canvas(QtWidgets.QWidget):
             pen = QtGui.QPen(
                 QtGui.QColor("#FF0000"),
                 2 * max(1, int(round(2.0 / Shape.scale))),
-                QtCore.Qt.SolidLine,
+                QtCore.Qt.PenStyle.SolidLine,
             )
             p.setPen(pen)
             p.setOpacity(0.1)
@@ -811,7 +803,8 @@ class Canvas(QtWidgets.QWidget):
 
     def transformPos(self, point):
         """Convert from widget-logical coordinates to painter-logical ones."""
-        return point / self.scale - self.offsetToCenter()
+
+        return point / self.scale - QtCore.QPointF(self.offsetToCenter())
 
     def offsetToCenter(self):
         s = self.scale
@@ -921,34 +914,34 @@ class Canvas(QtWidgets.QWidget):
         if QT5:
             mods = ev.modifiers()
             delta = ev.angleDelta()
-            if QtCore.Qt.ControlModifier == int(mods):
+            if QtCore.Qt.KeyboardModifier.ControlModifier == int(mods):
                 # with Ctrl/Command key
                 # zoom
                 self.zoomRequest.emit(delta.y(), ev.pos())
             else:
                 # scroll
-                self.scrollRequest.emit(delta.x(), QtCore.Qt.Horizontal)
-                self.scrollRequest.emit(delta.y(), QtCore.Qt.Vertical)
+                self.scrollRequest.emit(delta.x(), QtCore.Qt.Orientation.Horizontal)
+                self.scrollRequest.emit(delta.y(), QtCore.Qt.Orientation.Vertical)
         else:
-            if ev.orientation() == QtCore.Qt.Vertical:
+            if ev.orientation() == QtCore.Qt.Orientation.Vertical:
                 mods = ev.modifiers()
-                if QtCore.Qt.ControlModifier == int(mods):
+                if QtCore.Qt.KeyboardModifier.ControlModifier == int(mods):
                     # with Ctrl/Command key
                     self.zoomRequest.emit(ev.delta(), ev.pos())
                 else:
                     self.scrollRequest.emit(
                         ev.delta(),
-                        QtCore.Qt.Horizontal
-                        if (QtCore.Qt.ShiftModifier == int(mods))
-                        else QtCore.Qt.Vertical,
+                        QtCore.Qt.Orientation.Horizontal
+                        if (QtCore.Qt.KeyboardModifier.ShiftModifier == int(mods))
+                        else QtCore.Qt.Orientation.Vertical,
                     )
             else:
-                self.scrollRequest.emit(ev.delta(), QtCore.Qt.Horizontal)
+                self.scrollRequest.emit(ev.delta(), QtCore.Qt.Orientation.Horizontal)
         ev.accept()
 
     def keyPressEvent(self, ev):
         key = ev.key()
-        if key == QtCore.Qt.Key_Return:
+        if key == QtCore.Qt.Key.Key_Return:
             if self.SAM_mode != "":
                 self.samFinish.emit()
             elif self.tracking_area:

@@ -28,7 +28,7 @@ def PopUp():
     # Create a dialog box to display the runtime data
     dialog = QDialog()
     dialog.setWindowTitle("Runtime data")
-    dialog.setWindowFlags(dialog.windowFlags() & ~QtCore.Qt.WindowContextHelpButtonHint)
+    dialog.setWindowFlags(dialog.windowFlags() & ~QtCore.Qt.WindowType.WindowContextHelpButtonHint)
     layout = QVBoxLayout(dialog)
     layout.setContentsMargins(20, 20, 20, 20)
     layout.setSpacing(10)
@@ -76,4 +76,4 @@ def PopUp():
     layout.addWidget(ram_label)
 
     # Display the dialog box
-    dialog.exec_()
+    dialog.exec()

@@ -392,7 +392,7 @@ class FolderDialog(QFileDialog):
         super().__init__()
 
         # Set the mode to save a file
-        self.setAcceptMode(QFileDialog.AcceptSave)
+        self.setAcceptMode(QFileDialog.AcceptMode.AcceptSave)
 
         # Set the default file name
         self.selectFile(default_file_name)

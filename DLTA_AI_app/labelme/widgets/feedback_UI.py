@@ -22,13 +22,13 @@ def PopUp():
     msgBox.setText(text)
 
     # Add a button to open the GitHub issues page
-    msgBox.addButton(QMessageBox.Yes)
-    msgBox.button(QMessageBox.Yes).setText("Open an Issue")
-    msgBox.button(QMessageBox.Yes).clicked.connect(open_issue)
+    msgBox.addButton(QMessageBox.StandardButton.Yes)
+    msgBox.button(QMessageBox.StandardButton.Yes).setText("Open an Issue")
+    msgBox.button(QMessageBox.StandardButton.Yes).clicked.connect(open_issue)
 
     # Add a close button
     msgBox.addButton(QMessageBox.Close)
     msgBox.button(QMessageBox.Close).setText("Close")
 
     # Display the feedback dialog box
-    msgBox.exec_()
+    msgBox.exec()

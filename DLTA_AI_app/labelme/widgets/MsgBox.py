@@ -17,19 +17,19 @@ def OKmsgBox(title, text, type = "info", turnResult = False):
     
     msgBox = QtWidgets.QMessageBox()
     if type == "info":
-        msgBox.setIcon(QtWidgets.QMessageBox.Information)
+        msgBox.setIcon(QtWidgets.QMessageBox.Icon.Information)
     elif type == "warning":
         msgBox.setIcon(QtWidgets.QMessageBox.Warning)
     elif type == "critical":
-        msgBox.setIcon(QtWidgets.QMessageBox.Critical)
+        msgBox.setIcon(QtWidgets.QMessageBox.Icon.Critical)
     msgBox.setText(text)
     msgBox.setWindowTitle(title)
     if turnResult:
-        msgBox.setStandardButtons(QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel)
-        msgBox.setDefaultButton(QtWidgets.QMessageBox.Ok)
+        msgBox.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Ok | QtWidgets.QMessageBox.Cancel)
+        msgBox.setDefaultButton(QtWidgets.QMessageBox.StandardButton.Ok)
     else:
-        msgBox.setStandardButtons(QtWidgets.QMessageBox.Ok)
-    msgBox.exec_()
+        msgBox.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Ok)
+    msgBox.exec()
     return msgBox.result()
 
 

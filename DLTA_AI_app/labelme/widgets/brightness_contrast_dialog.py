@@ -38,7 +38,7 @@ class BrightnessContrastDialog(QtWidgets.QDialog):
         self.callback(qimage)
 
     def _create_slider(self):
-        slider = QtWidgets.QSlider(Qt.Horizontal)
+        slider = QtWidgets.QSlider(Qt.Orientation.Horizontal)
         slider.setRange(0, 150)
         slider.setValue(50)
         slider.valueChanged.connect(self.onNewValue)

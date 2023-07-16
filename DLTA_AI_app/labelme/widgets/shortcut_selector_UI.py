@@ -54,7 +54,7 @@ def PopUp():
         key_edit.setWindowTitle(f"Edit Shortcut for {name}")
         key_edit_label = QtWidgets.QLabel("Enter new shortcut for " + name)
         dialog = QtWidgets.QDialog()
-        dialog.setWindowFlags(dialog.windowFlags() & ~QtCore.Qt.WindowContextHelpButtonHint)
+        dialog.setWindowFlags(dialog.windowFlags() & ~QtCore.Qt.WindowType.WindowContextHelpButtonHint)
         dialog.setWindowTitle("Shortcut Selector")
         layout = QtWidgets.QVBoxLayout()
         layout.addWidget(key_edit_label)
@@ -67,7 +67,7 @@ def PopUp():
         dialog.setLayout(layout)
 
         # If the user clicks OK, update the shortcut and table
-        if dialog.exec_():
+        if dialog.exec():
             key = key_edit.keySequence().toString(QtGui.QKeySequence.NativeText)
             if key in shortcuts.values() and list(shortcuts.keys())[list(shortcuts.values()).index(key)] != name:
                 conflicting_shortcut = list(shortcuts.keys())[list(shortcuts.values()).index(key)]
@@ -116,7 +116,7 @@ def PopUp():
 
     # Create a dialog box to display the shortcut table
     dialog = QtWidgets.QDialog()
-    dialog.setWindowFlags(dialog.windowFlags() & ~QtCore.Qt.WindowContextHelpButtonHint)
+    dialog.setWindowFlags(dialog.windowFlags() & ~QtCore.Qt.WindowType.WindowContextHelpButtonHint)
     dialog.setWindowTitle("Shortcuts")
     layout = QtWidgets.QVBoxLayout()
     layout.addWidget(shortcut_table)
@@ -145,7 +145,7 @@ def PopUp():
     dialog.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Expanding)
 
     # Display the dialog box
-    dialog.exec_()
+    dialog.exec()
     
     # load shortcuts from shortcut table to be updated
     shortcuts = {}

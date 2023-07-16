@@ -20,9 +20,9 @@ def main():
     app.setWindowIcon(newIcon("icon"))
 
     # create and show splash screen
-    # splash_pix = QtGui.QPixmap('labelme/icons/splash_screen.png')
-    # splash = QtWidgets.QSplashScreen(splash_pix)
-    # splash.show()
+    splash_pix = QtGui.QPixmap('labelme/icons/splash_screen.png')
+    splash = QtWidgets.QSplashScreen(splash_pix)
+    splash.show()
 
     qss = """
     QMenuBar::item {
@@ -60,7 +60,7 @@ def main():
     # create main window
     from labelme.app import MainWindow
     win = MainWindow()
-    # splash.finish(win)
+    splash.finish(win)
     win.show()
 
     # close splash screen

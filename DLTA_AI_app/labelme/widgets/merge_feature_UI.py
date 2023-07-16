@@ -22,11 +22,11 @@ class MergeFeatureUI():
         # ExplorerMerge.adjustSize()
         # ExplorerMerge.resize(
         #     int(ExplorerMerge.width() * 2), int(ExplorerMerge.height() * 1.5))
-        # ExplorerMerge.exec_()
+        # ExplorerMerge.exec()
 
         dialog = QtWidgets.QDialog(self.parent)
         dialog.setWindowTitle('Select Models')
-        dialog.setWindowFlags(dialog.windowFlags() & ~QtCore.Qt.WindowContextHelpButtonHint)
+        dialog.setWindowFlags(dialog.windowFlags() & ~QtCore.Qt.WindowType.WindowContextHelpButtonHint)
         dialog.setWindowModality(QtCore.Qt.ApplicationModal)
         dialog.resize(200, 250)
         dialog.setMinimumSize(QtCore.QSize(200, 200))
@@ -44,7 +44,7 @@ class MergeFeatureUI():
         scrollArea.setWidget(scrollAreaWidgetContents)
         verticalLayout.addWidget(scrollArea)
         buttonBox = QtWidgets.QDialogButtonBox(dialog)
-        buttonBox.setOrientation(QtCore.Qt.Horizontal)
+        buttonBox.setOrientation(QtCore.Qt.Orientation.Horizontal)
         buttonBox.setStandardButtons(
             QtWidgets.QDialogButtonBox.Cancel | QtWidgets.QDialogButtonBox.Ok)
         buttonBox.setObjectName("buttonBox")
@@ -56,7 +56,7 @@ class MergeFeatureUI():
             self.models.append(QtWidgets.QCheckBox(models[i], dialog))
             verticalLayout_2.addWidget(self.models[i])
         dialog.show()
-        dialog.exec_()
+        dialog.exec()
         self.selectedmodels.clear()
         for i in range(len(self.models)):
             if self.models[i].isChecked():

@@ -29,7 +29,7 @@ def PopUp(TOTAL_VIDEO_FRAMES, INDEX_OF_CURRENT_FRAME, config):
     dialog.setWindowTitle("Choose Deletion Options")
     dialog.setWindowModality(Qt.ApplicationModal)
     dialog.resize(500, 100)
-    dialog.setWindowFlags(dialog.windowFlags() & ~QtCore.Qt.WindowContextHelpButtonHint)
+    dialog.setWindowFlags(dialog.windowFlags() & ~QtCore.Qt.WindowType.WindowContextHelpButtonHint)
 
     layout = QtWidgets.QVBoxLayout()
 
@@ -102,7 +102,7 @@ def PopUp(TOTAL_VIDEO_FRAMES, INDEX_OF_CURRENT_FRAME, config):
     buttonBox.rejected.connect(dialog.reject)
     layout.addWidget(buttonBox)
     dialog.setLayout(layout)
-    result = dialog.exec_()
+    result = dialog.exec()
     
     mode = config['deleteDefault']
     fromFrameVAL = from_frame.value() 

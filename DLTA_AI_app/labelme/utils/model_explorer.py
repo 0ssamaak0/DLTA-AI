@@ -36,7 +36,7 @@ class ModelExplorerDialog(QDialog):
         self.mute = mute
         self.notification = notification
         self.setWindowTitle("Model Explorer")
-        self.setWindowFlags(self.windowFlags() & ~QtCore.Qt.WindowContextHelpButtonHint)
+        self.setWindowFlags(self.windowFlags() & ~QtCore.Qt.WindowType.WindowContextHelpButtonHint)
 
 
         # Define the columns of the table
@@ -150,7 +150,7 @@ class ModelExplorerDialog(QDialog):
             col_count = 0
             for key in self.cols_labels:
                 item = QTableWidgetItem(f"{model[key]}")
-                item.setTextAlignment(QtCore.Qt.AlignCenter)
+                item.setTextAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
                 self.table.setItem(row_count, col_count, item)
                 col_count += 1
 
@@ -171,7 +171,7 @@ class ModelExplorerDialog(QDialog):
                 # make the text color dark green
                 available_item.setForeground(QtCore.Qt.darkGreen)
                 self.table.setItem(row_count, 9, available_item)
-                available_item.setTextAlignment(QtCore.Qt.AlignCenter)
+                available_item.setTextAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
             else:
                 available_item = QPushButton("Requires Download")
                 available_item.clicked.connect(

@@ -63,13 +63,13 @@ def PopUp():
 
     # If there are updates, add a button to download the latest version
     if updates:
-        msgBox.addButton(QMessageBox.Yes)
-        msgBox.button(QMessageBox.Yes).setText("Get the Latest Version")
-        msgBox.button(QMessageBox.Yes).clicked.connect(lambda: open_release(tag["href"]))
+        msgBox.addButton(QMessageBox.StandardButton.Yes)
+        msgBox.button(QMessageBox.StandardButton.Yes).setText("Get the Latest Version")
+        msgBox.button(QMessageBox.StandardButton.Yes).clicked.connect(lambda: open_release(tag["href"]))
 
     # Add a close button to the message box
     msgBox.addButton(QMessageBox.Close)
     msgBox.button(QMessageBox.Close).setText("Close")
 
     # Display the message box
-    msgBox.exec_()
+    msgBox.exec()

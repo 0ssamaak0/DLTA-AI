@@ -27,7 +27,7 @@ class Classeswidget(QtWidgets.QDialog):
     def setValue(self, value):
         self.class_name = value
 
-    def exec_(self):
-        super(Classeswidget, self).exec_()
+    def exec(self):
+        super(Classeswidget, self).exec()
         return self.class_name
 
