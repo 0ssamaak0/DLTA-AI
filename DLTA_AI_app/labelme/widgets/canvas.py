@@ -911,29 +911,16 @@ class Canvas(QtWidgets.QWidget):
         return super(Canvas, self).minimumSizeHint()
 
     def wheelEvent(self, ev):
-        if QT5:
-            mods = ev.modifiers()
-            delta = ev.angleDelta()
-            if QtCore.Qt.KeyboardModifier.ControlModifier == int(mods):
-                # with Ctrl/Command key
-                # zoom
-                self.zoomRequest.emit(delta.y(), ev.pos())
-            else:
-                # scroll
-                self.scrollRequest.emit(delta.x(), QtCore.Qt.Orientation.Horizontal)
-                self.scrollRequest.emit(delta.y(), QtCore.Qt.Orientation.Vertical)
+        mods = ev.modifiers()
+        delta = ev.angleDelta()
+        if mods.value:
+            # with Ctrl/Command key
+            # zoom
+            self.zoomRequest.emit(delta.y(), ev.position().toPoint())
         else:
-            mods = ev.modifiers()
-            delta = ev.angleDelta()
-            if mods.value:
-                # with Ctrl/Command key
-                # zoom
-                self.zoomRequest.emit(delta.y(), ev.position().toPoint())
-            else:
-                # scroll
-                self.scrollRequest.emit(delta.x(), QtCore.Qt.Orientation.Horizontal.value)
-                self.scrollRequest.emit(delta.y(), QtCore.Qt.Orientation.Vertical.value)
-                
+            # scroll
+            self.scrollRequest.emit(delta.x(), QtCore.Qt.Orientation.Horizontal.value)
+            self.scrollRequest.emit(delta.y(), QtCore.Qt.Orientation.Vertical.value)
         ev.accept()
 
     def keyPressEvent(self, ev):

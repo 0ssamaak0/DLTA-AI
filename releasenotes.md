@@ -1,40 +1,5 @@
 # New Features 🌟
-- User Guide is now available in the tool, you can access it from the Help menu or from [here](https://0ssamaak0.github.io/DLTA-AI/)
-- New Input Option: Extracting Video to Frame, open video as frames in directory mode, you can select start and end frames as well as sampling rate (every 2 frames, every 3 frames, etc.)
-- Custom Export is now fully supported in all modes, `custom_exports.py` is now updated with detailed documentation and examples
-- Adding splash screen while loading
-- New icons for Edit and Context Menu (previously was using the same icon for all funcionalities)
-- New UI for Edit Labels and Delete Polygons menus
-- General UI Enhancements, Buttons name changes, ToolTips are more clear.
-- Adding slider to Confidence and IOU Thresholds
-- Adding Visualization Options to Image and Dir modes
-- Adding Confidence visualization option to all modes
-- New Interpolation UI allows Both Interpolation Methods (Linear, SAM) can be done between (Detected frames, keyframes)
-- Shortcuts menu now has `reset` and `restore defaults` buttons
+-
 
 # Bug Fixes 🐞
-- Tracking after closing the tool now starts from last tracked ID (previously was starting from 1)
-- removing uncenessary prints in SAM, logs are more clean now
-- Enhance Polygons in SAM toolbar and context menu are unified now (same name, icon and shortcut)
-- Fixing a bug when changing the confidence of a custom class polygon
-- Fixing a bug shows a notification (Downloaded Successfully) even if the download failed
-- Fixing a bug in creating first SAM instance 
-- Fixing a bug when deleting a non completed polygon with `ESC` key
-- Fixing a bug in export adds COCO classes as custom classes (class_id > 80)
-- Export in image mode no longer exports all other JSONs in the same directory
-- Removing `WindowContextHelpButtonHint` from all dialogs, since it's inconvenient and has no functionality
-- File List Dock is cleared when opening image or video or closing the current Image in directory mode, it's opened shifted to the right by default to focus on the image names not the path
-- Fixing a bug allows user to input 0 threshold
-- Opening any new input clears Label list from old labels
-- Visualization Font size is now a function of the image size, no more accidental very small or very big font sizes
-- Loading Font size is also a function of the image size
-- Fixing a bug in visualization in dir mode doesn't show polygons and other visualization options
-- Changing Hard Coded Shortcuts
-- Fixing a bug crashes the tool when clicking and releasing a selected shape very fast (very rare bug)
-- SAM Interpolation now doesn't edit already made polygons when interpolating between frames
-- Fixing a bug visualization options to be more responsive after edits
-- Fixing a bug in export Error dialog
-- If Export as Video is interrupted, the video is created with the frames that were already exported
-- Export as video now show "Processing..." For the frames not being exported (previously was showing last exported frame number)
-- Exporting an Empty video will result in an error dialog
-- Custom Classes now have different colors in visualization
+- Closing the save dialog without saving annotations no more enables the export button #45

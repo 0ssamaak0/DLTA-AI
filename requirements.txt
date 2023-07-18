@@ -19,3 +19,4 @@ orjson==3.8.12
 notify-py==0.3.42
 psutil==5.9.4
 shapely==2.0.1
+screeninfo==0.8.1

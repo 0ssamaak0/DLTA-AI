@@ -14,15 +14,34 @@ import qdarktheme
 
 
 
+
 def main():
     app = QtWidgets.QApplication(sys.argv)
     QtWidgets.QApplication.setHighDpiScaleFactorRoundingPolicy(QtCore.Qt.HighDpiScaleFactorRoundingPolicy.RoundPreferFloor)
     app.setApplicationName(__appname__)
     app.setWindowIcon(newIcon("icon"))
-
     # create and show splash screen
     splash_pix = QtGui.QPixmap('labelme/icons/splash_screen.png')
+
     splash = QtWidgets.QSplashScreen(splash_pix)
+
+
+    # center the splash screen to the original screen size
+    try:
+        from screeninfo import get_monitors
+
+        original_width = get_monitors()[0].width
+        original_heigth = get_monitors()[0].height
+
+        slapsh_width = splash.width()
+        splash_height = splash.height()
+
+        splash.move((original_width - slapsh_width) / 2, (original_heigth - splash_height) / 2)
+    except Exception as e:
+        pass
+
+
+
     splash.show()
 
     qss = """
