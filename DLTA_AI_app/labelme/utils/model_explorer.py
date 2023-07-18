@@ -136,12 +136,12 @@ class ModelExplorerDialog(QDialog):
         header = self.table.horizontalHeader()
         self.table.setHorizontalHeaderLabels(
             self.cols_labels + ["Status", "Select Model"])
-        header.setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(QtWidgets.QHeaderView.ResizeMode.ResizeToContents)
 
         # remove vertical header
         self.table.verticalHeader().setVisible(False)
         self.table.horizontalHeader().setSectionResizeMode(
-            QtWidgets.QHeaderView.ResizeToContents)
+            QtWidgets.QHeaderView.ResizeMode.ResizeToContents)
 
         # Populate the table with data
         row_count = 0
@@ -169,7 +169,7 @@ class ModelExplorerDialog(QDialog):
             if model["Downloaded"]:
                 available_item = QTableWidgetItem("Downloaded")
                 # make the text color dark green
-                available_item.setForeground(QtCore.Qt.darkGreen)
+                available_item.setForeground(QtCore.Qt.GlobalColor.darkGreen)
                 self.table.setItem(row_count, 9, available_item)
                 available_item.setTextAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
             else:
@@ -266,7 +266,7 @@ class ModelExplorerDialog(QDialog):
             f"Downloading {model_name}...", "Cancel", 0, 100, self)
         # Set the window title
         self.progress_dialog.setWindowTitle("Downloading Model")
-        self.progress_dialog.setWindowModality(QtCore.Qt.WindowModal)
+        self.progress_dialog.setWindowModality(QtCore.Qt.WindowModality.WindowModal)
         self.progress_dialog.canceled.connect(self.cancel_download)
         self.progress_dialog.show()
 

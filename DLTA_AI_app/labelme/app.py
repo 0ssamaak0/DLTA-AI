@@ -146,14 +146,14 @@ class MainWindow(QtWidgets.QMainWindow):
         self.labelList = LabelListWidget()
         self.lastOpenDir = None
 
-        self.flag_dock = self.flag_widget = None
-        self.flag_dock = QtWidgets.QDockWidget(self.tr("Flags"), self)
-        self.flag_dock.setObjectName("Flags")
-        self.flag_widget = QtWidgets.QListWidget()
-        if config["flags"]:
-            self.loadFlags({k: False for k in config["flags"]})
-        self.flag_dock.setWidget(self.flag_widget)
-        self.flag_widget.itemChanged.connect(self.setDirty)
+        # self.flag_dock = self.flag_widget = None
+        # self.flag_dock = QtWidgets.QDockWidget(self.tr("Flags"), self)
+        # self.flag_dock.setObjectName("Flags")
+        # self.flag_widget = QtWidgets.QListWidget()
+        # if config["flags"]:
+        #     self.loadFlags({k: False for k in config["flags"]})
+        # self.flag_dock.setWidget(self.flag_widget)
+        # self.flag_widget.itemChanged.connect(self.setDirty)
 
 
         self.labelList.itemSelectionChanged.connect(self.labelSelectionChanged)
@@ -290,7 +290,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.minID = -2
         self.maxID = 0
  
-        for dock in ["flag_dock", "label_dock", "shape_dock", "file_dock", "vis_dock"]:
+        for dock in ["label_dock", "shape_dock", "file_dock", "vis_dock"]:
             if self._config[dock]["closable"]:
                 getattr(self, dock).setFeatures(QtWidgets.QDockWidget.DockWidgetFeature.DockWidgetClosable)
             if self._config[dock]["floatable"]:
@@ -300,7 +300,6 @@ class MainWindow(QtWidgets.QMainWindow):
             if self._config[dock]["show"] is False:
                 getattr(self, dock).setVisible(False)
 
-        self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.flag_dock)
         self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.label_dock)
         self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.shape_dock)
         self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.file_dock)
@@ -2058,13 +2057,13 @@ class MainWindow(QtWidgets.QMainWindow):
             s.append(shape)
         self.loadShapes(s, replace=replace)
 
-    def loadFlags(self, flags):
-        self.flag_widget.clear()
-        for key, flag in flags.items():
-            item = QtWidgets.QListWidgetItem(key)
-            item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
-            item.setCheckState(Qt.CheckState.Checked if flag else Qt.CheckState.Unchecked)
-            self.flag_widget.addItem(item)
+    # def loadFlags(self, flags):
+    #     self.flag_widget.clear()
+    #     for key, flag in flags.items():
+    #         item = QtWidgets.QListWidgetItem(key)
+    #         item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
+    #         item.setCheckState(Qt.CheckState.Checked if flag else Qt.CheckState.Unchecked)
+    #         self.flag_widget.addItem(item)
 
     def saveLabels(self, filename):
         lf = LabelFile()
@@ -2086,12 +2085,12 @@ class MainWindow(QtWidgets.QMainWindow):
             return data
 
         shapes = [format_shape(item.shape()) for item in self.labelList]
-        flags = {}
-        for i in range(self.flag_widget.count()):
-            item = self.flag_widget.item(i)
-            key = item.text()
-            flag = item.checkState() == Qt.CheckState.Checked
-            flags[key] = flag
+        # flags = {}
+        # for i in range(self.flag_widget.count()):
+        #     item = self.flag_widget.item(i)
+        #     key = item.text()
+        #     flag = item.checkState() == Qt.CheckState.Checked
+        #     flags[key] = flag
         try:
             imagePath = osp.relpath(self.imagePath, osp.dirname(filename))
             imageData = self.imageData if self._config["store_data"] else None
@@ -2402,7 +2401,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.loadLabels(self.labelFile.shapes)
             if self.labelFile.flags is not None:
                 flags.update(self.labelFile.flags)
-        self.loadFlags(flags)
+        # self.loadFlags(flags)
         if self._config["keep_prev"] and self.noShapes():
             self.loadShapes(prev_shapes, replace=False)
             self.setDirty()
@@ -3604,7 +3603,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     if len(self.CURRENT_SHAPES_IN_IMG) > 0:
                         self.loadLabels(self.CURRENT_SHAPES_IN_IMG)
 
-        self.loadFlags(flags)
+        # self.loadFlags(flags)
         self.setClean()
         self.canvas.setEnabled(True)
         # set zoom values

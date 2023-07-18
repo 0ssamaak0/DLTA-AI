@@ -37,15 +37,15 @@ def PopUp(mode = "video"):
     if mode == "video":
         vid_label = QtWidgets.QLabel("Export Video")
         vid_label.setFont(font)
-        vid_label.setMargin(10)
+        vid_label.setMargin(7)
 
     std_label = QtWidgets.QLabel("Export Annotations (Standard Formats)")
     std_label.setFont(font)
-    std_label.setMargin(10)
+    std_label.setMargin(7)
 
     custom_label = QtWidgets.QLabel("Export Annotations (Custom Formats)")
     custom_label.setFont(font)
-    custom_label.setMargin(10)
+    custom_label.setMargin(7)
     
     # Create a button group to hold the radio buttons
     button_group = QtWidgets.QButtonGroup()
