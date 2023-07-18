@@ -1576,8 +1576,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 mb = QtWidgets.QMessageBox
                 msg = self.tr("Interpolate all IDs?\n")
                 answer = mb.warning(self, self.tr(
-                    "Attention"), msg, mb.Yes | mb.No)
-                if answer != mb.Yes:
+                    "Attention"), msg, mb.StandardButton.Yes | mb.StandardButton.No)
+                if answer != mb.StandardButton.Yes:
                     return
                 else:
                     self.update_current_frame_annotation()
@@ -2899,8 +2899,8 @@ class MainWindow(QtWidgets.QMainWindow):
             "You are about to permanently delete this label file, "
             "proceed anyway?"
         )
-        answer = mb.warning(self, self.tr("Attention"), msg, mb.Yes | mb.No)
-        if answer != mb.Yes:
+        answer = mb.warning(self, self.tr("Attention"), msg, mb.StandardButton.Yes | mb.StandardButton.No)
+        if answer != mb.StandardButton.Yes:
             return
 
         label_file = self.getLabelFile()

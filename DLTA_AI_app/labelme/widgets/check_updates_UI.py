@@ -68,8 +68,8 @@ def PopUp():
         msgBox.button(QMessageBox.StandardButton.Yes).clicked.connect(lambda: open_release(tag["href"]))
 
     # Add a close button to the message box
-    msgBox.addButton(QMessageBox.Close)
-    msgBox.button(QMessageBox.Close).setText("Close")
+    msgBox.addButton(QMessageBox.StandardButton.Close)
+    msgBox.button(QMessageBox.StandardButton.Close).setText("Close")
 
     # Display the message box
     msgBox.exec()

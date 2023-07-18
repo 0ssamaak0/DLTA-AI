@@ -27,8 +27,8 @@ def PopUp():
     msgBox.button(QMessageBox.StandardButton.Yes).clicked.connect(open_issue)
 
     # Add a close button
-    msgBox.addButton(QMessageBox.Close)
-    msgBox.button(QMessageBox.Close).setText("Close")
+    msgBox.addButton(QMessageBox.StandardButton.Close)
+    msgBox.button(QMessageBox.StandardButton.Close).setText("Close")
 
     # Display the feedback dialog box
     msgBox.exec()

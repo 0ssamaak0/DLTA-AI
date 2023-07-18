@@ -36,11 +36,11 @@ def PopUp():
 
     # Create the labels
     themeLabel = QtWidgets.QLabel("Theme Settings 🌓")
-    themeLabel.setFont(QtGui.QFont("Arial", 10, QtGui.QFont.Bold))
+    themeLabel.setFont(QtGui.QFont("Arial", 10, QtGui.QFont.Weight.Bold))
     theme_note_label = QtWidgets.QLabel("Requires app restart to take effect")
 
     notificationLabel = QtWidgets.QLabel("Notifications Settings 🔔")
-    notificationLabel.setFont(QtGui.QFont("Arial", 10, QtGui.QFont.Bold))
+    notificationLabel.setFont(QtGui.QFont("Arial", 10, QtGui.QFont.Weight.Bold))
     notification_note_label = QtWidgets.QLabel("Notifications works only for long tasks and if the app isn't focused")
 
     # Load the current theme from the config file
