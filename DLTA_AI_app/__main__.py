@@ -4,7 +4,7 @@ import sys
 sys.path.append(os.path.dirname(os.path.realpath(__file__)))
 os.chdir(os.path.dirname(os.path.realpath(__file__)))
 
-from PyQt6 import QtGui, QtWidgets
+from PyQt6 import QtGui, QtWidgets, QtCore
 
 from labelme import __appname__
 from labelme import __version__
@@ -16,6 +16,7 @@ import qdarktheme
 
 def main():
     app = QtWidgets.QApplication(sys.argv)
+    QtWidgets.QApplication.setHighDpiScaleFactorRoundingPolicy(QtCore.Qt.HighDpiScaleFactorRoundingPolicy.RoundPreferFloor)
     app.setApplicationName(__appname__)
     app.setWindowIcon(newIcon("icon"))
 

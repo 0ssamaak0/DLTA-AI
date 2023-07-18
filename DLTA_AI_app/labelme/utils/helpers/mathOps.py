@@ -559,7 +559,6 @@ def convert_QT_to_cv(incomingImage):
 
     ptr = incomingImage.bits()
     ptr.setsize(incomingImage.sizeInBytes())
-    print(f"Height: {height}, Width: {width}, ptr: {ptr}")
     arr = np.array(ptr).reshape(height, width, 3)  # Copies the data
     return arr
 
