@@ -27,7 +27,7 @@ def PopUp(self, group_id, text):
     while is_id_repeated(self, group_id):
         dialog = QtWidgets.QDialog()
         dialog.setWindowTitle("ID already exists")
-        dialog.setWindowModality(Qt.ApplicationModal)
+        dialog.setWindowModality(Qt.WindowModality.ApplicationModal)
         dialog.resize(450, 100)
 
         if repeated == 0:
@@ -46,7 +46,7 @@ def PopUp(self, group_id, text):
         properID.setRange(1, 1000)
 
         buttonBox = QtWidgets.QDialogButtonBox(
-            QtWidgets.QDialogButtonBox.Ok)
+            QtWidgets.QDialogButtonBox.StandardButton.Ok)
         buttonBox.accepted.connect(dialog.accept)
 
         layout = QtWidgets.QVBoxLayout()

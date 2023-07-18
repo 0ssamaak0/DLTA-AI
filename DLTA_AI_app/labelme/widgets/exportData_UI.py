@@ -25,7 +25,7 @@ def PopUp(mode = "video"):
 
     dialog = QtWidgets.QDialog()
     dialog.setWindowTitle("Choose Export Options")
-    dialog.setWindowModality(Qt.ApplicationModal)
+    dialog.setWindowModality(Qt.WindowModality.ApplicationModal)
     dialog.resize(250, 100)
 
     layout = QtWidgets.QVBoxLayout()
@@ -112,7 +112,7 @@ def PopUp(mode = "video"):
     layout.addWidget(custom_exports_button)
 
     buttonBox = QtWidgets.QDialogButtonBox(
-        QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel)
+        QtWidgets.QDialogButtonBox.StandardButton.Ok | QtWidgets.QDialogButtonBox.Cancel)
     buttonBox.accepted.connect(dialog.accept)
     buttonBox.rejected.connect(dialog.reject)
 

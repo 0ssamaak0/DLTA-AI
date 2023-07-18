@@ -36,7 +36,7 @@ def main():
         slapsh_width = splash.width()
         splash_height = splash.height()
 
-        splash.move((original_width - slapsh_width) / 2, (original_heigth - splash_height) / 2)
+        splash.move(int((original_width - slapsh_width) / 2), int((original_heigth - splash_height) / 2))
     except Exception as e:
         pass
 

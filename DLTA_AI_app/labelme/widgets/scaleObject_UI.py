@@ -28,7 +28,7 @@ def PopUp(self):
 
     dialog = QtWidgets.QDialog()
     dialog.setWindowTitle("Scaling")
-    dialog.setWindowModality(Qt.ApplicationModal)
+    dialog.setWindowModality(Qt.WindowModality.ApplicationModal)
     dialog.resize(400, 400)
 
     layout = QtWidgets.QVBoxLayout()
@@ -76,7 +76,7 @@ def PopUp(self):
     layout.addWidget(ySlider)
 
     buttonBox = QtWidgets.QDialogButtonBox(
-        QtWidgets.QDialogButtonBox.Ok)
+        QtWidgets.QDialogButtonBox.StandardButton.Ok)
     buttonBox.accepted.connect(dialog.accept)
     layout.addWidget(buttonBox)
     dialog.setLayout(layout)

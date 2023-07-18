@@ -27,7 +27,7 @@ class MergeFeatureUI():
         dialog = QtWidgets.QDialog(self.parent)
         dialog.setWindowTitle('Select Models')
         dialog.setWindowFlags(dialog.windowFlags() & ~QtCore.Qt.WindowType.WindowContextHelpButtonHint)
-        dialog.setWindowModality(QtCore.Qt.ApplicationModal)
+        dialog.setWindowModality(QtCore.Qt.WindowModality.ApplicationModal)
         dialog.resize(200, 250)
         dialog.setMinimumSize(QtCore.QSize(200, 200))
         verticalLayout = QtWidgets.QVBoxLayout(dialog)
@@ -46,7 +46,7 @@ class MergeFeatureUI():
         buttonBox = QtWidgets.QDialogButtonBox(dialog)
         buttonBox.setOrientation(QtCore.Qt.Orientation.Horizontal)
         buttonBox.setStandardButtons(
-            QtWidgets.QDialogButtonBox.Cancel | QtWidgets.QDialogButtonBox.Ok)
+            QtWidgets.QDialogButtonBox.Cancel | QtWidgets.QDialogButtonBox.StandardButton.Ok)
         buttonBox.setObjectName("buttonBox")
         verticalLayout.addWidget(buttonBox)
         buttonBox.accepted.connect(dialog.accept)

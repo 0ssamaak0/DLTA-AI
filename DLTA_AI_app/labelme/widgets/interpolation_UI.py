@@ -32,14 +32,14 @@ def PopUp(config):
     
     dialog = QtWidgets.QDialog()
     dialog.setWindowTitle("Choose Interpolation Options")
-    dialog.setWindowModality(Qt.ApplicationModal)
+    dialog.setWindowModality(Qt.WindowModality.ApplicationModal)
     dialog.resize(250, 100)
     dialog.setWindowFlags(dialog.windowFlags() & ~QtCore.Qt.WindowType.WindowContextHelpButtonHint)
 
     layout = QtWidgets.QVBoxLayout()
 
     label = QtWidgets.QLabel("Choose Interpolation Options")
-    label.setFont(QtGui.QFont("", 10))
+    label.setFont(QtGui.QFont("Arial", 10))
     method_label = QtWidgets.QLabel("Interpolation Method")
     between_label = QtWidgets.QLabel("Interpolation Between")
 
@@ -88,7 +88,7 @@ def PopUp(config):
     # for some reason you must check linear then sam to make it work
     with_linear.setChecked(True)
 
-    buttonBox = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Ok)
+    buttonBox = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.StandardButton.Ok)
     buttonBox.accepted.connect(dialog.accept)
     layout.addWidget(buttonBox)
 

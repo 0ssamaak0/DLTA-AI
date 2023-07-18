@@ -17,7 +17,7 @@ def editLabel_idChanged_UI(config, old_group_id, new_group_id, id_frames_rec, IN
     
     dialog = QtWidgets.QDialog()
     dialog.setWindowTitle("Choose Edit Options")
-    dialog.setWindowModality(Qt.ApplicationModal)
+    dialog.setWindowModality(Qt.WindowModality.ApplicationModal)
     dialog.resize(250, 100)
 
     layout = QtWidgets.QVBoxLayout()
@@ -42,7 +42,7 @@ def editLabel_idChanged_UI(config, old_group_id, new_group_id, id_frames_rec, IN
     layout.addWidget(all)
 
     buttonBox = QtWidgets.QDialogButtonBox(
-        QtWidgets.QDialogButtonBox.Ok)
+        QtWidgets.QDialogButtonBox.StandardButton.Ok)
     buttonBox.accepted.connect(dialog.accept)
     layout.addWidget(buttonBox)
     dialog.setLayout(layout)

@@ -87,7 +87,7 @@ class SegmentationOptionsUI():
         layout.addWidget(slider)
         layout.addWidget(text_input)
 
-        button_box = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel)
+        button_box = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.StandardButton.Ok | QtWidgets.QDialogButtonBox.Cancel)
         layout.addWidget(button_box)
 
         def on_ok():
@@ -141,7 +141,7 @@ class SegmentationOptionsUI():
         layout.addWidget(slider)
         layout.addWidget(text_input)
 
-        button_box = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel)
+        button_box = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.StandardButton.Ok | QtWidgets.QDialogButtonBox.Cancel)
         layout.addWidget(button_box)
 
         def on_ok():
@@ -178,7 +178,7 @@ class SegmentationOptionsUI():
         # Create a new dialog box
         dialog = QtWidgets.QDialog(self.parent)
         dialog.setWindowTitle('Select Classes')
-        dialog.setWindowModality(QtCore.Qt.ApplicationModal)
+        dialog.setWindowModality(QtCore.Qt.WindowModality.ApplicationModal)
         dialog.resize(500, 500)
         dialog.setMinimumSize(QtCore.QSize(500, 500))
         dialog.setWindowFlags(dialog.windowFlags() & ~QtCore.Qt.WindowType.WindowContextHelpButtonHint)
@@ -212,15 +212,15 @@ class SegmentationOptionsUI():
         buttonBox = QtWidgets.QDialogButtonBox(dialog)
         buttonBox.setOrientation(QtCore.Qt.Orientation.Horizontal)
         buttonBox.setStandardButtons(
-            QtWidgets.QDialogButtonBox.Cancel | QtWidgets.QDialogButtonBox.Ok)
+            QtWidgets.QDialogButtonBox.Cancel | QtWidgets.QDialogButtonBox.StandardButton.Ok)
         buttonBox.setObjectName("buttonBox")
-        buttonBox.button(QtWidgets.QDialogButtonBox.Ok).setText("Select Classes")
+        buttonBox.button(QtWidgets.QDialogButtonBox.StandardButton.Ok).setText("Select Classes")
         defaultButton = QtWidgets.QPushButton("Set as Default", dialog)
         buttonBox.addButton(defaultButton, QtWidgets.QDialogButtonBox.ActionRole)
 
         # Add the buttons to a QHBoxLayout
         buttonLayout = QtWidgets.QHBoxLayout()
-        buttonLayout.addWidget(buttonBox.button(QtWidgets.QDialogButtonBox.Ok))
+        buttonLayout.addWidget(buttonBox.button(QtWidgets.QDialogButtonBox.StandardButton.Ok))
         buttonLayout.addWidget(defaultButton)
         buttonLayout.addWidget(buttonBox.button(QtWidgets.QDialogButtonBox.Cancel))
 

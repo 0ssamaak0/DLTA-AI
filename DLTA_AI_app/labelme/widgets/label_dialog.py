@@ -21,7 +21,7 @@ class LabelQLineEdit(QtWidgets.QLineEdit):
         self.list_widget = list_widget
 
     def keyPressEvent(self, e):
-        if e.key() in [QtCore.Qt.Key_Up, QtCore.Qt.Key_Down]:
+        if e.key() in [QtCore.Qt.Key.Key_Up, QtCore.Qt.Key.Key_Down]:
             self.list_widget.keyPressEvent(e)
         else:
             super(LabelQLineEdit, self).keyPressEvent(e)

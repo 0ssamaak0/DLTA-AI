@@ -3155,7 +3155,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 label_file_without_path = osp.basename(label_file)
                 label_file = osp.join(self.output_dir, label_file_without_path)
             item = QtWidgets.QListWidgetItem(file)
-            item.setFlags(Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable)
+            # item.setFlags(Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable)
             if QtCore.QFile.exists(label_file) and LabelFile.is_label_file(
                 label_file
             ):
@@ -3183,7 +3183,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 label_file_without_path = osp.basename(label_file)
                 label_file = osp.join(self.output_dir, label_file_without_path)
             item = QtWidgets.QListWidgetItem(filename)
-            item.setFlags(Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable)
+            # item.setFlags(Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable)
             if QtCore.QFile.exists(label_file) and LabelFile.is_label_file(
                 label_file
             ):
@@ -3780,7 +3780,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.canvas.cancelManualDrawing()
         self.setEditMode()
-        self.canvas.setCursor(QtGui.QCursor(QtCore.Qt.CrossCursor))
+        self.canvas.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.CrossCursor))
 
         if index == 0:
             self.canvas.tracking_area = ""
@@ -4875,7 +4875,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if not same_image:
             self.sam_clear_annotation_button_clicked()
             self.sam_buttons_colors("add")
-        self.canvas.setCursor(QtGui.QCursor(QtCore.Qt.CrossCursor))
+        self.canvas.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.CrossCursor))
         self.canvas.SAM_mode = "add point"
 
     def sam_remove_point_button_clicked(self):
@@ -4890,7 +4890,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if not same_image:
             self.sam_clear_annotation_button_clicked()
             self.sam_buttons_colors("remove")
-        self.canvas.setCursor(QtGui.QCursor(QtCore.Qt.CrossCursor))
+        self.canvas.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.CrossCursor))
         self.canvas.SAM_mode = "remove point"
 
     def sam_select_rect_button_clicked(self):
@@ -4906,7 +4906,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if not same_image:
             self.sam_clear_annotation_button_clicked()
             self.sam_buttons_colors("rect")
-        self.canvas.setCursor(QtGui.QCursor(QtCore.Qt.CrossCursor))
+        self.canvas.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.CrossCursor))
         self.canvas.SAM_mode = "select rect"
 
     def sam_clear_annotation_button_clicked(self):
@@ -4933,7 +4933,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.canvas.cancelManualDrawing()
         self.sam_buttons_colors("finish")
         # return the cursor to normal
-        self.canvas.setCursor(QtGui.QCursor(QtCore.Qt.ArrowCursor))
+        self.canvas.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.ArrowCursor))
         self.canvas.SAM_coordinates = []
         self.canvas.SAM_rect = []
         self.canvas.SAM_rects = []
