@@ -550,16 +550,14 @@ def convert_QT_to_cv(incomingImage):
     Returns:
         arr: a cv image MAT format
     """
-    from PyQt5.QtGui import QImage as QImg5
-    
-    # incomingImage = incomingImage.convertToFormat(QtGui.QImage.Format.Format_RGBA8888)
+    incomingImage = incomingImage.convertToFormat(QtGui.QImage.Format.Format_ARGB32)
 
     width = incomingImage.width()
     height = incomingImage.height()
 
     ptr = incomingImage.bits()
     ptr.setsize(incomingImage.sizeInBytes())
-    arr = np.array(ptr).reshape(height, width, 3)  # Copies the data
+    arr = np.array(ptr).reshape(height, width, 4)  # Copies the data
     return arr
 
 def convert_cv_to_qt(cv_img):
