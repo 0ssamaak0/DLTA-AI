@@ -224,6 +224,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.scrollBars = {
             Qt.Orientation.Vertical: scrollArea.verticalScrollBar(),
             Qt.Orientation.Horizontal: scrollArea.horizontalScrollBar(),
+            Qt.Orientation.Horizontal.value: scrollArea.horizontalScrollBar(),
+            Qt.Orientation.Vertical.value: scrollArea.verticalScrollBar(),
         }
         self.canvas.scrollRequest.connect(self.scrollRequest)
 
@@ -1066,6 +1068,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.scroll_values = {
             Qt.Orientation.Horizontal: {},
             Qt.Orientation.Vertical: {},
+            Qt.Orientation.Horizontal.value: {},
+            Qt.Orientation.Vertical.value: {},
         }  # key=filename, value=scroll_value
 
         if filename is not None and osp.isdir(filename):
