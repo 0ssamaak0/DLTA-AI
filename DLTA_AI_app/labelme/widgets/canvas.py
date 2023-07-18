@@ -923,20 +923,17 @@ class Canvas(QtWidgets.QWidget):
                 self.scrollRequest.emit(delta.x(), QtCore.Qt.Orientation.Horizontal)
                 self.scrollRequest.emit(delta.y(), QtCore.Qt.Orientation.Vertical)
         else:
-            if ev.orientation() == QtCore.Qt.Orientation.Vertical:
-                mods = ev.modifiers()
-                if QtCore.Qt.KeyboardModifier.ControlModifier == int(mods):
-                    # with Ctrl/Command key
-                    self.zoomRequest.emit(ev.delta(), ev.pos())
-                else:
-                    self.scrollRequest.emit(
-                        ev.delta(),
-                        QtCore.Qt.Orientation.Horizontal
-                        if (QtCore.Qt.KeyboardModifier.ShiftModifier == int(mods))
-                        else QtCore.Qt.Orientation.Vertical,
-                    )
+            mods = ev.modifiers()
+            delta = ev.angleDelta()
+            if mods.value:
+                # with Ctrl/Command key
+                # zoom
+                self.zoomRequest.emit(delta.y(), ev.position().toPoint())
             else:
-                self.scrollRequest.emit(ev.delta(), QtCore.Qt.Orientation.Horizontal)
+                # scroll
+                self.scrollRequest.emit(delta.x(), QtCore.Qt.Orientation.Horizontal.value)
+                self.scrollRequest.emit(delta.y(), QtCore.Qt.Orientation.Vertical.value)
+                
         ev.accept()
 
     def keyPressEvent(self, ev):
