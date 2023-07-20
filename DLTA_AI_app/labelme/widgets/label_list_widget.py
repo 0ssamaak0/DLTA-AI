@@ -71,12 +71,15 @@ class LabelListWidgetItem(QtGui.QStandardItem):
     def __init__(self, text=None, shape=None):
         super(LabelListWidgetItem, self).__init__()
         self.setText(text)
+
         self.setShape(shape)
 
         self.setCheckable(True)
         self.setCheckState(Qt.CheckState.Checked)
         self.setEditable(False)
         self.setTextAlignment(Qt.AlignmentFlag.AlignBottom)
+        font = QtGui.QFont("Arial", 10)
+        self.setFont(font)
 
     def clone(self):
         return LabelListWidgetItem(self.text(), self.shape())
