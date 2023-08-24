@@ -68,7 +68,7 @@ def PopUp():
 
         # If the user clicks OK, update the shortcut and table
         if dialog.exec():
-            key = key_edit.keySequence().toString(QtGui.QKeySequence.NativeText)
+            key = key_edit.keySequence().toString(QtGui.QKeySequence.SequenceFormat.NativeText)
             if key in shortcuts.values() and list(shortcuts.keys())[list(shortcuts.values()).index(key)] != name:
                 conflicting_shortcut = list(shortcuts.keys())[list(shortcuts.values()).index(key)]
                 QtWidgets.QMessageBox.warning(None, "Error", f"{key} is already assigned to {conflicting_shortcut}.")
@@ -142,7 +142,7 @@ def PopUp():
     dialog.setMinimumHeight(shortcut_table.rowHeight(0) * 10 + 50)
 
     # Set the size policy to allow vertical resizing
-    dialog.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Expanding)
+    dialog.setSizePolicy(QtWidgets.QSizePolicy.Policy.Fixed, QtWidgets.QSizePolicy.Policy.Expanding)
 
     # Display the dialog box
     dialog.exec()
