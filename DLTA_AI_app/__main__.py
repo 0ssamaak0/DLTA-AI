@@ -81,7 +81,7 @@ def main():
     from labelme.app import MainWindow
     win = MainWindow()
     splash.finish(win)
-    win.show()
+    win.showMaximized()
 
     # close splash screen
 
