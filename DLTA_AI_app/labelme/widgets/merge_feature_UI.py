@@ -46,7 +46,7 @@ class MergeFeatureUI():
         buttonBox = QtWidgets.QDialogButtonBox(dialog)
         buttonBox.setOrientation(QtCore.Qt.Orientation.Horizontal)
         buttonBox.setStandardButtons(
-            QtWidgets.QDialogButtonBox.Cancel | QtWidgets.QDialogButtonBox.StandardButton.Ok)
+            QtWidgets.QDialogButtonBox.StandardButton.Cancel | QtWidgets.QDialogButtonBox.StandardButton.Ok)
         buttonBox.setObjectName("buttonBox")
         verticalLayout.addWidget(buttonBox)
         buttonBox.accepted.connect(dialog.accept)
