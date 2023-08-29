@@ -2592,6 +2592,32 @@ class MainWindow(QtWidgets.QMainWindow):
                 selected_model_name, config, checkpoint)
         self.updateSamControls()
 
+    def openNextImg(self, _value=False, load=True):
+        self.refresh_image_MODE()
+        keep_prev = self._config["keep_prev"]
+        if not self.mayContinue():
+            return
+
+        if len(self.imageList) <= 0:
+            return
+
+        filename = None
+        if self.filename is None:
+            filename = self.imageList[0]
+        else:
+            currIndex = self.imageList.index(self.filename)
+            if currIndex + 1 < len(self.imageList):
+                filename = self.imageList[currIndex + 1]
+            else:
+                filename = self.imageList[-1]
+        self.filename = filename
+
+        if self.filename and load:
+            self.loadFile(self.filename)
+
+        self._config["keep_prev"] = keep_prev
+        self.refresh_image_MODE()
+
     def openFile(self, _value=False):
 
         self.actions.export.setEnabled(False)
@@ -3164,6 +3190,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 item.setCheckState(Qt.CheckState.Unchecked)
             self.fileListWidget.addItem(item)
 
+            self.openNextImg()
+
     def importDirImages(self, dirpath, pattern=None, load=True):
 
         self.actions.export.setEnabled(True)
@@ -3191,6 +3219,7 @@ class MainWindow(QtWidgets.QMainWindow):
             else:
                 item.setCheckState(Qt.CheckState.Unchecked)
             self.fileListWidget.addItem(item)
+        self.openNextImg(load=load)
         self.fileListWidget.horizontalScrollBar().setValue(
             self.fileListWidget.horizontalScrollBar().maximum()
         )
