@@ -1,14 +1,8 @@
-import sys
 from segment_anything import sam_model_registry, SamPredictor, SamAutomaticMaskGenerator
 import numpy as np
-import matplotlib.pyplot as plt
-import cv2
-import skimage.measure
 import torch
-from .helpers import compute_iou_exact
+from .helpers import mathOps
 
-# import mask_to_polygons from inference.py inside the inference class
-# from inference import mask_to_polygons
 
 # create a sam predictor class with funcions to predict and visualize and results
 
@@ -92,61 +86,6 @@ class Sam_Predictor():
     )
         return masks, scores
 
-    
-    
-    def get_contour_length(self, contour):
-        contour_start = contour
-        contour_end = np.r_[contour[1:], contour[0:1]]
-        return np.linalg.norm(contour_end - contour_start, axis=1).sum()
-
-    def mask_to_polygons(self, mask, n_points=25, resize_factors=[1.0, 1.0]):
-        mask = mask > 0.0
-        contours = skimage.measure.find_contours(mask)
-        if len(contours) == 0:
-            return []
-        contour = max(contours, key=self.get_contour_length)
-        coords = skimage.measure.approximate_polygon(
-            coords=contour,
-            tolerance=np.ptp(contour, axis=0).max() / 100,
-        )
-
-        coords = coords * resize_factors
-        # convert coords from x y to y x
-        coords = np.fliplr(coords)
-
-        # segment_points are a list of coords
-        segment_points = coords.astype(int)
-        polygon = segment_points
-        return polygon
-
-    def polygon_to_shape(self, polygon, score, className="SAM instance"):
-        shape = {}
-        shape["label"] = className
-        shape["content"] = str(round(score, 2))
-        shape["group_id"] = None
-        shape["shape_type"] = "polygon"
-        shape["bbox"] = self.get_bbox(polygon)
-
-        shape["flags"] = {}
-        shape["other_data"] = {}
-
-        # shape_points is result["seg"] flattened
-        shape["points"] = [item for sublist in polygon
-                               for item in sublist]
-        # print(shape)
-        return shape
-    
-    def get_bbox(self, segmentation):
-        x = []
-        y = []
-        for i in range(len(segmentation)):
-            x.append(segmentation[i][0])
-            y.append(segmentation[i][1])
-        # get the bbox in xyxy format
-        if len(x) == 0 or len(y) == 0:
-            return []
-        bbox = [min(x), min(y), max(x), max(y)]
-        return bbox
         
     def check_image(self , new_image):
         if not np.array_equal(self.image, new_image):
@@ -260,39 +199,7 @@ class Sam_Predictor():
             # crop_box - List[int] - the crop of the image used to generate this mask in xywh format
             
         sam_result = self.mask_generator.generate(image)
-        shapes = self.OURnms_areaBased(sam_result, iou_threshold=iou_threshold) # with AREA not score
+        shapes = mathOps.OURnms_areaBased_fromSAM(sam_result, iou_threshold=iou_threshold) # with AREA not score
         
         return shapes
     
-    def OURnms_areaBased(self, sam_result, iou_threshold=0.5):
-        
-        iou_threshold = float(iou_threshold)
-
-        # Sort shapes by their areas
-        sortedResult = sorted(sam_result, key=lambda x: x['area'], reverse=True)
-        masks = [ mask['segmentation'] for mask in sortedResult]
-        scores = [mask['stability_score'] for mask in sortedResult]
-        polygons = [self.mask_to_polygons(mask) for mask in masks]
-        
-        toBeRemoved = []
-
-        # Loop through each shape
-        if iou_threshold > 0.99:
-            for i in range(len(polygons)):
-                shape1 = polygons[i]
-                # Loop through each remaining shape
-                for j in range(i + 1, len(sortedResult)):
-                    shape2 = polygons[j]
-                    # Compute IOU between shape and remaining_shape
-                    iou = compute_iou_exact(shape1, shape2)
-                    # If IOU is greater than threshold, remove remaining_shape from shapes list
-                    if iou > iou_threshold:
-                        toBeRemoved.append(j)
-
-        shapes = []
-        for i in range(len(polygons)):
-            if i in toBeRemoved:
-                continue
-            shapes.append(self.polygon_to_shape(polygons[i], scores[i], f'X{i}'))
-
-        return shapes

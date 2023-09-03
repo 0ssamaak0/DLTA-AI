@@ -3,3 +3,6 @@
 *.pth
 # anything in the folders : datasets , runs
 runs/
+*.lnk
+*.ps1
+*.docx

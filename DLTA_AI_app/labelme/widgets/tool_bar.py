@@ -1,5 +1,5 @@
-from qtpy import QtCore
-from qtpy import QtWidgets
+from PyQt6 import QtCore
+from PyQt6 import QtWidgets
 
 
 class ToolBar(QtWidgets.QToolBar):
@@ -10,7 +10,7 @@ class ToolBar(QtWidgets.QToolBar):
         layout.setSpacing(0)
         layout.setContentsMargins(*m)
         self.setContentsMargins(*m)
-        self.setWindowFlags(self.windowFlags() | QtCore.Qt.FramelessWindowHint)
+        self.setWindowFlags(self.windowFlags() | QtCore.Qt.WindowType.FramelessWindowHint)
 
     def addAction(self, action):
         if isinstance(action, QtWidgets.QWidgetAction):
@@ -25,4 +25,4 @@ class ToolBar(QtWidgets.QToolBar):
             if isinstance(
                 self.layout().itemAt(i).widget(), QtWidgets.QToolButton
             ):
-                self.layout().itemAt(i).setAlignment(QtCore.Qt.AlignCenter)
+                self.layout().itemAt(i).setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)

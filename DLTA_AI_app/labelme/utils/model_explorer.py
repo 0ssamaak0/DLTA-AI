@@ -1,5 +1,5 @@
-from PyQt5 import QtWidgets, QtCore, QtGui
-from PyQt5.QtWidgets import QDialog, QToolBar, QTableWidget, QTableWidgetItem, QVBoxLayout, QHBoxLayout, QComboBox, QCheckBox, QPushButton, QProgressDialog, QApplication, QWidget
+from PyQt6 import QtWidgets, QtCore, QtGui
+from PyQt6.QtWidgets import QDialog, QToolBar, QTableWidget, QTableWidgetItem, QVBoxLayout, QHBoxLayout, QComboBox, QCheckBox, QPushButton, QProgressDialog, QApplication, QWidget
 import json
 import urllib.request
 import requests
@@ -36,7 +36,7 @@ class ModelExplorerDialog(QDialog):
         self.mute = mute
         self.notification = notification
         self.setWindowTitle("Model Explorer")
-        self.setWindowFlags(self.windowFlags() & ~QtCore.Qt.WindowContextHelpButtonHint)
+        self.setWindowFlags(self.windowFlags() & ~QtCore.Qt.WindowType.WindowContextHelpButtonHint)
 
 
         # Define the columns of the table
@@ -136,12 +136,12 @@ class ModelExplorerDialog(QDialog):
         header = self.table.horizontalHeader()
         self.table.setHorizontalHeaderLabels(
             self.cols_labels + ["Status", "Select Model"])
-        header.setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(QtWidgets.QHeaderView.ResizeMode.ResizeToContents)
 
         # remove vertical header
         self.table.verticalHeader().setVisible(False)
         self.table.horizontalHeader().setSectionResizeMode(
-            QtWidgets.QHeaderView.ResizeToContents)
+            QtWidgets.QHeaderView.ResizeMode.ResizeToContents)
 
         # Populate the table with data
         row_count = 0
@@ -150,7 +150,7 @@ class ModelExplorerDialog(QDialog):
             col_count = 0
             for key in self.cols_labels:
                 item = QTableWidgetItem(f"{model[key]}")
-                item.setTextAlignment(QtCore.Qt.AlignCenter)
+                item.setTextAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
                 self.table.setItem(row_count, col_count, item)
                 col_count += 1
 
@@ -169,9 +169,9 @@ class ModelExplorerDialog(QDialog):
             if model["Downloaded"]:
                 available_item = QTableWidgetItem("Downloaded")
                 # make the text color dark green
-                available_item.setForeground(QtCore.Qt.darkGreen)
+                available_item.setForeground(QtCore.Qt.GlobalColor.darkGreen)
                 self.table.setItem(row_count, 9, available_item)
-                available_item.setTextAlignment(QtCore.Qt.AlignCenter)
+                available_item.setTextAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
             else:
                 available_item = QPushButton("Requires Download")
                 available_item.clicked.connect(
@@ -266,7 +266,7 @@ class ModelExplorerDialog(QDialog):
             f"Downloading {model_name}...", "Cancel", 0, 100, self)
         # Set the window title
         self.progress_dialog.setWindowTitle("Downloading Model")
-        self.progress_dialog.setWindowModality(QtCore.Qt.WindowModal)
+        self.progress_dialog.setWindowModality(QtCore.Qt.WindowModality.WindowModal)
         self.progress_dialog.canceled.connect(self.cancel_download)
         self.progress_dialog.show()
 

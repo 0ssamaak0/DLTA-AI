@@ -1,9 +1,9 @@
 import re
 
 from qtpy import QT_VERSION
-from qtpy import QtCore
-from qtpy import QtGui
-from qtpy import QtWidgets
+from PyQt6 import QtCore
+from PyQt6 import QtGui
+from PyQt6 import QtWidgets
 
 from labelme.logger import logger
 import labelme.utils
@@ -21,7 +21,7 @@ class LabelQLineEdit(QtWidgets.QLineEdit):
         self.list_widget = list_widget
 
     def keyPressEvent(self, e):
-        if e.key() in [QtCore.Qt.Key_Up, QtCore.Qt.Key_Down]:
+        if e.key() in [QtCore.Qt.Key.Key_Up, QtCore.Qt.Key.Key_Down]:
             self.list_widget.keyPressEvent(e)
         else:
             super(LabelQLineEdit, self).keyPressEvent(e)
@@ -54,7 +54,7 @@ class LabelDialog(QtWidgets.QDialog):
         self.edit_group_id = QtWidgets.QLineEdit()
         self.edit_group_id.setPlaceholderText("Tracking ID")
         self.edit_group_id.setValidator(
-            QtGui.QRegExpValidator(QtCore.QRegExp(r"\d*"), None)
+            QtGui.QRegularExpressionValidator(QtCore.QRegularExpression(r"\d*"), None)
         )
 
         self.edit_group_id_label = QtWidgets.QLabel()
@@ -64,13 +64,13 @@ class LabelDialog(QtWidgets.QDialog):
         self.select_class_label.setText("Class Name")
 
         # buttons
-        self.buttonBox = bb = QtWidgets.QDialogButtonBox(
-            QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel,
-            QtCore.Qt.Horizontal,
-            self,
+        self.buttonBox = bb =  QtWidgets.QDialogButtonBox(
+            QtWidgets.QDialogButtonBox.StandardButton.Ok | QtWidgets.QDialogButtonBox.StandardButton.Cancel,
+            QtCore.Qt.Orientation.Horizontal,
+            self
         )
-        bb.button(bb.Ok).setIcon(labelme.utils.newIcon("done"))
-        bb.button(bb.Cancel).setIcon(labelme.utils.newIcon("undo"))
+        bb.button(bb.StandardButton.Ok).setIcon(labelme.utils.newIcon("done"))
+        bb.button(bb.StandardButton.Cancel).setIcon(labelme.utils.newIcon("undo"))
         bb.setCenterButtons(True)  # center the buttons
         bb.accepted.connect(self.validate)
         bb.rejected.connect(self.reject)
@@ -79,11 +79,11 @@ class LabelDialog(QtWidgets.QDialog):
         self.labelList = QtWidgets.QListWidget()
         if self._fit_to_content["row"]:
             self.labelList.setHorizontalScrollBarPolicy(
-                QtCore.Qt.ScrollBarAlwaysOff
+                QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff
             )
         if self._fit_to_content["column"]:
             self.labelList.setVerticalScrollBarPolicy(
-                QtCore.Qt.ScrollBarAlwaysOff
+                QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff
             )
         self._sort_labels = sort_labels
         if labels:
@@ -164,19 +164,19 @@ class LabelDialog(QtWidgets.QDialog):
             )
             completion = "startswith"
         if completion == "startswith":
-            completer.setCompletionMode(QtWidgets.QCompleter.InlineCompletion)
+            completer.setCompletionMode(QtWidgets.QCompleter.CompletionMode.InlineCompletion)
             # Default settings.
             # completer.setFilterMode(QtCore.Qt.MatchStartsWith)
         elif completion == "contains":
-            completer.setCompletionMode(QtWidgets.QCompleter.PopupCompletion)
-            completer.setFilterMode(QtCore.Qt.MatchContains)
+            completer.setCompletionMode(QtWidgets.QCompleter.CompletionMode.PopupCompletion)
+            completer.setFilterMode(QtCore.Qt.MatchFlag.MatchContains)
         else:
             raise ValueError("Unsupported completion: {}".format(completion))
         completer.setModel(self.labelList.model())
         self.edit.setCompleter(completer)
 
     def addLabelHistory(self, label):
-        if self.labelList.findItems(label, QtCore.Qt.MatchExactly):
+        if self.labelList.findItems(label, QtCore.Qt.MatchFlag.MatchExactly):
             return
         self.labelList.addItem(label)
         if self._sort_labels:
@@ -242,6 +242,7 @@ class LabelDialog(QtWidgets.QDialog):
         flags = {}
         for i in range(self.flagsLayout.count()):
             item = self.flagsLayout.itemAt(i).widget()
+            print(type(item))
             flags[item.text()] = item.isChecked()
         return flags
 
@@ -288,19 +289,19 @@ class LabelDialog(QtWidgets.QDialog):
             self.edit_group_id.clear()
         else:
             self.edit_group_id.setText(str(group_id))
-        items = self.labelList.findItems(text, QtCore.Qt.MatchFixedString)
+        items = self.labelList.findItems(text, QtCore.Qt.MatchFlag.MatchFixedString)
         if items:
             if len(items) != 1:
                 logger.warning("Label list has duplicate '{}'".format(text))
             self.labelList.setCurrentItem(items[0])
             row = self.labelList.row(items[0])
             self.edit.completer().setCurrentRow(row)
-        self.edit.setFocus(QtCore.Qt.PopupFocusReason)
+        self.edit.setFocus(QtCore.Qt.FocusReason.PopupFocusReason)
         if move:
             self.move(QtGui.QCursor.pos())
         if skip_flag:
             return self.edit.text(), self.getFlags(), self.getGroupId(), self.getContent()
-        if self.exec_():
+        if self.exec():
             return self.edit.text(), self.getFlags(), self.getGroupId(), self.getContent()
         else:
             return None, None, None, None
