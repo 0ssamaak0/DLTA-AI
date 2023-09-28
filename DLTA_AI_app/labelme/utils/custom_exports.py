@@ -71,8 +71,7 @@ Example: bar() in the dummy functions below.
 
 3- exported functions (image/dir): functions that are exported (image and dir mode * including video as frames *):
 they take the following arguments:
-    target_directory (str): The directory containing the JSON files (dir)
-    save_path (str): The path to save the output file (image mode)
+    json_paths (list): List of paths to the JSON files containing the object detection results.
     annotation_path (str): The path to the output file.
 
 and return annotation_path (str): to check if the function is working properly.
@@ -81,7 +80,7 @@ Example: baz() in the dummy functions below.
 
 ** WARINING: All EXPORT FUNCTIONS MUST HAVE THE SAME ARGUMENTS OR ELSE THEY WILL NOT WORK. **
 
-It's heavily recommended to check `exports.py` file to see how the functions are called, and how to parse the JSON files
+It's recommended to check `exports.py` file to see how the functions are called
 
 """
 # =========================================
@@ -96,10 +95,10 @@ def bar(results_file, vid_width, vid_height, annotation_path):
 
     return annotation_path
 
-def baz(target_directory, save_path, annotation_path):
+def baz(json_paths, annotation_path):
     foo()
     print("baz")
-    print(f"Export Function Check: target_directory: {target_directory} | save_path: {save_path} | annotation_path: {annotation_path}")
+    print(f"Export Function Check: json_paths {json_paths} | annotation_path: {annotation_path}")
 
     return annotation_path
 
