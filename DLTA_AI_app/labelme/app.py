@@ -2789,12 +2789,15 @@ class MainWindow(QtWidgets.QMainWindow):
                 if not result:
                     return
                 save_path = self.save_path if self.save_path else self.labelFile.filename
+                json_paths = utils.parse_img_export(self.target_directory, save_path)
+                # Check which radio button is checked and export accordingly
+                # COCO export
                 if coco_radio:
                     # Get user input for COCO export path
                     folderDialog = utils.FolderDialog("coco.json", "json")
                     if folderDialog.exec():
                         pth = utils.exportCOCO(
-                            self.target_directory, save_path, folderDialog.selectedFiles()[0])
+                            json_paths, folderDialog.selectedFiles()[0])
                     else:
                         return
                 # custom exports
@@ -2809,7 +2812,7 @@ class MainWindow(QtWidgets.QMainWindow):
                             if folderDialog.exec():
                                 try:
                                     pth = custom_exports_list_image[i](
-                                        self.target_directory, save_path, folderDialog.selectedFiles()[0])
+                                        json_paths, folderDialog.selectedFiles()[0])
                                 except Exception as e:
                                     MsgBox.OKmsgBox(
                                         f"Error", f"Error: with custom export {custom_exports_list_image[i].button_name}\n check the parameters matches the specified ones in custom_exports.py\n Error Message: {e}", "critical")

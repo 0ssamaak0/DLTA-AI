@@ -104,38 +104,22 @@ def baz(target_directory, save_path, annotation_path):
     return annotation_path
 
 
-def count_objects(target_directory, save_path, annotation_path):
+def count_objects(json_paths, annotation_path):
     import matplotlib.pyplot as plt
     import json
-    import glob
 
-    # If the target is not a directory, set the file path to the save path
-    try:
-        if target_directory == "":
-            image_mode = True
-        else:
-            image_mode = False
-
-        # Get all the JSON files in the specified directory
-        json_paths = glob.glob(f"{target_directory}/*.json")
-        if image_mode:
-            json_paths = [save_path]
-        # Raise an error if no JSON files are found in the directory
-        if len(json_paths) == 0:
-            raise ValueError("No json files found in the directory")
-
-        labels = []
-        counts = []
-        # Loop through each JSON file
-        for i in range(len(json_paths)):
-            with open(json_paths[i]) as f:
-                labels.append(json_paths[i].split("time_")[-1].split(".")[0].replace("_", ":")[-5:])
-                # Load the JSON data
-                data = json.load(f)
-                inner_count = 0
-                for j in range(len(data["shapes"])):
-                    inner_count += 1
-                counts.append(inner_count)
+    labels = []
+    counts = []
+    # Loop through each JSON file
+    for i in range(len(json_paths)):
+        with open(json_paths[i]) as f:
+            labels.append(json_paths[i].split("time_")[-1].split(".")[0].replace("_", ":")[-5:])
+            # Load the JSON data
+            data = json.load(f)
+            inner_count = 0
+            for j in range(len(data["shapes"])):
+                inner_count += 1
+            counts.append(inner_count)
         
         # Plot the counts
         plt.figure(figsize=(20, 12))
@@ -150,11 +134,6 @@ def count_objects(target_directory, save_path, annotation_path):
         plt.savefig(annotation_path)
         plt.close()
     
-    except Exception as e:
-        print(e)
-        print("Error in custom export function")
-        raise e
-
     return annotation_path
                 
 # =========================================

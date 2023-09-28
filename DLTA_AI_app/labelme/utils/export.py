@@ -110,8 +110,32 @@ def get_area_from_polygon(polygon, mode="segmentation"):
     else:
         raise ValueError("mode must be either 'segmentation' or 'bbox'")
 
+# the parsing function is called in the main export function (in app.py) before exporting in image or dir mode
+def parse_img_export(target_directory, save_path):
+    import json
+    import glob
 
-def exportCOCO(target_directory, save_path, annotation_path):
+    # If the target is not a directory, set the file path to the save path
+    try:
+        if target_directory == "":
+            image_mode = True
+        else:
+            image_mode = False
+
+        # Get all the JSON files in the specified directory
+        json_paths = glob.glob(f"{target_directory}/*.json")
+        if image_mode:
+            json_paths = [save_path]
+        # Raise an error if no JSON files are found in the directory
+        if len(json_paths) == 0:
+            raise ValueError("No json files found in the directory")
+    except Exception as e:
+        print(f"Error parsing image export: {e}")
+        return None
+    
+    return json_paths
+
+def exportCOCO(json_paths, annotation_path):
     """
     Export annotations in COCO format from a directory of JSON files for image and dir modes
 
@@ -127,13 +151,6 @@ def exportCOCO(target_directory, save_path, annotation_path):
         ValueError: If no JSON files are found in the directory.
 
     """
-    # If the target is not a directory, set the file path to the save path
-    if target_directory == "":
-        image_mode = True
-    else:
-        image_mode = False
-
-
     # Create a dictionary to store the file info
     file = {}
 
@@ -150,19 +167,9 @@ def exportCOCO(target_directory, save_path, annotation_path):
     # Create an empty set to store the used classes
     used_classes = set()
 
-    # Get all the JSON files in the specified directory
-    json_paths = glob.glob(f"{target_directory}/*.json")
-
-    if image_mode:
-        json_paths = [save_path]
-
     # Create empty lists to store annotations and images
     annotations = []
     images = []
-
-    # Raise an error if no JSON files are found in the directory
-    if len(json_paths) == 0:
-        raise ValueError("No json files found in the directory")
 
     # Loop through each JSON file
     for i in range(len(json_paths)):
