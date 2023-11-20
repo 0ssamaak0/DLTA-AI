@@ -6,3 +6,10 @@ runs/
 *.lnk
 *.ps1
 *.docx
+
+
+
+# for debugging purposes , remove files from ( test_imgs , test_videos ) folders
+test_imgs/
+test_videos/
+```
