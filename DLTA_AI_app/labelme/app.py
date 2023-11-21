@@ -3496,7 +3496,7 @@ class MainWindow(QtWidgets.QMainWindow):
             return
         videoFile = QtWidgets.QFileDialog.getOpenFileName(
             self, self.tr("%s - Open Video") % __appname__, ".",
-            self.tr("Video files (*.mp4 *.avi *.mov)")
+            self.tr("Video files (*.mp4 *.avi *.mov *.mkv *.webm *.flv *.mpeg *.mpg *.wmv)")
         )
 
         if videoFile[0]:
