@@ -36,7 +36,7 @@ color_palette = [(75, 25, 230),
 
 def draw_bb_id(flags, image, x, y, w, h, id, conf, label, color=(0, 0, 255), thickness=1):
     if image is None:
-        print("Image is None")
+        # print("Image is None")
         return
     
     """
