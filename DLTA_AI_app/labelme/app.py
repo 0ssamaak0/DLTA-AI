@@ -3516,6 +3516,7 @@ class MainWindow(QtWidgets.QMainWindow):
             else:
                 self.actions.export.setEnabled(False)
 
+            # initializing the main video parameters
             cap = cv2.VideoCapture(videoFile[0])
             self.CURRENT_VIDEO_HEIGHT = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
             self.CURRENT_VIDEO_WIDTH = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -3523,12 +3524,18 @@ class MainWindow(QtWidgets.QMainWindow):
             self.TOTAL_VIDEO_FRAMES = int(
                 self.CAP.get(cv2.CAP_PROP_FRAME_COUNT))
             self.CURRENT_VIDEO_FPS = self.CAP.get(cv2.CAP_PROP_FPS)
+            
+            # initializing the main video frames slider
             self.main_video_frames_slider.setMaximum(self.TOTAL_VIDEO_FRAMES)
-            self.frames_to_track_slider.setMaximum(
-                self.TOTAL_VIDEO_FRAMES - self.INDEX_OF_CURRENT_FRAME)
             self.main_video_frames_slider.setValue(2)
             self.INDEX_OF_CURRENT_FRAME = 1
             self.main_video_frames_slider.setValue(self.INDEX_OF_CURRENT_FRAME)
+            
+            # initializing the frames to track slider
+            self.frames_to_track_slider.setMaximum(
+                self.TOTAL_VIDEO_FRAMES - self.INDEX_OF_CURRENT_FRAME)
+            if self.TOTAL_VIDEO_FRAMES > 10 :
+                self.frames_to_track_slider.setValue(10)
 
             # self.addToolBarBreak
             self.set_video_controls_visibility(True)
