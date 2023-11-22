@@ -2739,9 +2739,11 @@ class MainWindow(QtWidgets.QMainWindow):
                 pth = ""
                 # Check which radio button is checked and export accordingly
                 if video_radio:
+                    output_video_file_name = f'{self.CURRENT_VIDEO_NAME}_tracking_results.mp4'
+
                     # Get user input for video export path
                     folderDialog = utils.FolderDialog(
-                        "tracking_results.mp4", "mp4")
+                        output_video_file_name, "mp4")
                     if folderDialog.exec():
                         pth = self.export_as_video_button_clicked(
                             folderDialog.selectedFiles()[0])
@@ -4100,9 +4102,12 @@ class MainWindow(QtWidgets.QMainWindow):
     def export_as_video_button_clicked(self, output_filename=None):
         self.update_current_frame_annotation()
         input_video_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}.mp4'
-        output_video_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}_tracking_results.mp4'
-        if output_filename is not False:
+        if output_filename is not None:
             output_video_file_name = output_filename
+        else:
+            output_video_file_name = f'{self.CURRENT_VIDEO_PATH}/{self.CURRENT_VIDEO_NAME}_tracking_results.mp4'
+            
+            
         input_cap = cv2.VideoCapture(input_video_file_name)
         output_cap = cv2.VideoWriter(output_video_file_name, cv2.VideoWriter_fourcc(
             *'mp4v'), int(self.CURRENT_VIDEO_FPS), (int(self.CURRENT_VIDEO_WIDTH), int(self.CURRENT_VIDEO_HEIGHT)))
