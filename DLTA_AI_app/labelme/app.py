@@ -2751,7 +2751,8 @@ class MainWindow(QtWidgets.QMainWindow):
                         return
                 if coco_radio:
                     # Get user input for COCO export path
-                    folderDialog = utils.FolderDialog("coco.json", "json")
+                    output_video_file_name = f'{self.CURRENT_VIDEO_NAME}_coco.json'
+                    folderDialog = utils.FolderDialog(output_video_file_name, "json")
                     if folderDialog.exec():
                         pth = utils.exportCOCOvid(
                             json_file_name, self.CURRENT_VIDEO_WIDTH, self.CURRENT_VIDEO_HEIGHT, folderDialog.selectedFiles()[0])
@@ -2759,7 +2760,8 @@ class MainWindow(QtWidgets.QMainWindow):
                         return
                 if mot_radio:
                     # Get user input for MOT export path
-                    folderDialog = utils.FolderDialog("mot.txt", "txt")
+                    output_video_file_name = f'{self.CURRENT_VIDEO_NAME}_mot.txt'
+                    folderDialog = utils.FolderDialog(output_video_file_name, "txt")
                     if folderDialog.exec():
                         pth = utils.exportMOT(
                             json_file_name, folderDialog.selectedFiles()[0])
