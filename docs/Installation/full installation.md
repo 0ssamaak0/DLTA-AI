@@ -22,6 +22,11 @@ Example:
 conda install pytorch torchvision torchaudio .... -c pytorch>
 ```
 
+!!!
+Due to inconsistency between the current versions of `pytorch` and `mmcv`, some users may face issues when using `pytorch 2.x`
+if you face any issues, try to install `pytorch 1.13.1` instead
+!!!
+
 ## Option 1: Using pip
 Installation using pip is more easier since it handles all dependencies
 ```
