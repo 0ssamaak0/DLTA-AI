@@ -8,7 +8,7 @@ icon: "assets/icon.png"
 ![DLTA-AI Preview](https://github.com/0ssamaak0/DLTA-AI/raw/master/assets/gif_main.gif?raw=true)
 
 <h3 align= "center">
-Data Labeling, Tracking and Annotation with AI
+Data Labeling, Tracking and Annotation with AI.
 </h3>
 
 DLTA-AI is the next generation of annotation tools, integrating the power of Computer Vision SOTA models to Labelme in a seamless expirence and intuitive workflow to make creating image datasets easier than ever before
