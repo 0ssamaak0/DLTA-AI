@@ -14,7 +14,7 @@ DLTA-AI is the next generation of annotation tools, integrating the power of Com
 
 [![User Guide](https://img.shields.io/badge/User%20Guide-blue)](https://0ssamaak0.github.io/DLTA-AI/)
 [![Youtube Channel](https://img.shields.io/youtube/channel/views/UCJi8OFF-fzwGSAC8BWJ0BhQ)](https://www.youtube.com/@DLTA-AI)
-[![Discord Server](https://img.shields.io/discord/1130938906616004638)](https://discord.gg/SmEaSxnt)
+[![Discord Server](https://img.shields.io/discord/1130938906616004638)](https://discord.gg/9Rmwcnc4)
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/DLTA-AI)](https://pypi.org/project/DLTA-AI/)
 [![GitHub release (latest by date including pre-releases)](https://img.shields.io/github/v/release/0ssamaak0/DLTA-AI?include_prereleases)](https://github.com/0ssamaak0/DLTA-AI/releases)
 [![GitHub issues](https://img.shields.io/github/issues/0ssamaak0/DLTA-AI)](https://github.com/0ssamaak0/DLTA-AI/issues)
