@@ -244,7 +244,7 @@ class ModelExplorerDialog(QDialog):
         row = index.row()
         model_id = int(self.table.item(row, 0).text())
         # Set the selected model as the model with this id
-        self.selected_model = models_json[model_id]["Model Name"], models_json[model_id]["Config"], models_json[model_id]["Checkpoint"],
+        self.selected_model = models_json[model_id]["Model Name"], models_json[model_id]["Family Name"], models_json[model_id]["Config"], models_json[model_id]["Checkpoint"],
         self.accept()
 
     def download_model(self, id):

@@ -27,6 +27,20 @@ from .widgets.MsgBox import OKmsgBox
 from .utils.helpers import mathOps
 
 
+# Model imports
+from .BIGMODEL import DLTA_Model, DLTA_Model_list
+# get all files under models directory
+models_dir = os.path.dirname(__file__) + '/models'
+model_files = [f for f in os.listdir(models_dir)]
+# import all of them (e.g, from .models import YOLOv8)
+for model_file in model_files:
+    if model_file.endswith(".py") and model_file != "__init__.py":
+        exec(f"from .models import {model_file[:-3]}")
+
+
+
+
+
 coco_classes = ['person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', 'truck', 'boat', 'traffic light',
                 'fire hydrant', 'stop sign', 'parking meter', 'bench', 'bird', 'cat', 'dog', 'horse', 'sheep', 'cow',
                 'elephant', 'bear', 'zebra', 'giraffe', 'backpack', 'umbrella', 'handbag', 'tie', 'suitcase', 'frisbee',
@@ -160,6 +174,13 @@ class Intelligence():
         # model = init_detector("C:/Users/Shehab/Desktop/mmdetection/mmdetection/configs/detectors/htc_r50_sac_1x_coco.py",
             # "C:/Users/Shehab/Desktop/mmdetection/mmdetection/checkpoints/htc_r50_sac_1x_coco-bfa60c54.pth", device = torch.device("cuda"))
         return selected_model_name, model
+
+    @torch.no_grad()
+    def make_DLTA_model(self, selected_model_name, model_family, config, checkpoint):
+        fam_names = [model.model_family for model in DLTA_Model_list]
+        if model_family in fam_names:
+            print(f"it worked!!! | {model_family}")
+        return "X", "Y"
 
     @ torch.no_grad()
     def make_mm_model_more(self, selected_model_name, config, checkpoint):

@@ -2586,10 +2586,11 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.helper_first_time_flag = False
         mathOps.update_saved_models_json(os.getcwd())
 
-        selected_model_name, config, checkpoint = model_explorer_dialog.selected_model
+        selected_model_name, model_family_name, config, checkpoint = model_explorer_dialog.selected_model
+        print(model_family_name)
         if selected_model_name != -1:
-            self.intelligenceHelper.current_model_name, self.intelligenceHelper.current_mm_model = self.intelligenceHelper.make_mm_model_more(
-                selected_model_name, config, checkpoint)
+            self.intelligenceHelper.current_model_name, self.intelligenceHelper.current_mm_model = self.intelligenceHelper.make_mm_model_more(selected_model_name, config, checkpoint)
+            self.intelligenceHelper.current_model_name, self.intelligenceHelper.current_mm_model = self.intelligenceHelper.make_DLTA_model(selected_model_name, model_family_name, config, checkpoint)
         self.updateSamControls()
 
     def openNextImg(self, _value=False, load=True):
