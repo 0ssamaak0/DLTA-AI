@@ -26,7 +26,17 @@ DLTA-AI is the next generation of annotation tools, integrating the power of Com
 <!-- make p with larger font size -->
 [Installation](#installation-%EF%B8%8F)  🛠️ | [Segment Anything](#Segment-Anything-) 🪄 | [Model Selection](#model-selection-) 🤖 | [Segmentation](#segmentation-) 🎨 | [Object Tracking](#object-tracking-) 🚗 | [Export](#export-) 📤 | [Other Features](#other-features-) 🌟| [Contributing](#contributing-) 🤝| [Acknowledgements](#acknowledgements-)🙏| [Resources](#resources-) 🌐 | [License](#license-) 📜
 
+
+<img src="https://kwoc.kossiitkgp.org/assets/kwoc_logo-0c56f0a8.png" width="200" height="200">
+
+| 🚀 DLTA-AI is currently participating in [KWoC23](https://kwoc.kossiitkgp.org/projects), [Join our discord server](https://discord.gg/9Rmwcnc4) to have a  great winter of code with us ❄️⛄|
+|-----------------------------------------|
+
+
+
 </div>
+
+
 
 # Installation 🛠️
 After creating a new environment, installing Pytorch to it, you can install DLTA-AI using pip
