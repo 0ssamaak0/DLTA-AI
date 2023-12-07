@@ -132,7 +132,7 @@ class Intelligence():
             print("error in loading the default classes from the config file, so we will use all the coco classes")
         self.selectedmodels = []
         self.current_model_name, self.current_mm_model = self.make_mm_model("")
-        self.DLTA_model = None
+        self.current_DLTA_model = None
 
 
     @torch.no_grad()
@@ -181,8 +181,8 @@ class Intelligence():
     def make_DLTA_model(self, selected_model_name, model_family, config, checkpoint):
 
         model_idx = -1
-        for index, model in enumerate(DLTA_Model_list):
-            if model.model_family == model_family:
+        for index, model_instance in enumerate(DLTA_Model_list):
+            if model_instance.model_family == model_family:
                 print(f"Match found at index {index} | {model_family}")
                 model_idx = index
                 break
@@ -190,13 +190,11 @@ class Intelligence():
             print(f"Model family {model_family} not found")
             return
         
-        self.DLTA_model = DLTA_Model_list[model_idx]
-        model = self.DLTA_model.initialize(checkpoint)
-        print(self.DLTA_model)
-        print(model)
+        self.current_DLTA_model = DLTA_Model_list[model_idx]
+        self.current_DLTA_model.initialize(checkpoint)
         print("Running through DLTA")
 
-        return selected_model_name, model
+        return selected_model_name
 
     # @ torch.no_grad()
     # def make_mm_model_more(self, selected_model_name, config, checkpoint):
@@ -258,8 +256,8 @@ class Intelligence():
         else:
             if img_array_flag:
                 print("entered img_array_flag")
-                inference_results = self.DLTA_model.inference(img = image, model = self.current_mm_model)
-                results = self.DLTA_model.postprocess(inference_results = inference_results, classdict = self.selectedclasses, threshold = self.conf_threshold)
+                inference_results = self.current_DLTA_model.inference(img = image)
+                results = self.current_DLTA_model.postprocess(inference_results = inference_results, classdict = self.selectedclasses, threshold = self.conf_threshold)
                 # results = self.reader.decode_file(
                 #     img=image, model=self.current_mm_model, classdict=self.selectedclasses, threshold=self.conf_threshold, img_array_flag=True)
                 # # print(type(results))

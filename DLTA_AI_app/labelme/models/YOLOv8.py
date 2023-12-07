@@ -29,13 +29,12 @@ YOLOv8.imports = imports
 # model initialization
 def initialize(checkpoint_path):
     YOLO = YOLOv8.install()
-    model = YOLO(checkpoint_path)
-    model.fuse()
-    return model
+    YOLOv8.model = YOLO(checkpoint_path)
+    YOLOv8.model.fuse()
 
 YOLOv8.initialize = initialize
 
-def inference(img, model):
+def inference(img):
     if isinstance(img, str):
                 img = cv2.imread(img)
 
@@ -46,7 +45,7 @@ def inference(img, model):
         # conf_thres=0.25,  # confidence threshold
         # iou_thres=0.45,  # NMS IOU threshold
         # max_det=1000,  # maximum detections per image
-    results = model(img_resized , conf = 0.25 , iou=  0.45 , verbose = False)
+    results = YOLOv8.model(img_resized , conf = 0.25 , iou=  0.45 , verbose = False)
     results = results[0]
     org_size = img.shape[:2]
     print("inferece done through DLTA_Model")
