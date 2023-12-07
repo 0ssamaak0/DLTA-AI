@@ -1,4 +1,4 @@
-from DLTA_AI_app.labelme.DLTA_Model import DLTA_Model
+from labelme.DLTA_Model import DLTA_Model
 
 
 YOLOv8 = DLTA_Model(
