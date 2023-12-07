@@ -132,6 +132,8 @@ class Intelligence():
             print("error in loading the default classes from the config file, so we will use all the coco classes")
         self.selectedmodels = []
         self.current_model_name, self.current_mm_model = self.make_mm_model("")
+        self.DLTA_model = None
+
 
     @torch.no_grad()
     def make_mm_model(self, selected_model_name):
@@ -188,9 +190,9 @@ class Intelligence():
             print(f"Model family {model_family} not found")
             return
         
-        DLTA_model = DLTA_Model_list[model_idx]
-        model = DLTA_model.initialize(checkpoint)
-        print(DLTA_model)
+        self.DLTA_model = DLTA_Model_list[model_idx]
+        model = self.DLTA_model.initialize(checkpoint)
+        print(self.DLTA_model)
         print(model)
         print("Running through DLTA")
 
@@ -255,14 +257,17 @@ class Intelligence():
 
         else:
             if img_array_flag:
-                results = self.reader.decode_file(
-                    img=image, model=self.current_mm_model, classdict=self.selectedclasses, threshold=self.conf_threshold, img_array_flag=True)
-                # print(type(results))
-                if isinstance(results, tuple):
-                    results = self.reader.polegonise(
-                        results[0], results[1], classdict=self.selectedclasses, threshold=self.conf_threshold)['results']
-                else:
-                    results = results['results']
+                print("entered img_array_flag")
+                inference_results = self.DLTA_model.inference(img = image, model = self.current_mm_model)
+                results = self.DLTA_model.postprocess(inference_results = inference_results, classdict = self.selectedclasses, threshold = self.conf_threshold)
+                # results = self.reader.decode_file(
+                #     img=image, model=self.current_mm_model, classdict=self.selectedclasses, threshold=self.conf_threshold, img_array_flag=True)
+                # # print(type(results))
+                # if isinstance(results, tuple):
+                #     results = self.reader.polegonise(
+                #         results[0], results[1], classdict=self.selectedclasses, threshold=self.conf_threshold)['results']
+                # else:
+                #     results = results['results']
             else:
                 results = self.reader.decode_file(
                     img=image, model=self.current_mm_model, classdict=self.selectedclasses, threshold=self.conf_threshold)

@@ -90,3 +90,24 @@ class DLTA_Model():
             None.
         """
         pass
+
+    def inference(self):
+        """
+        Performs inference on the given image.
+
+        Args:
+            image_path (str): The path to the image.
+
+        Returns:
+            None.
+        """
+        pass
+
+    def postprocess(self):
+        """
+        Postprocesses the model's inference results.
+
+        Returns:
+            None.
+        """
+        pass
