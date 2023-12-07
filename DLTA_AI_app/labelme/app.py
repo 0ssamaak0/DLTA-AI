@@ -49,7 +49,7 @@ from .intelligence import coco_classes, color_palette
 
 from supervision.detection.core import Detections
 from trackers.multi_tracker_zoo import create_tracker
-from ultralytics.yolo.utils.torch_utils import select_device
+# from ultralytics.yolo.utils.torch_utils import select_device
 
 warnings.filterwarnings("ignore")
 
@@ -1379,7 +1379,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.tracking_config = ROOT / 'trackers' / \
             method / 'configs' / (method + '.yaml')
         with torch.no_grad():
-            device = select_device('')
+            # device = select_device('')
             print(
                 f'tracking method {self.tracking_method} , config {self.tracking_config} , reid {reid_weights} , device {device} , half {False}')
             self.tracker = create_tracker(
@@ -2589,7 +2589,7 @@ class MainWindow(QtWidgets.QMainWindow):
         selected_model_name, model_family_name, config, checkpoint = model_explorer_dialog.selected_model
         print(model_family_name)
         if selected_model_name != -1:
-            self.intelligenceHelper.current_model_name, self.intelligenceHelper.current_mm_model = self.intelligenceHelper.make_mm_model_more(selected_model_name, config, checkpoint)
+            # self.intelligenceHelper.current_model_name, self.intelligenceHelper.current_mm_model = self.intelligenceHelper.make_mm_model_more(selected_model_name, config, checkpoint)
             self.intelligenceHelper.current_model_name, self.intelligenceHelper.current_mm_model = self.intelligenceHelper.make_DLTA_model(selected_model_name, model_family_name, config, checkpoint)
         self.updateSamControls()
 

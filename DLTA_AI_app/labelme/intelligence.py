@@ -28,7 +28,7 @@ from .utils.helpers import mathOps
 
 
 # Model imports
-from .BIGMODEL import DLTA_Model, DLTA_Model_list
+from .DLTA_Model import DLTA_Model_list
 # get all files under models directory
 models_dir = os.path.dirname(__file__) + '/models'
 model_files = [f for f in os.listdir(models_dir)]
@@ -177,38 +177,52 @@ class Intelligence():
 
     @torch.no_grad()
     def make_DLTA_model(self, selected_model_name, model_family, config, checkpoint):
-        fam_names = [model.model_family for model in DLTA_Model_list]
-        if model_family in fam_names:
-            print(f"it worked!!! | {model_family}")
-        return "X", "Y"
 
-    @ torch.no_grad()
-    def make_mm_model_more(self, selected_model_name, config, checkpoint):
-        torch.cuda.empty_cache()
-        print(
-            f"Selected model is {selected_model_name}\n and config is {config}\n and checkpoint is {checkpoint}")
+        model_idx = -1
+        for index, model in enumerate(DLTA_Model_list):
+            if model.model_family == model_family:
+                print(f"Match found at index {index} | {model_family}")
+                model_idx = index
+                break
+        if model_idx == -1:
+            print(f"Model family {model_family} not found")
+            return
+        
+        DLTA_model = DLTA_Model_list[model_idx]
+        model = DLTA_model.initialize(checkpoint)
+        print(DLTA_model)
+        print(model)
+        print("Running through DLTA")
 
-        # if YOLOv8
-        if "YOLOv8" in selected_model_name:
-            try:
-                model = YOLO(checkpoint)
-                model.fuse()
-                return selected_model_name, model
-            except Exception as e:
-                OKmsgBox("Error", f"Error in loading the model\n{e}", "critical")
-                return
+        return selected_model_name, model
 
-        # It's a MMDetection model
-        else:
-            try:
-                print(f"From the new one: {config}")
-                model = init_detector(config, checkpoint, device=torch.device(
-                    "cuda" if torch.cuda.is_available() else "cpu"))
-            except Exception as e:
-                OKmsgBox
-                OKmsgBox("Error", f"Error in loading the model\n{e}", "critical")
-                return
-            return selected_model_name, model
+    # @ torch.no_grad()
+    # def make_mm_model_more(self, selected_model_name, config, checkpoint):
+    #     torch.cuda.empty_cache()
+    #     print(
+    #         f"Selected model is {selected_model_name}\n and config is {config}\n and checkpoint is {checkpoint}")
+
+    #     # if YOLOv8
+    #     if "YOLOv8" in selected_model_name:
+    #         try:
+    #             model = YOLO(checkpoint)
+    #             model.fuse()
+    #             return selected_model_name, model
+    #         except Exception as e:
+    #             OKmsgBox("Error", f"Error in loading the model\n{e}", "critical")
+    #             return
+
+    #     # It's a MMDetection model
+    #     else:
+    #         try:
+    #             print(f"From the new one: {config}")
+    #             model = init_detector(config, checkpoint, device=torch.device(
+    #                 "cuda" if torch.cuda.is_available() else "cpu"))
+    #         except Exception as e:
+    #             OKmsgBox
+    #             OKmsgBox("Error", f"Error in loading the model\n{e}", "critical")
+    #             return
+    #         return selected_model_name, model
 
     def get_shapes_of_one(self, image, img_array_flag=False, multi_model_flag=False):
         # print(f"Threshold is {self.conf_threshold}")

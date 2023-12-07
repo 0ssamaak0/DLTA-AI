@@ -40,25 +40,49 @@ class DLTA_Model():
             The result of calling the function with the given arguments.
         """
         return self.inference_function(*args)
-    
-    def install():
+    def __str__(self):
         """
-        Installs the model and its dependencies.
+        Returns a string representation of the model.
+        """
+        return (f"Model Name: {self.model_name} | Model Family: {self.model_family} | Task: {self.task} | Classes: {self.classes}")
+    
+    def initialize(self):
+        """
+        Initializes the model.
+
+        Returns:
+            model: The initialized model.
+        """
+        pass  
+    def imports(self, type = "import"):
+        """
+        Imports the model's dependencies.
+
+        Args:
+            type (str): import or install, if import, then import the model's dependencies, if install, then install the model's dependencies
+        
+        Returns:
+            Imported model's dependencies.
+        """
+    def install(self):
+        """
+        Installs the model and its dependencies if they are not already installed.
 
         Returns:
             None.
         """
-        pass
-    
-    def check_installation():
-        """
-        Checks the installation of the model and its dependencies.
+        try:
+            return self.imports()
+        except ImportError:
+            print(f"{self.model_name} is not installed, installing...")
+            self.imports("install")
+            print(f"{self.model_name} successfully installed")
+            return self.imports()
+        except Exception as e:
+            print(f"Error installing {self.model_name}: {e}")
+            return
 
-        Returns:
-            None.
-        """
-        pass
-    def parse():
+    def parse(self):
         """
         Parses the model's configuration file.
 
