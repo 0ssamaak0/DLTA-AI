@@ -18,6 +18,7 @@ import os
 import os.path as osp
 import warnings
 import yaml
+from labelme.utils.helpers import mathOps
 
 import torch
 from mmdet.apis import init_detector
@@ -256,8 +257,8 @@ class Intelligence():
         else:
             if img_array_flag:
                 print("entered img_array_flag")
-                inference_results = self.current_DLTA_model.inference(img = image)
-                results = self.current_DLTA_model.postprocess(inference_results = inference_results, classdict = self.selectedclasses, threshold = self.conf_threshold)
+                results, resize_factor = self.current_DLTA_model.inference(img = image, threshold = self.conf_threshold, classdict = self.selectedclasses)
+                #results = self.current_DLTA_model.postprocess(inference_results = inference_results, classdict = self.selectedclasses, threshold = self.conf_threshold)
                 # results = self.reader.decode_file(
                 #     img=image, model=self.current_mm_model, classdict=self.selectedclasses, threshold=self.conf_threshold, img_array_flag=True)
                 # # print(type(results))
@@ -285,7 +286,12 @@ class Intelligence():
             shape["content"] = result["confidence"]
             shape["group_id"] = None
             shape["shape_type"] = "polygon"
-            shape["bbox"] = mathOps.get_bbox_xyxy(result["seg"])
+            result["seg"] = mathOps.mask_to_polygons(result["mask"], resize_factors= resize_factor)
+            # check if there is a key called bbox in the result dictionary
+            if "bbox" in result.keys():
+                shape["bbox"] = result["bbox"]
+            else:
+                shape["bbox"] = mathOps.get_bbox_xyxy(result["seg"])
 
             shape["flags"] = {}
             shape["other_data"] = {}
