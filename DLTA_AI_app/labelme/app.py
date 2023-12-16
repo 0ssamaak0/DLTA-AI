@@ -49,7 +49,7 @@ from .intelligence import coco_classes, color_palette
 
 from supervision.detection.core import Detections
 from trackers.multi_tracker_zoo import create_tracker
-# from ultralytics.yolo.utils.torch_utils import select_device
+# from ultralytics.utils.torch_utils import select_device
 
 warnings.filterwarnings("ignore")
 
@@ -694,6 +694,13 @@ class MainWindow(QtWidgets.QMainWindow):
             "tune",
             self.tr("Confidence Threshold")
         )
+        set_segmentation_accuracy = action(
+            self.tr("Segmentation Accuracy"),
+            self.setSegmentationAccuracy,
+            None,
+            "tune",
+            self.tr("Segmentation Accuracy")
+        )
         set_iou_threshold = action(
             self.tr("IOU Threshold (NMS)"),
             self.setIOUThreshold,
@@ -984,6 +991,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.menus.options,
             (
                 set_conf_threshold,
+                set_segmentation_accuracy,
                 set_iou_threshold,
                 self.menus.certain_area,
                 None,
@@ -2590,6 +2598,7 @@ class MainWindow(QtWidgets.QMainWindow):
         print(model_family_name)
         if selected_model_name != -1:
             # self.intelligenceHelper.current_model_name, self.intelligenceHelper.current_mm_model = self.intelligenceHelper.make_mm_model_more(selected_model_name, config, checkpoint)
+            print(f'selected_model_name: {selected_model_name} , model_family_name: {model_family_name} , config: {config} , checkpoint: {checkpoint}' , sep='\n')
             self.intelligenceHelper.current_model_name = self.intelligenceHelper.make_DLTA_model(selected_model_name, model_family_name, config, checkpoint)
         self.updateSamControls()
 
@@ -3340,6 +3349,16 @@ class MainWindow(QtWidgets.QMainWindow):
         else:
             self.intelligenceHelper.iou_threshold = self.segmentation_options_UI.setIOUThreshold()
 
+    def setSegmentationAccuracy(self):
+        # if a threshold exists, pass it as the previous value
+        if self.intelligenceHelper.segmentation_accuracy:
+            self.intelligenceHelper.segmentation_accuracy = self.segmentation_options_UI.setSegmentationAccuracy(
+                self.intelligenceHelper.segmentation_accuracy)
+        # if not, use the default value in the function as the previous value
+        else:
+            self.intelligenceHelper.segmentation_accuracy = self.segmentation_options_UI.setSegmentationAccuracy()
+            
+            
     def selectClasses(self):
         print(" from intelligenceHelper:" + str(self.intelligenceHelper.selectedclasses))
         self.intelligenceHelper.selectedclasses = self.segmentation_options_UI.selectClasses()
@@ -5064,7 +5083,8 @@ class MainWindow(QtWidgets.QMainWindow):
                                                  box=input_boxes,
                                                  image=self.CURRENT_FRAME_IMAGE)
 
-        points = mathOps.mask_to_polygons(mask)
+        points = mathOps.mask_to_polygons(
+            mask, epsilon=self.intelligenceHelper.segmentation_accuracy)
         shape = mathOps.polygon_to_shape(points, score)
         self.current_sam_shape = shape
         self.labelList.clear()
@@ -5112,7 +5132,7 @@ class MainWindow(QtWidgets.QMainWindow):
                                                  point_labels=None,
                                                  box=input_boxes,
                                                  image=frameIMAGE)
-        points = mathOps.mask_to_polygons(mask)
+        points = mathOps.mask_to_polygons(mask , epsilon = self.intelligenceHelper.segmentation_accuracy)
         SAMshape = mathOps.polygon_to_shape(points, score)
         cur_segment = SAMshape['points']
         cur_segment = [[int(cur_segment[i]), int(cur_segment[i + 1])]

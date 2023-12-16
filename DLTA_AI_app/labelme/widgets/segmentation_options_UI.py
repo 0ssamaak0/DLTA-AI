@@ -38,6 +38,7 @@ class SegmentationOptionsUI():
         self.parent = parent
         self.conf_threshold = 0.3
         self.iou_threshold = 0.5
+        self.segmentation_accuracy = 3.0
         with open ("labelme/config/default_config.yaml") as f:
             self.config = yaml.load(f, Loader=yaml.FullLoader)
         self.default_classes = self.config["default_classes"]
@@ -106,6 +107,68 @@ class SegmentationOptionsUI():
             return slider.value() / 100
         else:
             return prev_threshold
+        
+    # Set the segmentation accuracy as input from the user
+    def setSegmentationAccuracy(self, prev_accuracy=3.0):
+        """
+        Set the segmentation accuracy.
+
+        Args:
+            prev_accuracy (float): The previous accuracy value. Default is 3.0.
+
+        Returns:
+            float: The selected segmentation accuracy value.
+
+        """
+        dialog = QtWidgets.QDialog(self.parent)
+        dialog.setWindowTitle('Segmentation Accuracy Selector')
+        dialog.setWindowFlags(dialog.windowFlags() & ~QtCore.Qt.WindowType.WindowContextHelpButtonHint)
+
+        layout = QtWidgets.QVBoxLayout(dialog)
+
+        label = QtWidgets.QLabel('Select Segmentation Accuracy (Default is 70%)')
+        layout.addWidget(label)
+
+        slider = QtWidgets.QSlider(QtCore.Qt.Orientation.Horizontal)
+        slider.setMinimum(5)
+        slider.setMaximum(99)
+        slider.setValue(int((10 - prev_accuracy) * 10))
+        print(prev_accuracy)
+        print(int((10 - prev_accuracy) * 10))
+        layout.addWidget(slider)
+
+        slider_value_label = QtWidgets.QLabel()
+        slider_value_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        slider_value_label.setText(str(slider.value()) + '%')  # Add percentage sign
+        layout.addWidget(slider_value_label)
+
+        note_label = QtWidgets.QLabel('Note: Increasing segmentation accuracy results in having more points which could lead to a slower annotation process.') 
+        layout.addWidget(note_label)
+
+        button_box = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.StandardButton.Ok | QtWidgets.QDialogButtonBox.StandardButton.Cancel)
+        layout.addWidget(button_box)
+
+        def on_slider_change(value):
+            slider_value_label.setText(str(value) + '%')  # Update slider value with percentage sign
+
+        slider.valueChanged.connect(on_slider_change)
+
+        def on_ok():
+            segmentation_accuracy = 10 - (slider.value() / 10)
+            dialog.accept()
+            return segmentation_accuracy
+
+        def on_cancel():
+            dialog.reject()
+            return prev_accuracy
+
+        button_box.accepted.connect(on_ok)
+        button_box.rejected.connect(on_cancel)
+
+        if dialog.exec() == QtWidgets.QDialog.DialogCode.Accepted:
+            return 10 - (slider.value() / 10)
+        else:
+            return prev_accuracy
         
 
     def setIOUThreshold(self, prev_threshold=0.5):
