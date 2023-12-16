@@ -12,7 +12,7 @@ from .sort.tracker import Tracker
 
 from .reid_multibackend import ReIDDetectMultiBackend
 
-from ultralytics.yolo.utils.ops import xyxy2xywh
+from ultralytics.utils.ops import xyxy2xywh
 
 
 class StrongSORT(object):

@@ -32,9 +32,9 @@ if str(ROOT / 'yolov5') not in sys.path:
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 import logging
-from ultralytics.yolo.utils.torch_utils import select_device
-from ultralytics.yolo.utils import LOGGER, colorstr, ops
-from ultralytics.yolo.utils.checks import check_requirements, check_version
+from ultralytics.utils.torch_utils import select_device
+from ultralytics.utils import LOGGER, colorstr, ops
+from ultralytics.utils.checks import check_requirements, check_version
 from trackers.strongsort.deep.models import build_model
 from trackers.strongsort.deep.reid_model_factory import get_model_name, load_pretrained_weights
 

@@ -12,8 +12,8 @@ import gdown
 from os.path import exists as file_exists
 
 
-from ultralytics.yolo.utils.checks import check_requirements, check_version
-from ultralytics.yolo.utils import LOGGER
+from ultralytics.utils.checks import check_requirements, check_version
+from ultralytics.utils import LOGGER
 from trackers.strongsort.deep.reid_model_factory import (show_downloadeable_models, get_model_url, get_model_name,
                                                           download_url, load_pretrained_weights)
 from trackers.strongsort.deep.models import build_model
