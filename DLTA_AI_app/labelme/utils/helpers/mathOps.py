@@ -1,3 +1,4 @@
+import time
 import numpy as np
 import random
 import cv2
@@ -11,6 +12,7 @@ import copy
 from shapely.geometry import Polygon
 import skimage
 from labelme.shape import Shape
+
 
 coco_classes = ['person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', 'truck', 'boat', 'traffic light',
                 'fire hydrant', 'stop sign', 'parking meter', 'bench', 'bird', 'cat', 'dog', 'horse', 'sheep', 'cow',
@@ -928,30 +930,87 @@ def track_area_adjustedBboex(area_points, dims, ratio = 0.1):
     
     return [x1, y1, x2, y2]
 
+
+# def get_contour_length(contour):
+#     """Helper function to calculate the length of a contour."""
+#     return np.linalg.norm(np.diff(contour, axis=0), axis=1).sum()
+
 def get_contour_length(contour):
     contour_start = contour
     contour_end = np.r_[contour[1:], contour[0:1]]
     return np.linalg.norm(contour_end - contour_start, axis=1).sum()
 
-def mask_to_polygons(mask, n_points=25, resize_factors=[1.0, 1.0]):
-    mask = mask > 0.0
-    contours = skimage.measure.find_contours(mask)
-    if len(contours) == 0:
-        return []
-    contour = max(contours, key=get_contour_length)
-    coords = skimage.measure.approximate_polygon(
-        coords=contour,
-        tolerance=np.ptp(contour, axis=0).max() / 100,
-    )
 
-    coords = coords * resize_factors
-    # convert coords from x y to y x
-    coords = np.fliplr(coords)
+# def mask_to_polygons(mask, resize_factors=[1.0, 1.0]):
+#     contours = skimage.measure.find_contours(mask, level=0)
+#     if not contours:
+#         return []
+#     contour = max(contours, key=get_contour_length)
+#     coords = skimage.measure.approximate_polygon(
+#         contour, tolerance=np.ptp(contour, axis=0).max() / 100)
+#     coords *= resize_factors
+#     coords = np.fliplr(coords)
+#     return coords.astype(int).tolist()
 
-    # segment_points are a list of coords
-    segment_points = coords.astype(int)
-    polygon = segment_points
-    return polygon
+
+
+
+# def mask_to_polygons(mask, epsilon=0.1, resize_factors=[1.0, 1.0]):
+#     """
+#     Converts a mask to a list of polygons using Ramer-Douglas-Peucker.
+
+#     Args:
+#         mask: A NumPy array representing the binary mask.
+#         epsilon: The Douglas-Peucker simplification tolerance (default: 0.1).
+#         resize_factors: A tuple of two floats representing the resize factors (default: (1.0, 1.0)).
+
+#     Returns:
+#         A list of lists containing the coordinates of each polygon.
+#     """
+#     start_time = time.time()
+
+#     contours = skimage.measure.find_contours(mask, level=0)
+#     if not contours:
+#         return []
+
+#     polygons = []
+#     for contour in contours:
+#         # Simplify the contour using RDP
+#         simplified_contour = LinearRing(contour).simplify(epsilon)
+
+#         # Apply resize factors if necessary
+#         simplified_contour = simplified_contour * resize_factors
+
+#         # Convert to integer coordinates and append to polygons list
+#         simplified_contour = np.fliplr(simplified_contour.astype(int))
+#         polygons.append(simplified_contour.tolist())
+
+#     end_time = time.time()
+#     execution_time = end_time - start_time
+#     print("mask took:",
+#           int(execution_time * 1000), "milliseconds")
+
+#     return polygons
+
+
+def mask_to_polygons(mask, epsilon=3.0):
+    contours, _ = cv2.findContours(mask.astype(
+        np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    # print("contours", contours)
+    approx_polygons = [cv2.approxPolyDP(
+        contour, epsilon, True) for contour in contours]
+    
+    polygon_coords = [approx[:, 0, :].tolist() for approx in approx_polygons]
+    return polygon_coords[0]
+
+
+
+# def masks_to_polygons(masks, resize_factors=[1.0, 1.0]):
+#     polygons = []
+#     for mask in masks:
+#         polygons.append(mask_to_polygons(mask, resize_factors))
+#     return polygons
+
 
 def polygon_to_shape(polygon, score, className="SAM instance"):
     shape = {}
