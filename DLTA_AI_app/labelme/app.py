@@ -4834,7 +4834,7 @@ class MainWindow(QtWidgets.QMainWindow):
         with open(cwd + '/models_menu/sam_models.json') as f:
             data = json.load(f)
         # get all files in a directory
-        files = os.listdir(cwd + '/mmdetection/checkpoints/')
+        files = os.listdir(cwd + '/models_checkpoints/')
         models = []
         for model in data:
             if model['checkpoint'].split('/')[-1] in files:

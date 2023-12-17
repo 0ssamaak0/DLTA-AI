@@ -858,7 +858,7 @@ def update_saved_models_json(cwd):
         Update the saved models json file.
     """
     
-    checkpoints_dir = cwd + "/mmdetection/checkpoints/"
+    checkpoints_dir = cwd + "/models_checkpoints/"
     # list all the files in the checkpoints directory
     try:
         files = os.listdir(checkpoints_dir)

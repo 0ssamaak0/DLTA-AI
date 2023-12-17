@@ -452,7 +452,7 @@ for i in tqdm(range(len(tr_tags_list))):
         "https://github.com/open-mmlab/mmdetection/tree/master", "mmdetection")
     tr_tags_list[i]["Config"] = tr_tags_list[i]["Config"].replace(
         "https://github.com/open-mmlab/mmdetection/blob/master", "mmdetection")
-    tr_tags_list[i]["Checkpoint"] = "mmdetection/checkpoints/" + tr_tags_list[i]["Checkpoint_link"].split(
+    tr_tags_list[i]["Checkpoint"] = "models_checkpoints/" + tr_tags_list[i]["Checkpoint_link"].split(
         "/")[-1]
     tr_tags_list[i]["Checkpoint Size (MB)"] = round(int(requests.head(
         tr_tags_list[i]["Checkpoint_link"]).headers.get('Content-Length', 0)) / (1024 * 1024), 2)

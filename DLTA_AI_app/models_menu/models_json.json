@@ -12,7 +12,7 @@
         "mask AP": "30.5",
         "Config": "-",
         "Checkpoint_link": "https://github.com/ultralytics/assets/releases/download/v0.0.0/yolov8n-seg.pt",
-        "Checkpoint": "mmdetection/checkpoints/yolov8n-seg.pt",
+        "Checkpoint": "models_checkpoints/yolov8n-seg.pt",
         "Checkpoint Size (MB)": 6.72
     },
     {
@@ -28,7 +28,7 @@
         "mask AP": "36.8",
         "Config": "-",
         "Checkpoint_link": "https://github.com/ultralytics/assets/releases/download/v0.0.0/yolov8s-seg.pt",
-        "Checkpoint": "mmdetection/checkpoints/yolov8s-seg.pt",
+        "Checkpoint": "models_checkpoints/yolov8s-seg.pt",
         "Checkpoint Size (MB)": 22.7
     },
     {
@@ -44,7 +44,7 @@
         "mask AP": "40.8",
         "Config": "-",
         "Checkpoint_link": "https://github.com/ultralytics/assets/releases/download/v0.0.0/yolov8m-seg.pt",
-        "Checkpoint": "mmdetection/checkpoints/yolov8m-seg.pt",
+        "Checkpoint": "models_checkpoints/yolov8m-seg.pt",
         "Checkpoint Size (MB)": 52.3
     },
     {
@@ -60,7 +60,7 @@
         "mask AP": "42.6",
         "Config": "-",
         "Checkpoint_link": "https://github.com/ultralytics/assets/releases/download/v0.0.0/yolov8l-seg.pt",
-        "Checkpoint": "mmdetection/checkpoints/yolov8l-seg.pt",
+        "Checkpoint": "models_checkpoints/yolov8l-seg.pt",
         "Checkpoint Size (MB)": 88.1
     },
     {
@@ -76,7 +76,7 @@
         "mask AP": "43.4",
         "Config": "-",
         "Checkpoint_link": "https://github.com/ultralytics/assets/releases/download/v0.0.0/yolov8x-seg.pt",
-        "Checkpoint": "mmdetection/checkpoints/yolov8x-seg.pt",
+        "Checkpoint": "models_checkpoints/yolov8x-seg.pt",
         "Checkpoint Size (MB)": 137
     },
     {
@@ -90,9 +90,9 @@
         "Inference Time (fps)": "-",
         "box AP": "48.8",
         "mask AP": "42.1",
-        "Config": "models_configs/configs/rtmdet/rtmdet-ins_m_8xb32-300e_coco.py",
+        "Config": "models_configs/mmdetection_configs/rtmdet/rtmdet-ins_m_8xb32-300e_coco.py",
         "Checkpoint_link": "https://download.openmmlab.com/mmdetection/v3.0/rtmdet/rtmdet-ins_m_8xb32-300e_coco/rtmdet-ins_m_8xb32-300e_coco_20221123_001039-6eba602e.pth",
-        "Checkpoint": "mmdetection/checkpoints/rtmdet-ins_m_8xb32-300e_coco_20221123_001039-6eba602e.pth",
+        "Checkpoint": "models_checkpoints/rtmdet-ins_m_8xb32-300e_coco_20221123_001039-6eba602e.pth",
         "Checkpoint Size (MB)": 108
     },
     {
@@ -106,9 +106,9 @@
         "Inference Time (fps)": "-",
         "box AP": "45.7",
         "mask AP": "42.9",
-        "Config": "models_configs/configs//mask2former/mask2former_r50_8xb2-lsj-50e_coco.py",
+        "Config": "models_configs/mmdetection_configs//mask2former/mask2former_r50_8xb2-lsj-50e_coco.py",
         "Checkpoint_link": "https://download.openmmlab.com/mmdetection/v3.0/mask2former/mask2former_r50_8xb2-lsj-50e_coco/mask2former_r50_8xb2-lsj-50e_coco_20220506_191028-41b088b6.pth",
-        "Checkpoint": "mmdetection/checkpoints/mask2former_r50_8xb2-lsj-50e_coco_20220506_191028-41b088b6.pth",
+        "Checkpoint": "models_checkpoints/mask2former_r50_8xb2-lsj-50e_coco_20220506_191028-41b088b6.pth",
         "Checkpoint Size (MB)": 168
     },
     {
@@ -124,7 +124,7 @@
         "mask AP": "-",
         "Config": "-",
         "Checkpoint_link": "https://dl.fbaipublicfiles.com/segment_anything/sam_vit_h_4b8939.pth",
-        "Checkpoint": "mmdetection/checkpoints/sam_vit_h_4b8939.pth",
+        "Checkpoint": "models_checkpoints/sam_vit_h_4b8939.pth",
         "Checkpoint Size (MB)": 2445.75
     },
     {
@@ -140,7 +140,7 @@
         "mask AP": "-",
         "Config": "-",
         "Checkpoint_link": "https://dl.fbaipublicfiles.com/segment_anything/sam_vit_l_0b3195.pth",
-        "Checkpoint": "mmdetection/checkpoints/sam_vit_l_0b3195.pth",
+        "Checkpoint": "models_checkpoints/sam_vit_l_0b3195.pth",
         "Checkpoint Size (MB)": 1191.64
     },
     {
@@ -156,7 +156,7 @@
         "mask AP": "-",
         "Config": "-",
         "Checkpoint_link": "https://dl.fbaipublicfiles.com/segment_anything/sam_vit_b_01ec64.pth",
-        "Checkpoint": "mmdetection/checkpoints/sam_vit_b_01ec64.pth",
+        "Checkpoint": "models_checkpoints/sam_vit_b_01ec64.pth",
         "Checkpoint Size (MB)": 357.67
     }
 

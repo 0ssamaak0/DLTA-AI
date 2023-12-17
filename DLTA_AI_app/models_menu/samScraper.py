@@ -21,7 +21,7 @@ for i in li:
     model['name'] = name
     #print(i.find('a')['href']) # get href inside a tag)
     model['url'] = i.find('a')['href']
-    checkpoint = "mmdetection/checkpoints/" + i.find('a')['href'].split("/")[-1]
+    checkpoint = "models_checkpoints/" + i.find('a')['href'].split("/")[-1]
     model['checkpoint'] = checkpoint
     models_json.append(model)
 

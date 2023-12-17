@@ -12,6 +12,6 @@ runs/
 # for debugging purposes , remove files from ( test_imgs , test_videos ) folders
 test_imgs/
 test_videos/
-models_configs/
+# models_configs/
 models_checkpoints/
 ```

@@ -177,7 +177,7 @@ class Intelligence():
 
         # "C:\Users\Shehab\Desktop\l001\ANNOTATION_TOOL\mmdetection\mmdetection\configs\yolact\yolact_r50_1x8_coco.py"
         # model = init_detector("C:/Users/Shehab/Desktop/mmdetection/mmdetection/configs/detectors/htc_r50_sac_1x_coco.py",
-            # "C:/Users/Shehab/Desktop/mmdetection/mmdetection/checkpoints/htc_r50_sac_1x_coco-bfa60c54.pth", device = torch.device("cuda"))
+            # "C:/Users/Shehab/Desktop/mmdetection/models_checkpoints/htc_r50_sac_1x_coco-bfa60c54.pth", device = torch.device("cuda"))
         return selected_model_name, model
 
     @torch.no_grad()

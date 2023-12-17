@@ -306,7 +306,7 @@ class ModelExplorerDialog(QDialog):
             block_num = 0
 
             # Save the downloaded file to disk
-            file_path = f"{cwd}/mmdetection/checkpoints/{checkpoint_link.split('/')[-1]}"
+            file_path = f"{cwd}/models_checkpoints/{checkpoint_link.split('/')[-1]}"
             with open(file_path, 'wb') as f:
                 for data in response.iter_content(block_size):
                     if self.download_canceled:
@@ -372,7 +372,7 @@ class ModelExplorerDialog(QDialog):
         Returns:
             None
         """
-        checkpoints_dir = cwd + "/mmdetection/checkpoints/"
+        checkpoints_dir = cwd + "/models_checkpoints/"
         for model in models_json:
             if model["Checkpoint"].split("/")[-1] in os.listdir(checkpoints_dir):
                 model["Downloaded"] = True
@@ -387,7 +387,7 @@ class ModelExplorerDialog(QDialog):
         Returns:
             None
         """
-        url = QtCore.QUrl.fromLocalFile(cwd + "/mmdetection/checkpoints/")
+        url = QtCore.QUrl.fromLocalFile(cwd + "/models_checkpoints/")
         if not QtGui.QDesktopServices.openUrl(url):
             # Print an error message if opening failed
             print("Failed to open checkpoints directory")
