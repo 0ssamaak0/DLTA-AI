@@ -994,7 +994,8 @@ def get_contour_length(contour):
 
 
 def mask_to_polygons(mask, epsilon=3.0):
-    contours, _ = cv2.findContours(mask.astype(
+    mask_array = np.array(mask)
+    contours, _ = cv2.findContours(mask_array.astype(
         np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     # print("contours", contours)
     approx_polygons = [cv2.approxPolyDP(

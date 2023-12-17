@@ -6,7 +6,7 @@ try:
 except ModuleNotFoundError:
     import subprocess
     print("The required package 'mmcv-full' is not currently installed. It will now be installed. This process may take some time. Note that this package will only be installed the first time you use DLTA-AI.")
-    subprocess.run(["mim", "install", "mmcv-full==1.7.0"])
+    # subprocess.run(["mim", "install", "mmcv-full==1.7.0"])
     from inferencing import models_inference
 from labelme.label_file import LabelFile
 from labelme import PY2
@@ -27,7 +27,7 @@ from .widgets.MsgBox import OKmsgBox
 from .utils.helpers import mathOps
 
 init_detector = None
-
+# YOLO = None
 # Model imports
 from .DLTA_Model import DLTA_Model_list
 # get all files under models directory
@@ -195,7 +195,9 @@ class Intelligence():
             return
         
         self.current_DLTA_model = DLTA_Model_list[model_idx]
+        
         self.current_DLTA_model.initialize(checkpoint = checkpoint , config = config )
+        
         print("Running through DLTA")
 
         return selected_model_name
@@ -298,17 +300,6 @@ class Intelligence():
 
         return final_shapes
 
-    # print the labels of the selected classes in the dialog
-    # def updatlabellist(self):
-    #     for selectedclass in self.selectedclasses.values():
-    #         shape = Shape()
-    #         shape.label = selectedclass
-    #         shape.content = ""
-    #         shape.shape_type="polygon"
-    #         shape.flags = {}
-    #         shape.other_data = {}
-    #         mainwindow = self.parent
-    #         mainwindow.addLabel(shape)
 
     def get_shapes_of_batch(self, images, multi_model_flag=False, notif = []):
         self.pd = self.startOperationDialog()

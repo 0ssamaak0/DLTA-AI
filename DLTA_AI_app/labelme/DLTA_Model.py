@@ -72,12 +72,12 @@ class DLTA_Model():
             None.
         """
         try:
-            return self.imports()
+            return self.imports(type="import")
         except ImportError:
             print(f"{self.model_name} is not installed, installing...")
             self.imports("install")
             print(f"{self.model_name} successfully installed")
-            return self.imports()
+            return self.imports(type="import")
         except Exception as e:
             print(f"Error installing {self.model_name}: {e}")
             return

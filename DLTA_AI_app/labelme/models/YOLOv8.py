@@ -1,7 +1,7 @@
 from labelme.DLTA_Model import DLTA_Model
-import cv2
 import numpy as np
 import time
+from ultralytics import YOLO
 
 
 YOLOv8 = DLTA_Model(
@@ -27,7 +27,7 @@ def imports(type="import"):
 
 # model initialization
 def initialize(checkpoint  = None , config = None):
-    YOLO = YOLOv8.install()
+    # YOLO = YOLOv8.install()
     YOLOv8.model = YOLO(checkpoint)
     # YOLOv8.model.fuse()
     # run the model on a sample image to make sure that it is loaded correctly
@@ -38,12 +38,12 @@ def initialize(checkpoint  = None , config = None):
 
 def inference(img):
 
-    start_time = time.time()
+    start_time = time.perf_counter()
     
     inference_results = YOLOv8.model(
         img, retina_masks=True, verbose=False, conf=0.05)[0]
     
-    end_time = time.time()
+    end_time = time.perf_counter()
     execution_time = end_time - start_time
     print("1---- Execution time for only model inference:",
           int(execution_time * 1000), "milliseconds")
@@ -53,7 +53,7 @@ def inference(img):
 
 
 def postprocess(inference_results):
-    start_time = time.time()
+    start_time = time.perf_counter()
 
     if not inference_results:
         return []
@@ -64,7 +64,9 @@ def postprocess(inference_results):
     confidences = inference_results.boxes.conf.cpu().numpy()
     masks = inference_results.masks.data.cpu().numpy()
 
-    end_time = time.time()
+
+
+    end_time = time.perf_counter()
     execution_time = end_time - start_time
     print("2---- Execution time for parsing inside the model:",
           int(execution_time * 1000), "milliseconds")

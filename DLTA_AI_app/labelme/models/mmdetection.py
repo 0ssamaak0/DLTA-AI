@@ -23,15 +23,15 @@ def imports(type="import"):
         return init_detector, inference_detector
     elif type == "install":
         import subprocess
-        # uncomment the following after testing and debugging
-        # subprocess.run(["pip", "install", "-U", "openmim"])
-        # subprocess.run(["mim", "install", "mmengine>=0.7.0"])
-        # subprocess.run(["mim", "install", "mmcv>=2.0.0rc4"])
-        # subprocess.run(["mim", "install", "mmdet"])
+        subprocess.run(["pip", "install", "-U", "openmim"])
+        subprocess.run(["mim", "install", "mmengine>=0.7.0"])
+        subprocess.run(["mim", "install", "mmcv>=2.0.0rc4"])
+        subprocess.run(["mim", "install", "mmdet"])
 
 
 # model initialization
 def initialize(checkpoint=None, config=None):
+    # init_detector, inference_detector = mmdetection.install()
     mmdetection.model = init_detector(config, checkpoint,
                         device='cuda:0')  
 
