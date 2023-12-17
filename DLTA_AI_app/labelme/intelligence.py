@@ -18,15 +18,15 @@ import os
 import os.path as osp
 import warnings
 import yaml
-from labelme.utils.helpers import mathOps
 
 import torch
-from mmdet.apis import init_detector
+# from mmdet.apis import init_detector
 warnings.filterwarnings("ignore")
 
 from .widgets.MsgBox import OKmsgBox
 from .utils.helpers import mathOps
 
+init_detector = None
 
 # Model imports
 from .DLTA_Model import DLTA_Model_list
@@ -37,8 +37,8 @@ model_files = [f for f in os.listdir(models_dir)]
 for model_file in model_files:
     if model_file.endswith(".py") and model_file != "__init__.py":
         exec(f"from .models import {model_file[:-3]}")
-
-
+        print(f"imported {model_file[:-3]}")
+print(f'models list : {DLTA_Model_list}')
 
 
 
@@ -118,6 +118,7 @@ class Intelligence():
         self.reader = models_inference()
         self.parent = parent
         self.conf_threshold = 0.3
+        self.segmentation_accuracy = 3.0
         self.iou_threshold = 0.5
         with open ("labelme/config/default_config.yaml") as f:
             self.config = yaml.load(f, Loader=yaml.FullLoader)
@@ -131,6 +132,7 @@ class Intelligence():
         except:
             self.selectedclasses = {i:class_ for i,class_ in enumerate(coco_classes)}
             print("error in loading the default classes from the config file, so we will use all the coco classes")
+        # print(f"selected classes are {self.selectedclasses}")
         self.selectedmodels = []
         self.current_model_name, self.current_mm_model = self.make_mm_model("")
         self.current_DLTA_model = None
@@ -180,7 +182,8 @@ class Intelligence():
 
     @torch.no_grad()
     def make_DLTA_model(self, selected_model_name, model_family, config, checkpoint):
-
+        # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        
         model_idx = -1
         for index, model_instance in enumerate(DLTA_Model_list):
             if model_instance.model_family == model_family:
@@ -192,7 +195,7 @@ class Intelligence():
             return
         
         self.current_DLTA_model = DLTA_Model_list[model_idx]
-        self.current_DLTA_model.initialize(checkpoint)
+        self.current_DLTA_model.initialize(checkpoint = checkpoint , config = config )
         print("Running through DLTA")
 
         return selected_model_name
@@ -228,7 +231,7 @@ class Intelligence():
     def get_shapes_of_one(self, image, img_array_flag=False, multi_model_flag=False):
         # print(f"Threshold is {self.conf_threshold}")
         # results = self.reader.decode_file(img_path = filename, threshold = self.conf_threshold , selected_model_name = self.current_model_name)["results"]
-        start_time = time.time()
+        start_time_all = time.time()
         # if img_array_flag is true then the image is a numpy array and not a path
         if multi_model_flag:
             # to handle the case of the user selecting no models
@@ -256,9 +259,12 @@ class Intelligence():
 
         else:
             if img_array_flag:
-                print("entered img_array_flag")
-                results, resize_factor = self.current_DLTA_model.inference(img = image, threshold = self.conf_threshold, classdict = self.selectedclasses)
-                #results = self.current_DLTA_model.postprocess(inference_results = inference_results, classdict = self.selectedclasses, threshold = self.conf_threshold)
+                # print("entered img_array_flag")
+                results = self.current_DLTA_model.inference(image)
+                
+                # post process results to send to the gui 
+                
+                
                 # results = self.reader.decode_file(
                 #     img=image, model=self.current_mm_model, classdict=self.selectedclasses, threshold=self.conf_threshold, img_array_flag=True)
                 # # print(type(results))
@@ -267,6 +273,7 @@ class Intelligence():
                 #         results[0], results[1], classdict=self.selectedclasses, threshold=self.conf_threshold)['results']
                 # else:
                 #     results = results['results']
+                
             else:
                 results = self.reader.decode_file(
                     img=image, model=self.current_mm_model, classdict=self.selectedclasses, threshold=self.conf_threshold)
@@ -275,36 +282,21 @@ class Intelligence():
                         results[0], results[1], classdict=self.selectedclasses, threshold=self.conf_threshold)['results']
                 else:
                     results = results['results']
+            start_time = time.time()
+
+            final_shapes = self.parse_dlta_model_results_to_shapes(results)
             end_time = time.time()
+            execution_time = end_time - start_time
+            print("3---- Execution time for parsing to gui shapes(&masks2polygons):",
+             int(execution_time * 1000), "milliseconds")
+            
+            end_time_all = time.time()
             print(
-                f"Time taken to annoatate img on {self.current_model_name}: {int((end_time - start_time)*1000)} ms")
+                f"total Time taken to annoatate img on {self.current_model_name}: {int((end_time_all - start_time_all)*1000)} ms")
+            print(f'number of shapes: {len(final_shapes)}')
 
-        shapes = []
-        for result in results:
-            shape = {}
-            shape["label"] = result["class"]
-            shape["content"] = result["confidence"]
-            shape["group_id"] = None
-            shape["shape_type"] = "polygon"
-            result["seg"] = mathOps.mask_to_polygons(result["mask"], resize_factors= resize_factor)
-            # check if there is a key called bbox in the result dictionary
-            if "bbox" in result.keys():
-                shape["bbox"] = result["bbox"]
-            else:
-                shape["bbox"] = mathOps.get_bbox_xyxy(result["seg"])
 
-            shape["flags"] = {}
-            shape["other_data"] = {}
-
-            # shape_points is result["seg"] flattened
-            shape["points"] = [item for sublist in result["seg"]
-                               for item in sublist]
-
-            shapes.append(shape)
-            shapes, boxes, confidences, class_ids, segments = mathOps.OURnms_confidenceBased(
-                shapes, self.iou_threshold)
-            # self.addLabel(shape)
-        return shapes
+        return final_shapes
 
     # print the labels of the selected classes in the dialog
     # def updatlabellist(self):
@@ -398,3 +390,60 @@ class Intelligence():
             otherData={},
             flags={},
         )
+
+
+    def parse_dlta_model_results_to_shapes(self, results):
+        """
+        This function converts the results of the model to shapes to be displayed in the GUI,
+        while filtering the results based on the following criteria:
+        1. Selected classes by the user
+        2. Confidence threshold
+        3. IOU NM Suppression threshold
+        4. Segmentation accuracy (threshold for the epsilon parameter in the mask to polygon function)
+
+        Args:
+            results (list): A list containing the classes, confidences, and masks.
+
+        Returns:
+            list: A list of shapes representing the filtered and converted results.
+
+        """
+        if not results:
+            return []
+        classes, confidences, masks = results
+        
+        shapes = []
+        
+        for class_idx, confidence, mask in zip(classes, confidences, masks):
+            if float(confidence) < self.conf_threshold:
+                continue
+            
+            class_name = self.selectedclasses.get(class_idx)
+            if class_name is None:
+                continue
+            
+            shape = {   
+                "label": class_name,
+                "content": str(round(confidence, 2)),
+                "points": [],
+                "bbox": None,
+                "shape_type": "polygon",
+                "group_id": None,
+                "flags": {},
+                "other_data": {}
+            }
+            
+            segmentation_points = mathOps.mask_to_polygons(mask, epsilon=self.segmentation_accuracy)
+            
+            if len(segmentation_points) < 3:
+                continue
+            
+            shape["points"] = [item for sublist in segmentation_points for item in sublist]
+            shape["bbox"] = mathOps.get_bbox_xyxy(segmentation_points)
+
+            shapes.append(shape)
+        
+        # Apply non-maximum suppression based on confidence
+        shapes = mathOps.OURnms_confidenceBased(shapes, self.iou_threshold)[0]
+
+        return shapes
