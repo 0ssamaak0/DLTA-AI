@@ -3,7 +3,7 @@ import numpy as np
 import time
 
 # should be later imported in the imports function
-from mmdet.apis import init_detector, inference_detector
+# from mmdet.apis import init_detector, inference_detector
 
 mmdetection = DLTA_Model(
     model_name="mmdetection",
@@ -31,12 +31,13 @@ def imports(type="import"):
 
 # model initialization
 def initialize(checkpoint=None, config=None):
-    # init_detector, inference_detector = mmdetection.install()
+    init_detector, inference_detector = mmdetection.install()
     mmdetection.model = init_detector(config, checkpoint,
                         device='cuda:0')  
 
 def inference(img):
-    
+    init_detector, inference_detector = mmdetection.install()
+
     start_time = time.time()
     inference_results = inference_detector(mmdetection.model, img)
 
