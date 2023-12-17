@@ -3,16 +3,18 @@ import copy
 from supervision.detection.core import Detections
 from time import time
 import torch
-from mmdet.apis import inference_detector, init_detector, async_inference_detector
+# from mmdet.apis import inference_detector, init_detector, async_inference_detector
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 import warnings
-# from ultralytics.yolo.utils.ops import Profile, non_max_suppression, scale_boxes, process_mask, process_mask_native
+# from ultralytics.utils.ops import Profile, non_max_suppression, scale_boxes, process_mask, process_mask_native
 from labelme.utils.helpers import mathOps
+import time
 
 warnings.filterwarnings("ignore")
 
+inference_detector = None
 
 class models_inference():
     def __init__(self):
@@ -66,10 +68,12 @@ class models_inference():
             resize_factors = [org_size[0] / out_size[0] , org_size[1] / out_size[1]]
             if len(masks) == 0:
                 return {"results":{}}
+
             for mask in masks:
                 polygon = mathOps.mask_to_polygons(
                     mask, resize_factors=resize_factors)
                 polygons.append(polygon)
+
 
             # detection is a tuple of  (box, confidence, class_id, tracker_id)
             ind = 0
@@ -123,7 +127,7 @@ class models_inference():
         #         assert len(results0[i]) == len(results1[i])
         return results0, results1
 
-    def polegonise(self, results0, results1, classdict, threshold=0.3, show_bbox_flag=False):
+    def polegonise(self, results0, results1, classdict, threshold=0.3):
         result_dict = {}
         res_list = []
 
@@ -139,26 +143,8 @@ class models_inference():
                 # Confidence
                 result["confidence"] = str(
                     round(results0[classno][instance][-1], 2))
-                if classno == 0:
-                    result["seg"] = mathOps.mask_to_polygons(
-                        results1[classno][instance].astype(np.uint8), 10)
-                else:
-                    result["seg"] = mathOps.mask_to_polygons(
-                        results1[classno][instance].astype(np.uint8), 25)
-
-                # result["bbox"] = self.get_bbox(result["seg"])
-                if show_bbox_flag:
-                    # result["bbox"] = full_points(result["bbox"]).tolist()
-                    # points = full_points(result["bbox"])
-                    # result["x1"] = points[0][0]
-                    # result["y1"] = points[0][1]
-                    # result["x2"] = points[1][0]
-                    # result["y2"] = points[1][1]
-                    # result["x3"] = points[2][0]
-                    # result["y3"] = points[2][1]
-                    # result["x4"] = points[3][0]
-                    # result["y4"] = points[3][1]
-                    pass
+                result["seg"] = mathOps.mask_to_polygons(
+                        results1[classno][instance].astype(np.uint8))
 
                 if result["class"] == None:
                     continue

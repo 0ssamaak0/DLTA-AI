@@ -90,7 +90,7 @@ class DLTA_Model():
             None.
         """
         pass
-
+    
     def inference(self):
         """
         Performs inference on the given image.
@@ -103,11 +103,3 @@ class DLTA_Model():
         """
         pass
 
-    def postprocess(self):
-        """
-        Postprocesses the model's inference results.
-
-        Returns:
-            None.
-        """
-        pass
