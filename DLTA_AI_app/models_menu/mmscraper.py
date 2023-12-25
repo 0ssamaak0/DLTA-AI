@@ -469,5 +469,5 @@ for i in sorted(corrupted_models, reverse=True):
     tr_tags_list.pop(i)
 
 
-with open('models_json.json', 'w') as f:
+with open('models_metadata.json', 'w') as f:
     json.dump(tr_tags_list, f, indent=4)

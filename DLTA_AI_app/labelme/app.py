@@ -109,8 +109,6 @@ class MainWindow(QtWidgets.QMainWindow):
             *self._config["shape"]["hvertex_fill_color"]
         )
 
-        # update models json
-        mathOps.update_saved_models_json(os.getcwd())
 
         # add the segmentation UI controls interfance
         self.segmentation_options_UI = SegmentationOptionsUI(self)
@@ -908,7 +906,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
 
         )
- 
+        
         utils.addActions(
             self.menus.file,
             (
@@ -1019,7 +1017,8 @@ class MainWindow(QtWidgets.QMainWindow):
         )
 
         self.menus.file.aboutToShow.connect(self.updateFileMenu)
-        self.menus.file.aboutToShow.connect(self.update_models_menu)
+        # assign the saved models menu if clicked we run update_models_menu function
+        self.menus.saved_models.aboutToShow.connect(self.update_models_menu)
 
         # Custom context menu for the canvas widget:
         utils.addActions(self.canvas.menus[0], self.actions.menu)
@@ -1106,7 +1105,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Populate the File menu dynamically.
         self.updateFileMenu()
-        self.update_models_menu()
         # Since loading the file may take some time,
         # make sure it runs in the background.
         if self.filename is not None:
@@ -1303,26 +1301,44 @@ class MainWindow(QtWidgets.QMainWindow):
             menu.addAction(action)
 
     def update_models_menu(self):
-
         menu = self.menus.saved_models
         menu.clear()
 
-        with open("saved_models.json") as json_file:
-            data = json.load(json_file)
-            # loop through all the models
-            i = 0
-            for model_name in list(data.keys()):
-                if i >= 6:
-                    break
-                icon = utils.newIcon("brain")
-                action = QtGui.QAction(
-                    icon, "&%d %s" % (i + 1, model_name), self)
+        try:
+            with open("models_menu/models_metadata.json") as json_file:
+                data = json.load(json_file)
+
+            # Filter for downloaded models
+            downloaded_models = [item for item in data if item["Downloaded"] == "YES"]
+            excluded_families = ["SAM_basic"]  # add here any other families such as sam 
+            downloaded_models = [item for item in downloaded_models if item["Family Name"] not in excluded_families]
+
+            # Create menu actions for downloaded models
+            for i, model in enumerate(downloaded_models):
+                model_name = f"{i + 1}. {model['Model Name']} - {model['Family Name']}"
+                action = QtGui.QAction( model_name, self)
                 action.triggered.connect(functools.partial(
-                    self.change_curr_model, model_name))
+                    self.change_curr_model,
+                    model["Model Name"],
+                    model["Family Name"],
+                    model.get("Config"),
+                    model["Checkpoint"]
+                ))
+
                 menu.addAction(action)
-                i += 1
-        self.add_tracking_models_menu()
-        self.add_certain_area_menu()
+
+            menu.addSeparator()
+            self.add_tracking_models_menu()
+            self.add_certain_area_menu()
+
+        except FileNotFoundError:
+            print("Error: models_metadata.json file not found.")
+        except json.JSONDecodeError:
+            print("Error: Unable to load models_metadata.json file.")
+
+
+
+
 
     def add_tracking_models_menu(self):
         menu2 = self.menus.tracking_models
@@ -2551,22 +2567,21 @@ class MainWindow(QtWidgets.QMainWindow):
         if self.mayContinue():
             self.loadFile(filename)
 
-    def change_curr_model(self, model_name):
+    def change_curr_model(self, selected_model_name, model_family_name, config, checkpoint):
         """
         Summary:
             Change current model to the model_name
 
         Args:
-            model_name (str): name of the model to be changed to
+            selected_model_name (str): name of the model to be changed to
         """
 
         self.multi_model_flag = False
         self.waitWindow(
-            visible=True, text=f'Please Wait.\n{model_name} is being Loaded...')
-        self.intelligenceHelper.current_model_name, self.intelligenceHelper.current_mm_model = self.intelligenceHelper.make_mm_model(
-            model_name)
+            visible=True, text=f'Please Wait.\n{selected_model_name} is being Loaded...')
+        self.intelligenceHelper.current_model_name = self.intelligenceHelper.make_DLTA_model(selected_model_name, model_family_name, config, checkpoint)
         self.waitWindow()
-
+        
     def model_explorer(self):
         """
         Summary:
@@ -2578,10 +2593,11 @@ class MainWindow(QtWidgets.QMainWindow):
         # make it fit its contents
         model_explorer_dialog.adjustSize()
         model_explorer_dialog.setMinimumWidth(
-            model_explorer_dialog.table.width() * 1.5)
+            model_explorer_dialog.table.width() * 2)
         model_explorer_dialog.setMinimumHeight(
-            model_explorer_dialog.table.rowHeight(0) * 10)
+            model_explorer_dialog.table.rowHeight(0) * 15)
         model_explorer_dialog.exec()
+
         # init intelligence again if it's the first model
         if self.helper_first_time_flag:
             try:
@@ -2592,14 +2608,12 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.helper_first_time_flag = True
             else:
                 self.helper_first_time_flag = False
-        mathOps.update_saved_models_json(os.getcwd())
 
         selected_model_name, model_family_name, config, checkpoint = model_explorer_dialog.selected_model
         print(model_family_name)
         if selected_model_name != -1:
-            # self.intelligenceHelper.current_model_name, self.intelligenceHelper.current_mm_model = self.intelligenceHelper.make_mm_model_more(selected_model_name, config, checkpoint)
             print(f'selected_model_name: {selected_model_name} , model_family_name: {model_family_name} , config: {config} , checkpoint: {checkpoint}' , sep='\n')
-            self.intelligenceHelper.current_model_name = self.intelligenceHelper.make_DLTA_model(selected_model_name, model_family_name, config, checkpoint)
+            self.change_curr_model(selected_model_name, model_family_name, config, checkpoint)
         self.updateSamControls()
 
     def openNextImg(self, _value=False, load=True):

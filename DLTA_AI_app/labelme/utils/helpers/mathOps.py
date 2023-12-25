@@ -851,33 +851,6 @@ def getInterpolated(baseObject, baseObjectFrame, nextObject, nextObjectFrame, cu
     
     return cur
 
-def update_saved_models_json(cwd):
-    
-    """
-    Summary:
-        Update the saved models json file.
-    """
-    
-    checkpoints_dir = cwd + "/models_checkpoints/"
-    # list all the files in the checkpoints directory
-    try:
-        files = os.listdir(checkpoints_dir)
-    except:
-        # if checkpoints directory does not exist, create it
-        os.mkdir(checkpoints_dir)
-    with open(cwd + '/models_menu/models_json.json') as f:
-        models_json = json.load(f)
-    saved_models = {}
-    # saved_models["YOLOv8x"] = {"checkpoint": "yolov8x-seg.pt", "config": "none"}
-    for model in models_json:
-        if model["Model"] != "SAM":
-            if model["Checkpoint"].split("/")[-1] in os.listdir(checkpoints_dir):
-                saved_models[model["Model Name"]] = {
-                    "id": model["id"], "checkpoint": model["Checkpoint"], "config": model["Config"]}
-
-    with open(cwd + "/saved_models.json", "w") as f:
-        json.dump(saved_models, f, indent=4) 
- 
 def delete_id_from_rec_and_traj(id, id_frames_rec, trajectories, frames):
     
     """

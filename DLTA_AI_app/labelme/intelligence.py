@@ -134,7 +134,7 @@ class Intelligence():
             print("error in loading the default classes from the config file, so we will use all the coco classes")
         # print(f"selected classes are {self.selectedclasses}")
         self.selectedmodels = []
-        self.current_model_name, self.current_mm_model = self.make_mm_model("")
+        # self.current_model_name, self.current_mm_model = self.make_mm_model("")
         self.current_DLTA_model = None
 
 
@@ -184,6 +184,7 @@ class Intelligence():
     def make_DLTA_model(self, selected_model_name, model_family, config, checkpoint):
         # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         
+        # this is do get the family of the model to initialize the correct model accordingly
         model_idx = -1
         for index, model_instance in enumerate(DLTA_Model_list):
             if model_instance.model_family == model_family:

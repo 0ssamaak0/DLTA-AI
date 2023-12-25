@@ -6,11 +6,6 @@ import requests
 import os
 import time
 
-# store json file into list of dictionaries
-cwd = os.getcwd()
-with open(cwd + '/models_menu/models_json.json') as f:
-    models_json = json.load(f)
-
 
 class ModelExplorerDialog(QDialog):
     """
@@ -35,6 +30,8 @@ class ModelExplorerDialog(QDialog):
         self.main_window = main_window
         self.mute = mute
         self.notification = notification
+        self.cwd = os.getcwd()
+        self.models_json = self.load_models_json()
         self.setWindowTitle("Model Explorer")
         self.setWindowFlags(self.windowFlags() & ~QtCore.Qt.WindowType.WindowContextHelpButtonHint)
 
@@ -45,7 +42,7 @@ class ModelExplorerDialog(QDialog):
 
         # Get the unique model names
         self.model_keys = sorted(
-            list(set([model['Model'] for model in models_json])))
+            list(set([model['Model'] for model in self.models_json])))
 
         # Set up the layout
         layout = QVBoxLayout()
@@ -78,7 +75,7 @@ class ModelExplorerDialog(QDialog):
         open_checkpoints_dir_button = QPushButton("Open Checkpoints Dir")
         # add icon to the button
         open_checkpoints_dir_button.setIcon(
-            QtGui.QIcon(cwd + '/labelme/icons/downloads.png'))
+            QtGui.QIcon(self.cwd + '/labelme/icons/downloads.png'))
         open_checkpoints_dir_button.setIconSize(QtCore.QSize(20, 20))
         open_checkpoints_dir_button.clicked.connect(
             self.open_checkpoints_dir)
@@ -92,11 +89,11 @@ class ModelExplorerDialog(QDialog):
         layout.addWidget(self.table)
 
         # Set up the number of rows and columns
-        self.num_rows = len(models_json)
+        self.num_rows = len(self.models_json)
         self.num_cols = 9
 
         # Make availability list
-        self.check_availability()
+        self.check_availability_and_update()
 
         # Populate the table with default data
         self.populate_table()
@@ -118,6 +115,18 @@ class ModelExplorerDialog(QDialog):
 
         # layout spacing
         layout.setSpacing(10)
+
+    def load_models_json(self):
+        """
+        Loads the models JSON file and returns it as a list of dictionaries.
+
+        Returns:
+            list: List of dictionaries containing model information.
+        """
+        with open(self.cwd + '/models_menu/models_metadata.json') as f:
+            models_json = json.load(f)
+        return models_json
+
 
     def populate_table(self):
         """
@@ -145,7 +154,7 @@ class ModelExplorerDialog(QDialog):
 
         # Populate the table with data
         row_count = 0
-        for model in models_json:
+        for model in self.models_json:
 
             col_count = 0
             for key in self.cols_labels:
@@ -166,7 +175,7 @@ class ModelExplorerDialog(QDialog):
             self.table.setCellWidget(row_count, 10, select_row_button)
 
             # Downloaded column
-            if model["Downloaded"]:
+            if model["Downloaded"] == "YES":
                 available_item = QTableWidgetItem("Downloaded")
                 # make the text color dark green
                 available_item.setForeground(QtCore.Qt.GlobalColor.darkGreen)
@@ -210,7 +219,7 @@ class ModelExplorerDialog(QDialog):
             # Filter by model type
             if model_type != "All":
                 id = int(self.table.item(row, 0).text())
-                if models_json[id]["Model"] != model_type:
+                if self.models_json[id]["Model"] != model_type:
                     show_row = False
 
             # Filter by availability
@@ -244,7 +253,7 @@ class ModelExplorerDialog(QDialog):
         row = index.row()
         model_id = int(self.table.item(row, 0).text())
         # Set the selected model as the model with this id
-        self.selected_model = models_json[model_id]["Model Name"], models_json[model_id]["Family Name"], models_json[model_id]["Config"], models_json[model_id]["Checkpoint"],
+        self.selected_model = self.models_json[model_id]["Model Name"], self.models_json[model_id]["Family Name"], self.models_json[model_id]["Config"], self.models_json[model_id]["Checkpoint"],
         self.accept()
 
     def download_model(self, id):
@@ -258,8 +267,8 @@ class ModelExplorerDialog(QDialog):
             None
         """
         # Get the checkpoint link and model name for the model with this id
-        checkpoint_link = models_json[id]["Checkpoint_link"]
-        model_name = models_json[id]["Model Name"]
+        checkpoint_link = self.models_json[id]["Checkpoint_link"]
+        model_name = self.models_json[id]["Model Name"]
 
         # Create a progress dialog
         self.progress_dialog = QProgressDialog(
@@ -306,7 +315,7 @@ class ModelExplorerDialog(QDialog):
             block_num = 0
 
             # Save the downloaded file to disk
-            file_path = f"{cwd}/models_checkpoints/{checkpoint_link.split('/')[-1]}"
+            file_path = f"{self.cwd}/models_checkpoints/{checkpoint_link.split('/')[-1]}"
             with open(file_path, 'wb') as f:
                 for data in response.iter_content(block_size):
                     if self.download_canceled:
@@ -326,7 +335,7 @@ class ModelExplorerDialog(QDialog):
 
         # Close the progress dialog and update the table
         self.progress_dialog.close()
-        self.check_availability()
+        self.check_availability_and_update()
         self.populate_table()
         print("Download finished")
 
@@ -365,19 +374,21 @@ class ModelExplorerDialog(QDialog):
         return lambda: self.download_model(model_id)
 
 
-    def check_availability(self):
+    def check_availability_and_update(self):
         """
         Checks the availability of each model in the table and updates the "Downloaded" column.
 
         Returns:
             None
         """
-        checkpoints_dir = cwd + "/models_checkpoints/"
-        for model in models_json:
+        checkpoints_dir = self.cwd + "/models_checkpoints/"
+        for model in self.models_json:
             if model["Checkpoint"].split("/")[-1] in os.listdir(checkpoints_dir):
-                model["Downloaded"] = True
+                model["Downloaded"] = "YES"
             else:
-                model["Downloaded"] = False
+                model["Downloaded"] = "NO"        
+        with open(self.cwd + '/models_menu/models_metadata.json', 'w') as f:
+            json.dump(self.models_json, f, indent=4)
 
 
     def open_checkpoints_dir(self):
@@ -387,7 +398,7 @@ class ModelExplorerDialog(QDialog):
         Returns:
             None
         """
-        url = QtCore.QUrl.fromLocalFile(cwd + "/models_checkpoints/")
+        url = QtCore.QUrl.fromLocalFile(self.cwd + "/models_checkpoints/")
         if not QtGui.QDesktopServices.openUrl(url):
             # Print an error message if opening failed
             print("Failed to open checkpoints directory")
