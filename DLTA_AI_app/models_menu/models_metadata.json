@@ -87,6 +87,23 @@
     {
         "id": 5,
         "Model": "mmdetection",
+        "Model Name": "SOLOv2",
+        "Family Name": "mmdetection",
+        "Backbone": "X-101(DCN)",
+        "Lr schd": "3x",
+        "Memory (GB)": "11.3",
+        "Inference Time (fps)": "-",
+        "box AP": "-",
+        "mask AP": "42.4",
+        "Config": "models_configs/mmdetection_configs//solov2/solov2_x101-dcn_fpn_ms-3x_coco.py",
+        "Checkpoint_link": "https://download.openmmlab.com/mmdetection/v2.0/solov2/solov2_x101_dcn_fpn_3x_coco/solov2_x101_dcn_fpn_3x_coco_20220513_214337-aef41095.pth",
+        "Checkpoint": "models_checkpoints/solov2_x101_dcn_fpn_3x_coco_20220513_214337-aef41095.pth",
+        "Checkpoint Size (MB)": 444,
+        "Downloaded": "YES"
+    },
+    {
+        "id": 6,
+        "Model": "mmdetection",
         "Model Name": "rtmdet-ins_m",
         "Family Name": "mmdetection",
         "Backbone": "-",
@@ -102,7 +119,7 @@
         "Downloaded": "YES"
     },
     {
-        "id": 6,
+        "id": 7,
         "Model": "mmdetection",
         "Model Name": "mask2former-R50",
         "Family Name": "mmdetection",
@@ -119,7 +136,41 @@
         "Downloaded": "YES"
     },
     {
-        "id": 7,
+        "id": 8,
+        "Model": "mmdetection",
+        "Model Name": "mask2former-Swin-T",
+        "Family Name": "mmdetection",
+        "Backbone": "Swin-T",
+        "Lr schd": "50e",
+        "Memory (GB)": "15.3",
+        "Inference Time (fps)": "-",
+        "box AP": "47.7",
+        "mask AP": "44.7",
+        "Config": "models_configs/mmdetection_configs//mask2former/mask2former_swin-t-p4-w7-224_8xb2-lsj-50e_coco.py",
+        "Checkpoint_link": "https://download.openmmlab.com/mmdetection/v3.0/mask2former/mask2former_swin-t-p4-w7-224_8xb2-lsj-50e_coco/mask2former_swin-t-p4-w7-224_8xb2-lsj-50e_coco_20220508_091649-01b0f990.pth",
+        "Checkpoint": "models_checkpoints/mask2former_swin-t-p4-w7-224_8xb2-lsj-50e_coco_20220508_091649-01b0f990.pth",
+        "Checkpoint Size (MB)": 185,
+        "Downloaded": "YES"
+    },
+    {
+        "id": 9,
+        "Model": "mmdetection",
+        "Model Name": "mask2former-Swin-S",
+        "Family Name": "mmdetection",
+        "Backbone": "Swin-S",
+        "Lr schd": "50e",
+        "Memory (GB)": "18.8",
+        "Inference Time (fps)": "-",
+        "box AP": "49.3",
+        "mask AP": "46.1",
+        "Config": "models_configs/mmdetection_configs//mask2former/mask2former_swin-s-p4-w7-224_8xb2-lsj-50e_coco.py",
+        "Checkpoint_link": "https://download.openmmlab.com/mmdetection/v3.0/mask2former/mask2former_swin-s-p4-w7-224_8xb2-lsj-50e_coco/mask2former_swin-s-p4-w7-224_8xb2-lsj-50e_coco_20220504_001756-c9d0c4f2.pth",
+        "Checkpoint": "models_checkpoints/mask2former_swin-s-p4-w7-224_8xb2-lsj-50e_coco_20220504_001756-c9d0c4f2.pth",
+        "Checkpoint Size (MB)": 263,
+        "Downloaded": "YES"
+    },
+    {
+        "id": 10,
         "Model": "SAM",
         "Model Name": "ViT-H SAM model",
         "Family Name": "SAM_basic",
@@ -136,7 +187,7 @@
         "Downloaded": "NO"
     },
     {
-        "id": 8,
+        "id": 11,
         "Model": "SAM",
         "Model Name": "ViT-L SAM model",
         "Family Name": "SAM_basic",
@@ -153,7 +204,7 @@
         "Downloaded": "YES"
     },
     {
-        "id": 9,
+        "id": 12,
         "Model": "SAM",
         "Model Name": "ViT-B SAM model",
         "Family Name": "SAM_basic",

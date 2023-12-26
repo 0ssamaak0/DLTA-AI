@@ -1,13 +1,4 @@
-from ultralytics import YOLO
-import json
 import time
-try:
-    from inferencing import models_inference
-except ModuleNotFoundError:
-    import subprocess
-    print("The required package 'mmcv-full' is not currently installed. It will now be installed. This process may take some time. Note that this package will only be installed the first time you use DLTA-AI.")
-    # subprocess.run(["mim", "install", "mmcv-full==1.7.0"])
-    from inferencing import models_inference
 from labelme.label_file import LabelFile
 from labelme import PY2
 from PyQt6.QtCore import QThread
@@ -20,25 +11,24 @@ import warnings
 import yaml
 
 import torch
-# from mmdet.apis import init_detector
 warnings.filterwarnings("ignore")
 
-from .widgets.MsgBox import OKmsgBox
 from .utils.helpers import mathOps
 
-init_detector = None
-# YOLO = None
+
+
 # Model imports
 from .DLTA_Model import DLTA_Model_list
 # get all files under models directory
 models_dir = os.path.dirname(__file__) + '/models'
 model_files = [f for f in os.listdir(models_dir)]
 # import all of them (e.g, from .models import YOLOv8)
+print ("Model families found in DLTA-AI:")
 for model_file in model_files:
     if model_file.endswith(".py") and model_file != "__init__.py":
         exec(f"from .models import {model_file[:-3]}")
-        print(f"imported {model_file[:-3]}")
-print(f'models list : {DLTA_Model_list}')
+        print(f"{model_file[:-3]}")
+# print(f'models list : {DLTA_Model_list}')
 
 
 
@@ -115,7 +105,7 @@ class IntelligenceWorker(QThread):
 
 class Intelligence():
     def __init__(self, parent):
-        self.reader = models_inference()
+
         self.parent = parent
         self.conf_threshold = 0.3
         self.segmentation_accuracy = 3.0
@@ -138,57 +128,17 @@ class Intelligence():
         self.current_DLTA_model = None
 
 
-    @torch.no_grad()
     def make_mm_model(self, selected_model_name):
-        try:
-            with open("saved_models.json") as json_file:
-                data = json.load(json_file)
-                if selected_model_name == "":
-                    # read the saved_models.json file and import the config and checkpoint files from the first model
-                    selected_model_name = list(data.keys())[0]
-                    config = data[selected_model_name]["config"]
-                    checkpoint = data[selected_model_name]["checkpoint"]
-                else:
-                    config = data[selected_model_name]["config"]
-                    checkpoint = data[selected_model_name]["checkpoint"]
-                print(
-                    f'selected model : {selected_model_name} \nconfig : {config}\ncheckpoint : {checkpoint} \n')
-        except Exception as e:
-            OKmsgBox("Error", f"Error in loading the model\n{e}", "critical")
-            return
-
-
-        torch.cuda.empty_cache()
-        if "YOLOv8" in selected_model_name:
-            model = YOLO(checkpoint)
-            model.fuse()
-            return selected_model_name, model
-
-        try:
-            print(f"From the working one: {config}")
-            model = init_detector(config,
-                                  checkpoint,
-                                  device=torch.device("cuda" if torch.cuda.is_available() else "cpu"))
-        except:
-            print(
-                "Error in loading the model, please check if the config and checkpoint files do exist")
-
-            #    cfg_options= dict(iou_threshold=0.2))
-
-        # "C:\Users\Shehab\Desktop\l001\ANNOTATION_TOOL\mmdetection\mmdetection\configs\yolact\yolact_r50_1x8_coco.py"
-        # model = init_detector("C:/Users/Shehab/Desktop/mmdetection/mmdetection/configs/detectors/htc_r50_sac_1x_coco.py",
-            # "C:/Users/Shehab/Desktop/mmdetection/models_checkpoints/htc_r50_sac_1x_coco-bfa60c54.pth", device = torch.device("cuda"))
-        return selected_model_name, model
+        return selected_model_name, None
 
     @torch.no_grad()
     def make_DLTA_model(self, selected_model_name, model_family, config, checkpoint):
-        # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         
         # this is do get the family of the model to initialize the correct model accordingly
         model_idx = -1
         for index, model_instance in enumerate(DLTA_Model_list):
             if model_instance.model_family == model_family:
-                print(f"Match found at index {index} | {model_family}")
+                # print(f"Match found at index {index} | {model_family}")
                 model_idx = index
                 break
         if model_idx == -1:
@@ -196,109 +146,41 @@ class Intelligence():
             return
         
         self.current_DLTA_model = DLTA_Model_list[model_idx]
-        
+        self.current_DLTA_model.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.current_DLTA_model.verify_installation()
         self.current_DLTA_model.initialize(checkpoint = checkpoint , config = config )
-        
-        print("Running through DLTA")
+
 
         return selected_model_name
 
-    # @ torch.no_grad()
-    # def make_mm_model_more(self, selected_model_name, config, checkpoint):
-    #     torch.cuda.empty_cache()
-    #     print(
-    #         f"Selected model is {selected_model_name}\n and config is {config}\n and checkpoint is {checkpoint}")
 
-    #     # if YOLOv8
-    #     if "YOLOv8" in selected_model_name:
-    #         try:
-    #             model = YOLO(checkpoint)
-    #             model.fuse()
-    #             return selected_model_name, model
-    #         except Exception as e:
-    #             OKmsgBox("Error", f"Error in loading the model\n{e}", "critical")
-    #             return
-
-    #     # It's a MMDetection model
-    #     else:
-    #         try:
-    #             print(f"From the new one: {config}")
-    #             model = init_detector(config, checkpoint, device=torch.device(
-    #                 "cuda" if torch.cuda.is_available() else "cpu"))
-    #         except Exception as e:
-    #             OKmsgBox
-    #             OKmsgBox("Error", f"Error in loading the model\n{e}", "critical")
-    #             return
-    #         return selected_model_name, model
-
-    def get_shapes_of_one(self, image, img_array_flag=False, multi_model_flag=False):
-        # print(f"Threshold is {self.conf_threshold}")
-        # results = self.reader.decode_file(img_path = filename, threshold = self.conf_threshold , selected_model_name = self.current_model_name)["results"]
-        start_time_all = time.time()
-        # if img_array_flag is true then the image is a numpy array and not a path
+    def get_shapes_of_one(self, image, multi_model_flag=False):
+        
         if multi_model_flag:
-            # to handle the case of the user selecting no models
+            
             if len(self.selectedmodels) == 0:
                 return []
-            self.reader.annotating_models.clear()
-            for model_name in self.selectedmodels:
-                self.current_model_name, self.current_mm_model = self.make_mm_model(
-                    model_name)
-                if img_array_flag:
-                    results0, results1 = self.reader.decode_file(
-                        img=image, model=self.current_mm_model, classdict=self.selectedclasses, threshold=self.conf_threshold, img_array_flag=True)
-                else:
-                    results0, results1 = self.reader.decode_file(
-                        img=image, model=self.current_mm_model, classdict=self.selectedclasses, threshold=self.conf_threshold)
-                self.reader.annotating_models[model_name] = [
-                    results0, results1]
-                end_time = time.time()
-                print(
-                    f"Time taken to annoatate img on {self.current_model_name}: {int((end_time - start_time)*1000)} ms" + "\n")
-            print('merging masks')
-            results0, results1 = self.reader.merge_masks()
-            results = self.reader.polegonise(
-                results0, results1, classdict=self.selectedclasses, threshold=self.conf_threshold)['results']
+
+            models_results = []  # Store results from each model
+            for model in self.selectedmodels:
+                print (f"Running inference on {model['Model Name']}")
+                self.make_DLTA_model(model["Model Name"],
+                    model["Family Name"],
+                    model["Config"],
+                    model["Checkpoint"])
+                results = self.current_DLTA_model.inference(image)  # Run inference
+                models_results.append(results)
+
+            merged_results = self.merge_models_results(models_results)  # Merge results
+            final_shapes = self.parse_dlta_model_results_to_shapes(merged_results)  # Parse shapes
 
         else:
-            if img_array_flag:
-                # print("entered img_array_flag")
-                results = self.current_DLTA_model.inference(image)
-                
-                # post process results to send to the gui 
-                
-                
-                # results = self.reader.decode_file(
-                #     img=image, model=self.current_mm_model, classdict=self.selectedclasses, threshold=self.conf_threshold, img_array_flag=True)
-                # # print(type(results))
-                # if isinstance(results, tuple):
-                #     results = self.reader.polegonise(
-                #         results[0], results[1], classdict=self.selectedclasses, threshold=self.conf_threshold)['results']
-                # else:
-                #     results = results['results']
-                
-            else:
-                results = self.reader.decode_file(
-                    img=image, model=self.current_mm_model, classdict=self.selectedclasses, threshold=self.conf_threshold)
-                if isinstance(results, tuple):
-                    results = self.reader.polegonise(
-                        results[0], results[1], classdict=self.selectedclasses, threshold=self.conf_threshold)['results']
-                else:
-                    results = results['results']
-            start_time = time.time()
-
+            start_time_all = time.time()
+            results = self.current_DLTA_model.inference(image)
             final_shapes = self.parse_dlta_model_results_to_shapes(results)
-            end_time = time.time()
-            execution_time = end_time - start_time
-            print("3---- Execution time for parsing to gui shapes(&masks2polygons):",
-             int(execution_time * 1000), "milliseconds")
-            
             end_time_all = time.time()
             print(
                 f"total Time taken to annoatate img on {self.current_model_name}: {int((end_time_all - start_time_all)*1000)} ms")
-            print(f'number of shapes: {len(final_shapes)}')
-
-
         return final_shapes
 
 
@@ -343,8 +225,6 @@ class Intelligence():
             self.parent.loadFile(self.parent.filename)
 
 
-    def clear_annotating_models(self):
-        self.reader.annotating_models.clear()
 
     def saveLabelFile(self, filename, detectedShapes):
         lf = LabelFile()
@@ -384,14 +264,36 @@ class Intelligence():
         )
 
 
+
+    def merge_models_results(self, models_results):
+        """
+        Merge the results from multiple models.
+
+        Args:
+            models_results (list): A list of model results, where each result is a tuple
+                containing the class indices, confidences, and masks.
+
+        Returns:
+            list: A list containing the merged class indices, confidences, and masks.
+        """
+        classes, confidences, masks = [], [], []
+        for res in models_results:
+            if not res:
+                continue
+            for class_idx, confidence, mask in zip(res[0], res[1], res[2]):
+                classes.append(class_idx)
+                confidences.append(confidence)
+                masks.append(mask)
+        return [classes, confidences, masks]
+
     def parse_dlta_model_results_to_shapes(self, results):
         """
         This function converts the results of the model to shapes to be displayed in the GUI,
         while filtering the results based on the following criteria:
         1. Selected classes by the user
         2. Confidence threshold
-        3. IOU NM Suppression threshold
-        4. Segmentation accuracy (threshold for the epsilon parameter in the mask to polygon function)
+        3. Segmentation accuracy (threshold for the epsilon parameter in the mask to polygon function)
+        4. IOU NM Suppression threshold
 
         Args:
             results (list): A list containing the classes, confidences, and masks.

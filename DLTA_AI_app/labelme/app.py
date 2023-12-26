@@ -14,14 +14,13 @@ import numpy as np
 from pathlib import Path
 
 from PyQt6 import QtCore
-from PyQt6.QtCore import Qt, QThread
+from PyQt6.QtCore import Qt
 from PyQt6 import QtGui
 from PyQt6 import QtWidgets
-from PyQt6.QtCore import QObject, pyqtSignal, pyqtSlot
+from PyQt6.QtCore import pyqtSignal
 
 from . import __appname__
 from . import PY2
-from . import QT5
 from . import utils
 
 from .utils.sam import Sam_Predictor
@@ -47,9 +46,7 @@ from .widgets.merge_feature_UI import MergeFeatureUI
 from .intelligence import Intelligence
 from .intelligence import coco_classes, color_palette
 
-from supervision.detection.core import Detections
 from trackers.multi_tracker_zoo import create_tracker
-# from ultralytics.utils.torch_utils import select_device
 
 warnings.filterwarnings("ignore")
 
@@ -1321,7 +1318,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     self.change_curr_model,
                     model["Model Name"],
                     model["Family Name"],
-                    model.get("Config"),
+                    model["Config"],
                     model["Checkpoint"]
                 ))
 
@@ -2610,8 +2607,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.helper_first_time_flag = False
 
         selected_model_name, model_family_name, config, checkpoint = model_explorer_dialog.selected_model
-        print(model_family_name)
-        if selected_model_name != -1:
+        if selected_model_name:
             print(f'selected_model_name: {selected_model_name} , model_family_name: {model_family_name} , config: {config} , checkpoint: {checkpoint}' , sep='\n')
             self.change_curr_model(selected_model_name, model_family_name, config, checkpoint)
         self.updateSamControls()
@@ -3300,13 +3296,10 @@ class MainWindow(QtWidgets.QMainWindow):
             if self.current_annotation_mode != "video":
                 if os.path.exists(self.filename):
                     self.labelList.clearSelection()
-
-            if self.multi_model_flag:
-                shapes = self.intelligenceHelper.get_shapes_of_one(
-                    targetImage, img_array_flag=True, multi_model_flag=True)
-            else:
-                shapes = self.intelligenceHelper.get_shapes_of_one(
-                    targetImage, img_array_flag=True)
+                self.waitWindow(visible=True, text=f'running model/s on image .....')
+            shapes = self.intelligenceHelper.get_shapes_of_one(
+                targetImage, multi_model_flag=self.multi_model_flag)
+            self.waitWindow() if self.current_annotation_mode != "video" else None
 
             if areaFlag:
                 shapes = mathOps.adjust_shapes_to_original_image(
@@ -3374,16 +3367,18 @@ class MainWindow(QtWidgets.QMainWindow):
             
             
     def selectClasses(self):
-        print(" from intelligenceHelper:" + str(self.intelligenceHelper.selectedclasses))
+        # print(" from intelligenceHelper:" + str(self.intelligenceHelper.selectedclasses))
         self.intelligenceHelper.selectedclasses = self.segmentation_options_UI.selectClasses()
 
     def mergeSegModels(self):
-        print(" from intelligenceHelper:" + str(self.intelligenceHelper.selectedmodels))
+        # print(" from intelligenceHelper:" + str(self.intelligenceHelper.selectedmodels))
         self.intelligenceHelper.selectedmodels = self.merge_feature_UI.mergeSegModels()
         # check if the user selected any models
         if len(self.intelligenceHelper.selectedmodels) == 0:
             print("No models selected")
         else:
+            print("Selected models: ")
+            print([model['Model Name'] for model in self.intelligenceHelper.selectedmodels])
             self.multi_model_flag = True
 
     def Segment_anything(self):
@@ -3940,22 +3935,12 @@ class MainWindow(QtWidgets.QMainWindow):
                     shape['content'] = 1.0
             boxes, confidences, class_ids, segments = mathOps.get_boxes_conf_classids_segments(
                 shapes)
-
-            boxes = np.array(boxes, dtype=int)
-            confidences = np.array(confidences)
-            class_ids = np.array(class_ids)
-            detections = Detections(
-                xyxy=boxes,
-                confidence=confidences,
-                class_id=class_ids,
-            )
-            boxes = torch.from_numpy(detections.xyxy)
-            confidences = torch.from_numpy(detections.confidence)
-            class_ids = torch.from_numpy(detections.class_id)
-
-            dets = torch.cat((boxes, confidences.unsqueeze(
-                1), class_ids.unsqueeze(1)), dim=1)
-            dets = dets.to(torch.float32)
+            # Convert the lists or arrays directly to torch tensors
+            boxes = torch.tensor(boxes, dtype=torch.int).to(torch.float32)
+            confidences = torch.tensor(confidences, dtype=torch.float32)
+            class_ids = torch.tensor(class_ids, dtype=torch.float32)
+            dets = torch.cat((boxes, confidences.unsqueeze(1), class_ids.unsqueeze(1)), dim=1)
+            
             if hasattr(self.tracker, 'tracker') and hasattr(self.tracker.tracker, 'camera_update'):
                 if prev_frame is not None and curr_frame is not None:  # camera motion compensation
                     self.tracker.tracker.camera_update(prev_frame, curr_frame)

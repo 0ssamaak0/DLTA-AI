@@ -12,23 +12,25 @@ class MergeFeatureUI():
     # merge dialog 
     def mergeSegModels(self):
         # add a resizable and scrollable dialog that contains all the models and allow the user to select among them using checkboxes
-        models = []
-        with open("saved_models.json") as json_file:
-            data = json.load(json_file)
-            for model in data.keys():
-                if "YOLOv8" not in model:
-                    models.append(model)
-        # ExplorerMerge = ModelExplorerDialog(merge=True)
-        # ExplorerMerge.adjustSize()
-        # ExplorerMerge.resize(
-        #     int(ExplorerMerge.width() * 2), int(ExplorerMerge.height() * 1.5))
-        # ExplorerMerge.exec()
+
+        try:
+            with open("models_menu/models_metadata.json") as json_file:
+                data = json.load(json_file)
+            # Filter for downloaded models
+            downloaded_models = [item for item in data if item["Downloaded"] == "YES"]
+            excluded_families = ["SAM_basic"]  # add here any other families such as sam 
+            self.models = [item for item in downloaded_models if item["Family Name"] not in excluded_families]
+        except FileNotFoundError:
+            print("Error: models_metadata.json file not found.")
+        except json.JSONDecodeError:
+            print("Error: Unable to load models_metadata.json file.")
+
 
         dialog = QtWidgets.QDialog(self.parent)
         dialog.setWindowTitle('Select Models')
         dialog.setWindowFlags(dialog.windowFlags() & ~QtCore.Qt.WindowType.WindowContextHelpButtonHint)
         dialog.setWindowModality(QtCore.Qt.WindowModality.ApplicationModal)
-        dialog.resize(200, 250)
+        dialog.resize(400, 500)
         dialog.setMinimumSize(QtCore.QSize(200, 200))
         verticalLayout = QtWidgets.QVBoxLayout(dialog)
         verticalLayout.setObjectName("verticalLayout")
@@ -51,16 +53,18 @@ class MergeFeatureUI():
         verticalLayout.addWidget(buttonBox)
         buttonBox.accepted.connect(dialog.accept)
         buttonBox.rejected.connect(dialog.reject)
-        self.models = []
-        for i in range(len(models)):
-            self.models.append(QtWidgets.QCheckBox(models[i], dialog))
-            verticalLayout_2.addWidget(self.models[i])
+        self.models_checkboxes = []
+        for i in range(len(self.models)):
+            name = f'{self.models[i]["Model Name"]} | {self.models[i]["Family Name"]}'
+            checkbox = QtWidgets.QCheckBox(name, dialog)
+            self.models_checkboxes.append(checkbox)
+            verticalLayout_2.addWidget(checkbox)
+            
         dialog.show()
         dialog.exec()
         self.selectedmodels.clear()
         for i in range(len(self.models)):
-            if self.models[i].isChecked():
-                self.selectedmodels.append(self.models[i].text())
-        print(self.selectedmodels)
+            if self.models_checkboxes[i].isChecked():
+                self.selectedmodels.append(self.models[i])
         return self.selectedmodels
 

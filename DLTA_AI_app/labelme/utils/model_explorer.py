@@ -164,7 +164,7 @@ class ModelExplorerDialog(QDialog):
                 col_count += 1
 
             # Select Model column
-            self.selected_model = (-1, -1, -1)
+            self.selected_model = (None , None , None , None)
             select_row_button = QPushButton("Select Model")
 
 
