@@ -24,8 +24,7 @@ class DLTA_Model():
         self.classes = classes
         self.inference_function = inference_function
         self.model = None
-
-        print(f"{self.model_name} successfully initialized")
+        self.device = 'cpu'
 
         DLTA_Model_list.append(self)
 
@@ -40,12 +39,24 @@ class DLTA_Model():
             The result of calling the function with the given arguments.
         """
         return self.inference_function(*args)
+    
     def __str__(self):
         """
         Returns a string representation of the model.
         """
         return (f"Model Name: {self.model_name} | Model Family: {self.model_family} | Task: {self.task} | Classes: {self.classes}")
     
+
+    def verify_installation(self):
+        """
+        Verifies that the model is installed and imports the necessary libraries.
+
+        Returns:
+            None.
+        """
+        print ("verify_installation function is not implemented for this model")
+        pass
+
     def initialize(self):
         """
         Initializes the model.
@@ -53,42 +64,7 @@ class DLTA_Model():
         Returns:
             model: The initialized model.
         """
-        pass  
-    def imports(self, type = "import"):
-        """
-        Imports the model's dependencies.
-
-        Args:
-            type (str): import or install, if import, then import the model's dependencies, if install, then install the model's dependencies
-        
-        Returns:
-            Imported model's dependencies.
-        """
-    def install(self):
-        """
-        Installs the model and its dependencies if they are not already installed.
-
-        Returns:
-            None.
-        """
-        try:
-            return self.imports(type="import")
-        except ImportError:
-            print(f"{self.model_name} is not installed, installing...")
-            self.imports("install")
-            print(f"{self.model_name} successfully installed")
-            return self.imports(type="import")
-        except Exception as e:
-            print(f"Error installing {self.model_name}: {e}")
-            return
-
-    def parse(self):
-        """
-        Parses the model's configuration file.
-
-        Returns:
-            None.
-        """
+        print ("initialize function is not implemented for this model")
         pass
     
     def inference(self):
@@ -101,5 +77,6 @@ class DLTA_Model():
         Returns:
             None.
         """
-        pass
+        print ("inference function is not implemented for this model")
+        return []
 

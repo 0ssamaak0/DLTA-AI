@@ -1,9 +1,4 @@
 from labelme.DLTA_Model import DLTA_Model
-import numpy as np
-import time
-
-# should be later imported in the imports function
-# from mmdet.apis import init_detector, inference_detector
 
 mmdetection = DLTA_Model(
     model_name="mmdetection",
@@ -16,37 +11,35 @@ mmdetection = DLTA_Model(
 )
 
 
-# prepare imports ( this function isn't yet tested thoroughly )
-def imports(type="import"):
-    if type == "import":
+# verify installation and import necessary libraries
+# if you only want to test/inference a model in dlta (not for devoloping DLTA-AI):
+    # This function is not necessary if you have already installed the required libraries in your environment.
+# It is provided for integrating the models inside DLTA-AI applications.
+def verify_installation():
+    try:
         from mmdet.apis import init_detector, inference_detector
-        return init_detector, inference_detector
-    elif type == "install":
+        print("Import mmdetection successful")
+    except ImportError:
+        print("Libraries not installed, installing...")
         import subprocess
         subprocess.run(["pip", "install", "-U", "openmim"])
         subprocess.run(["mim", "install", "mmengine>=0.7.0"])
         subprocess.run(["mim", "install", "mmcv>=2.0.0rc4"])
         subprocess.run(["mim", "install", "mmdet"])
+        print("Installation complete")
+
 
 
 # model initialization
 def initialize(checkpoint=None, config=None):
-    init_detector, inference_detector = mmdetection.install()
+    from mmdet.apis import init_detector
     mmdetection.model = init_detector(config, checkpoint,
-                        device='cuda:0')  
+                        device= mmdetection.device)  
 
 def inference(img):
-    init_detector, inference_detector = mmdetection.install()
+    from mmdet.apis import inference_detector
 
-    start_time = time.time()
     inference_results = inference_detector(mmdetection.model, img)
-
-    end_time = time.time()
-    execution_time = end_time - start_time
-    print("1---- Execution time for only model inference:",
-          int(execution_time * 1000), "milliseconds")
-
-    start_time = time.time()
 
     if not inference_results:
         return []
@@ -54,15 +47,9 @@ def inference(img):
     masks = inference_results.pred_instances.masks.cpu().numpy()
     classes = inference_results.pred_instances.labels.cpu().numpy()
     confidences = inference_results.pred_instances.scores.cpu().numpy()
-    
-
-    end_time = time.time()
-    execution_time = end_time - start_time
-    print("2---- Execution time for parsing inside the model:",
-          int(execution_time * 1000), "milliseconds")
-    
     return [classes, confidences, masks]
 
-mmdetection.imports = imports
+
+mmdetection.verify_installation = verify_installation
 mmdetection.initialize = initialize
 mmdetection.inference = inference
