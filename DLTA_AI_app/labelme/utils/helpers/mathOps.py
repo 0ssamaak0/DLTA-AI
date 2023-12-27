@@ -24,22 +24,47 @@ coco_classes = ['person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'tr
 # make a list of 12 unique colors as we will use them to draw bounding boxes of different classes in different colors
 # so the calor palette will be used to draw bounding boxes of different classes in different colors
 # the color pallette should have the famous 12 colors as red, green, blue, yellow, cyan, magenta, white, black, gray, brown, pink, and orange in bgr format
-color_palette = [(75, 25, 230),
-                 (75, 180, 60),
-                 (25, 225, 255),
-                 (200, 130, 0),
-                 (49, 130, 245),
-                 (180, 30, 145),
-                 (240, 240, 70),
-                 (230, 50, 240),
-                 (60, 245, 210),
-                 (190, 190, 250),
-                 (128, 128, 0),
-                 (255, 190, 230),
-                 (40, 110, 170),
-                 (200, 250, 255),
-                 (0, 0, 128),
-                 (195, 255, 170)]
+import random
+import colorsys
+
+class ColorGen:
+    """
+    A class for generating colors using the HLS color model.
+
+    Attributes:
+        colors (list): A list to store the generated colors.
+
+    Methods:
+        generateColors(num, lightness, saturation): Generates the specified number of colors based on the given lightness and saturation values.
+    """
+
+    def __init__(self):
+        self.colors = []
+
+    def generateColors(self, num, lightness, saturation):
+        """
+        Generates the specified number of colors based on the given lightness and saturation values.
+
+        Args:
+            num (int): The number of colors to generate.
+            lightness (float): The lightness value for the generated colors (0.0 to 1.0).
+            saturation (float): The saturation value for the generated colors (0.0 to 1.0).
+
+        Returns:
+            List of generated colors in RGB format.
+        """
+        h = 0.314159265359
+        golden_ratio_conjugate = 0.618033988749895
+        for _ in range(num):
+            h += golden_ratio_conjugate 
+            h %= 1
+            rgb = colorsys.hls_to_rgb(h, lightness, saturation)
+            self.colors.append([int(i * 255.0) for i in rgb])
+        return self.colors
+
+c = ColorGen()
+
+color_palette = c.generateColors(20,0.45,0.6)
 
 
 def get_bbox_xyxy(segment):

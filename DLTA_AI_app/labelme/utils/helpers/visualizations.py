@@ -15,22 +15,6 @@ coco_classes = ['person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'tr
 # make a list of 12 unique colors as we will use them to draw bounding boxes of different classes in different colors
 # so the calor palette will be used to draw bounding boxes of different classes in different colors
 # the color pallette should have the famous 12 colors as red, green, blue, yellow, cyan, magenta, white, black, gray, brown, pink, and orange in bgr format
-color_palette = [(75, 25, 230),
-                 (75, 180, 60),
-                 (25, 225, 255),
-                 (200, 130, 0),
-                 (49, 130, 245),
-                 (180, 30, 145),
-                 (240, 240, 70),
-                 (230, 50, 240),
-                 (60, 245, 210),
-                 (190, 190, 250),
-                 (128, 128, 0),
-                 (255, 190, 230),
-                 (40, 110, 170),
-                 (200, 250, 255),
-                 (0, 0, 128),
-                 (195, 255, 170)]
 
 
 
