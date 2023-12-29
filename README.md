@@ -81,7 +81,7 @@ and as mentioned before, **SAM** is fully integrated in DLTA-AI to provide zero-
 # Object Tracking 🚗
 Built on top of the segmentation and detection models, DLTA-AI provides a complete solution for Object Tracking, with 5 different models for tracking
 
-To impr DLTA-AI have options for video navigation, tracking settings and different visualization options with the ability to export the tracking results to a video file
+To import DLTA-AI have options for video navigation, tracking settings and different visualization options with the ability to export the tracking results to a video file
 
 Beside this, DLTA-AI provides a completely new way to modify the tracking results, including edit and delete propagation across frames
 
